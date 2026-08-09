@@ -1,0 +1,44 @@
+{
+  "lexicon": 1,
+  "id": "dev.adenosine.pullRequestStatus",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["subject", "targetRepository", "state", "createdAt", "updatedAt"],
+        "properties": {
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The dev.adenosine.pullRequest record whose state this record controls."
+          },
+          "targetRepository": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The dev.adenosine.repo record whose owner controls this status."
+          },
+          "state": {
+            "type": "string",
+            "knownValues": ["open", "closed", "merged"]
+          },
+          "mergeCommitSHA": {
+            "type": "string",
+            "minLength": 40,
+            "maxLength": 64,
+            "description": "The lowercase hexadecimal Git SHA-1 or SHA-256 merge commit object ID; present only for merged status."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

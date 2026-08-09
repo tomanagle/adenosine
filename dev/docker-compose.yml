@@ -1,0 +1,469 @@
+name: adenosine
+
+services:
+  postgres:
+    image: postgres:17.5-alpine3.21
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_replication_slots=5
+      - -c
+      - max_wal_senders=5
+      - -c
+      - max_slot_wal_keep_size=1GB
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  adenosine:
+    build:
+      context: ..
+      dockerfile: dev/Dockerfile
+      target: dev-go
+    working_dir: /workspace
+    command: ["air", "-c", "dev/air.toml"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      ADENOSINE_BASE_URL: ${ADENOSINE_BASE_URL}
+      ADENOSINE_LISTEN_ADDR: ${ADENOSINE_LISTEN_ADDR}
+      ADENOSINE_REPO_ROOT: ${ADENOSINE_REPO_ROOT}
+      ADENOSINE_GIT_BINARY: ${ADENOSINE_GIT_BINARY:-git}
+      ADENOSINE_SSH_LISTEN_ADDR: ${ADENOSINE_SSH_LISTEN_ADDR:-:2222}
+      ADENOSINE_SSH_HOST: ${ADENOSINE_SSH_HOST:-localhost}
+      ADENOSINE_SSH_PORT: ${ADENOSINE_SSH_PORT:-2222}
+      ADENOSINE_SSH_HOST_KEY_PATH: ${ADENOSINE_SSH_HOST_KEY_PATH:-/var/lib/adenosine/state/ssh_host_ed25519_key}
+      ADENOSINE_OAUTH_STATE_KEY: ${ADENOSINE_OAUTH_STATE_KEY}
+      ADENOSINE_OAUTH_CREDENTIAL_KEY: ${ADENOSINE_OAUTH_CREDENTIAL_KEY}
+      ADENOSINE_TAP_CONSUMER: ${ADENOSINE_TAP_CONSUMER:-tap:dev.adenosine:v1}
+      ADENOSINE_TAP_ADMIN_PASSWORD: ${TAP_ADMIN_PASSWORD}
+      ADENOSINE_ELECTRIC_URL: http://electric:3000
+      ADENOSINE_ELECTRIC_SECRET: ${ELECTRIC_SECRET}
+      ELECTRIC_DATABASE_PASSWORD: ${ELECTRIC_DATABASE_PASSWORD}
+      OTEL_SERVICE_NAME: adenosine
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_TRACES_SAMPLER: always_on
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=development,service.version=dev
+    ports:
+      - "${ADENOSINE_SSH_PORT:-2222}:2222"
+    volumes:
+      - ..:/workspace
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+      - repositories:/var/lib/adenosine/repos
+      - instance_state:/var/lib/adenosine/state
+    depends_on:
+      postgres:
+        condition: service_healthy
+      otel-lgtm:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health/ready"]
+      interval: 30s
+      timeout: 1s
+      retries: 30
+
+  electric:
+    image: docker.io/electricsql/electric:1.7.10@sha256:5758f72b40d2ea9c3ba676b0f6070dd5cd5552975c19b2b8f82206743f47164c
+    environment:
+      DATABASE_URL: postgresql://electric:${ELECTRIC_DATABASE_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      ELECTRIC_SECRET: ${ELECTRIC_SECRET}
+      ELECTRIC_PORT: "3000"
+      ELECTRIC_DB_POOL_SIZE: "10"
+      ELECTRIC_MANUAL_TABLE_PUBLISHING: "true"
+      ELECTRIC_STORAGE_DIR: /var/lib/electric/persistent
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: electric
+    volumes:
+      - electric_data:/var/lib/electric/persistent
+    depends_on:
+      postgres:
+        condition: service_healthy
+      adenosine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "test \"$$(curl -so /dev/null -w '%{http_code}' http://localhost:3000/v1/health)\" = 200"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  web:
+    build:
+      context: ..
+      dockerfile: dev/Dockerfile
+      target: dev-web
+    working_dir: /workspace
+    command: ["bun", "run", "--cwd", "web", "dev", "--", "--port", "3001"]
+    environment:
+      ADENOSINE_DEV_SERVICE: web
+      ADENOSINE_INTERNAL_API_URL: http://adenosine:8080
+    volumes:
+      - ..:/workspace
+      - root_node_modules:/workspace/node_modules
+      - bun_cache:/root/.bun/install/cache
+    depends_on:
+      adenosine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/ | grep -q 'Build in public'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  gateway:
+    image: docker.io/library/caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile", "--watch"]
+    ports:
+      - "${ADENOSINE_HTTP_PORT:-8080}:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      adenosine:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ | grep -q 'Build in public'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  tap:
+    image: ghcr.io/bluesky-social/indigo/tap:0.1.10@sha256:5e20bfe416d29fcd215ed8bf99f10b2ab825a6de4e5599846dd33967ade2abeb
+    environment:
+      TAP_DATABASE_URL: sqlite:///data/tap.db
+      TAP_SIGNAL_COLLECTION: dev.adenosine.repo
+      TAP_COLLECTION_FILTERS: dev.adenosine.*
+      TAP_WEBHOOK_URL: http://adenosine:8080/internal/federation/tap
+      TAP_NO_REPLAY: "false"
+      TAP_DISABLE_ACKS: "false"
+      TAP_ADMIN_PASSWORD: ${TAP_ADMIN_PASSWORD}
+    volumes:
+      - tap_data:/data
+    depends_on:
+      adenosine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "credentials=$$(printf 'admin:%s' \"$$TAP_ADMIN_PASSWORD\" | base64 | tr -d '\\n'); wget -q --spider --header=\"Authorization: Basic $$credentials\" http://127.0.0.1:2480/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 10
+
+  otel-lgtm:
+    image: grafana/otel-lgtm:0.11.9
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+      - "${OTEL_GRPC_PORT:-4317}:4317"
+      - "${OTEL_HTTP_PORT:-4318}:4318"
+
+  postgres-a:
+    profiles: ["federation-test"]
+    image: postgres:17.5-alpine3.21
+    environment:
+      POSTGRES_USER: adenosine
+      POSTGRES_DB: adenosine
+      POSTGRES_PASSWORD: federation-a
+    volumes:
+      - federation_postgres_a:/var/lib/postgresql/data
+    networks: [federation-data-a]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adenosine -d adenosine"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  postgres-b:
+    profiles: ["federation-test"]
+    image: postgres:17.5-alpine3.21
+    environment:
+      POSTGRES_USER: adenosine
+      POSTGRES_DB: adenosine
+      POSTGRES_PASSWORD: federation-b
+    volumes:
+      - federation_postgres_b:/var/lib/postgresql/data
+    networks: [federation-data-b]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adenosine -d adenosine"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  adenosine-a:
+    profiles: ["federation-test"]
+    build:
+      context: ..
+      dockerfile: dev/Dockerfile
+      target: dev-go
+    working_dir: /workspace
+    command: ["air", "-c", "dev/air.toml"]
+    environment:
+      DATABASE_URL: postgres://adenosine:federation-a@postgres-a:5432/adenosine?sslmode=disable
+      ADENOSINE_BASE_URL: https://adenosine-a-tls
+      ADENOSINE_LISTEN_ADDR: :8080
+      ADENOSINE_REPO_ROOT: /var/lib/adenosine/repos
+      ADENOSINE_GIT_BINARY: git
+      ADENOSINE_SSH_LISTEN_ADDR: 127.0.0.1:2222
+      ADENOSINE_SSH_HOST: adenosine-a
+      ADENOSINE_SSH_PORT: 2222
+      ADENOSINE_SSH_HOST_KEY_PATH: /var/lib/adenosine/state/ssh_host_ed25519_key
+      ADENOSINE_OAUTH_STATE_KEY: MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      ADENOSINE_OAUTH_CREDENTIAL_KEY: MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=
+      ADENOSINE_TAP_CONSUMER: tap:federation-test-a:v1
+      ADENOSINE_TAP_ADMIN_PASSWORD: federation-test-secret
+      ADENOSINE_PR_FETCH_CAINFO: /caddy-b-data/caddy/pki/authorities/local/root.crt
+    volumes:
+      - federation_repositories_a:/var/lib/adenosine/repos
+      - federation_state_a:/var/lib/adenosine/state
+      - federation_caddy_data_b:/caddy-b-data:ro
+    tmpfs:
+      - /tmp:exec,size=512m
+    networks: [federation-data-a, federation-http-a, federation-egress-a, federation-pr-fetch]
+    depends_on:
+      postgres-a:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health/ready"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+
+  adenosine-a-tls:
+    profiles: ["federation-test"]
+    image: caddy:2.10.0-alpine@sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c
+    command:
+      - caddy
+      - reverse-proxy
+      - --from
+      - https://adenosine-a-tls
+      - --to
+      - http://adenosine-a:8080
+      - --internal-certs
+    volumes:
+      - federation_caddy_data_a:/data
+    networks: [federation-http-a]
+    depends_on:
+      adenosine-a:
+        condition: service_healthy
+
+  adenosine-b:
+    profiles: ["federation-test"]
+    build:
+      context: ..
+      dockerfile: dev/Dockerfile
+      target: dev-go
+    working_dir: /workspace
+    command: ["air", "-c", "dev/air.toml"]
+    environment:
+      DATABASE_URL: postgres://adenosine:federation-b@postgres-b:5432/adenosine?sslmode=disable
+      ADENOSINE_BASE_URL: http://127.0.0.1:8080
+      ADENOSINE_LISTEN_ADDR: :8080
+      ADENOSINE_REPO_ROOT: /var/lib/adenosine/repos
+      ADENOSINE_GIT_BINARY: git
+      ADENOSINE_SSH_LISTEN_ADDR: 127.0.0.1:2222
+      ADENOSINE_SSH_HOST: adenosine-b
+      ADENOSINE_SSH_PORT: 2222
+      ADENOSINE_SSH_HOST_KEY_PATH: /var/lib/adenosine/state/ssh_host_ed25519_key
+      ADENOSINE_OAUTH_STATE_KEY: MjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjI=
+      ADENOSINE_OAUTH_CREDENTIAL_KEY: MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM=
+      ADENOSINE_TAP_CONSUMER: tap:federation-test-b:v1
+      ADENOSINE_TAP_ADMIN_PASSWORD: federation-test-secret
+    volumes:
+      - federation_repositories_b:/var/lib/adenosine/repos
+      - federation_state_b:/var/lib/adenosine/state
+    tmpfs:
+      - /tmp:exec,size=512m
+    networks: [federation-data-b, federation-http-b, federation-egress-b]
+    depends_on:
+      postgres-b:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health/ready"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+
+  adenosine-b-tls:
+    profiles: ["federation-test"]
+    image: caddy:2.10.0-alpine@sha256:ae4458638da8e1a91aafffb231c5f8778e964bca650c8a8cb23a7e8ac557aa3c
+    command:
+      - caddy
+      - reverse-proxy
+      - --from
+      - https://adenosine-b-tls
+      - --to
+      - http://adenosine-b:8080
+      - --internal-certs
+    volumes:
+      - federation_caddy_data_b:/data
+    networks: [federation-http-b, federation-pr-fetch]
+    depends_on:
+      adenosine-b:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "test -s /data/caddy/pki/authorities/local/root.crt && test -s /data/caddy/certificates/local/adenosine-b-tls/adenosine-b-tls.crt"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  federation-acceptance:
+    profiles: ["federation-test"]
+    build:
+      context: ..
+      dockerfile: dev/Dockerfile
+      target: dev-go
+    entrypoint: []
+    working_dir: /workspace
+    command: ["go", "run", "./test/federation", "-phase=seed"]
+    environment:
+      ADENOSINE_A_URL: http://adenosine-a:8080
+      ADENOSINE_B_URL: http://adenosine-b:8080
+      ADENOSINE_TAP_ADMIN_PASSWORD: federation-test-secret
+      GIT_SSL_CAINFO: /caddy-data/caddy/pki/authorities/local/root.crt
+    volumes:
+      - federation_caddy_data_a:/caddy-data:ro
+    networks: [federation-http-a, federation-http-b]
+    depends_on:
+      adenosine-a:
+        condition: service_healthy
+      adenosine-b:
+        condition: service_healthy
+      adenosine-a-tls:
+        condition: service_started
+
+  federation-star:
+    profiles: ["federation-test"]
+    build:
+      context: ..
+      dockerfile: dev/Dockerfile
+      target: dev-go
+    entrypoint: []
+    working_dir: /workspace
+    command: ["go", "run", "./test/federationstar"]
+    environment:
+      DATABASE_URL: postgres://adenosine:federation-b@postgres-b:5432/adenosine?sslmode=disable
+      ADENOSINE_A_URL: http://adenosine-a:8080
+      ADENOSINE_B_URL: http://adenosine-b:8080
+      ADENOSINE_TAP_ADMIN_PASSWORD: federation-test-secret
+    networks: [federation-data-b, federation-http-a, federation-http-b, federation-egress-b]
+    depends_on:
+      adenosine-a:
+        condition: service_healthy
+      adenosine-b:
+        condition: service_healthy
+
+  federation-issue:
+    profiles: ["federation-test"]
+    build:
+      context: ..
+      dockerfile: dev/Dockerfile
+      target: dev-go
+    entrypoint: []
+    working_dir: /workspace
+    command: ["go", "run", "./test/federationissue"]
+    environment:
+      DATABASE_URL: postgres://adenosine:federation-b@postgres-b:5432/adenosine?sslmode=disable
+      ADENOSINE_A_URL: http://adenosine-a:8080
+      ADENOSINE_B_URL: http://adenosine-b:8080
+      ADENOSINE_TAP_ADMIN_PASSWORD: federation-test-secret
+    networks: [federation-data-b, federation-http-a, federation-http-b, federation-egress-b]
+    depends_on:
+      adenosine-a:
+        condition: service_healthy
+      adenosine-b:
+        condition: service_healthy
+
+  federation-comment:
+    profiles: ["federation-test"]
+    build:
+      context: ..
+      dockerfile: dev/Dockerfile
+      target: dev-go
+    entrypoint: []
+    working_dir: /workspace
+    command: ["go", "run", "./test/federationcomment", "-phase=create"]
+    environment:
+      DATABASE_URL_A: postgres://adenosine:federation-a@postgres-a:5432/adenosine?sslmode=disable
+      DATABASE_URL_B: postgres://adenosine:federation-b@postgres-b:5432/adenosine?sslmode=disable
+      ADENOSINE_A_URL: http://adenosine-a:8080
+      ADENOSINE_B_URL: http://adenosine-b:8080
+      ADENOSINE_TAP_ADMIN_PASSWORD: federation-test-secret
+    networks: [federation-data-a, federation-data-b, federation-http-a, federation-http-b, federation-egress-b]
+    depends_on:
+      adenosine-a:
+        condition: service_healthy
+      adenosine-b:
+        condition: service_healthy
+
+  federation-pr:
+    profiles: ["federation-test"]
+    build:
+      context: ..
+      dockerfile: dev/Dockerfile
+      target: dev-go
+    entrypoint: []
+    working_dir: /workspace
+    command: ["go", "run", "./test/federationpr", "-phase=create"]
+    environment:
+      DATABASE_URL_A: postgres://adenosine:federation-a@postgres-a:5432/adenosine?sslmode=disable
+      DATABASE_URL_B: postgres://adenosine:federation-b@postgres-b:5432/adenosine?sslmode=disable
+      ADENOSINE_A_URL: http://adenosine-a:8080
+      ADENOSINE_B_URL: http://adenosine-b:8080
+      ADENOSINE_TAP_ADMIN_PASSWORD: federation-test-secret
+      ADENOSINE_REPO_ROOT: /var/lib/adenosine/repos-a
+      ADENOSINE_GIT_BINARY: git
+      ADENOSINE_PR_FETCH_CAINFO: /caddy-b-data/caddy/pki/authorities/local/root.crt
+    volumes:
+      - federation_repositories_a:/var/lib/adenosine/repos-a
+      - federation_caddy_data_b:/caddy-b-data:ro
+    networks: [federation-data-a, federation-data-b, federation-http-a, federation-http-b, federation-egress-b, federation-pr-fetch]
+    depends_on:
+      adenosine-a:
+        condition: service_healthy
+      adenosine-b:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  repositories:
+  instance_state:
+  tap_data:
+  go_mod_cache:
+  go_build_cache:
+  root_node_modules:
+  bun_cache:
+  electric_data:
+  federation_postgres_a:
+  federation_postgres_b:
+  federation_repositories_a:
+  federation_repositories_b:
+  federation_state_a:
+  federation_state_b:
+  federation_caddy_data_a:
+  federation_caddy_data_b:
+
+networks:
+  federation-data-a:
+    internal: true
+  federation-data-b:
+    internal: true
+  federation-http-a:
+    internal: true
+  federation-http-b:
+    internal: true
+  federation-egress-a:
+  federation-egress-b:
+  federation-pr-fetch:
+    internal: true

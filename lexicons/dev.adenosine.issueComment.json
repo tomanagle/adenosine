@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "dev.adenosine.issueComment",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["subject", "body", "createdAt", "updatedAt"],
+        "properties": {
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef"
+          },
+          "parent": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The dev.adenosine.issueComment record this comment replies to."
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 65535
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

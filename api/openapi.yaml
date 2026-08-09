@@ -1,0 +1,1532 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Adenosine API",
+    "version": "0.1.0",
+    "description": "The stable public contract for Adenosine clients. REST is the canonical write path and remains fully functional without realtime sync."
+  },
+  "servers": [{ "url": "/" }],
+  "tags": [
+    { "name": "Health" },
+    { "name": "Identity" },
+    { "name": "Profiles" },
+    { "name": "Repositories" },
+    { "name": "Credentials" },
+    { "name": "Passkeys" },
+    { "name": "Issues" },
+    { "name": "Pull Requests" },
+    { "name": "Comments" },
+    { "name": "Moderation" },
+    { "name": "Sync", "description": "Optional Electric shape streams. These endpoints use Electric's shape-log protocol rather than the nested REST resource format." }
+  ],
+  "paths": {
+    "/health/live": {
+      "get": {
+        "operationId": "getLiveness",
+        "tags": ["Health"],
+        "summary": "Check process liveness",
+        "responses": {
+          "200": {
+            "description": "The process is alive",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "getReadiness",
+        "tags": ["Health"],
+        "summary": "Check service readiness",
+        "responses": {
+          "200": {
+            "description": "All required dependencies are ready",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } }
+          },
+          "503": {
+            "description": "A required dependency is unavailable",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } }
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "getCurrentIdentity",
+        "tags": ["Identity"],
+        "summary": "Get the authenticated identity",
+        "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "responses": {
+          "200": {
+            "description": "Current DID-based identity",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CurrentIdentity" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/auth/atproto/start": {
+      "post": {
+        "operationId": "startATProtoLogin",
+        "tags": ["Identity"],
+        "summary": "Start AT Protocol OAuth login",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StartATProtoLoginRequest" } } } },
+        "responses": {
+          "200": { "description": "Authorization URL", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StartATProtoLoginResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "AT Protocol identity or OAuth provider unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "tags": ["Identity"],
+        "summary": "Revoke the current local browser session",
+        "security": [{ "sessionCookie": [] }],
+        "responses": {
+          "204": { "description": "Session revoked" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/oauth/atproto/callback": {
+      "get": {
+        "operationId": "completeATProtoLogin",
+        "tags": ["Identity"],
+        "summary": "Complete AT Protocol OAuth login",
+        "parameters": [
+          { "name": "state", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "iss", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "code", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "error", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "error_description", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "error_uri", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "303": {
+            "description": "Local session created",
+            "headers": {
+              "Location": { "schema": { "type": "string" } },
+              "Set-Cookie": { "schema": { "type": "string" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/oauth/client-metadata.json": {
+      "get": {
+        "operationId": "getOAuthClientMetadata",
+        "tags": ["Identity"],
+        "summary": "Get the public AT Protocol OAuth client metadata",
+        "responses": {
+          "200": { "description": "OAuth client metadata", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OAuthClientMetadata" } } } }
+        }
+      }
+    },
+    "/api/v1/passkeys/registration/options": {
+      "post": {
+        "operationId": "beginPasskeyRegistration",
+        "tags": ["Passkeys"],
+        "summary": "Begin passkey registration for the current browser session",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BeginPasskeyRegistrationRequest" } } } },
+        "responses": {
+          "200": { "description": "WebAuthn registration options", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasskeyCeremonyOptions" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/passkeys/registration/verify": {
+      "post": {
+        "operationId": "verifyPasskeyRegistration",
+        "tags": ["Passkeys"],
+        "summary": "Verify passkey registration for the current browser session",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VerifyPasskeyCeremonyRequest" } } } },
+        "responses": {
+          "201": {
+            "description": "Passkey registered",
+            "headers": { "Location": { "description": "Canonical API URL for the passkey", "schema": { "type": "string", "format": "uri-reference" } } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Passkey" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/passkeys/login/options": {
+      "post": {
+        "operationId": "beginPasskeyLogin",
+        "tags": ["Passkeys"],
+        "summary": "Begin anonymous discoverable passkey login",
+        "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "responses": {
+          "200": { "description": "WebAuthn login options", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasskeyCeremonyOptions" } } } },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/api/v1/passkeys/login/verify": {
+      "post": {
+        "operationId": "verifyPasskeyLogin",
+        "tags": ["Passkeys"],
+        "summary": "Verify anonymous discoverable passkey login",
+        "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VerifyPasskeyCeremonyRequest" } } } },
+        "responses": {
+          "204": { "description": "Local browser session created", "headers": { "Set-Cookie": { "schema": { "type": "string" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/passkeys": {
+      "get": {
+        "operationId": "listPasskeys",
+        "tags": ["Passkeys"],
+        "summary": "List passkey metadata for the current browser session",
+        "security": [{ "sessionCookie": [] }],
+        "responses": {
+          "200": { "description": "Active passkey metadata", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasskeyList" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/passkeys/{id}": {
+      "delete": {
+        "operationId": "deletePasskey",
+        "tags": ["Passkeys"],
+        "summary": "Revoke a passkey owned by the current browser session",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "$ref": "#/components/parameters/ExactOrigin" }
+        ],
+        "responses": {
+          "204": { "description": "Passkey revoked" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/profiles/{did}": {
+      "get": {
+        "operationId": "getDeveloperProfile",
+        "tags": ["Profiles"],
+        "summary": "Get a shared developer profile",
+        "parameters": [
+          { "name": "did", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Shared developer profile",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeveloperProfile" } } }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "The profile provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/profile": {
+      "put": {
+        "operationId": "updateDeveloperProfile",
+        "tags": ["Profiles"],
+        "summary": "Replace the authenticated developer's shared profile",
+        "security": [{ "sessionCookie": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateDeveloperProfileRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Updated shared developer profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeveloperProfile" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "The profile provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/repositories": {
+      "post": {
+        "operationId": "createRepository",
+        "tags": ["Repositories"],
+        "summary": "Create a locally hosted repository",
+        "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateRepositoryRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Repository created",
+            "headers": {
+              "Location": { "description": "Canonical API URL for the repository", "schema": { "type": "string", "format": "uri-reference" } },
+              "X-Request-ID": { "$ref": "#/components/headers/RequestID" }
+            },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Repository" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/stars": {
+      "get": {
+        "operationId": "getStars", "tags": ["Stars"], "summary": "Get projected stars for a repository", "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }],
+        "responses": {
+          "200": { "description": "Current bounded star projection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StarList" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      },
+      "put": {
+        "operationId": "putStar", "tags": ["Stars"], "summary": "Publish the current developer's star", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }, { "$ref": "#/components/parameters/MutationOrigin" }],
+        "responses": {
+          "202": { "description": "Star published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StarMutation" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "The AT Protocol star provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "operationId": "deleteStar", "tags": ["Stars"], "summary": "Delete the current developer's star", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }, { "$ref": "#/components/parameters/MutationOrigin" }],
+        "responses": {
+          "202": { "description": "Star deleted; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "The AT Protocol star provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/issues": {
+      "get": {
+        "operationId": "getIssues", "tags": ["Issues"], "summary": "Get projected issues for a repository", "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }],
+        "responses": {
+          "200": { "description": "Current bounded issue projection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueList" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      },
+      "post": {
+        "operationId": "createIssue", "tags": ["Issues"], "summary": "Publish a reporter-authored issue", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateIssueRequest" } } } },
+        "responses": {
+          "202": { "description": "Issue published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueMutation" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "The AT Protocol issue provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "put": {
+        "operationId": "putIssueStatus", "tags": ["Issues"], "summary": "Publish repository-authoritative issue state", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutIssueStatusRequest" } } } },
+        "responses": {
+          "202": { "description": "Issue status published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueStatusMutation" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "The AT Protocol issue provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/issues/comments": {
+      "get": {
+        "operationId": "getIssueComments", "tags": ["Comments"], "summary": "Get projected comments for an issue", "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IssueURI" }],
+        "responses": {
+          "200": { "description": "Current bounded comment projection, personalized for a valid browser session", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommentList" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      },
+      "post": {
+        "operationId": "createIssueComment", "tags": ["Comments"], "summary": "Publish an author-owned issue comment", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateCommentRequest" } } } },
+        "responses": {
+          "202": { "description": "Comment published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommentMutation" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "The AT Protocol comment provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "operationId": "deleteIssueComment", "tags": ["Comments"], "summary": "Delete the current developer's issue comment", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/CommentURI" }, { "$ref": "#/components/parameters/ExactOrigin" }],
+        "responses": {
+          "202": { "description": "Comment deleted; projection update is pending" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "The AT Protocol comment provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/pull-requests": {
+      "get": {
+        "operationId": "listPullRequests", "tags": ["Pull Requests"], "summary": "List projected pull requests targeting a repository", "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }],
+        "responses": {
+          "200": { "description": "Current bounded pull request projection", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestList" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      },
+      "post": {
+        "operationId": "createPullRequest", "tags": ["Pull Requests"], "summary": "Publish a contributor-authored pull request", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatePullRequestRequest" } } } },
+        "responses": {
+          "202": { "description": "Pull request published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestMutation" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "The AT Protocol pull request provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/pull-requests/detail": {
+      "get": {
+        "operationId": "getPullRequest", "tags": ["Pull Requests"], "summary": "Get one current projected pull request", "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }],
+        "responses": { "200": { "description": "Current projected pull request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequest" } } } }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      }
+    },
+    "/api/v1/pull-requests/diff": {
+      "get": {
+        "operationId": "getPullRequestDiff", "tags": ["Pull Requests"], "summary": "Refresh and return a verified pull request diff", "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }],
+        "responses": {
+          "200": { "description": "Verified bounded pull request diff", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestDiff" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "413": { "description": "Diff exceeds the bounded output limit", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/pull-requests/reviews": {
+      "get": {
+        "operationId": "listPullRequestReviews", "tags": ["Pull Requests"], "summary": "List reviews for the exact current pull request CID", "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }],
+        "responses": { "200": { "description": "Current bounded reviews", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestReviewList" } } } }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      },
+      "post": {
+        "operationId": "createPullRequestReview", "tags": ["Pull Requests"], "summary": "Publish a reviewer-authored review", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatePullRequestReviewRequest" } } } },
+        "responses": {
+          "202": { "description": "Review published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestReviewMutation" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "description": "The AT Protocol pull request provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/pull-requests/status": {
+      "put": {
+        "operationId": "putPullRequestStatus", "tags": ["Pull Requests"], "summary": "Publish target-owner-authoritative open or closed state", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutPullRequestStatusRequest" } } } },
+        "responses": {
+          "202": { "description": "Status published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestStatusMutation" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "description": "The AT Protocol pull request provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/pull-requests/merge": {
+      "post": {
+        "operationId": "mergePullRequest", "tags": ["Pull Requests"], "summary": "Merge an open pull request into its local target repository", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MergePullRequestRequest" } } } },
+        "responses": {
+          "200": { "description": "Pull request merged and target-owner status published", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestMerge" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "500": { "description": "The durable merge event could not be recorded", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "502": { "description": "The target owner's AT Protocol provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "503": { "description": "The Git repository is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/moderation": {
+      "get": {
+        "operationId": "getModeration", "tags": ["Moderation"], "summary": "List moderation rules owned by the current browser session", "security": [{ "sessionCookie": [] }],
+        "responses": {
+          "200": { "description": "Current account-scoped moderation rules", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Moderation" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/v1/moderation/blocked-dids": {
+      "put": {
+        "operationId": "putBlockedDID", "tags": ["Moderation"], "summary": "Block a DID for the current browser session", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutBlockedDIDRequest" } } } },
+        "responses": { "204": { "description": "DID blocked" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      },
+      "delete": {
+        "operationId": "deleteBlockedDID", "tags": ["Moderation"], "summary": "Unblock a DID for the current browser session", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/BlockedDID" }, { "$ref": "#/components/parameters/ExactOrigin" }],
+        "responses": { "204": { "description": "DID unblocked" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      }
+    },
+    "/api/v1/moderation/hidden-records": {
+      "put": {
+        "operationId": "putHiddenRecord", "tags": ["Moderation"], "summary": "Hide a record for the current browser session", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutHiddenRecordRequest" } } } },
+        "responses": { "204": { "description": "Record hidden" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      },
+      "delete": {
+        "operationId": "deleteHiddenRecord", "tags": ["Moderation"], "summary": "Unhide a record for the current browser session", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RecordURI" }, { "$ref": "#/components/parameters/ExactOrigin" }],
+        "responses": { "204": { "description": "Record unhidden" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      }
+    },
+    "/api/v1/network/repositories": {
+      "get": {
+        "operationId": "listNetworkRepositories",
+        "tags": ["Repositories"],
+        "summary": "Discover public repositories indexed from the network",
+        "security": [],
+        "parameters": [
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 } },
+          { "name": "cursor", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 4096 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of public network repositories",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NetworkRepositoryList" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/v1/sync/repositories": {
+      "get": {
+        "operationId": "getSyncRepositories",
+        "tags": ["Sync"],
+        "summary": "Synchronize the public repository projection",
+        "description": "Proxies an Electric 1.7.10 shape fixed to approved columns from network.repositories. Adenosine always applies deleted_at IS NULL AND cid IS NOT NULL. The response is an Electric shape log: regular requests return an array of operation/control messages, not REST Repository objects. Insert values correspond to SyncRepository; update and delete values may contain only changed or key columns according to Electric replica semantics.",
+        "security": [],
+        "parameters": [
+          { "$ref": "#/components/parameters/ElectricOffset" },
+          { "$ref": "#/components/parameters/ElectricHandle" },
+          { "$ref": "#/components/parameters/ElectricCursor" },
+          { "$ref": "#/components/parameters/ElectricCacheBuster" },
+          { "$ref": "#/components/parameters/ElectricExpiredHandle" },
+          { "$ref": "#/components/parameters/ElectricLive" },
+          { "$ref": "#/components/parameters/ElectricLiveSSE" },
+          { "$ref": "#/components/parameters/ElectricReplica" },
+          { "$ref": "#/components/parameters/ElectricLog" }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/ElectricShape" },
+          "304": { "description": "The cached shape response is still current" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "409": { "$ref": "#/components/responses/ElectricShapeConflict" },
+          "429": { "description": "Electric is temporarily busy", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
+          "502": { "description": "Electric is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "503": { "description": "Realtime sync is not configured", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "post": {
+        "operationId": "postSyncRepositories",
+        "tags": ["Sync"],
+        "summary": "Synchronize or request a subset of the public repository projection",
+        "description": "Uses Electric 1.7.10 POST subset semantics. The optional JSON body can only narrow the server-owned shape. Electric combines body where with Adenosine's main predicate using AND and restricts filtering and ordering to the server-owned queryable column list. An empty body is forwarded as Electric's supported empty POST form.",
+        "security": [],
+        "parameters": [
+          { "$ref": "#/components/parameters/ElectricOffset" },
+          { "$ref": "#/components/parameters/ElectricHandle" },
+          { "$ref": "#/components/parameters/ElectricCacheBuster" },
+          { "$ref": "#/components/parameters/ElectricExpiredHandle" },
+          { "$ref": "#/components/parameters/ElectricReplica" },
+          { "$ref": "#/components/parameters/ElectricLog" }
+        ],
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } },
+        "responses": {
+          "200": { "$ref": "#/components/responses/ElectricShape" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "409": { "$ref": "#/components/responses/ElectricShapeConflict" },
+          "413": { "description": "The subset request body exceeds 16 KiB", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "429": { "description": "Electric is temporarily busy", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
+          "502": { "description": "Electric is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "503": { "description": "Realtime sync is not configured", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}": {
+      "get": {
+        "operationId": "getRepository",
+        "tags": ["Repositories"],
+        "summary": "Get a local or federated repository",
+        "parameters": [
+          { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository metadata",
+            "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Repository" } } }
+          },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/branches": {
+      "get": {
+        "operationId": "listRepositoryBranches",
+        "tags": ["Repositories"],
+        "summary": "List repository branches",
+        "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [
+          { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }
+        ],
+        "responses": {
+          "200": { "description": "Repository branches", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchList" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/tags": {
+      "get": {
+        "operationId": "listRepositoryTags",
+        "tags": ["Repositories"],
+        "summary": "List repository tags",
+        "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [
+          { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }
+        ],
+        "responses": {
+          "200": { "description": "Repository tags", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TagList" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/tree": {
+      "get": {
+        "operationId": "getRepositoryTree",
+        "tags": ["Repositories"],
+        "summary": "List one repository tree directory",
+        "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [
+          { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } },
+          { "name": "rev", "in": "query", "required": false, "schema": { "type": "string", "minLength": 1, "maxLength": 1024 } },
+          { "name": "path", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 4096 } }
+        ],
+        "responses": {
+          "200": { "description": "Resolved tree directory", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Tree" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/blobs/{sha}": {
+      "get": {
+        "operationId": "getRepositoryBlob",
+        "tags": ["Repositories"],
+        "summary": "Stream an immutable Git blob",
+        "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [
+          { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } },
+          { "name": "sha", "in": "path", "required": true, "schema": { "type": "string", "pattern": "^([0-9a-f]{40}|[0-9a-f]{64})$" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Raw blob bytes",
+            "headers": {
+              "Content-Length": { "schema": { "type": "integer", "format": "int64" } },
+              "ETag": { "schema": { "type": "string" } },
+              "X-Request-ID": { "$ref": "#/components/headers/RequestID" }
+            },
+            "content": { "application/octet-stream": { "schema": { "type": "string", "format": "binary" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/commits": {
+      "get": {
+        "operationId": "listRepositoryCommits",
+        "tags": ["Repositories"],
+        "summary": "List repository commit history",
+        "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [
+          { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } },
+          { "name": "ref", "in": "query", "required": false, "schema": { "type": "string", "minLength": 1, "maxLength": 1024 } },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 } }
+        ],
+        "responses": {
+          "200": { "description": "Commit history", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommitList" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/commits/{revision}": {
+      "get": {
+        "operationId": "getRepositoryCommit",
+        "tags": ["Repositories"],
+        "summary": "Get repository commit details",
+        "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [
+          { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } },
+          { "name": "revision", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 1024 } }
+        ],
+        "responses": {
+          "200": { "description": "Commit details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Commit" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/diff": {
+      "get": {
+        "operationId": "getRepositoryDiff",
+        "tags": ["Repositories"],
+        "summary": "Get a bounded diff between two commits",
+        "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [
+          { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } },
+          { "name": "base", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 1024 } },
+          { "name": "head", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 1024 } }
+        ],
+        "responses": {
+          "200": { "description": "Resolved diff and patch", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Diff" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "413": { "description": "Diff exceeds the bounded output limit", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/merge-base": {
+      "get": {
+        "operationId": "getRepositoryMergeBase",
+        "tags": ["Repositories"],
+        "summary": "Find a merge base for two commits",
+        "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [
+          { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } },
+          { "name": "a", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 1024 } },
+          { "name": "b", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 1024 } }
+        ],
+        "responses": {
+          "200": { "description": "Merge base", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MergeBase" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/tokens": {
+      "get": {
+        "operationId": "listAccessTokens",
+        "tags": ["Credentials"],
+        "summary": "List active personal access tokens",
+        "security": [{ "sessionCookie": [] }],
+        "responses": {
+          "200": { "description": "Active personal access tokens", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AccessTokenList" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      },
+      "post": {
+        "operationId": "createAccessToken",
+        "tags": ["Credentials"],
+        "summary": "Create a personal access token",
+        "security": [{ "sessionCookie": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateAccessTokenRequest" } } } },
+        "responses": {
+          "201": { "description": "Personal access token created; plaintext is returned once", "headers": { "Location": { "schema": { "type": "string" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatedAccessToken" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/tokens/{id}": {
+      "delete": {
+        "operationId": "revokeAccessToken",
+        "tags": ["Credentials"],
+        "summary": "Revoke a personal access token",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "204": { "description": "Personal access token revoked" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/ssh-keys": {
+      "get": {
+        "operationId": "listSSHKeys",
+        "tags": ["Credentials"],
+        "summary": "List active SSH public keys",
+        "security": [{ "sessionCookie": [] }],
+        "responses": {
+          "200": { "description": "Active SSH public keys", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SSHKeyList" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      },
+      "post": {
+        "operationId": "createSSHKey",
+        "tags": ["Credentials"],
+        "summary": "Register an SSH public key",
+        "security": [{ "sessionCookie": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateSSHKeyRequest" } } } },
+        "responses": {
+          "201": { "description": "SSH public key registered", "headers": { "Location": { "schema": { "type": "string" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SSHKey" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/ssh-keys/{id}": {
+      "delete": {
+        "operationId": "revokeSSHKey",
+        "tags": ["Credentials"],
+        "summary": "Revoke an SSH public key",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "204": { "description": "SSH public key revoked" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": { "type": "apiKey", "in": "cookie", "name": "adenosine_session" },
+      "personalAccessToken": { "type": "http", "scheme": "bearer", "bearerFormat": "Adenosine personal access token" }
+    },
+    "headers": {
+      "RequestID": { "description": "Identifier for correlating a request with logs and traces", "schema": { "type": "string" } }
+    },
+    "parameters": {
+      "RepositoryURI": { "name": "repository_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
+      "IssueURI": { "name": "issue_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
+      "PullRequestURI": { "name": "pull_request_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
+      "CommentURI": { "name": "comment_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
+      "BlockedDID": { "name": "blocked_did", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
+      "RecordURI": { "name": "record_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
+      "MutationOrigin": { "name": "Origin", "in": "header", "required": false, "description": "Required for browser-session mutations and must exactly match the configured Adenosine origin.", "schema": { "type": "string", "format": "uri" } },
+      "ExactOrigin": { "name": "Origin", "in": "header", "required": false, "description": "Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.", "schema": { "type": "string", "format": "uri" } },
+      "IdempotencyKey": { "name": "Idempotency-Key", "in": "header", "required": false, "schema": { "type": "string", "minLength": 1, "maxLength": 255 } },
+      "Limit": { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 } },
+      "Cursor": { "name": "cursor", "in": "query", "required": false, "schema": { "type": "string" } }
+      ,"ElectricOffset": { "name": "offset", "in": "query", "required": true, "description": "Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.", "schema": { "type": "string", "minLength": 1, "maxLength": 255 } }
+      ,"ElectricHandle": { "name": "handle", "in": "query", "required": false, "description": "Electric shape handle required for continuation offsets.", "schema": { "type": "string", "maxLength": 255 } }
+      ,"ElectricCursor": { "name": "cursor", "in": "query", "required": false, "description": "Electric cache-busting cursor returned by a prior live request.", "schema": { "type": "string", "maxLength": 255 } }
+      ,"ElectricCacheBuster": { "name": "cache-buster", "in": "query", "required": false, "description": "Electric stale-cache recovery token.", "schema": { "type": "string", "maxLength": 255 } }
+      ,"ElectricExpiredHandle": { "name": "expired_handle", "in": "query", "required": false, "description": "Electric shape handle being replaced during stale-shape recovery.", "schema": { "type": "string", "maxLength": 255 } }
+      ,"ElectricLive": { "name": "live", "in": "query", "required": false, "description": "Wait for a long-poll response.", "schema": { "type": "boolean" } }
+      ,"ElectricLiveSSE": { "name": "live_sse", "in": "query", "required": false, "description": "Use Electric server-sent events; requires live=true.", "schema": { "type": "boolean" } }
+      ,"ElectricReplica": { "name": "replica", "in": "query", "required": false, "schema": { "type": "string", "enum": ["default", "full"] } }
+      ,"ElectricLog": { "name": "log", "in": "query", "required": false, "schema": { "type": "string", "enum": ["full", "changes_only"] } }
+    },
+    "responses": {
+      "BadRequest": { "description": "Malformed request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "Unauthorized": { "description": "Authentication required", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "Forbidden": { "description": "The identity is not authorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "NotFound": { "description": "The requested resource was not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "Conflict": { "description": "The request conflicts with existing state", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "UnprocessableEntity": { "description": "The request is structurally valid but semantically invalid", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "ElectricShape": {
+        "description": "Electric shape-log or subset-snapshot response. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved.",
+        "headers": {
+          "electric-handle": { "schema": { "type": "string" } },
+          "electric-offset": { "schema": { "type": "string" } },
+          "electric-cursor": { "schema": { "type": "string" } },
+          "electric-schema": { "schema": { "type": "string" } },
+          "etag": { "schema": { "type": "string" } },
+          "cache-control": { "schema": { "type": "string" } },
+          "Vary": { "description": "Always includes Cookie and Authorization.", "schema": { "type": "string" } }
+        },
+        "content": { "application/json": { "schema": { "oneOf": [
+          { "type": "array", "items": { "$ref": "#/components/schemas/ElectricShapeMessage" } },
+          { "$ref": "#/components/schemas/ElectricSubsetResponse" }
+        ] } }, "text/event-stream": { "schema": { "type": "string" } } }
+      },
+      "ElectricShapeConflict": {
+        "description": "The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.",
+        "headers": { "electric-handle": { "schema": { "type": "string" } } },
+        "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ElectricShapeMessage" } } } }
+      }
+    },
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "required": ["status"],
+        "properties": { "status": { "type": "string", "enum": ["ok", "unavailable"] } }
+      },
+      "CurrentIdentity": {
+        "type": "object",
+        "required": ["did"],
+        "properties": {
+          "did": { "type": "string", "minLength": 1 },
+          "handle": { "type": "string", "nullable": true }
+        }
+      },
+      "StartATProtoLoginRequest": {
+        "type": "object",
+        "required": ["identifier"],
+        "properties": { "identifier": { "type": "string", "minLength": 1, "maxLength": 2048 } }
+      },
+      "StartATProtoLoginResponse": {
+        "type": "object",
+        "required": ["authorization_url"],
+        "properties": { "authorization_url": { "type": "string", "format": "uri" } }
+      },
+      "OAuthClientMetadata": {
+        "type": "object",
+        "required": ["client_id", "grant_types", "scope", "response_types", "redirect_uris", "dpop_bound_access_tokens", "token_endpoint_auth_method"],
+        "properties": {
+          "client_id": { "type": "string" },
+          "application_type": { "type": "string", "nullable": true },
+          "grant_types": { "type": "array", "items": { "type": "string" } },
+          "scope": { "type": "string" },
+          "response_types": { "type": "array", "items": { "type": "string" } },
+          "redirect_uris": { "type": "array", "items": { "type": "string" } },
+          "dpop_bound_access_tokens": { "type": "boolean" },
+          "token_endpoint_auth_method": { "type": "string" }
+        }
+      },
+      "BeginPasskeyRegistrationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 255 } }
+      },
+      "VerifyPasskeyCeremonyRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ceremony_token", "response"],
+        "properties": {
+          "ceremony_token": { "type": "string", "minLength": 1 },
+          "response": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "PasskeyCeremonyOptions": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["options", "ceremony_token"],
+        "properties": {
+          "options": { "type": "object", "additionalProperties": true },
+          "ceremony_token": { "type": "string" }
+        }
+      },
+      "Passkey": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "created_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "last_used_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "PasskeyList": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data"],
+        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Passkey" } } }
+      },
+      "DeveloperProfile": {
+        "type": "object",
+        "required": ["did", "repository_count", "contribution_count", "indexed_at"],
+        "properties": {
+          "did": { "type": "string" },
+          "uri": { "type": "string", "format": "uri", "nullable": true },
+          "cid": { "type": "string", "nullable": true },
+          "handle": { "type": "string", "nullable": true },
+          "display_name": { "type": "string", "nullable": true },
+          "bio": { "type": "string", "nullable": true },
+          "avatar_ref": { "type": "string", "nullable": true },
+          "website": { "type": "string", "format": "uri", "nullable": true },
+          "location": { "type": "string", "nullable": true },
+          "repository_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "contribution_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "record_created_at": { "type": "string", "format": "date-time", "nullable": true },
+          "indexed_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UpdateDeveloperProfileRequest": {
+        "type": "object",
+        "properties": {
+          "display_name": { "type": "string", "maxLength": 64, "nullable": true },
+          "bio": { "type": "string", "maxLength": 256, "nullable": true },
+          "website": { "type": "string", "format": "uri", "maxLength": 2048, "nullable": true },
+          "location": { "type": "string", "maxLength": 64, "nullable": true }
+        }
+      },
+      "AccessToken": {
+        "type": "object",
+        "required": ["id", "name", "prefix", "scopes", "created_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "prefix": { "type": "string" },
+          "scopes": { "type": "array", "items": { "type": "string", "enum": ["repository:read", "repository:write"] } },
+          "repository_id": { "type": "string", "format": "uuid", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "expires_at": { "type": "string", "format": "date-time", "nullable": true },
+          "last_used_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "CreatedAccessToken": {
+        "allOf": [
+          { "$ref": "#/components/schemas/AccessToken" },
+          { "type": "object", "required": ["token"], "properties": { "token": { "type": "string" } } }
+        ]
+      },
+      "CreateAccessTokenRequest": {
+        "type": "object",
+        "required": ["name", "scopes"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "scopes": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["repository:read", "repository:write"] } },
+          "repository_id": { "type": "string", "format": "uuid", "nullable": true },
+          "expires_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "AccessTokenList": {
+        "type": "object",
+        "required": ["data", "page"],
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/AccessToken" } },
+          "page": { "$ref": "#/components/schemas/Page" }
+        }
+      },
+      "SSHKey": {
+        "type": "object",
+        "required": ["id", "name", "algorithm", "public_key", "fingerprint", "created_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "algorithm": { "type": "string" },
+          "public_key": { "type": "string" },
+          "fingerprint": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "last_used_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "CreateSSHKeyRequest": {
+        "type": "object",
+        "required": ["name", "public_key"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "public_key": { "type": "string", "minLength": 1, "maxLength": 16384 }
+        }
+      },
+      "SSHKeyList": {
+        "type": "object",
+        "required": ["data", "page"],
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/SSHKey" } },
+          "page": { "$ref": "#/components/schemas/Page" }
+        }
+      },
+      "RepositorySlug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$", "maxLength": 100 },
+      "CreateRepositoryRequest": {
+        "type": "object",
+        "required": ["slug"],
+        "properties": {
+          "slug": { "$ref": "#/components/schemas/RepositorySlug" },
+          "display_name": { "type": "string", "maxLength": 255 },
+          "description": { "type": "string", "maxLength": 2000 },
+          "visibility": { "type": "string", "enum": ["public", "private"], "default": "public" },
+          "default_branch": { "type": "string", "default": "main", "minLength": 1, "maxLength": 255 }
+        }
+      },
+      "RepositoryOwner": {
+        "type": "object",
+        "required": ["did"],
+        "properties": {
+          "did": { "type": "string" },
+          "handle": { "type": "string", "nullable": true }
+        }
+      },
+      "RepositoryHosting": {
+        "type": "object",
+        "required": ["local", "web_url", "git_https_url"],
+        "properties": {
+          "local": { "type": "boolean" },
+          "web_url": { "type": "string", "format": "uri" },
+          "git_https_url": { "type": "string", "format": "uri" },
+          "git_ssh_url": { "type": "string", "nullable": true }
+        }
+      },
+      "Repository": {
+        "type": "object",
+        "required": ["slug", "visibility", "state", "default_branch", "owner", "hosting", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "nullable": true },
+          "uri": { "type": "string", "nullable": true },
+          "cid": { "type": "string", "nullable": true },
+          "slug": { "$ref": "#/components/schemas/RepositorySlug" },
+          "display_name": { "type": "string", "nullable": true },
+          "description": { "type": "string", "nullable": true },
+          "visibility": { "type": "string", "enum": ["public", "private"] },
+          "state": { "type": "string", "enum": ["creating", "active", "failed", "deleting", "deleted"] },
+          "default_branch": { "type": "string" },
+          "owner": { "$ref": "#/components/schemas/RepositoryOwner" },
+          "hosting": { "$ref": "#/components/schemas/RepositoryHosting" },
+          "star_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "issue_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "open_issue_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "comment_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "open_pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "NetworkRepositoryList": {
+        "type": "object",
+        "required": ["data", "page"],
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } },
+          "page": { "$ref": "#/components/schemas/Page" }
+        }
+      },
+      "SyncRepository": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Flat approved network.repositories projection materialized from Electric insert rows. This is intentionally distinct from the nested REST Repository model.",
+        "required": ["uri", "cid", "owner_did", "star_count", "issue_count", "open_issue_count", "pull_request_count", "open_pull_request_count", "indexed_at"],
+        "properties": {
+          "uri": { "type": "string" },
+          "cid": { "type": "string" },
+          "owner_did": { "type": "string" },
+          "slug": { "type": "string", "nullable": true },
+          "name": { "type": "string", "nullable": true },
+          "description": { "type": "string", "nullable": true },
+          "default_branch": { "type": "string", "nullable": true },
+          "git_https": { "type": "string", "nullable": true },
+          "git_ssh": { "type": "string", "nullable": true },
+          "web": { "type": "string", "nullable": true },
+          "record_created_at": { "type": "string", "format": "date-time", "nullable": true },
+          "record_updated_at": { "type": "string", "format": "date-time", "nullable": true },
+          "indexed_at": { "type": "string", "format": "date-time" },
+          "star_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "issue_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "open_issue_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "open_pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 }
+        }
+      },
+      "SyncSubsetRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Electric 1.7.10 subset snapshot fields. where and order_by may reference only the approved SyncRepository columns.",
+        "properties": {
+          "where": { "type": "string", "minLength": 1, "maxLength": 4096 },
+          "params": { "type": "object", "maxProperties": 100, "additionalProperties": { "type": "string", "maxLength": 4096 } },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 1000 },
+          "offset": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+          "order_by": { "type": "string", "minLength": 1, "maxLength": 1024 }
+        }
+      },
+      "ElectricShapeMessage": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Electric protocol message. Operation value and old_value are partial flat row objects; insert values conform to SyncRepository while updates and deletes may omit unchanged columns.",
+        "required": ["headers"],
+        "properties": {
+          "headers": { "type": "object", "additionalProperties": true },
+          "key": { "type": "string" },
+          "value": { "type": "object", "additionalProperties": true },
+          "old_value": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "ElectricSubsetResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["data", "metadata"],
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/ElectricShapeMessage" } },
+          "metadata": { "type": "object", "additionalProperties": true, "description": "Electric PostgreSQL snapshot metadata including xmin, xmax, xip_list, snapshot_mark, and database_lsn." }
+        }
+      },
+      "Star": {
+        "type": "object",
+        "required": ["uri", "cid", "author_did", "repository_uri", "repository_cid", "created_at", "indexed_at"],
+        "properties": {
+          "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" },
+          "repository_uri": { "type": "string" }, "repository_cid": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "StarEnvelope": {
+        "type": "object",
+        "required": ["uri", "cid", "author_did", "repository_uri", "repository_cid", "created_at"],
+        "properties": {
+          "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" },
+          "repository_uri": { "type": "string" }, "repository_cid": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "StarList": {
+        "type": "object", "required": ["star_count", "data"],
+        "properties": { "star_count": { "type": "integer", "format": "int64", "minimum": 0 }, "data": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/Star" } } }
+      },
+      "StarMutation": {
+        "type": "object", "required": ["star", "projected"],
+        "properties": { "star": { "$ref": "#/components/schemas/StarEnvelope" }, "projected": { "type": "boolean", "enum": [false] } }
+      },
+      "Issue": {
+        "type": "object", "additionalProperties": false,
+        "required": ["uri", "cid", "author_did", "repository_uri", "repository_cid", "title", "body", "state", "status_uri", "status_cid", "comment_count", "created_at", "updated_at", "indexed_at"],
+        "properties": {
+          "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" },
+          "repository_uri": { "type": "string" }, "repository_cid": { "type": "string" },
+          "title": { "type": "string" }, "body": { "type": "string" }, "state": { "type": "string", "enum": ["open", "closed"] },
+          "status_uri": { "type": "string", "nullable": true }, "status_cid": { "type": "string", "nullable": true },
+          "comment_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "IssueEnvelope": {
+        "type": "object", "additionalProperties": false,
+        "required": ["uri", "cid", "author_did", "repository_uri", "repository_cid", "title", "body", "created_at", "updated_at"],
+        "properties": {
+          "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" },
+          "repository_uri": { "type": "string" }, "repository_cid": { "type": "string" }, "title": { "type": "string" }, "body": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "IssueStatusEnvelope": {
+        "type": "object", "additionalProperties": false,
+        "required": ["uri", "cid", "author_did", "issue_uri", "issue_cid", "repository_uri", "repository_cid", "state", "created_at", "updated_at"],
+        "properties": {
+          "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" },
+          "issue_uri": { "type": "string" }, "issue_cid": { "type": "string" }, "repository_uri": { "type": "string" }, "repository_cid": { "type": "string" },
+          "state": { "type": "string", "enum": ["open", "closed"] }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "IssueList": {
+        "type": "object", "additionalProperties": false, "required": ["issue_count", "open_issue_count", "data"],
+        "properties": { "issue_count": { "type": "integer", "format": "int64", "minimum": 0 }, "open_issue_count": { "type": "integer", "format": "int64", "minimum": 0 }, "data": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/Issue" } } }
+      },
+      "CreateIssueRequest": {
+        "type": "object", "additionalProperties": false, "required": ["repository_uri", "title", "body"],
+        "properties": { "repository_uri": { "type": "string", "minLength": 1 }, "title": { "type": "string", "maxLength": 255 }, "body": { "type": "string", "maxLength": 65535 } }
+      },
+      "PutIssueStatusRequest": {
+        "type": "object", "additionalProperties": false, "required": ["issue_uri", "state"],
+        "properties": { "issue_uri": { "type": "string", "minLength": 1 }, "state": { "type": "string", "enum": ["open", "closed"] } }
+      },
+      "IssueMutation": {
+        "type": "object", "additionalProperties": false, "required": ["issue", "projected"],
+        "properties": { "issue": { "$ref": "#/components/schemas/IssueEnvelope" }, "projected": { "type": "boolean", "enum": [false] } }
+      },
+      "IssueStatusMutation": {
+        "type": "object", "additionalProperties": false, "required": ["status", "projected"],
+        "properties": { "status": { "$ref": "#/components/schemas/IssueStatusEnvelope" }, "projected": { "type": "boolean", "enum": [false] } }
+      },
+      "PullRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["uri", "cid", "author_did", "source_repository_uri", "source_repository_cid", "source_branch", "target_repository_uri", "target_repository_cid", "target_branch", "head_sha", "title", "body", "state", "status_uri", "status_cid", "merged_commit_sha", "review_count", "created_at", "updated_at", "indexed_at"],
+        "properties": {
+          "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" },
+          "source_repository_uri": { "type": "string" }, "source_repository_cid": { "type": "string" }, "source_branch": { "type": "string" },
+          "target_repository_uri": { "type": "string" }, "target_repository_cid": { "type": "string" }, "target_branch": { "type": "string" },
+          "head_sha": { "type": "string" }, "title": { "type": "string" }, "body": { "type": "string" }, "state": { "type": "string", "enum": ["open", "closed", "merged"] },
+          "status_uri": { "type": "string", "nullable": true }, "status_cid": { "type": "string", "nullable": true }, "merged_commit_sha": { "type": "string", "nullable": true },
+          "review_count": { "type": "integer", "format": "int64", "minimum": 0 }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PullRequestEnvelope": {
+        "type": "object", "additionalProperties": false,
+        "required": ["uri", "cid", "author_did", "source_repository_uri", "source_repository_cid", "source_branch", "target_repository_uri", "target_repository_cid", "target_branch", "head_sha", "title", "body", "created_at", "updated_at"],
+        "properties": {
+          "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" },
+          "source_repository_uri": { "type": "string" }, "source_repository_cid": { "type": "string" }, "source_branch": { "type": "string" },
+          "target_repository_uri": { "type": "string" }, "target_repository_cid": { "type": "string" }, "target_branch": { "type": "string" },
+          "head_sha": { "type": "string" }, "title": { "type": "string" }, "body": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PullRequestList": {
+        "type": "object", "additionalProperties": false, "required": ["pull_request_count", "open_pull_request_count", "data"],
+        "properties": { "pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 }, "open_pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 }, "data": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/PullRequest" } } }
+      },
+      "CreatePullRequestRequest": {
+        "type": "object", "additionalProperties": false, "required": ["source_repository_uri", "target_repository_uri", "source_branch", "target_branch", "head_sha", "title", "body"],
+        "properties": {
+          "source_repository_uri": { "type": "string", "minLength": 1 }, "target_repository_uri": { "type": "string", "minLength": 1 },
+          "source_branch": { "type": "string", "minLength": 1, "maxLength": 255 }, "target_branch": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "head_sha": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$" }, "title": { "type": "string", "minLength": 1, "maxLength": 255 }, "body": { "type": "string", "maxLength": 65535 }
+        }
+      },
+      "PullRequestMutation": { "type": "object", "additionalProperties": false, "required": ["pull_request", "projected"], "properties": { "pull_request": { "$ref": "#/components/schemas/PullRequestEnvelope" }, "projected": { "type": "boolean", "enum": [false] } } },
+      "PullRequestReview": {
+        "type": "object", "additionalProperties": false, "required": ["uri", "cid", "author_did", "pull_request_uri", "pull_request_cid", "verdict", "body", "created_at", "updated_at", "indexed_at"],
+        "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "pull_request_uri": { "type": "string" }, "pull_request_cid": { "type": "string" }, "verdict": { "type": "string", "enum": ["comment", "approve", "request_changes"] }, "body": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time" } }
+      },
+      "PullRequestReviewEnvelope": {
+        "type": "object", "additionalProperties": false, "required": ["uri", "cid", "author_did", "pull_request_uri", "pull_request_cid", "verdict", "body", "created_at", "updated_at"],
+        "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "pull_request_uri": { "type": "string" }, "pull_request_cid": { "type": "string" }, "verdict": { "type": "string", "enum": ["comment", "approve", "request_changes"] }, "body": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } }
+      },
+      "PullRequestReviewList": { "type": "object", "additionalProperties": false, "required": ["data"], "properties": { "data": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/PullRequestReview" } } } },
+      "CreatePullRequestReviewRequest": { "type": "object", "additionalProperties": false, "required": ["pull_request_uri", "verdict", "body"], "properties": { "pull_request_uri": { "type": "string", "minLength": 1 }, "verdict": { "type": "string", "enum": ["comment", "approve", "request_changes"] }, "body": { "type": "string", "maxLength": 65535 } } },
+      "PullRequestReviewMutation": { "type": "object", "additionalProperties": false, "required": ["review", "projected"], "properties": { "review": { "$ref": "#/components/schemas/PullRequestReviewEnvelope" }, "projected": { "type": "boolean", "enum": [false] } } },
+      "PullRequestStatusEnvelope": {
+        "type": "object", "additionalProperties": false, "required": ["uri", "cid", "author_did", "pull_request_uri", "pull_request_cid", "target_repository_uri", "target_repository_cid", "state", "merge_commit_sha", "created_at", "updated_at"],
+        "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "pull_request_uri": { "type": "string" }, "pull_request_cid": { "type": "string" }, "target_repository_uri": { "type": "string" }, "target_repository_cid": { "type": "string" }, "state": { "type": "string", "enum": ["open", "closed", "merged"] }, "merge_commit_sha": { "type": "string", "nullable": true }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } }
+      },
+      "PutPullRequestStatusRequest": { "type": "object", "additionalProperties": false, "required": ["pull_request_uri", "state"], "properties": { "pull_request_uri": { "type": "string", "minLength": 1 }, "state": { "type": "string", "enum": ["open", "closed"] } } },
+      "PullRequestStatusMutation": { "type": "object", "additionalProperties": false, "required": ["status", "projected"], "properties": { "status": { "$ref": "#/components/schemas/PullRequestStatusEnvelope" }, "projected": { "type": "boolean", "enum": [false] } } },
+      "MergePullRequestRequest": { "type": "object", "additionalProperties": false, "required": ["pull_request_uri", "strategy"], "properties": { "pull_request_uri": { "type": "string", "minLength": 1 }, "strategy": { "type": "string", "enum": ["merge-commit", "squash"] } } },
+      "PullRequestMerge": {
+        "type": "object", "additionalProperties": false,
+        "required": ["merge_commit_sha", "old_sha", "head_sha", "target_ref", "strategy", "status"],
+        "properties": {
+          "merge_commit_sha": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$" }, "old_sha": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$" },
+          "head_sha": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$" }, "target_ref": { "type": "string" }, "strategy": { "type": "string", "enum": ["merge-commit", "squash"] },
+          "status": { "$ref": "#/components/schemas/PullRequestStatusEnvelope" }
+        }
+      },
+      "PullRequestDiff": { "type": "object", "additionalProperties": false, "required": ["merge_base", "head_ref", "diff"], "properties": { "merge_base": { "type": "string" }, "head_ref": { "type": "string" }, "diff": { "$ref": "#/components/schemas/Diff" } } },
+      "Comment": {
+        "type": "object", "additionalProperties": false,
+        "required": ["uri", "cid", "author_did", "issue_uri", "issue_cid", "parent_uri", "parent_cid", "body", "created_at", "updated_at", "indexed_at"],
+        "properties": {
+          "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" },
+          "issue_uri": { "type": "string" }, "issue_cid": { "type": "string" },
+          "parent_uri": { "type": "string", "nullable": true }, "parent_cid": { "type": "string", "nullable": true },
+          "body": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" },
+          "indexed_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CommentEnvelope": {
+        "type": "object", "additionalProperties": false,
+        "required": ["uri", "cid", "author_did", "issue_uri", "issue_cid", "parent_uri", "parent_cid", "body", "created_at", "updated_at"],
+        "properties": {
+          "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" },
+          "issue_uri": { "type": "string" }, "issue_cid": { "type": "string" },
+          "parent_uri": { "type": "string", "nullable": true }, "parent_cid": { "type": "string", "nullable": true },
+          "body": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CommentList": {
+        "type": "object", "additionalProperties": false, "required": ["comment_count", "data"],
+        "properties": { "comment_count": { "type": "integer", "format": "int64", "minimum": 0 }, "data": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/Comment" } } }
+      },
+      "CreateCommentRequest": {
+        "type": "object", "additionalProperties": false, "required": ["issue_uri", "body"],
+        "properties": { "issue_uri": { "type": "string", "minLength": 1 }, "parent_uri": { "type": "string", "nullable": true }, "body": { "type": "string", "maxLength": 65535 } }
+      },
+      "CommentMutation": {
+        "type": "object", "additionalProperties": false, "required": ["comment", "projected"],
+        "properties": { "comment": { "$ref": "#/components/schemas/CommentEnvelope" }, "projected": { "type": "boolean", "enum": [false] } }
+      },
+      "Moderation": {
+        "type": "object", "additionalProperties": false, "required": ["blocked_dids", "hidden_records"],
+        "properties": { "blocked_dids": { "type": "array", "items": { "type": "string" } }, "hidden_records": { "type": "array", "items": { "type": "string" } } }
+      },
+      "PutBlockedDIDRequest": {
+        "type": "object", "additionalProperties": false, "required": ["blocked_did"], "properties": { "blocked_did": { "type": "string", "minLength": 1 } }
+      },
+      "PutHiddenRecordRequest": {
+        "type": "object", "additionalProperties": false, "required": ["record_uri"], "properties": { "record_uri": { "type": "string", "minLength": 1 } }
+      },
+      "Branch": {
+        "type": "object",
+        "required": ["name", "sha", "default"],
+        "properties": {
+          "name": { "type": "string" },
+          "sha": { "type": "string" },
+          "default": { "type": "boolean" }
+        }
+      },
+      "BranchList": {
+        "type": "object",
+        "required": ["data"],
+        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Branch" } } }
+      },
+      "Tag": {
+        "type": "object",
+        "required": ["name", "sha", "object_type", "target_sha", "target_type"],
+        "properties": {
+          "name": { "type": "string" },
+          "sha": { "type": "string" },
+          "object_type": { "type": "string" },
+          "target_sha": { "type": "string" },
+          "target_type": { "type": "string" }
+        }
+      },
+      "TagList": {
+        "type": "object",
+        "required": ["data"],
+        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Tag" } } }
+      },
+      "Tree": {
+        "type": "object",
+        "required": ["revision", "commit_sha", "path", "entries"],
+        "properties": {
+          "revision": { "type": "string" },
+          "commit_sha": { "type": "string" },
+          "path": { "type": "string" },
+          "entries": { "type": "array", "items": { "$ref": "#/components/schemas/TreeEntry" } }
+        }
+      },
+      "TreeEntry": {
+        "type": "object",
+        "required": ["name", "path", "mode", "type", "sha"],
+        "properties": {
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "mode": { "type": "string" },
+          "type": { "type": "string", "enum": ["tree", "blob", "commit"] },
+          "sha": { "type": "string" },
+          "size": { "type": "integer", "format": "int64", "nullable": true }
+        }
+      },
+      "CommitIdentity": {
+        "type": "object",
+        "required": ["name", "email", "date"],
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "date": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CommitSummary": {
+        "type": "object",
+        "required": ["sha", "parents", "author", "committer", "summary"],
+        "properties": {
+          "sha": { "type": "string" },
+          "parents": { "type": "array", "items": { "type": "string" } },
+          "author": { "$ref": "#/components/schemas/CommitIdentity" },
+          "committer": { "$ref": "#/components/schemas/CommitIdentity" },
+          "summary": { "type": "string" }
+        }
+      },
+      "Commit": {
+        "allOf": [
+          { "$ref": "#/components/schemas/CommitSummary" },
+          { "type": "object", "required": ["message"], "properties": { "message": { "type": "string" } } }
+        ]
+      },
+      "CommitList": {
+        "type": "object",
+        "required": ["data"],
+        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/CommitSummary" } } }
+      },
+      "DiffFile": {
+        "type": "object",
+        "required": ["status", "old_path", "new_path"],
+        "properties": {
+          "status": { "type": "string" },
+          "old_path": { "type": "string" },
+          "new_path": { "type": "string" },
+          "additions": { "type": "integer", "nullable": true },
+          "deletions": { "type": "integer", "nullable": true }
+        }
+      },
+      "Diff": {
+        "type": "object",
+        "required": ["base_sha", "head_sha", "files", "patch"],
+        "properties": {
+          "base_sha": { "type": "string" },
+          "head_sha": { "type": "string" },
+          "files": { "type": "array", "items": { "$ref": "#/components/schemas/DiffFile" } },
+          "patch": { "type": "string" }
+        }
+      },
+      "MergeBase": {
+        "type": "object",
+        "required": ["sha"],
+        "properties": { "sha": { "type": "string" } }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["error"],
+        "properties": { "error": { "$ref": "#/components/schemas/Error" } }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["code", "message", "request_id"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "request_id": { "type": "string" },
+          "details": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "Page": {
+        "type": "object",
+        "required": ["next_cursor"],
+        "properties": { "next_cursor": { "type": "string", "nullable": true } }
+      }
+    }
+  }
+}

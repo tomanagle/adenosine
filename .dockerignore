@@ -1,0 +1,7 @@
+.git
+.env
+.env.local
+.air
+bin
+node_modules
+coverage.out

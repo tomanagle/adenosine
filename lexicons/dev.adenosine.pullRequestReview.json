@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "dev.adenosine.pullRequestReview",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["subject", "verdict", "body", "createdAt", "updatedAt"],
+        "properties": {
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The dev.adenosine.pullRequest record being reviewed."
+          },
+          "verdict": {
+            "type": "string",
+            "knownValues": ["comment", "approve", "request_changes"]
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 65535
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

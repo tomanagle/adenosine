@@ -1,0 +1,12 @@
+{
+  "name": "adenosine",
+  "private": true,
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "typescript": "6.0.3"
+  },
+  "workspaces": [
+    "packages/*",
+    "web"
+  ]
+}

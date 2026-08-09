@@ -1,0 +1,36 @@
+{
+  "lexicon": 1,
+  "id": "dev.adenosine.issue",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["repository", "title", "body", "createdAt", "updatedAt"],
+        "properties": {
+          "repository": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 65535
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

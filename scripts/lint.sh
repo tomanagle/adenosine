@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+unformatted="$(find . -name '*.go' -not -path './.air/*' -exec gofmt -l {} +)"
+if [[ -n "$unformatted" ]]; then
+  echo "Go files need formatting:" >&2
+  echo "$unformatted" >&2
+  exit 1
+fi
+
+go vet ./...
+
+panic_uses="$(find . -name '*.go' -not -path './.air/*' -exec grep -HnF 'panic(' {} + | grep -Ev '^./internal/(config/config|di/providers|database/migration/migration|gitssh/host_key|atproto/client|repository/endpoints|passkey/service|syncproxy/proxy)\.go:' || true)"
+if [[ -n "$panic_uses" ]]; then
+  echo "panic is only allowed in startup Must functions:" >&2
+  echo "$panic_uses" >&2
+  exit 1
+fi

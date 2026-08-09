@@ -1,0 +1,15 @@
+root = "."
+tmp_dir = ".air"
+
+[build]
+cmd = "go build -o ./.air/adenosine ./cmd/adenosine"
+bin = "./.air/adenosine serve"
+include_ext = ["go"]
+exclude_dir = [".git", ".air", "api/generated", "packages", "web"]
+delay = 300
+stop_on_error = true
+send_interrupt = true
+kill_delay = "2s"
+
+[log]
+time = true

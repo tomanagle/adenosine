@@ -1,0 +1,12 @@
+:8080 {
+	@internal path /internal/*
+	respond @internal 404
+
+	@go path /api/* /oauth/* /health/* /docs/api /openapi.json /openapi.yaml
+	reverse_proxy @go adenosine:8080
+
+	@git path_regexp smart_git ^/[^/]+/[^/]+\.git/(info/refs|git-upload-pack|git-receive-pack)$
+	reverse_proxy @git adenosine:8080
+
+	reverse_proxy web:3001
+}

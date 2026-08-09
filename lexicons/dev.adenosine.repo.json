@@ -1,0 +1,65 @@
+{
+  "lexicon": 1,
+  "id": "dev.adenosine.repo",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["slug", "name", "defaultBranch", "git", "web", "createdAt", "updatedAt"],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 100,
+            "maxGraphemes": 100
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "maxGraphemes": 100
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "maxGraphemes": 2000
+          },
+          "defaultBranch": {
+            "type": "string",
+            "maxLength": 255,
+            "maxGraphemes": 255
+          },
+          "git": {
+            "type": "object",
+            "required": ["https"],
+            "properties": {
+              "https": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2048
+              },
+              "ssh": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2048
+              }
+            }
+          },
+          "web": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 2048
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}
