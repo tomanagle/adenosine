@@ -4,7 +4,7 @@ import { getRequestHeader } from '@tanstack/react-start/server'
 
 import { classifyIdentityResult } from './identity'
 
-export const getLandingIdentity = createServerFn({ method: 'GET' }).handler(async () => {
+export const getIdentity = createServerFn({ method: 'GET' }).handler(async () => {
   const cookie = getRequestHeader('cookie')
   const client = createClient({
     baseUrl: process.env.ADENOSINE_INTERNAL_API_URL ?? 'http://localhost:8080',

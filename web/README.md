@@ -3,9 +3,11 @@
 The first-party TanStack Start client consumes the documented Adenosine REST and
 Electric sync interfaces through the `@adenosine/api-client` workspace package.
 
-Only `/` is server rendered. `/home` and `/login` are browser-owned routes. The
-home route uses TanStack Query for its identity and REST snapshot, then starts a
-route-scoped TanStack DB/Electric repository collection for optional live data.
+The root route ensures identity once and passes it through typed router context
+to every child route. `/` renders the public landing page anonymously and the
+personal home page when authenticated; `/login` redirects authenticated users
+back to `/`. TanStack Query owns the identity and REST snapshot caches, while
+route-scoped TanStack DB/Electric collections provide optional live data.
 
 From the workspace root, install dependencies with `bun install`. In this
 directory use `bun run dev`, `bun run typecheck`, `bun run test`, and

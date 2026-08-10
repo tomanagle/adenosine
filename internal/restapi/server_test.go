@@ -631,7 +631,7 @@ func TestATProtoLoginStartAndCallback(t *testing.T) {
 			}
 
 			response = performAPIRequest(server, http.MethodGet, "/oauth/atproto/callback?state=state&iss=https%3A%2F%2Fissuer.example&code=code", "", false, false, "")
-			if response.Code != http.StatusSeeOther || response.Header().Get("Location") != "/api/v1/me" {
+			if response.Code != http.StatusSeeOther || response.Header().Get("Location") != "/" {
 				t.Fatalf("callback response = %d, location = %q", response.Code, response.Header().Get("Location"))
 			}
 			cookies := response.Result().Cookies()

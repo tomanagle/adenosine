@@ -297,7 +297,7 @@ func (handler *apiHandler) CompleteATProtoLogin(w http.ResponseWriter, r *http.R
 		return
 	}
 	handler.setSessionCookie(w, result.SessionPlaintext, result.SessionExpiresAt)
-	http.Redirect(w, r, "/api/v1/me", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (handler *apiHandler) BeginPasskeyRegistration(w http.ResponseWriter, r *http.Request, _ generated.BeginPasskeyRegistrationParams) {

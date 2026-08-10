@@ -6,7 +6,29 @@ import { Badge } from '@/components/ui/badge'
 import { createRepositoryCollection, type RepositoryCollection } from '@/db/collections/repositories'
 
 export function LiveRepositories() {
-  const [collection] = useState<RepositoryCollection>(createRepositoryCollection)
+  const [collection, setCollection] = useState<RepositoryCollection | null>(null)
+  const [unavailable, setUnavailable] = useState(false)
+
+  useEffect(() => {
+    let created: RepositoryCollection
+    try {
+      created = createRepositoryCollection()
+      setCollection(created)
+    } catch {
+      setUnavailable(true)
+      return
+    }
+    return () => {
+      void created.cleanup()
+    }
+  }, [])
+
+  if (unavailable) return <LiveUnavailable />
+  if (!collection) return <LiveConnecting />
+  return <LiveRepositoryQuery collection={collection} />
+}
+
+function LiveRepositoryQuery({ collection }: { collection: RepositoryCollection }) {
   const live = useLiveQuery((query) =>
     query
       .from({ repository: collection })
@@ -21,29 +43,9 @@ export function LiveRepositories() {
       })),
   )
 
-  useEffect(() => {
-    return () => {
-      void collection.cleanup()
-    }
-  }, [collection])
+  if (live.isError) return <LiveUnavailable />
 
-  if (live.isError) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <WifiOff className="size-4" aria-hidden="true" />
-        Live updates unavailable. The REST snapshot remains available.
-      </div>
-    )
-  }
-
-  if (!live.isReady) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Radio className="size-4" aria-hidden="true" />
-        Connecting live repository updates...
-      </div>
-    )
-  }
+  if (!live.isReady) return <LiveConnecting />
 
   return (
     <div className="space-y-3">
@@ -65,6 +67,24 @@ export function LiveRepositories() {
           ))}
         </ul>
       ) : null}
+    </div>
+  )
+}
+
+function LiveConnecting() {
+  return (
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <Radio className="size-4" aria-hidden="true" />
+      Connecting live repository updates...
+    </div>
+  )
+}
+
+function LiveUnavailable() {
+  return (
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <WifiOff className="size-4" aria-hidden="true" />
+      Live updates unavailable. The REST snapshot remains available.
     </div>
   )
 }

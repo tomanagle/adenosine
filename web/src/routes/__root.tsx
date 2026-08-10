@@ -1,11 +1,16 @@
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 
+import { identityQueryOptions } from '@/features/identity/identity.query'
 import globalsCss from '@/styles/globals.css?url'
 
 export type RouterContext = { queryClient: QueryClient }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  beforeLoad: async ({ context }) => {
+    const identity = await context.queryClient.ensureQueryData(identityQueryOptions())
+    return { identity }
+  },
   head: () => ({
     meta: [
       { charSet: 'utf-8' },

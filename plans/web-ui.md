@@ -100,15 +100,14 @@ Account settings
 
 ### Proposed routes and rendering policy
 
-Only the anonymous landing page is server rendered. The authenticated product is
-a client-rendered application below the shared TanStack Start document shell.
-`ssr: true` means data and markup render on the server; `false` means the route's
-loader and component run in the browser.
+The root route resolves identity once and renders the anonymous landing page or
+the authenticated personal homepage at the same URL. `ssr: true` means data and
+markup render on the server; `false` means the route's loader and component run
+in the browser.
 
 | Route | Purpose | SSR | Initial data | Live data |
 |---|---|---:|---|---|
-| `/` | Anonymous public landing; authenticated users redirect to `/home` | true | identity check + public REST | none |
-| `/home` | Signed-in personal homepage | false | REST/Query | activity/repository/profile collections |
+| `/` | Public landing or signed-in personal homepage | true | identity check + conditional REST/Query | activity/repository/profile collections after mount |
 | `/explore` | Network repository discovery | false | REST/Query | repository/profile collections |
 | `/login` | ATProto and passkey entry | false | identity query | none |
 | `/profiles/$identity` | Portable developer profile | false | REST/Query | profile/repository collections |
@@ -126,15 +125,12 @@ loader and component run in the browser.
 | `/new` | Create a local repository | false | identity query | none |
 | `/settings/*` | Account and credential management | false | REST/Query | none |
 
-On an initial `/` request, the server uses the request-scoped generated SDK to
-check the existing Adenosine session cookie. An unauthenticated request renders
-the simple public landing page. An authenticated request redirects to `/home`
-before rendering landing-page markup. `/home` uses `ssr: false` and starts the
-personal Query/DB data flow in the browser.
-
-This split keeps personalized data out of server-rendered HTML and removes any
-need to combine SSR and TanStack DB live-query rendering. API authorization still
-remains authoritative for every personal read and mutation.
+On an initial `/` request, the root route ensures the identity query through the
+request-scoped generated SDK and passes the result through typed router context.
+An unauthenticated request renders the public landing page. An authenticated
+request renders the homepage at `/`, where the owning feature loads its REST snapshot.
+Route-scoped Electric collections still start only after browser mount. API
+authorization remains authoritative for every personal read and mutation.
 
 ## 4. Repository page composition
 
@@ -293,17 +289,13 @@ composer draft before persistence is added
 
 ## 7. Rendering and live-query boundary
 
-There is deliberately no SSR-to-live handoff in the initial application.
+The root route hands an authenticated Query snapshot to browser-only live data.
 
 ```text
 GET /
-  -> Start runs the server-side identity check through @adenosine/api-client
+  -> root beforeLoad ensures identity through @adenosine/api-client
   -> unauthenticated: SSR the public landing page
-  -> authenticated: redirect to /home before rendering
-
-GET /home
-  -> Start returns the client-route fallback because ssr: false
-  -> browser loads identity and personal REST snapshot with Query
+  -> authenticated: render the personal homepage and its Query-owned REST snapshot
   -> browser starts route-scoped Electric collections
   -> TanStack DB useLiveQuery renders personal activity
 ```
@@ -315,8 +307,10 @@ replacement SSR implementation remains a draft pull request.
 
 Rules for the initial implementation:
 
-- `/` never instantiates Electric or calls `useLiveQuery`.
-- `/home` and the rest of the product routes use `ssr: false`.
+- `/` never instantiates Electric during SSR or calls `useLiveQuery` until its
+  browser-owned collections exist after mount.
+- Other product routes use `ssr: false` unless they establish an equally safe
+  Query-to-live handoff.
 - Construct route-scoped Electric collections in browser-owned feature modules,
   never at SSR module scope.
 - Bootstrap personal routes with a normal Query REST snapshot so they remain
@@ -629,13 +623,13 @@ The rendering/live-query tests must assert all of the following:
 
 1. An unauthenticated `/` response contains the public landing content without
    running browser JavaScript.
-2. An authenticated `/` request redirects to `/home` without rendering public or
-   personalized page content into that response.
-3. `/home` mounts client-side without hydration or missing-`getServerSnapshot`
-   warnings.
+2. An authenticated `/` response contains the personal Query snapshot rather
+   than public landing content.
+3. `/` hydrates without missing-`getServerSnapshot` warnings and starts Electric
+   collections only after browser mount.
 4. A PostgreSQL projection change reaches the personal homepage live query
    through the documented sync endpoint.
-5. Stopping only the Electric service leaves `/home`, navigation, and REST
+5. Stopping only the Electric service leaves `/`, navigation, and REST
    mutations working from the Query snapshot/fallback path.
 6. Restarting Electric resumes live updates without a full-page reload.
 7. `@adenosine/web` type-checks while importing the SDK, Query factories, and
@@ -653,7 +647,7 @@ The rendering/live-query tests must assert all of the following:
 - Add `@adenosine/api-client: workspace:*` to `web/package.json` and import a
   representative SDK operation, Query option, and schema from its public exports.
 - Prove request-scoped SSR client cookie forwarding for the `/` identity check.
-- Prove anonymous landing SSR and authenticated redirect to client-only `/home`.
+- Prove anonymous landing SSR and authenticated personal-home SSR at `/`.
 - Add one safe Electric sync endpoint and one typed collection.
 - Prove the personal homepage's client-side REST snapshot, live query, and
   REST-only fallback.
@@ -662,8 +656,8 @@ The rendering/live-query tests must assert all of the following:
   health checks.
 
 Exit condition: the anonymous landing page is useful with JavaScript disabled,
-authenticated `/` requests redirect to `/home`, and the personal homepage becomes
-live after its client render while still working with Electric stopped. The UI
+authenticated `/` requests render the personal homepage, and that homepage becomes
+live after browser mount while still working with Electric stopped. The UI
 imports the generated SDK only through its workspace package, the browser console
 has no hydration or `getServerSnapshot` errors, and the whole spike starts through
 `make dev` without host-installed Bun or Node.
@@ -716,8 +710,8 @@ TanStack DB owns browser-side normalized/live projection queries.
 Tailwind CSS and shadcn/ui own the initial presentation foundation.
 OpenAPI owns the public SDK contract.
 The official UI has no privileged data path.
-Only the anonymous `/` landing page is SSR.
-Authenticated `/` requests redirect to the client-rendered `/home` route.
+`/` uses root identity context to SSR either the public landing page or personal homepage.
+Authenticated and anonymous entry states share `/`; there is no `/home` route.
 All product routes, including public repository/profile pages, use `ssr: false`.
 Whole-network eager sync is prohibited.
 ATProto publication success is not confused with local projection completion.
