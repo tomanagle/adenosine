@@ -1539,10 +1539,13 @@ stream large payloads
 
 Runtime code does not panic.
 
-Only startup `main` may use:
+Packages that construct required startup values own a public `Must` function backed by a
+private error-returning implementation. Runtime code does not panic. Do not add a generic
+helper in `main`; the composition root should remain plain.
 
 ```go
-func must[T any](value T, err error) T {
+func Must() Config {
+    value, err := load()
     if err != nil {
         panic(err)
     }
@@ -1670,7 +1673,8 @@ adenosine-runner
 dedicated development Docker/DinD execution environment
 ```
 
-No host-installed Go/Node/runtime requirements.
+Normal `make test`, `make lint`, and `make generate` use native host Go and Bun. Docker
+owns local services, `doctor`/`shell`/`psql`, and black-box E2E.
 
 Optional debugging:
 

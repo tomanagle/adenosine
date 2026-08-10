@@ -6837,10 +6837,13 @@ convert unrecoverable startup failure into process termination
 
 It contains no repository, Git, REST, or federation business logic.
 
-Adenosine should make the "panic only during startup" rule literal by keeping the panic helper in the `main` package:
+Adenosine makes the "panic only during startup" rule literal with package-owned `Must`
+constructors. Each required startup package wraps a private error-returning implementation;
+`main` does not contain a generic helper:
 
 ```go
-func must[T any](value T, err error) T {
+func Must() Config {
+    value, err := load()
     if err != nil {
         panic(err)
     }
@@ -6856,8 +6859,8 @@ func main() {
     )
     defer stop()
 
-    cfg := must(config.Load())
-    application := must(di.Build(cfg))
+    cfg := config.Must()
+    application := di.Must(ctx, cfg)
 
     if err := application.Run(ctx); err != nil {
         slog.Error("adenosine stopped", "error", err)
@@ -6866,7 +6869,7 @@ func main() {
 }
 ```
 
-`must` follows the normal Must convention:
+Package-owned `Must` follows the startup convention:
 
 ```text
 return the successfully constructed value
@@ -6874,11 +6877,11 @@ OR
 panic because startup cannot continue
 ```
 
-All reusable packages still expose ordinary error-returning APIs.
+Runtime and request-path APIs expose ordinary error-returning behavior.
 
 ## 79.3 Panic policy
 
-**`panic` is only permitted at the process startup boundary in `cmd/adenosine`.**
+**`panic` is only permitted in startup-only package-owned `Must` functions.**
 
 Runtime/domain/application packages do not panic.
 
@@ -7932,7 +7935,9 @@ make doctor
 
 Use named volumes for Postgres, Go caches, and Git repository storage.
 
-**Acceptance:** a fresh clone on a machine with Docker, Compose, Make, and Git can run `make dev` without host Go or PostgreSQL.
+**Acceptance:** a fresh clone with Docker, Compose, Make, and Git can run `make dev`
+without host PostgreSQL. Native host Go and Bun are required for `make test`, `make lint`,
+and `make generate`.
 
 ### Step 3 — Establish Go engineering rules
 

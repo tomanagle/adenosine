@@ -2,6 +2,12 @@
 
 Cross-package contract, Git transport, federation, and realtime tests belong here. Package-local unit tests stay beside their Go source.
 
+`make test` runs native Go unit/integration tests, offline documentation/tooling tests, and
+web tests. Database and real-Git integration tests are distinct from generated-handler API
+tests. CI additionally runs `go test -race ./...`. Docker is used for `make e2e` and
+`make e2e-federation`; see [`../docs/development.md`](../docs/development.md) for when to
+choose each layer.
+
 ## Two-instance projection and clone contract
 
 `make e2e-federation` runs the isolated Step 24 acceptance topology under the Compose `federation-test` profile. It starts independent A and B applications with separate Postgres databases, repository storage, instance state, tmpfs mounts, and private networks. Instance B has no network path to A's API, TLS proxy, or database.
@@ -12,7 +18,11 @@ The test submits authenticated, valid Tap identity and Adenosine record webhook 
 
 This is intentionally a **two-instance authenticated Tap webhook projection and real Git clone contract**. It does not run real OAuth, a PDS, or a Relay, does not validate signed ATProto events, and must not be described as proof of PDS/Relay federation.
 
-The target is self-contained, uses a unique Compose project, runs Go inside the project development image, and always removes its containers, networks, and volumes. Normal `make dev` behavior is unchanged because the acceptance services are profile-only.
+The target is self-contained, uses a unique Compose project, runs its black-box harnesses
+inside the project development image, and always removes its containers, networks, and
+volumes. Normal `make dev` behavior is unchanged because the acceptance services are
+profile-only. This is a deliberate exception to native host Go for normal `make test` and
+`make lint`: black-box E2E belongs in Docker.
 
 ## Realtime federation contract
 

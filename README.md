@@ -59,11 +59,18 @@ make e2e-federation  # isolated two-instance federation acceptance
 make doctor          # health-check a running development stack
 ```
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`docs/api-authentication.md`](docs/api-authentication.md), [`docs/git-http.md`](docs/git-http.md), [`docs/git-ssh.md`](docs/git-ssh.md), [`docs/repository-browser.md`](docs/repository-browser.md), and [`plan.md`](plan.md) for the development workflow, protocol details, and architecture.
+See the [documentation index](docs/README.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md)
+for architecture, protocols, operation status, and the contributor workflow. `plan.md` and
+`plans/` contain design history and future work, not guarantees of implemented behavior.
 
 ## Status
 
-Adenosine is under active development and is not ready for production use. The Git, identity, federation, collaboration, pull request, public API, and realtime foundations are implemented and covered by isolated federation acceptance tests. The first-party web client currently provides the initial landing, login, identity, and live repository surfaces; the complete forge UI and production deployment hardening remain in progress.
+Adenosine is pre-alpha and is not ready for production use. Core Git transports,
+DID-based authentication, ATProto publication/projection, collaboration APIs, secure pull
+request fetch/merge, and optional realtime projections are implemented. The first-party
+web client currently provides the anonymous or authenticated root experience and login;
+repository browsing, collaboration UI, production deployments, and backup/restore remain
+open work. See [self-hosting status](docs/self-hosting.md) for exact limitations.
 
 ## License
 

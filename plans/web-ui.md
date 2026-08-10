@@ -175,7 +175,6 @@ web/src/
 ├── routes/
 │   ├── __root.tsx
 │   ├── index.tsx
-│   ├── home.tsx
 │   ├── explore.tsx
 │   ├── login.tsx
 │   ├── profiles.$identity.tsx
@@ -660,7 +659,8 @@ authenticated `/` requests render the personal homepage, and that homepage becom
 live after browser mount while still working with Electric stopped. The UI
 imports the generated SDK only through its workspace package, the browser console
 has no hydration or `getServerSnapshot` errors, and the whole spike starts through
-`make dev` without host-installed Bun or Node.
+`make dev`; native host Bun remains required for `make test`, `make lint`, and
+`make generate` under the repository development policy.
 
 ### Phase 1 — shell and repository browser
 

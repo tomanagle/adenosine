@@ -17,7 +17,17 @@ make lint
 make doctor
 ```
 
-Run `make generate` after changing generated API, database, or Lexicon inputs. The script caches a checksum-verified sqlc release and invokes the pinned OpenAPI generator through `go run`; separate global installs are not required.
+For a backend change, start with the [documentation index](docs/README.md), then use the
+source-of-truth checklist in [database and projections](docs/database.md) or
+[REST API](docs/api.md). Package-local tests should prove domain behavior; add the narrowest
+real-database, real-Git, HTTP, or federation layer needed to prove the changed boundary.
+
+Run `make generate` after changing migrations/query SQL, OpenAPI, or generator
+configuration. The script caches a checksum-verified sqlc release, invokes the pinned
+OpenAPI generator through `go run`, and runs the workspace TypeScript client generator;
+separate global generator installs are not required. Do not hand-edit
+`internal/database/generated/`, `api/generated/go/`,
+`packages/api-client/src/generated/`, or `web/src/routeTree.gen.ts`.
 
 Oxlint and Oxfmt are pinned workspace dependencies; global installs are not needed. `make lint` runs
 their non-mutating checks. Use `bun run lint:fix` and `bun run format` to fix web code locally, or run
@@ -34,5 +44,11 @@ their non-mutating checks. Use `bun run lint:fix` and `bun run format` to fix we
 - Do not execute dynamic Git or SSH commands through a shell.
 - Keep public wire models at the transport edge.
 - Format code with `gofmt` and add tests for behavior changes.
+- Keep startup fail-fast behavior in package-owned `Must` functions; runtime paths return wrapped errors.
+- Treat Git refs/objects, DIDs, AT URIs/CIDs, local authoritative tables, and network projections according to [architecture](docs/architecture.md).
 
-The complete architectural constraints and implementation order are documented in [`plan.md`](plan.md).
+Before submitting a change, run `make test`, `make lint`, `make generate`, verify generation
+did not leave an unexpected diff, and run `git diff --check`. Use `make e2e` or
+`make e2e-federation` for affected black-box boundaries. Detailed test layers and generated
+ownership are in [development and testing](docs/development.md). `plan.md` is roadmap and
+design history; current docs and code define implemented behavior.
