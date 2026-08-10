@@ -48,96 +48,121 @@ func (store *memorySessionStore) AuthenticateSession(_ context.Context, hash []b
 
 func TestSessionAuthenticatorHashesCredentialAndReturnsIdentity(t *testing.T) {
 	t.Parallel()
-	plaintext := "session-secret"
-	wantHash := sha256.Sum256([]byte(plaintext))
-	now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.FixedZone("test", -3600))
-	want := SessionIdentity{SessionID: uuid.New(), AccountDID: "did:plc:alice"}
-	store := &memorySessionStore{identity: want}
+	testCases := []struct{ name string }{{name: "valid credential"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			plaintext := "session-secret"
+			wantHash := sha256.Sum256([]byte(plaintext))
+			now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.FixedZone("test", -3600))
+			want := SessionIdentity{SessionID: uuid.New(), AccountDID: "did:plc:alice"}
+			store := &memorySessionStore{identity: want}
 
-	identity, err := NewSessionAuthenticator(store, fixedTokenClock{now: now}).Authenticate(context.Background(), plaintext)
-	if err != nil {
-		t.Fatalf("authenticate session: %v", err)
-	}
-	if identity != want {
-		t.Fatalf("identity = %#v, want %#v", identity, want)
-	}
-	if string(store.hash) != string(wantHash[:]) {
-		t.Fatal("session lookup did not use SHA-256 hash")
-	}
-	if !store.seenAt.Equal(now.UTC()) || store.seenAt.Location() != time.UTC {
-		t.Fatalf("seen at = %v, want %v", store.seenAt, now.UTC())
+			identity, err := NewSessionAuthenticator(store, fixedTokenClock{now: now}).Authenticate(context.Background(), plaintext)
+			if err != nil {
+				t.Fatalf("authenticate session: %v", err)
+			}
+			if identity != want {
+				t.Fatalf("identity = %#v, want %#v", identity, want)
+			}
+			if string(store.hash) != string(wantHash[:]) {
+				t.Fatal("session lookup did not use SHA-256 hash")
+			}
+			if !store.seenAt.Equal(now.UTC()) || store.seenAt.Location() != time.UTC {
+				t.Fatalf("seen at = %v, want %v", store.seenAt, now.UTC())
+			}
+		})
 	}
 }
 
 func TestSessionAuthenticatorRejectsUnknownWithoutSeparateTouch(t *testing.T) {
 	t.Parallel()
-	store := &memorySessionStore{err: ErrUnauthorized}
-	_, err := NewSessionAuthenticator(store, fixedTokenClock{now: time.Now()}).Authenticate(context.Background(), "unknown")
-	if !errors.Is(err, ErrUnauthorized) {
-		t.Fatalf("error = %v, want ErrUnauthorized", err)
-	}
-	if store.calls != 1 {
-		t.Fatalf("store calls = %d, want one atomic authentication call", store.calls)
+	testCases := []struct{ name string }{{name: "unknown credential"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &memorySessionStore{err: ErrUnauthorized}
+			_, err := NewSessionAuthenticator(store, fixedTokenClock{now: time.Now()}).Authenticate(context.Background(), "unknown")
+			if !errors.Is(err, ErrUnauthorized) {
+				t.Fatalf("error = %v, want ErrUnauthorized", err)
+			}
+			if store.calls != 1 {
+				t.Fatalf("store calls = %d, want one atomic authentication call", store.calls)
+			}
+		})
 	}
 }
 
 func TestSessionAuthenticatorRejectsEmptyCredentialWithoutLookup(t *testing.T) {
 	t.Parallel()
-	store := &memorySessionStore{}
-	_, err := NewSessionAuthenticator(store, fixedTokenClock{}).Authenticate(context.Background(), "")
-	if !errors.Is(err, ErrUnauthorized) {
-		t.Fatalf("error = %v, want ErrUnauthorized", err)
-	}
-	if store.calls != 0 {
-		t.Fatal("empty credential reached the store")
+	testCases := []struct{ name string }{{name: "empty credential"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &memorySessionStore{}
+			_, err := NewSessionAuthenticator(store, fixedTokenClock{}).Authenticate(context.Background(), "")
+			if !errors.Is(err, ErrUnauthorized) {
+				t.Fatalf("error = %v, want ErrUnauthorized", err)
+			}
+			if store.calls != 0 {
+				t.Fatal("empty credential reached the store")
+			}
+		})
 	}
 }
 
 func TestSessionServiceStoresHashAndReturnsPlaintextOnce(t *testing.T) {
 	t.Parallel()
-	plaintext := "dGVzdC1zZXNzaW9uLXNlY3JldA"
-	wantHash := sha256.Sum256([]byte(plaintext))
-	now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.FixedZone("test", 3600))
-	id := uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af3")
-	store := &memorySessionStore{}
-	service := NewSessionService(store, fixedTokenClock{now: now}, fixedTokenIDs{id: id}, fixedSecrets{plaintext: plaintext}, 24*time.Hour)
+	testCases := []struct{ name string }{{name: "success"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			plaintext := "dGVzdC1zZXNzaW9uLXNlY3JldA"
+			wantHash := sha256.Sum256([]byte(plaintext))
+			now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.FixedZone("test", 3600))
+			id := uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af3")
+			store := &memorySessionStore{}
+			service := NewSessionService(store, fixedTokenClock{now: now}, fixedTokenIDs{id: id}, fixedSecrets{plaintext: plaintext}, 24*time.Hour)
 
-	session, revealed, err := service.CreateSession(context.Background(), "  did:plc:alice ")
-	if err != nil {
-		t.Fatalf("create session: %v", err)
-	}
-	if revealed != plaintext {
-		t.Fatalf("revealed credential = %q, want %q", revealed, plaintext)
-	}
-	if session.ID != id || session.AccountDID != "did:plc:alice" {
-		t.Fatalf("session identity = %#v", session)
-	}
-	if string(store.session.Hash) != string(wantHash[:]) || string(store.session.Hash) == plaintext {
-		t.Fatal("session store did not receive only the SHA-256 hash")
-	}
-	if !session.CreatedAt.Equal(now.UTC()) || !session.ExpiresAt.Equal(now.UTC().Add(24*time.Hour)) {
-		t.Fatalf("session lifetime = %v through %v", session.CreatedAt, session.ExpiresAt)
+			session, revealed, err := service.CreateSession(context.Background(), "  did:plc:alice ")
+			if err != nil {
+				t.Fatalf("create session: %v", err)
+			}
+			if revealed != plaintext {
+				t.Fatalf("revealed credential = %q, want %q", revealed, plaintext)
+			}
+			if session.ID != id || session.AccountDID != "did:plc:alice" {
+				t.Fatalf("session identity = %#v", session)
+			}
+			if string(store.session.Hash) != string(wantHash[:]) || string(store.session.Hash) == plaintext {
+				t.Fatal("session store did not receive only the SHA-256 hash")
+			}
+			if !session.CreatedAt.Equal(now.UTC()) || !session.ExpiresAt.Equal(now.UTC().Add(24*time.Hour)) {
+				t.Fatalf("session lifetime = %v through %v", session.CreatedAt, session.ExpiresAt)
+			}
+		})
 	}
 }
 
 func TestRandomSessionSecretGeneratorReturns256URLSafeBits(t *testing.T) {
 	t.Parallel()
-	plaintext, err := (RandomSessionSecretGenerator{}).New()
-	if err != nil {
-		t.Fatalf("generate session secret: %v", err)
-	}
-	decoded, err := base64.RawURLEncoding.DecodeString(plaintext)
-	if err != nil {
-		t.Fatalf("decode URL-safe session secret: %v", err)
-	}
-	if len(decoded) != 32 {
-		t.Fatalf("random secret bytes = %d, want 32", len(decoded))
+	testCases := []struct{ name string }{{name: "generated secret"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			plaintext, err := (RandomSessionSecretGenerator{}).New()
+			if err != nil {
+				t.Fatalf("generate session secret: %v", err)
+			}
+			decoded, err := base64.RawURLEncoding.DecodeString(plaintext)
+			if err != nil {
+				t.Fatalf("decode URL-safe session secret: %v", err)
+			}
+			if len(decoded) != 32 {
+				t.Fatalf("random secret bytes = %d, want 32", len(decoded))
+			}
+		})
 	}
 }
 
 func TestSessionServiceValidatesDIDAndLifetimeBeforeIssuing(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
+	testCases := []struct {
 		name     string
 		did      string
 		lifetime time.Duration
@@ -146,13 +171,12 @@ func TestSessionServiceValidatesDIDAndLifetimeBeforeIssuing(t *testing.T) {
 		{name: "zero lifetime", did: "did:plc:alice", lifetime: 0},
 		{name: "negative lifetime", did: "did:plc:alice", lifetime: -time.Hour},
 	}
-	for _, test := range tests {
-		test := test
-		t.Run(test.name, func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			store := &memorySessionStore{}
-			service := NewSessionService(store, fixedTokenClock{}, fixedTokenIDs{}, fixedSecrets{}, test.lifetime)
-			_, plaintext, err := service.CreateSession(context.Background(), test.did)
+			service := NewSessionService(store, fixedTokenClock{}, fixedTokenIDs{}, fixedSecrets{}, testCase.lifetime)
+			_, plaintext, err := service.CreateSession(context.Background(), testCase.did)
 			if !errors.Is(err, ErrValidation) || plaintext != "" {
 				t.Fatalf("result = (%q, %v), want empty plaintext and ErrValidation", plaintext, err)
 			}
@@ -165,16 +189,21 @@ func TestSessionServiceValidatesDIDAndLifetimeBeforeIssuing(t *testing.T) {
 
 func TestSessionServiceRevokesByOwnerAndPreservesNotFound(t *testing.T) {
 	t.Parallel()
-	now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
-	id := uuid.New()
-	store := &memorySessionStore{revokeErr: ErrNotFound}
-	service := NewSessionService(store, fixedTokenClock{now: now}, fixedTokenIDs{}, fixedSecrets{}, time.Hour)
+	testCases := []struct{ name string }{{name: "not found"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
+			id := uuid.New()
+			store := &memorySessionStore{revokeErr: ErrNotFound}
+			service := NewSessionService(store, fixedTokenClock{now: now}, fixedTokenIDs{}, fixedSecrets{}, time.Hour)
 
-	err := service.RevokeSession(context.Background(), " did:plc:alice ", id)
-	if !errors.Is(err, ErrNotFound) {
-		t.Fatalf("error = %v, want ErrNotFound", err)
-	}
-	if store.revokedDID != "did:plc:alice" || store.revokedID != id || !store.revokedAt.Equal(now) {
-		t.Fatalf("revoke scope = (%q, %s, %v)", store.revokedDID, store.revokedID, store.revokedAt)
+			err := service.RevokeSession(context.Background(), " did:plc:alice ", id)
+			if !errors.Is(err, ErrNotFound) {
+				t.Fatalf("error = %v, want ErrNotFound", err)
+			}
+			if store.revokedDID != "did:plc:alice" || store.revokedID != id || !store.revokedAt.Equal(now) {
+				t.Fatalf("revoke scope = (%q, %s, %v)", store.revokedDID, store.revokedID, store.revokedAt)
+			}
+		})
 	}
 }

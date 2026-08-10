@@ -4,7 +4,7 @@ import "testing"
 
 func TestParseCommand(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
+	testCases := []struct {
 		name      string
 		value     string
 		operation string
@@ -25,19 +25,19 @@ func TestParseCommand(t *testing.T) {
 		{name: "metacharacters", value: "git-upload-pack 'alice/project.git;id'"},
 		{name: "newline", value: "git-upload-pack 'alice/project.git\n'"},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := parseCommand(test.value)
-			if !test.valid {
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			got, err := parseCommand(testCase.value)
+			if !testCase.valid {
 				if err == nil {
-					t.Fatalf("parseCommand(%q) unexpectedly succeeded", test.value)
+					t.Fatalf("parseCommand(%q) unexpectedly succeeded", testCase.value)
 				}
 				return
 			}
 			if err != nil {
-				t.Fatalf("parseCommand(%q): %v", test.value, err)
+				t.Fatalf("parseCommand(%q): %v", testCase.value, err)
 			}
-			if got.operation != test.operation || got.owner != test.owner || got.slug != test.slug {
+			if got.operation != testCase.operation || got.owner != testCase.owner || got.slug != testCase.slug {
 				t.Fatalf("command = %#v", got)
 			}
 		})

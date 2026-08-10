@@ -2,7 +2,13 @@
 
 ## Local workflow
 
-Use the Dockerized project toolchain so local Go and PostgreSQL versions do not affect results:
+Install the Go version declared by `go.mod` and Bun 1.3.13, then install the workspace dependencies:
+
+```sh
+bun install --frozen-lockfile
+```
+
+Tests, linting, type checking, and generation run directly on the host. Docker is reserved for the local service stack and black-box environments:
 
 ```sh
 make dev-detached
@@ -11,7 +17,7 @@ make lint
 make doctor
 ```
 
-Run `make generate` after changing generated API, database, or Lexicon inputs once those generators are introduced.
+Run `make generate` after changing generated API, database, or Lexicon inputs. The script caches a checksum-verified sqlc release and invokes the pinned OpenAPI generator through `go run`; separate global installs are not required.
 
 ## Engineering rules
 

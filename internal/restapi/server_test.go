@@ -256,37 +256,39 @@ func TestAPIDocumentation(t *testing.T) {
 		t.Fatalf("create server: %v", err)
 	}
 
-	tests := []struct {
-		path        string
-		contentType string
+	testCases := []struct {
+		name           string
+		path           string
+		contentType    string
+		verifyDocument bool
 	}{
-		{path: "/docs/api", contentType: "text/html; charset=utf-8"},
-		{path: "/openapi.json", contentType: "application/json"},
-		{path: "/openapi.yaml", contentType: "application/yaml"},
+		{name: "API documentation", path: "/docs/api", contentType: "text/html; charset=utf-8"},
+		{name: "OpenAPI JSON", path: "/openapi.json", contentType: "application/json"},
+		{name: "OpenAPI YAML", path: "/openapi.yaml", contentType: "application/yaml"},
+		{name: "OpenAPI JSON document", path: "/openapi.json", verifyDocument: true},
 	}
-	for _, tt := range tests {
-		t.Run(tt.path, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodGet, tt.path, nil)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, testCase.path, nil)
 			response := httptest.NewRecorder()
 			server.Handler.ServeHTTP(response, request)
+			if testCase.verifyDocument {
+				var document map[string]any
+				if err := json.Unmarshal(response.Body.Bytes(), &document); err != nil {
+					t.Fatalf("OpenAPI response is not JSON: %v", err)
+				}
+				if document["openapi"] != "3.0.3" {
+					t.Fatalf("OpenAPI version = %v, want 3.0.3", document["openapi"])
+				}
+				return
+			}
 			if response.Code != http.StatusOK {
 				t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
 			}
-			if got := response.Header().Get("Content-Type"); got != tt.contentType {
-				t.Fatalf("content type = %q, want %q", got, tt.contentType)
+			if got := response.Header().Get("Content-Type"); got != testCase.contentType {
+				t.Fatalf("content type = %q, want %q", got, testCase.contentType)
 			}
 		})
-	}
-
-	request := httptest.NewRequest(http.MethodGet, "/openapi.json", nil)
-	response := httptest.NewRecorder()
-	server.Handler.ServeHTTP(response, request)
-	var document map[string]any
-	if err := json.Unmarshal(response.Body.Bytes(), &document); err != nil {
-		t.Fatalf("OpenAPI response is not JSON: %v", err)
-	}
-	if document["openapi"] != "3.0.3" {
-		t.Fatalf("OpenAPI version = %v, want 3.0.3", document["openapi"])
 	}
 }
 
@@ -296,7 +298,7 @@ func TestHealthEndpoints(t *testing.T) {
 	t.Parallel()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	tests := []struct {
+	testCases := []struct {
 		name      string
 		path      string
 		readiness fakeReadiness
@@ -307,17 +309,17 @@ func TestHealthEndpoints(t *testing.T) {
 		{name: "database unavailable", path: "/health/ready", readiness: fakeReadiness{err: errors.New("unavailable")}, want: http.StatusServiceUnavailable},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server, err := NewServer(":0", "http://localhost:8080", tt.readiness, logger, Dependencies{}, nil)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			server, err := NewServer(":0", "http://localhost:8080", testCase.readiness, logger, Dependencies{}, nil)
 			if err != nil {
 				t.Fatalf("create server: %v", err)
 			}
-			request := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			request := httptest.NewRequest(http.MethodGet, testCase.path, nil)
 			response := httptest.NewRecorder()
 			server.Handler.ServeHTTP(response, request)
-			if response.Code != tt.want {
-				t.Fatalf("status = %d, want %d", response.Code, tt.want)
+			if response.Code != testCase.want {
+				t.Fatalf("status = %d, want %d", response.Code, testCase.want)
 			}
 			if response.Header().Get("X-Request-ID") == "" {
 				t.Fatal("missing request ID")
@@ -335,59 +337,67 @@ func TestCredentialEndpointsRequireSessionAndOrigin(t *testing.T) {
 		Repositories: fakeRepositories{}, Authorization: fakeAuthorization{},
 	})
 
-	t.Run("create token returns plaintext once", func(t *testing.T) {
-		response := performAPIRequest(server, http.MethodPost, "/api/v1/tokens", `{"name":"laptop","scopes":["repository:write"]}`, true, true, "")
-		if response.Code != http.StatusCreated {
-			t.Fatalf("status = %d, want 201: %s", response.Code, response.Body.String())
-		}
-		if tokens.createdFor != "did:plc:alice" {
-			t.Fatalf("created for %q", tokens.createdFor)
-		}
-		var body generated.CreatedAccessToken
-		if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
-			t.Fatalf("decode token: %v", err)
-		}
-		if body.Token != "adn_pat_one_time_plaintext" || response.Header().Get("Location") == "" {
-			t.Fatalf("created token response = %#v", body)
-		}
-	})
+	testCases := []struct {
+		name string
+		run  func(*testing.T)
+	}{
+		{name: "create token returns plaintext once", run: func(t *testing.T) {
+			response := performAPIRequest(server, http.MethodPost, "/api/v1/tokens", `{"name":"laptop","scopes":["repository:write"]}`, true, true, "")
+			if response.Code != http.StatusCreated {
+				t.Fatalf("status = %d, want 201: %s", response.Code, response.Body.String())
+			}
+			if tokens.createdFor != "did:plc:alice" {
+				t.Fatalf("created for %q", tokens.createdFor)
+			}
+			var body generated.CreatedAccessToken
+			if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+				t.Fatalf("decode token: %v", err)
+			}
+			if body.Token != "adn_pat_one_time_plaintext" || response.Header().Get("Location") == "" {
+				t.Fatalf("created token response = %#v", body)
+			}
+		}},
 
-	t.Run("missing origin is forbidden", func(t *testing.T) {
-		response := performAPIRequest(server, http.MethodPost, "/api/v1/tokens", `{"name":"laptop","scopes":["repository:write"]}`, true, false, "")
-		assertAPIError(t, response, http.StatusForbidden, "permission_denied")
-	})
+		{name: "missing origin is forbidden", run: func(t *testing.T) {
+			response := performAPIRequest(server, http.MethodPost, "/api/v1/tokens", `{"name":"laptop","scopes":["repository:write"]}`, true, false, "")
+			assertAPIError(t, response, http.StatusForbidden, "permission_denied")
+		}},
 
-	t.Run("PAT cannot administer credentials", func(t *testing.T) {
-		response := performAPIRequest(server, http.MethodGet, "/api/v1/tokens", "", false, false, "valid-pat")
-		assertAPIError(t, response, http.StatusForbidden, "permission_denied")
-	})
+		{name: "PAT cannot administer credentials", run: func(t *testing.T) {
+			response := performAPIRequest(server, http.MethodGet, "/api/v1/tokens", "", false, false, "valid-pat")
+			assertAPIError(t, response, http.StatusForbidden, "permission_denied")
+		}},
 
-	t.Run("missing authentication", func(t *testing.T) {
-		response := performAPIRequest(server, http.MethodGet, "/api/v1/ssh-keys", "", false, false, "")
-		assertAPIError(t, response, http.StatusUnauthorized, "authentication_required")
-	})
+		{name: "missing authentication", run: func(t *testing.T) {
+			response := performAPIRequest(server, http.MethodGet, "/api/v1/ssh-keys", "", false, false, "")
+			assertAPIError(t, response, http.StatusUnauthorized, "authentication_required")
+		}},
 
-	t.Run("unknown JSON field", func(t *testing.T) {
-		response := performAPIRequest(server, http.MethodPost, "/api/v1/ssh-keys", `{"name":"laptop","public_key":"ssh-ed25519 AAAA","account_did":"did:plc:mallory"}`, true, true, "")
-		assertAPIError(t, response, http.StatusBadRequest, "malformed_request")
-	})
+		{name: "unknown JSON field", run: func(t *testing.T) {
+			response := performAPIRequest(server, http.MethodPost, "/api/v1/ssh-keys", `{"name":"laptop","public_key":"ssh-ed25519 AAAA","account_did":"did:plc:mallory"}`, true, true, "")
+			assertAPIError(t, response, http.StatusBadRequest, "malformed_request")
+		}},
 
-	t.Run("duplicate SSH key conflict", func(t *testing.T) {
-		keys.createErr = auth.ErrConflict
-		response := performAPIRequest(server, http.MethodPost, "/api/v1/ssh-keys", `{"name":"laptop","public_key":"ssh-ed25519 AAAA"}`, true, true, "")
-		assertAPIError(t, response, http.StatusConflict, "conflict")
-		keys.createErr = nil
-	})
+		{name: "duplicate SSH key conflict", run: func(t *testing.T) {
+			keys.createErr = auth.ErrConflict
+			response := performAPIRequest(server, http.MethodPost, "/api/v1/ssh-keys", `{"name":"laptop","public_key":"ssh-ed25519 AAAA"}`, true, true, "")
+			assertAPIError(t, response, http.StatusConflict, "conflict")
+			keys.createErr = nil
+		}},
 
-	t.Run("revoke derives account from session", func(t *testing.T) {
-		response := performAPIRequest(server, http.MethodDelete, "/api/v1/tokens/0198a851-2a89-7ae2-a370-dc68883e3af3", "", true, true, "")
-		if response.Code != http.StatusNoContent {
-			t.Fatalf("status = %d, want 204: %s", response.Code, response.Body.String())
-		}
-		if tokens.revokedFor != "did:plc:alice" {
-			t.Fatalf("revoked for %q", tokens.revokedFor)
-		}
-	})
+		{name: "revoke derives account from session", run: func(t *testing.T) {
+			response := performAPIRequest(server, http.MethodDelete, "/api/v1/tokens/0198a851-2a89-7ae2-a370-dc68883e3af3", "", true, true, "")
+			if response.Code != http.StatusNoContent {
+				t.Fatalf("status = %d, want 204: %s", response.Code, response.Body.String())
+			}
+			if tokens.revokedFor != "did:plc:alice" {
+				t.Fatalf("revoked for %q", tokens.revokedFor)
+			}
+		}},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, testCase.run)
+	}
 }
 
 func TestDeveloperProfileEndpoints(t *testing.T) {
@@ -445,7 +455,7 @@ func TestDeveloperProfileEndpoints(t *testing.T) {
 
 func TestDeveloperProfileErrors(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
+	testCases := []struct {
 		name   string
 		method string
 		path   string
@@ -460,17 +470,17 @@ func TestDeveloperProfileErrors(t *testing.T) {
 		{name: "invalid provider data", method: http.MethodGet, path: "/api/v1/profiles/did:plc:abcdefghijklmnopqrstuvwx", err: &profile.ProviderError{Operation: "get", Err: &profile.ValidationError{Field: "CID", Problem: "secret provider detail"}}, status: http.StatusBadGateway, code: "profile_provider_unavailable"},
 		{name: "authorization required", method: http.MethodPut, path: "/api/v1/profile", body: `{}`, err: &profile.AuthorizationError{Err: errors.New("secret provider detail")}, status: http.StatusConflict, code: "atproto_authorization_required"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
 			profiles := &fakeProfiles{}
-			if tt.method == http.MethodPut {
-				profiles.updateErr = tt.err
+			if testCase.method == http.MethodPut {
+				profiles.updateErr = testCase.err
 			} else {
-				profiles.getErr = tt.err
+				profiles.getErr = testCase.err
 			}
 			server := testAPIServer(t, Dependencies{Sessions: fakeSessions{}, Profiles: profiles})
-			response := performAPIRequest(server, tt.method, tt.path, tt.body, tt.method == http.MethodPut, tt.method == http.MethodPut, "")
-			assertAPIError(t, response, tt.status, tt.code)
+			response := performAPIRequest(server, testCase.method, testCase.path, testCase.body, testCase.method == http.MethodPut, testCase.method == http.MethodPut, "")
+			assertAPIError(t, response, testCase.status, testCase.code)
 			if strings.Contains(response.Body.String(), "secret provider detail") {
 				t.Fatalf("error leaked internal detail: %s", response.Body.String())
 			}
@@ -488,163 +498,200 @@ func TestRepositoryReadEndpoints(t *testing.T) {
 		Repositories: fixedRepositoryManager{repository: repo}, Authorization: fakeAuthorization{}, Git: fakeGitReader{blob: blob},
 	})
 
-	t.Run("anonymous branches", func(t *testing.T) {
-		response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/branches", "", false, false, "")
-		if response.Code != http.StatusOK {
-			t.Fatalf("status = %d: %s", response.Code, response.Body.String())
-		}
-		var body generated.BranchList
-		if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || len(body.Data) != 1 || !body.Data[0].Default {
-			t.Fatalf("branches = %#v, error = %v", body, err)
-		}
-	})
+	testCases := []struct {
+		name string
+		run  func(*testing.T)
+	}{
+		{name: "anonymous branches", run: func(t *testing.T) {
+			response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/branches", "", false, false, "")
+			if response.Code != http.StatusOK {
+				t.Fatalf("status = %d: %s", response.Code, response.Body.String())
+			}
+			var body generated.BranchList
+			if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || len(body.Data) != 1 || !body.Data[0].Default {
+				t.Fatalf("branches = %#v, error = %v", body, err)
+			}
+		}},
 
-	t.Run("default tree", func(t *testing.T) {
-		response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/tree?path=", "", false, false, "")
-		if response.Code != http.StatusOK {
-			t.Fatalf("status = %d: %s", response.Code, response.Body.String())
-		}
-		var body generated.Tree
-		if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.Revision != "main" || len(body.Entries) != 2 || body.Entries[0].Size != nil || body.Entries[1].Size == nil {
-			t.Fatalf("tree = %#v, error = %v", body, err)
-		}
-	})
+		{name: "default tree", run: func(t *testing.T) {
+			response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/tree?path=", "", false, false, "")
+			if response.Code != http.StatusOK {
+				t.Fatalf("status = %d: %s", response.Code, response.Body.String())
+			}
+			var body generated.Tree
+			if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.Revision != "main" || len(body.Entries) != 2 || body.Entries[0].Size != nil || body.Entries[1].Size == nil {
+				t.Fatalf("tree = %#v, error = %v", body, err)
+			}
+		}},
 
-	t.Run("invalid tree revision", func(t *testing.T) {
-		response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/tree?rev=bad", "", false, false, "")
-		assertAPIError(t, response, http.StatusBadRequest, "malformed_request")
-	})
+		{name: "invalid tree revision", run: func(t *testing.T) {
+			response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/tree?rev=bad", "", false, false, "")
+			assertAPIError(t, response, http.StatusBadRequest, "malformed_request")
+		}},
 
-	t.Run("raw blob", func(t *testing.T) {
-		sha := strings.Repeat("d", 40)
-		response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/blobs/"+sha, "", false, false, "")
-		if response.Code != http.StatusOK || !bytes.Equal(response.Body.Bytes(), blob) {
-			t.Fatalf("status = %d, blob = %v", response.Code, response.Body.Bytes())
-		}
-		if response.Header().Get("Content-Type") != "application/octet-stream" || response.Header().Get("ETag") != `"`+sha+`"` || response.Header().Get("Cache-Control") != "public, max-age=31536000, immutable" {
-			t.Fatalf("blob headers = %v", response.Header())
-		}
-	})
+		{name: "raw blob", run: func(t *testing.T) {
+			sha := strings.Repeat("d", 40)
+			response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/blobs/"+sha, "", false, false, "")
+			if response.Code != http.StatusOK || !bytes.Equal(response.Body.Bytes(), blob) {
+				t.Fatalf("status = %d, blob = %v", response.Code, response.Body.Bytes())
+			}
+			if response.Header().Get("Content-Type") != "application/octet-stream" || response.Header().Get("ETag") != `"`+sha+`"` || response.Header().Get("Cache-Control") != "public, max-age=31536000, immutable" {
+				t.Fatalf("blob headers = %v", response.Header())
+			}
+		}},
 
-	t.Run("commit history and detail", func(t *testing.T) {
-		response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/commits?ref=main&limit=10", "", false, false, "")
-		if response.Code != http.StatusOK {
-			t.Fatalf("history status = %d: %s", response.Code, response.Body.String())
-		}
-		var history generated.CommitList
-		if err := json.Unmarshal(response.Body.Bytes(), &history); err != nil || len(history.Data) != 1 || history.Data[0].Summary != "Update README" {
-			t.Fatalf("history = %#v, error = %v", history, err)
-		}
-		response = performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/commits/main", "", false, false, "")
-		var detail generated.Commit
-		if err := json.Unmarshal(response.Body.Bytes(), &detail); response.Code != http.StatusOK || err != nil || !strings.Contains(detail.Message, "Details.") {
-			t.Fatalf("detail status = %d, body = %#v, error = %v", response.Code, detail, err)
-		}
-	})
+		{name: "commit history and detail", run: func(t *testing.T) {
+			response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/commits?ref=main&limit=10", "", false, false, "")
+			if response.Code != http.StatusOK {
+				t.Fatalf("history status = %d: %s", response.Code, response.Body.String())
+			}
+			var history generated.CommitList
+			if err := json.Unmarshal(response.Body.Bytes(), &history); err != nil || len(history.Data) != 1 || history.Data[0].Summary != "Update README" {
+				t.Fatalf("history = %#v, error = %v", history, err)
+			}
+			response = performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/commits/main", "", false, false, "")
+			var detail generated.Commit
+			if err := json.Unmarshal(response.Body.Bytes(), &detail); response.Code != http.StatusOK || err != nil || !strings.Contains(detail.Message, "Details.") {
+				t.Fatalf("detail status = %d, body = %#v, error = %v", response.Code, detail, err)
+			}
+		}},
 
-	t.Run("diff and merge base", func(t *testing.T) {
-		response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/diff?base=main~1&head=main", "", false, false, "")
-		var diff generated.Diff
-		if err := json.Unmarshal(response.Body.Bytes(), &diff); response.Code != http.StatusOK || err != nil || len(diff.Files) != 1 || diff.Files[0].Additions == nil {
-			t.Fatalf("diff status = %d, body = %#v, error = %v", response.Code, diff, err)
-		}
-		response = performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/merge-base?a=main~1&b=main", "", false, false, "")
-		var mergeBase generated.MergeBase
-		if err := json.Unmarshal(response.Body.Bytes(), &mergeBase); response.Code != http.StatusOK || err != nil || mergeBase.Sha != strings.Repeat("a", 40) {
-			t.Fatalf("merge base status = %d, body = %#v, error = %v", response.Code, mergeBase, err)
-		}
-	})
+		{name: "diff and merge base", run: func(t *testing.T) {
+			response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/diff?base=main~1&head=main", "", false, false, "")
+			var diff generated.Diff
+			if err := json.Unmarshal(response.Body.Bytes(), &diff); response.Code != http.StatusOK || err != nil || len(diff.Files) != 1 || diff.Files[0].Additions == nil {
+				t.Fatalf("diff status = %d, body = %#v, error = %v", response.Code, diff, err)
+			}
+			response = performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/merge-base?a=main~1&b=main", "", false, false, "")
+			var mergeBase generated.MergeBase
+			if err := json.Unmarshal(response.Body.Bytes(), &mergeBase); response.Code != http.StatusOK || err != nil || mergeBase.Sha != strings.Repeat("a", 40) {
+				t.Fatalf("merge base status = %d, body = %#v, error = %v", response.Code, mergeBase, err)
+			}
+		}},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, testCase.run)
+	}
 }
 
 func TestPrivateRepositoryReadRequiresScopedAuthorization(t *testing.T) {
 	t.Parallel()
-	repositoryID := repository.ID(uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af2"))
-	repo := repository.Repository{ID: repositoryID, OwnerDID: "did:plc:alice", Slug: "private", Visibility: repository.VisibilityPrivate, State: repository.StateActive, DefaultBranch: "main"}
-	dependencies := Dependencies{
-		Sessions: fakeSessions{}, TokenAuth: fakeTokenAuth{},
-		Repositories: fixedRepositoryManager{repository: repo}, Authorization: fakeAuthorization{}, Git: fakeGitReader{},
+	testCases := []struct {
+		name string
+	}{
+		{name: "requires matching scoped authorization"},
 	}
-	server := testAPIServer(t, dependencies)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			repositoryID := repository.ID(uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af2"))
+			repo := repository.Repository{ID: repositoryID, OwnerDID: "did:plc:alice", Slug: "private", Visibility: repository.VisibilityPrivate, State: repository.StateActive, DefaultBranch: "main"}
+			dependencies := Dependencies{
+				Sessions: fakeSessions{}, TokenAuth: fakeTokenAuth{},
+				Repositories: fixedRepositoryManager{repository: repo}, Authorization: fakeAuthorization{}, Git: fakeGitReader{},
+			}
+			server := testAPIServer(t, dependencies)
 
-	response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/private/branches", "", false, false, "")
-	assertAPIError(t, response, http.StatusUnauthorized, "authentication_required")
+			response := performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/private/branches", "", false, false, "")
+			assertAPIError(t, response, http.StatusUnauthorized, "authentication_required")
 
-	response = performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/private/branches", "", false, false, "valid-pat")
-	if response.Code != http.StatusOK {
-		t.Fatalf("authorized status = %d: %s", response.Code, response.Body.String())
+			response = performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/private/branches", "", false, false, "valid-pat")
+			if response.Code != http.StatusOK {
+				t.Fatalf("authorized status = %d: %s", response.Code, response.Body.String())
+			}
+
+			otherRepository := repository.ID(uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af9"))
+			dependencies.TokenAuth = configuredTokenAuth{token: auth.AccessToken{
+				AccountDID: "did:plc:alice", Scopes: []string{auth.ScopeRepositoryRead}, RepositoryID: &otherRepository,
+			}}
+			server = testAPIServer(t, dependencies)
+			response = performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/private/branches", "", false, false, "valid-pat")
+			assertAPIError(t, response, http.StatusNotFound, "not_found")
+		})
 	}
-
-	otherRepository := repository.ID(uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af9"))
-	dependencies.TokenAuth = configuredTokenAuth{token: auth.AccessToken{
-		AccountDID: "did:plc:alice", Scopes: []string{auth.ScopeRepositoryRead}, RepositoryID: &otherRepository,
-	}}
-	server = testAPIServer(t, dependencies)
-	response = performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/private/branches", "", false, false, "valid-pat")
-	assertAPIError(t, response, http.StatusNotFound, "not_found")
 }
 
 func TestATProtoLoginStartAndCallback(t *testing.T) {
 	t.Parallel()
-	expiresAt := time.Date(2026, 8, 10, 1, 2, 3, 0, time.UTC)
-	login := &fakeLogin{result: localidentity.LoginResult{
-		DID: "did:plc:alice", Handle: "alice.example", SessionPlaintext: "new-session", SessionExpiresAt: expiresAt,
-	}}
-	server := testAPIServer(t, Dependencies{Login: login})
+	testCases := []struct{ name string }{{name: "starts login and completes callback"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			expiresAt := time.Date(2026, 8, 10, 1, 2, 3, 0, time.UTC)
+			login := &fakeLogin{result: localidentity.LoginResult{
+				DID: "did:plc:alice", Handle: "alice.example", SessionPlaintext: "new-session", SessionExpiresAt: expiresAt,
+			}}
+			server := testAPIServer(t, Dependencies{Login: login})
 
-	response := performAPIRequest(server, http.MethodPost, "/api/v1/auth/atproto/start", `{"identifier":"alice.example"}`, false, false, "")
-	if response.Code != http.StatusOK || login.identifier != "alice.example" {
-		t.Fatalf("start response = %d %q, identifier = %q", response.Code, response.Body.String(), login.identifier)
-	}
-	var started generated.StartATProtoLoginResponse
-	if err := json.Unmarshal(response.Body.Bytes(), &started); err != nil || started.AuthorizationUrl != "https://provider.example/authorize" {
-		t.Fatalf("start body = %#v, error = %v", started, err)
-	}
+			response := performAPIRequest(server, http.MethodPost, "/api/v1/auth/atproto/start", `{"identifier":"alice.example"}`, false, false, "")
+			if response.Code != http.StatusOK || login.identifier != "alice.example" {
+				t.Fatalf("start response = %d %q, identifier = %q", response.Code, response.Body.String(), login.identifier)
+			}
+			var started generated.StartATProtoLoginResponse
+			if err := json.Unmarshal(response.Body.Bytes(), &started); err != nil || started.AuthorizationUrl != "https://provider.example/authorize" {
+				t.Fatalf("start body = %#v, error = %v", started, err)
+			}
 
-	response = performAPIRequest(server, http.MethodGet, "/oauth/atproto/callback?state=state&iss=https%3A%2F%2Fissuer.example&code=code", "", false, false, "")
-	if response.Code != http.StatusSeeOther || response.Header().Get("Location") != "/api/v1/me" {
-		t.Fatalf("callback response = %d, location = %q", response.Code, response.Header().Get("Location"))
-	}
-	cookies := response.Result().Cookies()
-	if len(cookies) != 1 || cookies[0].Name != "adenosine_session" || cookies[0].Value != "new-session" || !cookies[0].HttpOnly || cookies[0].Secure || cookies[0].SameSite != http.SameSiteLaxMode {
-		t.Fatalf("session cookie = %#v", cookies)
+			response = performAPIRequest(server, http.MethodGet, "/oauth/atproto/callback?state=state&iss=https%3A%2F%2Fissuer.example&code=code", "", false, false, "")
+			if response.Code != http.StatusSeeOther || response.Header().Get("Location") != "/api/v1/me" {
+				t.Fatalf("callback response = %d, location = %q", response.Code, response.Header().Get("Location"))
+			}
+			cookies := response.Result().Cookies()
+			if len(cookies) != 1 || cookies[0].Name != "adenosine_session" || cookies[0].Value != "new-session" || !cookies[0].HttpOnly || cookies[0].Secure || cookies[0].SameSite != http.SameSiteLaxMode {
+				t.Fatalf("session cookie = %#v", cookies)
+			}
+		})
 	}
 }
 
 func TestLogoutRevokesSessionAndClearsCookie(t *testing.T) {
 	t.Parallel()
-	sessions := &fakeLocalSessions{}
-	server := testAPIServer(t, Dependencies{Sessions: fakeSessions{}, LocalSessions: sessions})
+	testCases := []struct{ name string }{{name: "revokes session and clears cookie"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			sessions := &fakeLocalSessions{}
+			server := testAPIServer(t, Dependencies{Sessions: fakeSessions{}, LocalSessions: sessions})
 
-	response := performAPIRequest(server, http.MethodPost, "/api/v1/auth/logout", "", true, true, "")
-	if response.Code != http.StatusNoContent || sessions.accountDID != "did:plc:alice" || sessions.sessionID == uuid.Nil {
-		t.Fatalf("logout response = %d, account = %q, session = %s", response.Code, sessions.accountDID, sessions.sessionID)
-	}
-	cookies := response.Result().Cookies()
-	if len(cookies) != 1 || cookies[0].Name != "adenosine_session" || cookies[0].MaxAge != -1 || !cookies[0].HttpOnly {
-		t.Fatalf("cleared cookie = %#v", cookies)
+			response := performAPIRequest(server, http.MethodPost, "/api/v1/auth/logout", "", true, true, "")
+			if response.Code != http.StatusNoContent || sessions.accountDID != "did:plc:alice" || sessions.sessionID == uuid.Nil {
+				t.Fatalf("logout response = %d, account = %q, session = %s", response.Code, sessions.accountDID, sessions.sessionID)
+			}
+			cookies := response.Result().Cookies()
+			if len(cookies) != 1 || cookies[0].Name != "adenosine_session" || cookies[0].MaxAge != -1 || !cookies[0].HttpOnly {
+				t.Fatalf("cleared cookie = %#v", cookies)
+			}
+		})
 	}
 }
 
 func TestCurrentIdentityIncludesVerifiedHandle(t *testing.T) {
 	t.Parallel()
-	handle := "alice.example"
-	server := testAPIServer(t, Dependencies{
-		Sessions: fakeSessions{}, Accounts: fakeAccounts{account: auth.Account{DID: "did:plc:alice", Handle: &handle}},
-	})
+	testCases := []struct{ name string }{{name: "includes verified handle"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			handle := "alice.example"
+			server := testAPIServer(t, Dependencies{
+				Sessions: fakeSessions{}, Accounts: fakeAccounts{account: auth.Account{DID: "did:plc:alice", Handle: &handle}},
+			})
 
-	response := performAPIRequest(server, http.MethodGet, "/api/v1/me", "", true, false, "")
-	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"handle":"alice.example"`) {
-		t.Fatalf("identity response = %d %s", response.Code, response.Body.String())
+			response := performAPIRequest(server, http.MethodGet, "/api/v1/me", "", true, false, "")
+			if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"handle":"alice.example"`) {
+				t.Fatalf("identity response = %d %s", response.Code, response.Body.String())
+			}
+		})
 	}
 }
 
 func TestOAuthClientMetadata(t *testing.T) {
 	t.Parallel()
-	server := testAPIServer(t, Dependencies{OAuthMetadata: fakeOAuthMetadata{}})
+	testCases := []struct{ name string }{{name: "returns client metadata"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			server := testAPIServer(t, Dependencies{OAuthMetadata: fakeOAuthMetadata{}})
 
-	response := performAPIRequest(server, http.MethodGet, "/oauth/client-metadata.json", "", false, false, "")
-	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"scope":"atproto"`) || !strings.Contains(response.Body.String(), `"dpop_bound_access_tokens":true`) {
-		t.Fatalf("metadata response = %d %s", response.Code, response.Body.String())
+			response := performAPIRequest(server, http.MethodGet, "/oauth/client-metadata.json", "", false, false, "")
+			if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"scope":"atproto"`) || !strings.Contains(response.Body.String(), `"dpop_bound_access_tokens":true`) {
+				t.Fatalf("metadata response = %d %s", response.Code, response.Body.String())
+			}
+		})
 	}
 }
 

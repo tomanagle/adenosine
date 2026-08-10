@@ -302,8 +302,10 @@ func TestFinishRegistrationStoresCompleteCredential(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			store := newFakePasskeyStore()
 			credentialRecordID := uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af2")
+			// go-webauthn checks registration expiry against the wall clock.
+			clock := &fakeClock{now: time.Now().UTC()}
 			service := Must(
-				"https://example.com", store, &fakeSessionIssuer{events: &store.events}, &fakeClock{now: testNow},
+				"https://example.com", store, &fakeSessionIssuer{events: &store.events}, clock,
 				fakeIDs{id: credentialRecordID}, &fakeSecrets{values: []string{testSecret(1), testSecret(2)}},
 			)
 			browserSessionID := uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af1")

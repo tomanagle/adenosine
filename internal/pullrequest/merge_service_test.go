@@ -179,16 +179,23 @@ func TestMergeOrchestrationStrategiesAndFailures(t *testing.T) {
 func TestMergeRetryRecognizesBothStrategiesWithoutDuplicateCommit(t *testing.T) {
 	t.Parallel()
 	target, fetch, oldSHA, newSHA := mergeFixtures()
-	for _, strategy := range []gitservice.MergeStrategy{gitservice.MergeCommit, gitservice.MergeSquash} {
-		t.Run(string(strategy), func(t *testing.T) {
+	testCases := []struct {
+		name     string
+		strategy gitservice.MergeStrategy
+	}{
+		{name: string(gitservice.MergeCommit), strategy: gitservice.MergeCommit},
+		{name: string(gitservice.MergeSquash), strategy: gitservice.MergeSquash},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
 			parents := []string{oldSHA}
-			if strategy == gitservice.MergeCommit {
+			if testCase.strategy == gitservice.MergeCommit {
 				parents = append(parents, target.HeadSHA)
 			}
-			git := &mergeGit{commit: gitservice.Commit{SHA: newSHA, Parents: parents, Message: mergeMessage(target, mergeTrailers(target, strategy))}}
+			git := &mergeGit{commit: gitservice.Commit{SHA: newSHA, Parents: parents, Message: mergeMessage(target, mergeTrailers(target, testCase.strategy))}}
 			events := &mergeEvents{}
 			publisher := &mergePublisher{applicationPublisher: applicationPublisher{status: Status{AuthorDID: target.TargetOwnerDID}}}
-			result, err := NewApplicationService(&mergeStore{targets: []mergeTarget{target, target}, fetch: fetch}, git, publisher, applicationClock{now: target.CreatedAt.Add(2 * time.Hour)}, mergeAuthorizer{allowed: true}, events).Merge(context.Background(), "did:plc:collaborator", MergeInput{PullRequestURI: target.Subject.URI, Strategy: strategy})
+			result, err := NewApplicationService(&mergeStore{targets: []mergeTarget{target, target}, fetch: fetch}, git, publisher, applicationClock{now: target.CreatedAt.Add(2 * time.Hour)}, mergeAuthorizer{allowed: true}, events).Merge(context.Background(), "did:plc:collaborator", MergeInput{PullRequestURI: target.Subject.URI, Strategy: testCase.strategy})
 			if err != nil || git.mergeCalls != 0 || result.Git.NewSHA != newSHA || result.Git.OldSHA != oldSHA || events.calls != 1 || publisher.calls != 1 {
 				t.Fatalf("retry = %#v, %v; merge/event/publish = %d/%d/%d", result, err, git.mergeCalls, events.calls, publisher.calls)
 			}

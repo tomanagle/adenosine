@@ -3,18 +3,13 @@
 FROM oven/bun:1.3.13-alpine AS bun
 
 FROM golang:1.24.3-alpine3.21 AS tools
-ARG TARGETARCH
 RUN apk add --no-cache bash curl git libgcc libstdc++ make openssh-client postgresql-client
-COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
-RUN curl -fsSL "https://github.com/sqlc-dev/sqlc/releases/download/v1.31.1/sqlc_1.31.1_linux_${TARGETARCH}.tar.gz" \
-    | tar -xz -C /usr/local/bin sqlc
 WORKDIR /workspace
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 FROM tools AS dev-go
-RUN go install github.com/air-verse/air@v1.61.7 \
-    && go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.7.2
+RUN go install github.com/air-verse/air@v1.61.7
 COPY . .
 COPY dev/entrypoint.sh /usr/local/bin/dev-entrypoint
 RUN chmod +x /usr/local/bin/dev-entrypoint

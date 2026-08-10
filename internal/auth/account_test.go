@@ -10,16 +10,26 @@ import (
 func TestAccountFromRowPreservesOptionalHandle(t *testing.T) {
 	t.Parallel()
 
-	withHandle := accountFromRow(dbgen.CoreAccount{
-		Did:         "did:plc:alice",
-		HandleCache: pgtype.Text{String: "alice.example", Valid: true},
-	})
-	if withHandle.DID != "did:plc:alice" || withHandle.Handle == nil || *withHandle.Handle != "alice.example" {
-		t.Fatalf("account = %#v", withHandle)
+	testCases := []struct {
+		name string
+	}{
+		{name: "optional handle"},
 	}
 
-	withoutHandle := accountFromRow(dbgen.CoreAccount{Did: "did:plc:bob"})
-	if withoutHandle.Handle != nil {
-		t.Fatalf("optional handle = %q, want nil", *withoutHandle.Handle)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			withHandle := accountFromRow(dbgen.CoreAccount{
+				Did:         "did:plc:alice",
+				HandleCache: pgtype.Text{String: "alice.example", Valid: true},
+			})
+			if withHandle.DID != "did:plc:alice" || withHandle.Handle == nil || *withHandle.Handle != "alice.example" {
+				t.Fatalf("account = %#v", withHandle)
+			}
+
+			withoutHandle := accountFromRow(dbgen.CoreAccount{Did: "did:plc:bob"})
+			if withoutHandle.Handle != nil {
+				t.Fatalf("optional handle = %q, want nil", *withoutHandle.Handle)
+			}
+		})
 	}
 }

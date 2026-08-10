@@ -86,44 +86,55 @@ func TestMergeConflictLeavesBranchUnchanged(t *testing.T) {
 }
 
 func TestMergeUnrelatedHistoryIsConflict(t *testing.T) {
-	fixture := newMergeFixture(t, "sha1", false)
-	fixture.workGit(nil, "checkout", "--orphan", "unrelated")
-	fixture.workGit(nil, "rm", "-rf", "--ignore-unmatch", "--", ".")
-	fixture.write("unrelated.txt", "unrelated\n")
-	fixture.workGit(nil, "add", "--", ".")
-	fixture.workGit(nil, "commit", "-m", "unrelated")
-	fixture.headSHA = fixture.workGit(nil, "rev-parse", "HEAD")
-	fixture.workGit(nil, "push", "--force", fixture.bare, "HEAD:refs/heads/feature")
-	before := fixture.git("rev-parse", "refs/heads/main")
+	testCases := []struct{ name string }{{name: "unrelated history"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			fixture := newMergeFixture(t, "sha1", false)
+			fixture.workGit(nil, "checkout", "--orphan", "unrelated")
+			fixture.workGit(nil, "rm", "-rf", "--ignore-unmatch", "--", ".")
+			fixture.write("unrelated.txt", "unrelated\n")
+			fixture.workGit(nil, "add", "--", ".")
+			fixture.workGit(nil, "commit", "-m", "unrelated")
+			fixture.headSHA = fixture.workGit(nil, "rev-parse", "HEAD")
+			fixture.workGit(nil, "push", "--force", fixture.bare, "HEAD:refs/heads/feature")
+			before := fixture.git("rev-parse", "refs/heads/main")
 
-	_, err := fixture.service.Merge(context.Background(), fixture.id, fixture.request(MergeCommit))
-	if !errors.Is(err, ErrMergeConflict) {
-		t.Fatalf("Merge() error = %v, want ErrMergeConflict", err)
-	}
-	if after := fixture.git("rev-parse", "refs/heads/main"); after != before {
-		t.Errorf("main changed from %s to %s", before, after)
+			_, err := fixture.service.Merge(context.Background(), fixture.id, fixture.request(MergeCommit))
+			if !errors.Is(err, ErrMergeConflict) {
+				t.Fatalf("Merge() error = %v, want ErrMergeConflict", err)
+			}
+			if after := fixture.git("rev-parse", "refs/heads/main"); after != before {
+				t.Errorf("main changed from %s to %s", before, after)
+			}
+		})
 	}
 }
 
 func TestMergeDoesNotRunRepositoryMergeDriver(t *testing.T) {
-	fixture := newMergeFixture(t, "sha1", true)
-	marker := filepath.Join(t.TempDir(), "driver-ran")
-	fixture.git("config", "merge.untrusted.driver", "touch "+marker)
+	testCases := []struct{ name string }{{name: "repository merge driver disabled"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			fixture := newMergeFixture(t, "sha1", true)
+			marker := filepath.Join(t.TempDir(), "driver-ran")
+			fixture.git("config", "merge.untrusted.driver", "touch "+marker)
 
-	_, err := fixture.service.Merge(context.Background(), fixture.id, fixture.request(MergeCommit))
-	if !errors.Is(err, ErrMergeConflict) {
-		t.Fatalf("Merge() error = %v, want ErrMergeConflict", err)
-	}
-	if _, statErr := os.Stat(marker); !errors.Is(statErr, os.ErrNotExist) {
-		t.Fatalf("custom merge driver ran: %v", statErr)
+			_, err := fixture.service.Merge(context.Background(), fixture.id, fixture.request(MergeCommit))
+			if !errors.Is(err, ErrMergeConflict) {
+				t.Fatalf("Merge() error = %v, want ErrMergeConflict", err)
+			}
+			if _, statErr := os.Stat(marker); !errors.Is(statErr, os.ErrNotExist) {
+				t.Fatalf("custom merge driver ran: %v", statErr)
+			}
+		})
 	}
 }
 
 func TestMergeCASConflictLeavesBranchUnchanged(t *testing.T) {
 	testCases := []struct {
-		name          string
-		mutateRequest func(*mergeFixture, *MergeRequest)
-		want          error
+		name                 string
+		mutateRequest        func(*mergeFixture, *MergeRequest)
+		want                 error
+		wantConcurrentUpdate bool
 	}{
 		{
 			name: "stale expected target",
@@ -146,7 +157,8 @@ func TestMergeCASConflictLeavesBranchUnchanged(t *testing.T) {
 					fixture.git("update-ref", "refs/heads/main", fixture.headSHA, fixture.targetSHA)
 				}
 			},
-			want: ErrMergeRefConflict,
+			want:                 ErrMergeRefConflict,
+			wantConcurrentUpdate: true,
 		},
 	}
 	for _, testCase := range testCases {
@@ -160,7 +172,7 @@ func TestMergeCASConflictLeavesBranchUnchanged(t *testing.T) {
 				t.Fatalf("Merge() error = %v, want %v", err, testCase.want)
 			}
 			after := fixture.git("rev-parse", "refs/heads/main")
-			if testCase.name == "ref changes before CAS" {
+			if testCase.wantConcurrentUpdate {
 				if after != fixture.headSHA {
 					t.Errorf("concurrent update was overwritten: main = %s, want %s", after, fixture.headSHA)
 				}
@@ -226,43 +238,53 @@ func TestMergeRejectsMaliciousInput(t *testing.T) {
 }
 
 func TestMergeCancellationLeavesNoRefs(t *testing.T) {
-	fixture := newMergeFixture(t, "sha1", false)
-	before := fixture.git("rev-parse", "refs/heads/main")
-	temporaryBefore, err := filepath.Glob(filepath.Join(os.TempDir(), "adenosine-merge-*"))
-	if err != nil {
-		t.Fatalf("list temporary merge repositories: %v", err)
-	}
-	ctx, cancel := context.WithCancel(context.Background())
-	fixture.service.beforeMergeCAS = cancel
-	_, err = fixture.service.Merge(ctx, fixture.id, fixture.request(MergeCommit))
-	if !errors.Is(err, context.Canceled) {
-		t.Fatalf("Merge() error = %v, want context.Canceled", err)
-	}
-	if after := fixture.git("rev-parse", "refs/heads/main"); after != before {
-		t.Errorf("main changed from %s to %s", before, after)
-	}
-	fixture.assertNoTransientRefs()
-	temporaryAfter, err := filepath.Glob(filepath.Join(os.TempDir(), "adenosine-merge-*"))
-	if err != nil {
-		t.Fatalf("list temporary merge repositories: %v", err)
-	}
-	if len(temporaryAfter) != len(temporaryBefore) {
-		t.Errorf("temporary merge repositories before = %v, after = %v", temporaryBefore, temporaryAfter)
+	testCases := []struct{ name string }{{name: "cancellation leaves no refs"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			fixture := newMergeFixture(t, "sha1", false)
+			before := fixture.git("rev-parse", "refs/heads/main")
+			temporaryBefore, err := filepath.Glob(filepath.Join(os.TempDir(), "adenosine-merge-*"))
+			if err != nil {
+				t.Fatalf("list temporary merge repositories: %v", err)
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			fixture.service.beforeMergeCAS = cancel
+			_, err = fixture.service.Merge(ctx, fixture.id, fixture.request(MergeCommit))
+			if !errors.Is(err, context.Canceled) {
+				t.Fatalf("Merge() error = %v, want context.Canceled", err)
+			}
+			if after := fixture.git("rev-parse", "refs/heads/main"); after != before {
+				t.Errorf("main changed from %s to %s", before, after)
+			}
+			fixture.assertNoTransientRefs()
+			temporaryAfter, err := filepath.Glob(filepath.Join(os.TempDir(), "adenosine-merge-*"))
+			if err != nil {
+				t.Fatalf("list temporary merge repositories: %v", err)
+			}
+			if len(temporaryAfter) != len(temporaryBefore) {
+				t.Errorf("temporary merge repositories before = %v, after = %v", temporaryBefore, temporaryAfter)
+			}
+		})
 	}
 }
 
 func TestMergeSHA256(t *testing.T) {
-	fixture := newMergeFixture(t, "sha256", false)
-	request := fixture.request(MergeCommit)
-	result, err := fixture.service.Merge(context.Background(), fixture.id, request)
-	if err != nil {
-		t.Fatalf("Merge() error = %v", err)
-	}
-	if len(result.NewSHA) != 64 || len(result.TreeSHA) != 64 {
-		t.Errorf("SHA-256 result = %+v", result)
-	}
-	if parents := fixture.git("show", "-s", "--format=%P", result.NewSHA); parents != request.ExpectedTargetSHA+" "+request.HeadSHA {
-		t.Errorf("parents = %q", parents)
+	testCases := []struct{ name string }{{name: "SHA-256 repository"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			fixture := newMergeFixture(t, "sha256", false)
+			request := fixture.request(MergeCommit)
+			result, err := fixture.service.Merge(context.Background(), fixture.id, request)
+			if err != nil {
+				t.Fatalf("Merge() error = %v", err)
+			}
+			if len(result.NewSHA) != 64 || len(result.TreeSHA) != 64 {
+				t.Errorf("SHA-256 result = %+v", result)
+			}
+			if parents := fixture.git("show", "-s", "--format=%P", result.NewSHA); parents != request.ExpectedTargetSHA+" "+request.HeadSHA {
+				t.Errorf("parents = %q", parents)
+			}
+		})
 	}
 }
 

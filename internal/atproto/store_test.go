@@ -197,41 +197,51 @@ func testRequest(state string) oauth.AuthRequestData {
 
 func TestPostgresClientAuthStoreEncryptsRequestState(t *testing.T) {
 	t.Parallel()
-	now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
-	db := newMemoryOAuthDB()
-	store := newTestStore(t, db, &fixedClock{now: now})
-	info := testRequest("state-super-secret")
-	if err := store.SaveAuthRequestInfo(context.Background(), info); err != nil {
-		t.Fatalf("save request: %v", err)
-	}
-	row := db.onlyRow(t)
-	hash := sha256.Sum256([]byte(info.State))
-	if !bytes.Equal(row.hash, hash[:]) {
-		t.Fatalf("stored state hash = %x", row.hash)
-	}
-	for _, plaintext := range []string{info.State, info.PKCEVerifier, info.DPoPAuthServerNonce, info.DPoPPrivateKeyMultibase, info.RequestURI} {
-		if bytes.Contains(row.encrypted, []byte(plaintext)) {
-			t.Fatalf("encrypted payload contains plaintext %q", plaintext)
-		}
-		if bytes.Contains(row.hash, []byte(plaintext)) {
-			t.Fatalf("state hash contains plaintext %q", plaintext)
-		}
-	}
-	if !row.createdAt.Equal(now) || !row.expiresAt.Equal(now.Add(10*time.Minute)) {
-		t.Fatalf("stored times = %v, %v", row.createdAt, row.expiresAt)
-	}
-	consumed, err := store.GetAuthRequestInfo(context.Background(), info.State)
-	if err != nil {
-		t.Fatalf("consume request: %v", err)
-	}
-	if !reflect.DeepEqual(*consumed, info) {
-		t.Fatalf("consumed info = %#v", consumed)
+	testCases := []struct {
+		name string
+	}{{
+		name: "encrypted state",
+	}}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
+			db := newMemoryOAuthDB()
+			store := newTestStore(t, db, &fixedClock{now: now})
+			info := testRequest("state-super-secret")
+			if err := store.SaveAuthRequestInfo(context.Background(), info); err != nil {
+				t.Fatalf("save request: %v", err)
+			}
+			row := db.onlyRow(t)
+			hash := sha256.Sum256([]byte(info.State))
+			if !bytes.Equal(row.hash, hash[:]) {
+				t.Fatalf("stored state hash = %x", row.hash)
+			}
+			for _, plaintext := range []string{info.State, info.PKCEVerifier, info.DPoPAuthServerNonce, info.DPoPPrivateKeyMultibase, info.RequestURI} {
+				if bytes.Contains(row.encrypted, []byte(plaintext)) {
+					t.Fatalf("encrypted payload contains plaintext %q", plaintext)
+				}
+				if bytes.Contains(row.hash, []byte(plaintext)) {
+					t.Fatalf("state hash contains plaintext %q", plaintext)
+				}
+			}
+			if !row.createdAt.Equal(now) || !row.expiresAt.Equal(now.Add(10*time.Minute)) {
+				t.Fatalf("stored times = %v, %v", row.createdAt, row.expiresAt)
+			}
+			consumed, err := store.GetAuthRequestInfo(context.Background(), info.State)
+			if err != nil {
+				t.Fatalf("consume request: %v", err)
+			}
+			if !reflect.DeepEqual(*consumed, info) {
+				t.Fatalf("consumed info = %#v", consumed)
+			}
+		})
 	}
 }
 
 func TestPostgresClientAuthStoreDetectsTamperingAndPayloadMismatch(t *testing.T) {
 	t.Parallel()
-	for _, test := range []struct {
+	testCases := []struct {
 		name   string
 		mutate func(*PostgresClientAuthStore, *memoryOAuthDB, string)
 	}{
@@ -249,8 +259,9 @@ func TestPostgresClientAuthStoreDetectsTamperingAndPayloadMismatch(t *testing.T)
 			row.encrypted = store.stateAEAD.Seal(bytes.Clone(nonce), nonce, payload, hash[:])
 			db.rows[string(hash[:])] = row
 		}},
-	} {
-		t.Run(test.name, func(t *testing.T) {
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
 			db := newMemoryOAuthDB()
 			clock := &fixedClock{now: time.Now()}
 			store := newTestStore(t, db, clock)
@@ -259,7 +270,7 @@ func TestPostgresClientAuthStoreDetectsTamperingAndPayloadMismatch(t *testing.T)
 				t.Fatal(err)
 			}
 			db.mu.Lock()
-			test.mutate(store, db, state)
+			testCase.mutate(store, db, state)
 			db.mu.Unlock()
 			_, err := store.GetAuthRequestInfo(context.Background(), state)
 			if !errors.Is(err, ErrStateInvalid) {
@@ -271,182 +282,221 @@ func TestPostgresClientAuthStoreDetectsTamperingAndPayloadMismatch(t *testing.T)
 
 func TestPostgresClientAuthStoreConsumesOnlyOnceUnderConcurrency(t *testing.T) {
 	t.Parallel()
-	db := newMemoryOAuthDB()
-	store := newTestStore(t, db, &fixedClock{now: time.Now()})
-	const state = "one-use-state"
-	if err := store.SaveAuthRequestInfo(context.Background(), testRequest(state)); err != nil {
-		t.Fatal(err)
-	}
-	var successes atomic.Int32
-	var failures atomic.Int32
-	var wait sync.WaitGroup
-	for range 32 {
-		wait.Add(1)
-		go func() {
-			defer wait.Done()
-			_, err := store.GetAuthRequestInfo(context.Background(), state)
-			if err == nil {
-				successes.Add(1)
-			} else if errors.Is(err, ErrStateNotFound) {
-				failures.Add(1)
-			} else {
-				t.Errorf("consume error: %v", err)
+	testCases := []struct{ name string }{{name: "32 concurrent consumers"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			db := newMemoryOAuthDB()
+			store := newTestStore(t, db, &fixedClock{now: time.Now()})
+			const state = "one-use-state"
+			if err := store.SaveAuthRequestInfo(context.Background(), testRequest(state)); err != nil {
+				t.Fatal(err)
 			}
-		}()
-	}
-	wait.Wait()
-	if successes.Load() != 1 || failures.Load() != 31 {
-		t.Fatalf("successes = %d, not found = %d", successes.Load(), failures.Load())
+			var successes atomic.Int32
+			var failures atomic.Int32
+			var wait sync.WaitGroup
+			for range 32 {
+				wait.Add(1)
+				go func() {
+					defer wait.Done()
+					_, err := store.GetAuthRequestInfo(context.Background(), state)
+					if err == nil {
+						successes.Add(1)
+					} else if errors.Is(err, ErrStateNotFound) {
+						failures.Add(1)
+					} else {
+						t.Errorf("consume error: %v", err)
+					}
+				}()
+			}
+			wait.Wait()
+			if successes.Load() != 1 || failures.Load() != 31 {
+				t.Fatalf("successes = %d, not found = %d", successes.Load(), failures.Load())
+			}
+		})
 	}
 }
 
 func TestPostgresClientAuthStoreRejectsExpiredState(t *testing.T) {
 	t.Parallel()
-	now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
-	clock := &fixedClock{now: now}
-	db := newMemoryOAuthDB()
-	store := newTestStore(t, db, clock)
-	if err := store.SaveAuthRequestInfo(context.Background(), testRequest("expired-state")); err != nil {
-		t.Fatal(err)
-	}
-	clock.now = now.Add(10 * time.Minute)
-	if _, err := store.GetAuthRequestInfo(context.Background(), "expired-state"); !errors.Is(err, ErrStateNotFound) {
-		t.Fatalf("expired error = %v", err)
-	}
-	if err := store.DeleteAuthRequestInfo(context.Background(), "missing"); err != nil {
-		t.Fatalf("delete missing request: %v", err)
+	testCases := []struct{ name string }{{name: "expired state"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
+			clock := &fixedClock{now: now}
+			db := newMemoryOAuthDB()
+			store := newTestStore(t, db, clock)
+			if err := store.SaveAuthRequestInfo(context.Background(), testRequest("expired-state")); err != nil {
+				t.Fatal(err)
+			}
+			clock.now = now.Add(10 * time.Minute)
+			if _, err := store.GetAuthRequestInfo(context.Background(), "expired-state"); !errors.Is(err, ErrStateNotFound) {
+				t.Fatalf("expired error = %v", err)
+			}
+			if err := store.DeleteAuthRequestInfo(context.Background(), "missing"); err != nil {
+				t.Fatalf("delete missing request: %v", err)
+			}
+		})
 	}
 }
 
 func TestBuildPostgresClientAuthStoreRequiresAES256Key(t *testing.T) {
 	t.Parallel()
-	for _, size := range []int{0, 16, 24, 31, 33} {
-		for _, credentialSize := range []int{size, 32} {
-			stateSize := 32
-			if credentialSize == 32 {
-				stateSize = size
-			}
-			_, err := buildPostgresClientAuthStore(dbgen.New(newMemoryOAuthDB()), make([]byte, stateSize), make([]byte, credentialSize), &fixedClock{}, bytes.NewReader(nil))
-			if err == nil {
-				t.Fatalf("state/credential key sizes %d/%d accepted", stateSize, credentialSize)
-			}
-		}
+	testCases := []struct {
+		name           string
+		stateSize      int
+		credentialSize int
+		wantErr        bool
+	}{
+		{name: "credential key empty", stateSize: 32, credentialSize: 0, wantErr: true},
+		{name: "state key empty", credentialSize: 32, wantErr: true},
+		{name: "credential key 16 bytes", stateSize: 32, credentialSize: 16, wantErr: true},
+		{name: "state key 16 bytes", stateSize: 16, credentialSize: 32, wantErr: true},
+		{name: "credential key 24 bytes", stateSize: 32, credentialSize: 24, wantErr: true},
+		{name: "state key 24 bytes", stateSize: 24, credentialSize: 32, wantErr: true},
+		{name: "credential key 31 bytes", stateSize: 32, credentialSize: 31, wantErr: true},
+		{name: "state key 31 bytes", stateSize: 31, credentialSize: 32, wantErr: true},
+		{name: "credential key 33 bytes", stateSize: 32, credentialSize: 33, wantErr: true},
+		{name: "state key 33 bytes", stateSize: 33, credentialSize: 32, wantErr: true},
+		{name: "both keys 32 bytes", stateSize: 32, credentialSize: 32},
 	}
-	if _, err := buildPostgresClientAuthStore(dbgen.New(newMemoryOAuthDB()), make([]byte, 32), make([]byte, 32), &fixedClock{}, bytes.NewReader(nil)); err != nil {
-		t.Fatalf("32-byte key rejected: %v", err)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			_, err := buildPostgresClientAuthStore(dbgen.New(newMemoryOAuthDB()), make([]byte, testCase.stateSize), make([]byte, testCase.credentialSize), &fixedClock{}, bytes.NewReader(nil))
+			if testCase.wantErr && err == nil {
+				t.Fatalf("state/credential key sizes %d/%d accepted", testCase.stateSize, testCase.credentialSize)
+			}
+			if !testCase.wantErr && err != nil {
+				t.Fatalf("32-byte key rejected: %v", err)
+			}
+		})
 	}
 }
 
 func TestPostgresClientAuthStoreEncryptsAndIsolatesResumableSessions(t *testing.T) {
 	t.Parallel()
-	now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
-	clock := &fixedClock{now: now}
-	db := newMemoryOAuthDB()
-	store := newTestStore(t, db, clock)
-	did := syntax.DID("did:plc:abcdefghijklmnopqrstuvwx")
-	first := oauth.ClientSessionData{
-		AccountDID: did, SessionID: "browser-one", Scopes: []string{"atproto"},
-		AccessToken: "access-secret", RefreshToken: "refresh-secret", DPoPPrivateKeyMultibase: "private-secret",
-	}
-	second := first
-	second.SessionID = "browser-two"
-	second.AccessToken = "other-access-secret"
-	if err := store.SaveSession(context.Background(), first); err != nil {
-		t.Fatal(err)
-	}
-	if err := store.SaveSession(context.Background(), second); err != nil {
-		t.Fatal(err)
-	}
-	if len(db.credentials) != 2 {
-		t.Fatalf("credential rows = %d, want 2", len(db.credentials))
-	}
-	for _, row := range db.credentials {
-		for _, secret := range []string{row.did, first.SessionID, second.SessionID, first.AccessToken, first.RefreshToken, first.DPoPPrivateKeyMultibase} {
-			if secret != row.did && bytes.Contains(row.encrypted, []byte(secret)) {
-				t.Fatalf("encrypted credentials contain %q", secret)
+	testCases := []struct{ name string }{{name: "two isolated sessions"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
+			clock := &fixedClock{now: now}
+			db := newMemoryOAuthDB()
+			store := newTestStore(t, db, clock)
+			did := syntax.DID("did:plc:abcdefghijklmnopqrstuvwx")
+			first := oauth.ClientSessionData{
+				AccountDID: did, SessionID: "browser-one", Scopes: []string{"atproto"},
+				AccessToken: "access-secret", RefreshToken: "refresh-secret", DPoPPrivateKeyMultibase: "private-secret",
 			}
-		}
-		if !row.createdAt.Equal(now) || !row.updatedAt.Equal(now) {
-			t.Fatalf("credential timestamps = %v, %v", row.createdAt, row.updatedAt)
-		}
-	}
-	loaded, err := store.GetSession(context.Background(), did, first.SessionID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(*loaded, first) {
-		t.Fatalf("loaded session = %#v", loaded)
-	}
-	if _, err := store.GetSession(context.Background(), did, "missing"); !errors.Is(err, ErrSessionNotFound) {
-		t.Fatalf("missing session error = %v", err)
-	}
-	if err := store.DeleteSession(context.Background(), did, first.SessionID); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := store.GetSession(context.Background(), did, first.SessionID); !errors.Is(err, ErrSessionNotFound) {
-		t.Fatalf("deleted session error = %v", err)
+			second := first
+			second.SessionID = "browser-two"
+			second.AccessToken = "other-access-secret"
+			if err := store.SaveSession(context.Background(), first); err != nil {
+				t.Fatal(err)
+			}
+			if err := store.SaveSession(context.Background(), second); err != nil {
+				t.Fatal(err)
+			}
+			if len(db.credentials) != 2 {
+				t.Fatalf("credential rows = %d, want 2", len(db.credentials))
+			}
+			for _, row := range db.credentials {
+				for _, secret := range []string{row.did, first.SessionID, second.SessionID, first.AccessToken, first.RefreshToken, first.DPoPPrivateKeyMultibase} {
+					if secret != row.did && bytes.Contains(row.encrypted, []byte(secret)) {
+						t.Fatalf("encrypted credentials contain %q", secret)
+					}
+				}
+				if !row.createdAt.Equal(now) || !row.updatedAt.Equal(now) {
+					t.Fatalf("credential timestamps = %v, %v", row.createdAt, row.updatedAt)
+				}
+			}
+			loaded, err := store.GetSession(context.Background(), did, first.SessionID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(*loaded, first) {
+				t.Fatalf("loaded session = %#v", loaded)
+			}
+			if _, err := store.GetSession(context.Background(), did, "missing"); !errors.Is(err, ErrSessionNotFound) {
+				t.Fatalf("missing session error = %v", err)
+			}
+			if err := store.DeleteSession(context.Background(), did, first.SessionID); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := store.GetSession(context.Background(), did, first.SessionID); !errors.Is(err, ErrSessionNotFound) {
+				t.Fatalf("deleted session error = %v", err)
+			}
+		})
 	}
 }
 
 func TestPostgresClientAuthStoreUsesFreshNonceAndIdentityAAD(t *testing.T) {
 	t.Parallel()
-	db := newMemoryOAuthDB()
-	store := newTestStore(t, db, &fixedClock{now: time.Now()})
-	did := syntax.DID("did:plc:abcdefghijklmnopqrstuvwx")
-	session := oauth.ClientSessionData{AccountDID: did, SessionID: "browser", Scopes: []string{"atproto"}, AccessToken: "secret"}
-	if err := store.SaveSession(context.Background(), session); err != nil {
-		t.Fatal(err)
-	}
-	hash := sha256.Sum256([]byte(session.SessionID))
-	first := bytes.Clone(db.credentials[credentialRowKey(did.String(), hash[:])].encrypted)
-	if err := store.SaveSession(context.Background(), session); err != nil {
-		t.Fatal(err)
-	}
-	second := db.credentials[credentialRowKey(did.String(), hash[:])].encrypted
-	if bytes.Equal(first, second) {
-		t.Fatal("credential upsert reused nonce/ciphertext")
-	}
-	otherDID := syntax.DID("did:plc:zyxwvutsrqponmlkjihgfedc")
-	db.credentials[credentialRowKey(otherDID.String(), hash[:])] = oauthCredentialRow{encrypted: bytes.Clone(second)}
-	if _, err := store.GetSession(context.Background(), otherDID, session.SessionID); !errors.Is(err, ErrSessionInvalid) {
-		t.Fatalf("AAD identity substitution error = %v", err)
+	testCases := []struct{ name string }{{name: "nonce and identity AAD"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			db := newMemoryOAuthDB()
+			store := newTestStore(t, db, &fixedClock{now: time.Now()})
+			did := syntax.DID("did:plc:abcdefghijklmnopqrstuvwx")
+			session := oauth.ClientSessionData{AccountDID: did, SessionID: "browser", Scopes: []string{"atproto"}, AccessToken: "secret"}
+			if err := store.SaveSession(context.Background(), session); err != nil {
+				t.Fatal(err)
+			}
+			hash := sha256.Sum256([]byte(session.SessionID))
+			first := bytes.Clone(db.credentials[credentialRowKey(did.String(), hash[:])].encrypted)
+			if err := store.SaveSession(context.Background(), session); err != nil {
+				t.Fatal(err)
+			}
+			second := db.credentials[credentialRowKey(did.String(), hash[:])].encrypted
+			if bytes.Equal(first, second) {
+				t.Fatal("credential upsert reused nonce/ciphertext")
+			}
+			otherDID := syntax.DID("did:plc:zyxwvutsrqponmlkjihgfedc")
+			db.credentials[credentialRowKey(otherDID.String(), hash[:])] = oauthCredentialRow{encrypted: bytes.Clone(second)}
+			if _, err := store.GetSession(context.Background(), otherDID, session.SessionID); !errors.Is(err, ErrSessionInvalid) {
+				t.Fatalf("AAD identity substitution error = %v", err)
+			}
+		})
 	}
 }
 
 func TestPostgresClientAuthStoreLoadsLatestSessionUsingHashAAD(t *testing.T) {
 	t.Parallel()
-	now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
-	clock := &fixedClock{now: now}
-	db := newMemoryOAuthDB()
-	store := newTestStore(t, db, clock)
-	did := syntax.DID(canonicalDID)
-	first := oauth.ClientSessionData{AccountDID: did, SessionID: "first-secret-session", AccessToken: "first-token"}
-	second := oauth.ClientSessionData{AccountDID: did, SessionID: "latest-secret-session", AccessToken: "latest-token"}
-	if err := store.SaveSession(context.Background(), first); err != nil {
-		t.Fatal(err)
-	}
-	clock.now = now.Add(time.Second)
-	if err := store.SaveSession(context.Background(), second); err != nil {
-		t.Fatal(err)
-	}
-	loaded, err := store.GetLatestSession(context.Background(), did)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if loaded.SessionID != second.SessionID || loaded.AccessToken != second.AccessToken {
-		t.Fatalf("latest session = %#v", loaded)
-	}
+	testCases := []struct{ name string }{{name: "latest session"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
+			clock := &fixedClock{now: now}
+			db := newMemoryOAuthDB()
+			store := newTestStore(t, db, clock)
+			did := syntax.DID(canonicalDID)
+			first := oauth.ClientSessionData{AccountDID: did, SessionID: "first-secret-session", AccessToken: "first-token"}
+			second := oauth.ClientSessionData{AccountDID: did, SessionID: "latest-secret-session", AccessToken: "latest-token"}
+			if err := store.SaveSession(context.Background(), first); err != nil {
+				t.Fatal(err)
+			}
+			clock.now = now.Add(time.Second)
+			if err := store.SaveSession(context.Background(), second); err != nil {
+				t.Fatal(err)
+			}
+			loaded, err := store.GetLatestSession(context.Background(), did)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if loaded.SessionID != second.SessionID || loaded.AccessToken != second.AccessToken {
+				t.Fatalf("latest session = %#v", loaded)
+			}
 
-	hash := sha256.Sum256([]byte(second.SessionID))
-	row := db.credentials[credentialRowKey(did.String(), hash[:])]
-	nonce := row.encrypted[:store.credentialAEAD.NonceSize()]
-	ciphertext := row.encrypted[store.credentialAEAD.NonceSize():]
-	if _, err := store.credentialAEAD.Open(nil, nonce, ciphertext, sessionAAD(did.String(), []byte(second.SessionID))); err == nil {
-		t.Fatal("credential envelope authenticated with raw session ID AAD")
-	}
-	row.hash[0] ^= 0xff
-	db.credentials[credentialRowKey(did.String(), hash[:])] = row
-	if _, err := store.GetLatestSession(context.Background(), did); !errors.Is(err, ErrSessionInvalid) {
-		t.Fatalf("tampered latest hash error = %v", err)
+			hash := sha256.Sum256([]byte(second.SessionID))
+			row := db.credentials[credentialRowKey(did.String(), hash[:])]
+			nonce := row.encrypted[:store.credentialAEAD.NonceSize()]
+			ciphertext := row.encrypted[store.credentialAEAD.NonceSize():]
+			if _, err := store.credentialAEAD.Open(nil, nonce, ciphertext, sessionAAD(did.String(), []byte(second.SessionID))); err == nil {
+				t.Fatal("credential envelope authenticated with raw session ID AAD")
+			}
+			row.hash[0] ^= 0xff
+			db.credentials[credentialRowKey(did.String(), hash[:])] = row
+			if _, err := store.GetLatestSession(context.Background(), did); !errors.Is(err, ErrSessionInvalid) {
+				t.Fatalf("tampered latest hash error = %v", err)
+			}
+		})
 	}
 }

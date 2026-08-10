@@ -19,6 +19,8 @@ It combines a Go API and Git server, PostgreSQL projections, AT Protocol federat
 
 Requirements:
 
+- Go 1.24.3 or the version declared by `go.mod`
+- Bun 1.3.13
 - Docker with Docker Compose
 - Make
 - Git
@@ -29,7 +31,7 @@ Start the development stack:
 make dev
 ```
 
-`make dev` creates an ignored `.env.local` with development credentials when needed. The complete container setup is in [`dev/docker-compose.yml`](dev/docker-compose.yml); container startup prepares the database roles, module cache, repository directory, and persistent SSH host key.
+Docker is used to run the local service stack and E2E environments, not for normal tests, linting, or generation. `make dev` creates an ignored `.env.local` with development credentials when needed. The complete container setup is in [`dev/docker-compose.yml`](dev/docker-compose.yml); container startup prepares the database roles, module cache, repository directory, and persistent SSH host key.
 
 Run it in the background with `make dev-detached`, inspect it with `make logs`, and stop it with `make down`.
 
@@ -49,9 +51,9 @@ Your `.env.local` is the source of truth when ports are overridden. Electric is 
 ## Development Commands
 
 ```sh
-make test            # Go tests in the Dockerized project toolchain
-make lint            # Go formatting, vet, and panic-policy checks
-make generate        # sqlc, OpenAPI, and TypeScript client generation
+make test            # Native Go and frontend tests
+make lint            # Native Go checks and frontend type checking
+make generate        # Native pinned sqlc, OpenAPI, and client generation
 make e2e             # local stack acceptance
 make e2e-federation  # isolated two-instance federation acceptance
 make doctor          # health-check a running development stack

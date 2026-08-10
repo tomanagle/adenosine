@@ -97,27 +97,32 @@ func profileClient(t *testing.T, api *fakeProfileAPI, store *profileSessionStore
 
 func TestProfileGetReturnsStrictCanonicalRecordAndVerifiedHandle(t *testing.T) {
 	t.Parallel()
-	value := json.RawMessage(`{"$type":"dev.adenosine.profile","displayName":"Alice","bio":"Builds things","website":"https://alice.test","location":"Earth","createdAt":"2026-08-09T12:00:00Z"}`)
-	api := &fakeProfileAPI{getOutput: getRecordOutput{
-		CID: stringPointer(profileCID), URI: "at://" + canonicalDID + "/dev.adenosine.profile/self", Value: &value,
-	}}
-	client, _ := profileClient(t, api, &profileSessionStore{})
-	result, err := client.Get(context.Background(), canonicalDID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.DID != canonicalDID || result.Handle != "alice.test" || result.DisplayName != "Alice" || result.CID != profileCID {
-		t.Fatalf("profile = %#v", result)
-	}
-	wantParams := map[string]any{"collection": profileCollection, "repo": canonicalDID, "rkey": profileRKey}
-	if !reflect.DeepEqual(api.getParams, wantParams) {
-		t.Fatalf("get params = %#v", api.getParams)
+	testCases := []struct{ name string }{{name: "canonical record"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			value := json.RawMessage(`{"$type":"dev.adenosine.profile","displayName":"Alice","bio":"Builds things","website":"https://alice.test","location":"Earth","createdAt":"2026-08-09T12:00:00Z"}`)
+			api := &fakeProfileAPI{getOutput: getRecordOutput{
+				CID: stringPointer(profileCID), URI: "at://" + canonicalDID + "/dev.adenosine.profile/self", Value: &value,
+			}}
+			client, _ := profileClient(t, api, &profileSessionStore{})
+			result, err := client.Get(context.Background(), canonicalDID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result.DID != canonicalDID || result.Handle != "alice.test" || result.DisplayName != "Alice" || result.CID != profileCID {
+				t.Fatalf("profile = %#v", result)
+			}
+			wantParams := map[string]any{"collection": profileCollection, "repo": canonicalDID, "rkey": profileRKey}
+			if !reflect.DeepEqual(api.getParams, wantParams) {
+				t.Fatalf("get params = %#v", api.getParams)
+			}
+		})
 	}
 }
 
 func TestProfileGetRejectsInvalidProviderEnvelopeAndUnknownRecordFields(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
+	testCases := []struct {
 		name  string
 		uri   string
 		cid   string
@@ -128,10 +133,10 @@ func TestProfileGetRejectsInvalidProviderEnvelopeAndUnknownRecordFields(t *testi
 		{name: "createdAt", uri: "at://" + canonicalDID + "/dev.adenosine.profile/self", cid: profileCID, value: `{"$type":"dev.adenosine.profile","createdAt":"2026-08-09T12:00:00+00:00"}`},
 		{name: "unknown", uri: "at://" + canonicalDID + "/dev.adenosine.profile/self", cid: profileCID, value: `{"$type":"dev.adenosine.profile","createdAt":"2026-08-09T12:00:00Z","token":"secret"}`},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			value := json.RawMessage(test.value)
-			api := &fakeProfileAPI{getOutput: getRecordOutput{CID: &test.cid, URI: test.uri, Value: &value}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			value := json.RawMessage(testCase.value)
+			api := &fakeProfileAPI{getOutput: getRecordOutput{CID: &testCase.cid, URI: testCase.uri, Value: &value}}
 			client, _ := profileClient(t, api, &profileSessionStore{})
 			_, err := client.Get(context.Background(), canonicalDID)
 			if !errors.Is(err, profile.ErrProvider) || strings.Contains(err.Error(), "secret") {
@@ -143,102 +148,136 @@ func TestProfileGetRejectsInvalidProviderEnvelopeAndUnknownRecordFields(t *testi
 
 func TestProfileGetMapsNotFoundWithoutProviderDetails(t *testing.T) {
 	t.Parallel()
-	api := &fakeProfileAPI{getErr: &atclient.APIError{StatusCode: http.StatusBadRequest, Name: "RecordNotFound", Message: "token-secret"}}
-	client, _ := profileClient(t, api, &profileSessionStore{})
-	_, err := client.Get(context.Background(), canonicalDID)
-	if !errors.Is(err, profile.ErrNotFound) || strings.Contains(err.Error(), "token-secret") {
-		t.Fatalf("error = %v", err)
+	testCases := []struct{ name string }{{name: "record not found"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			api := &fakeProfileAPI{getErr: &atclient.APIError{StatusCode: http.StatusBadRequest, Name: "RecordNotFound", Message: "token-secret"}}
+			client, _ := profileClient(t, api, &profileSessionStore{})
+			_, err := client.Get(context.Background(), canonicalDID)
+			if !errors.Is(err, profile.ErrNotFound) || strings.Contains(err.Error(), "token-secret") {
+				t.Fatalf("error = %v", err)
+			}
+		})
 	}
 }
 
 func TestProfilePutUsesSelfRecordAndExplicitlyPersistsRotations(t *testing.T) {
 	t.Parallel()
-	store := &profileSessionStore{}
-	api := &fakeProfileAPI{}
-	client, session := profileClient(t, api, store)
-	api.post = func() { session.Data.DPoPHostNonce = "rotated-nonce" }
-	createdAt := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
-	result, err := client.Put(context.Background(), canonicalDID, profile.Record{DisplayName: "Alice", CreatedAt: createdAt})
-	if err != nil {
-		t.Fatal(err)
-	}
-	input, ok := api.postInput.(putRecordInput)
-	if !ok || input.Repo != canonicalDID || input.Collection != profileCollection || input.RKey != profileRKey || input.Record["$type"] != profileCollection {
-		t.Fatalf("put input = %#v", api.postInput)
-	}
-	if store.saveCall != 1 || store.saved.DPoPHostNonce != "rotated-nonce" {
-		t.Fatalf("saved session = %#v, calls = %d", store.saved, store.saveCall)
-	}
-	if result.URI != "at://"+canonicalDID+"/dev.adenosine.profile/self" || result.Handle != "alice.test" {
-		t.Fatalf("profile = %#v", result)
+	testCases := []struct{ name string }{{name: "successful put"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &profileSessionStore{}
+			api := &fakeProfileAPI{}
+			client, session := profileClient(t, api, store)
+			api.post = func() { session.Data.DPoPHostNonce = "rotated-nonce" }
+			createdAt := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
+			result, err := client.Put(context.Background(), canonicalDID, profile.Record{DisplayName: "Alice", CreatedAt: createdAt})
+			if err != nil {
+				t.Fatal(err)
+			}
+			input, ok := api.postInput.(putRecordInput)
+			if !ok || input.Repo != canonicalDID || input.Collection != profileCollection || input.RKey != profileRKey || input.Record["$type"] != profileCollection {
+				t.Fatalf("put input = %#v", api.postInput)
+			}
+			if store.saveCall != 1 || store.saved.DPoPHostNonce != "rotated-nonce" {
+				t.Fatalf("saved session = %#v, calls = %d", store.saved, store.saveCall)
+			}
+			if result.URI != "at://"+canonicalDID+"/dev.adenosine.profile/self" || result.Handle != "alice.test" {
+				t.Fatalf("profile = %#v", result)
+			}
+		})
 	}
 }
 
 func TestProfilePutSurfacesPersistenceFailureAndRejectsSessionHostMismatch(t *testing.T) {
 	t.Parallel()
-	store := &profileSessionStore{saveErr: errors.New("database token-secret")}
-	api := &fakeProfileAPI{}
-	client, _ := profileClient(t, api, store)
-	_, err := client.Put(context.Background(), canonicalDID, profile.Record{CreatedAt: time.Now()})
-	if !errors.Is(err, profile.ErrProvider) || strings.Contains(err.Error(), "token-secret") || store.saveCall != 1 {
-		t.Fatalf("persistence error = %v, calls = %d", err, store.saveCall)
+	testCases := []struct {
+		name               string
+		saveErr            error
+		hostURL            string
+		persistenceFailure bool
+	}{
+		{name: "persistence failure", saveErr: errors.New("database token-secret"), persistenceFailure: true},
+		{name: "session host mismatch", hostURL: "https://attacker.example"},
 	}
-
-	client, session := profileClient(t, api, &profileSessionStore{})
-	session.Data.HostURL = "https://attacker.example"
-	api.postInput = nil
-	_, err = client.Put(context.Background(), canonicalDID, profile.Record{CreatedAt: time.Now()})
-	if !errors.Is(err, profile.ErrProvider) || api.postInput != nil {
-		t.Fatalf("host mismatch error/input = %v, %#v", err, api.postInput)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &profileSessionStore{saveErr: testCase.saveErr}
+			api := &fakeProfileAPI{}
+			client, session := profileClient(t, api, store)
+			if testCase.hostURL != "" {
+				session.Data.HostURL = testCase.hostURL
+			}
+			_, err := client.Put(context.Background(), canonicalDID, profile.Record{CreatedAt: time.Now()})
+			if testCase.persistenceFailure {
+				if !errors.Is(err, profile.ErrProvider) || strings.Contains(err.Error(), "token-secret") || store.saveCall != 1 {
+					t.Fatalf("persistence error = %v, calls = %d", err, store.saveCall)
+				}
+				return
+			}
+			if !errors.Is(err, profile.ErrProvider) || api.postInput != nil {
+				t.Fatalf("host mismatch error/input = %v, %#v", err, api.postInput)
+			}
+		})
 	}
 }
 
 func TestProfilePutPersistsRotationsAfterProviderFailure(t *testing.T) {
 	t.Parallel()
-	store := &profileSessionStore{}
-	api := &fakeProfileAPI{postErr: &atclient.APIError{StatusCode: http.StatusServiceUnavailable, Message: "token-secret"}}
-	client, session := profileClient(t, api, store)
-	api.post = func() { session.Data.DPoPHostNonce = "failure-rotation" }
-	_, err := client.Put(context.Background(), canonicalDID, profile.Record{CreatedAt: time.Now()})
-	if !errors.Is(err, profile.ErrProvider) || strings.Contains(err.Error(), "token-secret") {
-		t.Fatalf("provider error = %v", err)
-	}
-	if store.saveCall != 1 || store.saved.DPoPHostNonce != "failure-rotation" {
-		t.Fatalf("saved session = %#v, calls = %d", store.saved, store.saveCall)
+	testCases := []struct{ name string }{{name: "provider failure"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &profileSessionStore{}
+			api := &fakeProfileAPI{postErr: &atclient.APIError{StatusCode: http.StatusServiceUnavailable, Message: "token-secret"}}
+			client, session := profileClient(t, api, store)
+			api.post = func() { session.Data.DPoPHostNonce = "failure-rotation" }
+			_, err := client.Put(context.Background(), canonicalDID, profile.Record{CreatedAt: time.Now()})
+			if !errors.Is(err, profile.ErrProvider) || strings.Contains(err.Error(), "token-secret") {
+				t.Fatalf("provider error = %v", err)
+			}
+			if store.saveCall != 1 || store.saved.DPoPHostNonce != "failure-rotation" {
+				t.Fatalf("saved session = %#v, calls = %d", store.saved, store.saveCall)
+			}
+		})
 	}
 }
 
 func TestProfilePutSerializesSameDIDOperations(t *testing.T) {
-	store := &profileSessionStore{}
-	api := &fakeProfileAPI{}
-	client, _ := profileClient(t, api, store)
-	client.resume = func(context.Context, syntax.DID, string) (*oauth.ClientSession, error) {
-		data := store.latest
-		return &oauth.ClientSession{Data: &data}, nil
-	}
-	var active atomic.Int32
-	var maximum atomic.Int32
-	api.post = func() {
-		current := active.Add(1)
-		if current > maximum.Load() {
-			maximum.Store(current)
-		}
-		time.Sleep(20 * time.Millisecond)
-		active.Add(-1)
-	}
-	var wait sync.WaitGroup
-	for range 4 {
-		wait.Add(1)
-		go func() {
-			defer wait.Done()
-			if _, err := client.Put(context.Background(), canonicalDID, profile.Record{CreatedAt: time.Now()}); err != nil {
-				t.Errorf("put: %v", err)
+	testCases := []struct{ name string }{{name: "same DID"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &profileSessionStore{}
+			api := &fakeProfileAPI{}
+			client, _ := profileClient(t, api, store)
+			client.resume = func(context.Context, syntax.DID, string) (*oauth.ClientSession, error) {
+				data := store.latest
+				return &oauth.ClientSession{Data: &data}, nil
 			}
-		}()
-	}
-	wait.Wait()
-	if maximum.Load() != 1 {
-		t.Fatalf("maximum concurrent same-DID operations = %d", maximum.Load())
+			var active atomic.Int32
+			var maximum atomic.Int32
+			api.post = func() {
+				current := active.Add(1)
+				if current > maximum.Load() {
+					maximum.Store(current)
+				}
+				time.Sleep(20 * time.Millisecond)
+				active.Add(-1)
+			}
+			var wait sync.WaitGroup
+			for range 4 {
+				wait.Add(1)
+				go func() {
+					defer wait.Done()
+					if _, err := client.Put(context.Background(), canonicalDID, profile.Record{CreatedAt: time.Now()}); err != nil {
+						t.Errorf("put: %v", err)
+					}
+				}()
+			}
+			wait.Wait()
+			if maximum.Load() != 1 {
+				t.Fatalf("maximum concurrent same-DID operations = %d", maximum.Load())
+			}
+		})
 	}
 }
 

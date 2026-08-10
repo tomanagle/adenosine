@@ -4820,18 +4820,15 @@ Publish a repo on A and verify B indexes/displays it.
 
 ---
 
-# 55. Local development — Docker first, one command
+# 55. Local development — Dockerized services, native tooling
 
 The local developer experience has one hard requirement:
 
-> **A contributor with Make + Docker + Docker Compose can get the complete Adenosine development environment running with `make dev`.**
+> **A contributor with Make + Docker + Docker Compose can run the complete Adenosine service stack with `make dev`; contributors use native Go and Bun for tests, linting, and generation.**
 
-They should not need host-installed:
+Running the application locally should not require host-installed:
 
 ```text
-Go
-Node
-pnpm
 Postgres
 Git server tooling
 Electric
@@ -4839,11 +4836,9 @@ Tap
 OpenTelemetry Collector
 Grafana
 Pulumi
-sqlc
-OpenAPI generators
 ```
 
-Those tools run inside versioned containers.
+Those runtime services run inside versioned containers. Contributors install the Go version declared by `go.mod` and the pinned Bun version for fast native code-quality commands. Generator versions remain pinned; sqlc is downloaded to a checksum-verified local tool cache and the OpenAPI generator is invoked through `go run`, so global installs are not required.
 
 The host still needs a normal Git client to exercise the product as an end user.
 
@@ -4866,7 +4861,7 @@ That is the documented happy path.
 5. starts PostgreSQL;
 6. waits for PostgreSQL readiness;
 7. runs schema migrations;
-8. runs/checks generated OpenAPI/sqlc/Lexicon code;
+8. starts from the committed generated OpenAPI/sqlc/Lexicon code;
 9. starts Electric;
 10. starts Tap/federation development dependencies;
 11. starts the local OpenTelemetry/Grafana development backend;
@@ -4875,7 +4870,7 @@ That is the documented happy path.
 14. waits for readiness;
 15. prints the important local URLs.
 
-No manual `make db`, `make migrate`, `pnpm install`, or `go run` sequence is required before it.
+No manual `make db`, `make migrate`, or service-specific startup sequence is required before it.
 
 ## 55.2 Makefile surface
 
@@ -4900,13 +4895,13 @@ logs:
 	docker compose -f dev/docker-compose.yml logs -f
 
 test:
-	./scripts/docker-task.sh test
+	./scripts/test.sh
 
 lint:
-	./scripts/docker-task.sh lint
+	./scripts/lint.sh
 
 generate:
-	./scripts/docker-task.sh generate
+	./scripts/generate.sh
 
 doctor:
 	./scripts/docker-task.sh doctor
@@ -4989,7 +4984,6 @@ It owns:
 
 ```text
 configuration validation
-code generation
 migration
 development SSH host-key generation
 seed/bootstrap data where enabled
@@ -5009,7 +5003,7 @@ Generated files written through bind mounts must use the host UID/GID where supp
 
 ## 55.5 Development Dockerfiles
 
-Use development targets rather than requiring host toolchains.
+Use development targets for running the service stack, hot reload, and production-like runtime dependencies. Do not install lint or generator tooling into the runtime development image merely to wrap native developer commands in Docker.
 
 Example:
 
@@ -5018,9 +5012,7 @@ dev/Dockerfile
 ├── target: tools
 │   ├── Go
 │   ├── Git
-│   ├── sqlc
-│   ├── OpenAPI generator
-│   └── project tooling
+│   └── runtime/service tooling
 │
 ├── target: dev-go
 │   ├── tools
@@ -5053,7 +5045,7 @@ pnpm_store
 
 Bind mount source code.
 
-This keeps `make dev` fast after the first run without requiring the host to own language-specific caches.
+This keeps the Dockerized service stack fast after the first run. Native Go and Bun commands use their normal host caches.
 
 ## 55.7 Hot reload
 
@@ -5174,7 +5166,7 @@ and rich trace-correlated logs in Grafana.
 
 Generated files are committed, but development should keep them correct.
 
-`make generate` runs everything in Docker:
+`make generate` runs natively with pinned tools:
 
 ```text
 sqlc
@@ -5193,9 +5185,9 @@ make generate
 git diff --exit-code
 ```
 
-No contributor needs generators installed on the host.
+The host needs Go and Bun, but sqlc is cached from a checksum-verified pinned release and the OpenAPI Go generator is invoked at a pinned version through `go run` rather than global installs.
 
-## 55.14 Tests are Dockerized too
+## 55.14 Tests and linting are native
 
 A contributor can run:
 
@@ -5205,9 +5197,9 @@ make lint
 make e2e
 ```
 
-with the same Docker toolchain used in CI.
+`make test` and `make lint` use the host Go and Bun toolchains for fast feedback. `make e2e` uses Docker because it exercises the assembled service topology. CI pins the same Go and Bun versions.
 
-This prevents:
+Pinned versions and generated-diff checks prevent:
 
 ```text
 "works with my local Go version"
@@ -7717,7 +7709,7 @@ When deciding whether something belongs in Git, ATProto, or Adenosine's local da
 If starting the repository today, implement exactly this sequence:
 
 ```text
-1. Docker-first development stack + `make dev`
+1. Dockerized local service stack + native developer tooling + `make dev`
 2. Local OTel/LGTM backend + one traced health/API request
 3. Go server + config + Postgres + DI composition root
 4. SQL migrations + sqlc for identity/repository core schema
@@ -7913,7 +7905,7 @@ Add the base Go module, Makefile, Dockerfile, Compose files, README, contributin
 
 **Acceptance:** `make dev` can validate the Docker environment and start the initial development stack.
 
-### Step 2 — Make local development Docker-first
+### Step 2 — Dockerize the local service stack
 
 Implement the canonical:
 
@@ -8004,7 +7996,7 @@ access tokens
 outbox
 ```
 
-Generate all code with `make generate` inside Docker.
+Generate all code natively with `make generate` using pinned Go/Bun tooling.
 
 **Acceptance:** domain services do not issue raw SQL directly and no ORM is required.
 

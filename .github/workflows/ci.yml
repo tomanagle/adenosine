@@ -17,12 +17,12 @@ jobs:
         with:
           go-version: "1.24.3"
           cache: true
-      - run: go test ./...
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.13"
+      - run: bun install --frozen-lockfile
+      - run: make test
       - run: go test -race ./...
-      - run: go vet ./...
+      - run: make lint
       - name: Verify generated code
         run: make generate && git diff --exit-code
-      - name: Check formatting
-        run: test -z "$(gofmt -l .)"
-      - name: Enforce panic policy
-        run: test -z "$(find . -name '*.go' -exec grep -HnF 'panic(' {} + | grep -Ev '^./internal/(config/config|di/providers|database/migration/migration)\.go:' || true)"

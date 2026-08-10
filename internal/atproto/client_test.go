@@ -100,7 +100,7 @@ func parsedDID(t *testing.T) syntax.DID {
 
 func TestBuildConfiguresLocalhostAndPublicMetadata(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
+	testCases := []struct {
 		name     string
 		baseURL  string
 		clientID string
@@ -119,14 +119,14 @@ func TestBuildConfiguresLocalhostAndPublicMetadata(t *testing.T) {
 			callback: "https://git.example/app/oauth/atproto/callback",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			client, err := build(test.baseURL, nil, nil, nil, nil, buildOptions{flow: &fakeOAuthFlow{}, directory: fakeDirectory{}})
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			client, err := build(testCase.baseURL, nil, nil, nil, nil, buildOptions{flow: &fakeOAuthFlow{}, directory: fakeDirectory{}})
 			if err != nil {
 				t.Fatalf("build: %v", err)
 			}
 			metadata := client.ClientMetadata()
-			if metadata.ClientID != test.clientID || len(metadata.RedirectURIs) != 1 || metadata.RedirectURIs[0] != test.callback {
+			if metadata.ClientID != testCase.clientID || len(metadata.RedirectURIs) != 1 || metadata.RedirectURIs[0] != testCase.callback {
 				t.Fatalf("metadata = %#v", metadata)
 			}
 			if metadata.Scope != "atproto" || strings.Contains(metadata.Scope, "transition") || !metadata.DPoPBoundAccessTokens {
@@ -138,124 +138,171 @@ func TestBuildConfiguresLocalhostAndPublicMetadata(t *testing.T) {
 
 func TestBuildRejectsUnsafeBaseURLs(t *testing.T) {
 	t.Parallel()
-	for _, baseURL := range []string{
-		"", " http://localhost", "http://localhost:3000", "http://example.com",
-		"https://user:password@example.com", "https://example.com?secret=value", "https://example.com/#fragment",
-	} {
-		if _, err := build(baseURL, nil, nil, nil, nil, buildOptions{flow: &fakeOAuthFlow{}, directory: fakeDirectory{}}); err == nil {
-			t.Fatalf("unsafe base URL accepted: %q", baseURL)
-		}
+	testCases := []struct {
+		name    string
+		baseURL string
+	}{
+		{name: "empty"},
+		{name: "leading whitespace", baseURL: " http://localhost"},
+		{name: "localhost hostname", baseURL: "http://localhost:3000"},
+		{name: "public HTTP", baseURL: "http://example.com"},
+		{name: "userinfo", baseURL: "https://user:password@example.com"},
+		{name: "query", baseURL: "https://example.com?secret=value"},
+		{name: "fragment", baseURL: "https://example.com/#fragment"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if _, err := build(testCase.baseURL, nil, nil, nil, nil, buildOptions{flow: &fakeOAuthFlow{}, directory: fakeDirectory{}}); err == nil {
+				t.Fatalf("unsafe base URL accepted: %q", testCase.baseURL)
+			}
+		})
 	}
 }
 
 func TestStartValidatesIdentifierBeforeNetwork(t *testing.T) {
 	t.Parallel()
-	for _, identifier := range []string{
-		"", "https://bsky.social", "bsky.social:443", "127.0.0.1", "server", "localhost",
-		"handle.invalid", "alice.localhost", "alice.example", " alice.test", "alice.test\n",
-		strings.Repeat("a", 2049),
-	} {
-		flow := &fakeOAuthFlow{}
-		client := &Client{flow: flow}
-		_, err := client.Start(context.Background(), identifier)
-		if !errors.Is(err, ErrInvalidIdentifier) {
-			t.Fatalf("identifier %q error = %v", identifier, err)
-		}
-		if flow.starts != 0 {
-			t.Fatalf("identifier %q reached provider", identifier)
-		}
+	testCases := []struct {
+		name       string
+		identifier string
+		valid      bool
+	}{
+		{name: "empty"},
+		{name: "URL", identifier: "https://bsky.social"},
+		{name: "host and port", identifier: "bsky.social:443"},
+		{name: "IP address", identifier: "127.0.0.1"},
+		{name: "single label", identifier: "server"},
+		{name: "localhost", identifier: "localhost"},
+		{name: "invalid TLD", identifier: "handle.invalid"},
+		{name: "localhost subdomain", identifier: "alice.localhost"},
+		{name: "example TLD", identifier: "alice.example"},
+		{name: "leading whitespace", identifier: " alice.test"},
+		{name: "trailing newline", identifier: "alice.test\n"},
+		{name: "too long", identifier: strings.Repeat("a", 2049)},
+		{name: "valid handle and DID", identifier: "Alice.Test", valid: true},
 	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if testCase.valid {
+				flow := &fakeOAuthFlow{start: "https://auth.example/authorize"}
+				client := &Client{flow: flow}
+				redirect, err := client.Start(context.Background(), testCase.identifier)
+				if err != nil {
+					t.Fatalf("start handle: %v", err)
+				}
+				if redirect != flow.start || flow.input != "alice.test" {
+					t.Fatalf("redirect/input = %q, %q", redirect, flow.input)
+				}
+				if _, err := client.Start(context.Background(), canonicalDID); err != nil {
+					t.Fatalf("start DID: %v", err)
+				}
+				return
+			}
 
-	flow := &fakeOAuthFlow{start: "https://auth.example/authorize"}
-	client := &Client{flow: flow}
-	redirect, err := client.Start(context.Background(), "Alice.Test")
-	if err != nil {
-		t.Fatalf("start handle: %v", err)
-	}
-	if redirect != flow.start || flow.input != "alice.test" {
-		t.Fatalf("redirect/input = %q, %q", redirect, flow.input)
-	}
-	if _, err := client.Start(context.Background(), canonicalDID); err != nil {
-		t.Fatalf("start DID: %v", err)
+			flow := &fakeOAuthFlow{}
+			client := &Client{flow: flow}
+			_, err := client.Start(context.Background(), testCase.identifier)
+			if !errors.Is(err, ErrInvalidIdentifier) {
+				t.Fatalf("identifier %q error = %v", testCase.identifier, err)
+			}
+			if flow.starts != 0 {
+				t.Fatalf("identifier %q reached provider", testCase.identifier)
+			}
+		})
 	}
 }
 
 func TestStartWrapsProviderFailureWithoutSecretDetails(t *testing.T) {
 	t.Parallel()
-	flow := &fakeOAuthFlow{startErr: errors.New("provider included secret-code")}
-	_, err := (&Client{flow: flow}).Start(context.Background(), "alice.test")
-	if !errors.Is(err, ErrProviderFailure) {
-		t.Fatalf("error = %v", err)
-	}
-	var typed *ProviderError
-	if !errors.As(err, &typed) {
-		t.Fatalf("error type = %T", err)
-	}
-	if strings.Contains(err.Error(), "secret-code") {
-		t.Fatalf("provider secret rendered in error: %v", err)
+	testCases := []struct{ name string }{{name: "provider failure"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			flow := &fakeOAuthFlow{startErr: errors.New("provider included secret-code")}
+			_, err := (&Client{flow: flow}).Start(context.Background(), "alice.test")
+			if !errors.Is(err, ErrProviderFailure) {
+				t.Fatalf("error = %v", err)
+			}
+			var typed *ProviderError
+			if !errors.As(err, &typed) {
+				t.Fatalf("error type = %T", err)
+			}
+			if strings.Contains(err.Error(), "secret-code") {
+				t.Fatalf("provider secret rendered in error: %v", err)
+			}
+		})
 	}
 }
 
 func TestStartFailsWhenIndigoIgnoresStatePersistenceError(t *testing.T) {
 	t.Parallel()
-	flow := &fakeOAuthFlow{start: "https://provider.example/authorize", persistErr: errors.New("database included secret-state")}
-	client := &Client{flow: flow, observeStateSaves: true}
-	redirectURL, err := client.Start(context.Background(), "alice.test")
-	if redirectURL != "" || !errors.Is(err, ErrProviderFailure) {
-		t.Fatalf("redirect/error = %q, %v", redirectURL, err)
-	}
-	if strings.Contains(err.Error(), "secret-state") {
-		t.Fatalf("state persistence details rendered in error: %v", err)
+	testCases := []struct{ name string }{{name: "persistence failure"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			flow := &fakeOAuthFlow{start: "https://provider.example/authorize", persistErr: errors.New("database included secret-state")}
+			client := &Client{flow: flow, observeStateSaves: true}
+			redirectURL, err := client.Start(context.Background(), "alice.test")
+			if redirectURL != "" || !errors.Is(err, ErrProviderFailure) {
+				t.Fatalf("redirect/error = %q, %v", redirectURL, err)
+			}
+			if strings.Contains(err.Error(), "secret-state") {
+				t.Fatalf("state persistence details rendered in error: %v", err)
+			}
+		})
 	}
 }
 
 func TestCompleteRequiresAtprotoScopeAndDropsCredentials(t *testing.T) {
 	t.Parallel()
-	did := parsedDID(t)
-	session := &oauth.ClientSessionData{
-		AccountDID:              did,
-		SessionID:               "browser-session",
-		Scopes:                  []string{"repo:read"},
-		AccessToken:             "access-secret",
-		RefreshToken:            "refresh-secret",
-		DPoPPrivateKeyMultibase: "private-secret",
-	}
-	client := &Client{
-		flow:      &fakeOAuthFlow{session: session},
-		directory: fakeDirectory{identity: &indigoidentity.Identity{DID: did, Handle: syntax.Handle("alice.test")}},
-	}
-	_, _, err := client.Complete(context.Background(), nil)
-	if !errors.Is(err, ErrCallbackFailure) {
-		t.Fatalf("scope error = %v", err)
-	}
-	if !reflectZeroSession(*session) {
-		t.Fatalf("OAuth session credentials retained: %#v", session)
+	testCases := []struct{ name string }{{name: "missing atproto scope"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			did := parsedDID(t)
+			session := &oauth.ClientSessionData{
+				AccountDID:              did,
+				SessionID:               "browser-session",
+				Scopes:                  []string{"repo:read"},
+				AccessToken:             "access-secret",
+				RefreshToken:            "refresh-secret",
+				DPoPPrivateKeyMultibase: "private-secret",
+			}
+			client := &Client{
+				flow:      &fakeOAuthFlow{session: session},
+				directory: fakeDirectory{identity: &indigoidentity.Identity{DID: did, Handle: syntax.Handle("alice.test")}},
+			}
+			_, _, err := client.Complete(context.Background(), nil)
+			if !errors.Is(err, ErrCallbackFailure) {
+				t.Fatalf("scope error = %v", err)
+			}
+			if !reflectZeroSession(*session) {
+				t.Fatalf("OAuth session credentials retained: %#v", session)
+			}
+		})
 	}
 }
 
 func TestCompleteReturnsCanonicalDIDAndCurrentlyVerifiedHandle(t *testing.T) {
 	t.Parallel()
 	did := parsedDID(t)
-	for _, test := range []struct {
+	testCases := []struct {
 		name   string
 		handle syntax.Handle
 		want   string
 	}{
 		{name: "verified", handle: syntax.Handle("Alice.Test"), want: "alice.test"},
 		{name: "invalid omitted", handle: syntax.HandleInvalid, want: ""},
-	} {
-		t.Run(test.name, func(t *testing.T) {
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
 			session := &oauth.ClientSessionData{AccountDID: did, SessionID: "browser-session", Scopes: []string{"atproto"}, AccessToken: "secret"}
 			client := &Client{
 				flow:      &fakeOAuthFlow{session: session},
-				directory: fakeDirectory{identity: &indigoidentity.Identity{DID: did, Handle: test.handle}},
+				directory: fakeDirectory{identity: &indigoidentity.Identity{DID: did, Handle: testCase.handle}},
 			}
 			callbackValues := url.Values{"code": {"callback-secret"}, "state": {"state-secret"}}
 			result, grant, err := client.Complete(context.Background(), callbackValues)
 			if err != nil {
 				t.Fatalf("complete: %v", err)
 			}
-			if result.DID != canonicalDID || result.Handle != test.want {
+			if result.DID != canonicalDID || result.Handle != testCase.want {
 				t.Fatalf("identity = %#v", result)
 			}
 			if grant == nil {
@@ -276,38 +323,43 @@ func TestCompleteReturnsCanonicalDIDAndCurrentlyVerifiedHandle(t *testing.T) {
 
 func TestCompleteCredentialGrantPersistsOnceAndDeletesOnDownstreamFailure(t *testing.T) {
 	t.Parallel()
-	did := parsedDID(t)
-	session := &oauth.ClientSessionData{
-		AccountDID: did, SessionID: "browser-session", Scopes: []string{"atproto"},
-		AccessToken: "access-secret", RefreshToken: "refresh-secret", DPoPPrivateKeyMultibase: "private-secret",
-	}
-	store := &fakeResumableSessionStore{}
-	client := &Client{
-		flow:         &fakeOAuthFlow{session: session},
-		directory:    fakeDirectory{identity: &indigoidentity.Identity{DID: did, Handle: syntax.Handle("alice.test")}},
-		sessionStore: store,
-	}
-	_, grant, err := client.Complete(context.Background(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflectZeroSession(*session) {
-		t.Fatalf("callback session retained: %#v", session)
-	}
-	if err := grant.Persist(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	if store.saveCalls != 1 || store.saved.AccessToken != "access-secret" || store.saved.SessionID != "browser-session" {
-		t.Fatalf("saved credentials = %#v, calls %d", store.saved, store.saveCalls)
-	}
-	if err := grant.Persist(context.Background()); err == nil {
-		t.Fatal("credential grant persisted twice")
-	}
-	if err := grant.Discard(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-	if store.deleteCalls != 1 {
-		t.Fatalf("credential deletes = %d, want 1", store.deleteCalls)
+	testCases := []struct{ name string }{{name: "persist once then discard"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			did := parsedDID(t)
+			session := &oauth.ClientSessionData{
+				AccountDID: did, SessionID: "browser-session", Scopes: []string{"atproto"},
+				AccessToken: "access-secret", RefreshToken: "refresh-secret", DPoPPrivateKeyMultibase: "private-secret",
+			}
+			store := &fakeResumableSessionStore{}
+			client := &Client{
+				flow:         &fakeOAuthFlow{session: session},
+				directory:    fakeDirectory{identity: &indigoidentity.Identity{DID: did, Handle: syntax.Handle("alice.test")}},
+				sessionStore: store,
+			}
+			_, grant, err := client.Complete(context.Background(), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflectZeroSession(*session) {
+				t.Fatalf("callback session retained: %#v", session)
+			}
+			if err := grant.Persist(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			if store.saveCalls != 1 || store.saved.AccessToken != "access-secret" || store.saved.SessionID != "browser-session" {
+				t.Fatalf("saved credentials = %#v, calls %d", store.saved, store.saveCalls)
+			}
+			if err := grant.Persist(context.Background()); err == nil {
+				t.Fatal("credential grant persisted twice")
+			}
+			if err := grant.Discard(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			if store.deleteCalls != 1 {
+				t.Fatalf("credential deletes = %d, want 1", store.deleteCalls)
+			}
+		})
 	}
 }
 
@@ -317,49 +369,68 @@ func reflectZeroSession(session oauth.ClientSessionData) bool {
 
 func TestPublicIPPolicy(t *testing.T) {
 	t.Parallel()
-	for _, test := range []struct {
+	testCases := []struct {
+		name    string
 		address string
 		public  bool
 	}{
-		{address: "8.8.8.8", public: true},
-		{address: "2606:4700:4700::1111", public: true},
-		{address: "127.0.0.1"}, {address: "10.0.0.1"}, {address: "172.16.0.1"},
-		{address: "192.168.0.1"}, {address: "169.254.1.1"}, {address: "0.0.0.0"},
-		{address: "224.0.0.1"}, {address: "::1"}, {address: "fc00::1"}, {address: "fe80::1"}, {address: "ff02::1"},
-	} {
-		address := netip.MustParseAddr(test.address)
-		if got := isPublicIP(address); got != test.public {
-			t.Fatalf("isPublicIP(%s) = %v", address, got)
-		}
+		{name: "public IPv4", address: "8.8.8.8", public: true},
+		{name: "public IPv6", address: "2606:4700:4700::1111", public: true},
+		{name: "loopback IPv4", address: "127.0.0.1"}, {name: "private 10", address: "10.0.0.1"}, {name: "private 172", address: "172.16.0.1"},
+		{name: "private 192", address: "192.168.0.1"}, {name: "link-local IPv4", address: "169.254.1.1"}, {name: "unspecified IPv4", address: "0.0.0.0"},
+		{name: "multicast IPv4", address: "224.0.0.1"}, {name: "loopback IPv6", address: "::1"}, {name: "private IPv6", address: "fc00::1"}, {name: "link-local IPv6", address: "fe80::1"}, {name: "multicast IPv6", address: "ff02::1"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			address := netip.MustParseAddr(testCase.address)
+			if got := isPublicIP(address); got != testCase.public {
+				t.Fatalf("isPublicIP(%s) = %v", address, got)
+			}
+		})
 	}
 }
 
 func TestPublicDialRejectsPrivateOrMixedDNSAnswers(t *testing.T) {
 	t.Parallel()
-	for _, addresses := range [][]netip.Addr{
-		{netip.MustParseAddr("127.0.0.1")},
-		{netip.MustParseAddr("8.8.8.8"), netip.MustParseAddr("10.0.0.1")},
-	} {
-		dial := publicDialContext(&net.Dialer{}, func(context.Context, string) ([]netip.Addr, error) { return addresses, nil })
-		if _, err := dial(context.Background(), "tcp", "provider.example:443"); !errors.Is(err, errorsNoPublicAddress) {
-			t.Fatalf("addresses %v error = %v", addresses, err)
-		}
+	testCases := []struct {
+		name      string
+		addresses []netip.Addr
+	}{
+		{name: "private", addresses: []netip.Addr{netip.MustParseAddr("127.0.0.1")}},
+		{name: "mixed", addresses: []netip.Addr{netip.MustParseAddr("8.8.8.8"), netip.MustParseAddr("10.0.0.1")}},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			dial := publicDialContext(&net.Dialer{}, func(context.Context, string) ([]netip.Addr, error) { return testCase.addresses, nil })
+			if _, err := dial(context.Background(), "tcp", "provider.example:443"); !errors.Is(err, errorsNoPublicAddress) {
+				t.Fatalf("addresses %v error = %v", testCase.addresses, err)
+			}
+		})
 	}
 }
 
 func TestPublicHTTPClientRejectsUnsafeRedirects(t *testing.T) {
 	t.Parallel()
-	client := newPublicHTTPClient(func(context.Context, string) ([]netip.Addr, error) {
-		return []netip.Addr{netip.MustParseAddr("8.8.8.8")}, nil
-	})
-	for _, rawURL := range []string{"http://provider.example/callback", "https://user:secret@provider.example/callback"} {
-		requestURL, err := url.Parse(rawURL)
-		if err != nil {
-			t.Fatal(err)
-		}
-		request := &http.Request{URL: requestURL}
-		if err := client.CheckRedirect(request, nil); !errors.Is(err, errorsUnsafeRedirect) {
-			t.Fatalf("redirect %q error = %v", rawURL, err)
-		}
+	testCases := []struct {
+		name   string
+		rawURL string
+	}{
+		{name: "HTTP", rawURL: "http://provider.example/callback"},
+		{name: "userinfo", rawURL: "https://user:secret@provider.example/callback"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			client := newPublicHTTPClient(func(context.Context, string) ([]netip.Addr, error) {
+				return []netip.Addr{netip.MustParseAddr("8.8.8.8")}, nil
+			})
+			requestURL, err := url.Parse(testCase.rawURL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			request := &http.Request{URL: requestURL}
+			if err := client.CheckRedirect(request, nil); !errors.Is(err, errorsUnsafeRedirect) {
+				t.Fatalf("redirect %q error = %v", testCase.rawURL, err)
+			}
+		})
 	}
 }

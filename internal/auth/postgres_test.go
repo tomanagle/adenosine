@@ -52,82 +52,110 @@ func (row stubRow) Scan(destinations ...any) error {
 
 func TestPostgresStoreUpsertLoginNormalizesIdentityAndLoginTimes(t *testing.T) {
 	t.Parallel()
-	now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.FixedZone("test", 3600))
-	store := NewPostgresStore(dbgen.New(stubAuthDB{queryRow: func(query string, args ...any) pgx.Row {
-		if !strings.Contains(query, "ON CONFLICT (did) DO UPDATE") {
-			t.Fatalf("unexpected upsert query: %s", query)
-		}
-		if len(args) != 6 || args[0] != "did:plc:alice" {
-			t.Fatalf("upsert arguments = %#v", args)
-		}
-		handle, ok := args[1].(pgtype.Text)
-		if !ok || !handle.Valid || handle.String != "alice.example" {
-			t.Fatalf("handle argument = %#v", args[1])
-		}
-		for _, index := range []int{2, 3, 4, 5} {
-			at, ok := args[index].(pgtype.Timestamptz)
-			if !ok || !at.Valid || !at.Time.Equal(now.UTC()) || at.Time.Location() != time.UTC {
-				t.Fatalf("time argument %d = %#v", index, args[index])
-			}
-		}
-		return accountRow("did:plc:alice", handle)
-	}}))
-
-	account, err := store.UpsertLogin(context.Background(), " did:plc:alice ", " alice.example ", now)
-	if err != nil {
-		t.Fatalf("upsert login: %v", err)
+	testCases := []struct {
+		name string
+	}{
+		{name: "success"},
 	}
-	if account.DID != "did:plc:alice" || account.Handle == nil || *account.Handle != "alice.example" {
-		t.Fatalf("account = %#v", account)
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.FixedZone("test", 3600))
+			store := NewPostgresStore(dbgen.New(stubAuthDB{queryRow: func(query string, args ...any) pgx.Row {
+				if !strings.Contains(query, "ON CONFLICT (did) DO UPDATE") {
+					t.Fatalf("unexpected upsert query: %s", query)
+				}
+				if len(args) != 6 || args[0] != "did:plc:alice" {
+					t.Fatalf("upsert arguments = %#v", args)
+				}
+				handle, ok := args[1].(pgtype.Text)
+				if !ok || !handle.Valid || handle.String != "alice.example" {
+					t.Fatalf("handle argument = %#v", args[1])
+				}
+				for _, index := range []int{2, 3, 4, 5} {
+					at, ok := args[index].(pgtype.Timestamptz)
+					if !ok || !at.Valid || !at.Time.Equal(now.UTC()) || at.Time.Location() != time.UTC {
+						t.Fatalf("time argument %d = %#v", index, args[index])
+					}
+				}
+				return accountRow("did:plc:alice", handle)
+			}}))
+
+			account, err := store.UpsertLogin(context.Background(), " did:plc:alice ", " alice.example ", now)
+			if err != nil {
+				t.Fatalf("upsert login: %v", err)
+			}
+			if account.DID != "did:plc:alice" || account.Handle == nil || *account.Handle != "alice.example" {
+				t.Fatalf("account = %#v", account)
+			}
+		})
 	}
 }
 
 func TestPostgresStoreGetAccountHandlesOptionalIdentityAndMissingRows(t *testing.T) {
 	t.Parallel()
-	t.Run("optional handle", func(t *testing.T) {
-		store := NewPostgresStore(dbgen.New(stubAuthDB{queryRow: func(_ string, args ...any) pgx.Row {
-			if len(args) != 1 || args[0] != "did:plc:alice" {
-				t.Fatalf("get account arguments = %#v", args)
+	testCases := []struct {
+		name string
+		run  func(*testing.T)
+	}{
+		{name: "optional handle", run: func(t *testing.T) {
+			store := NewPostgresStore(dbgen.New(stubAuthDB{queryRow: func(_ string, args ...any) pgx.Row {
+				if len(args) != 1 || args[0] != "did:plc:alice" {
+					t.Fatalf("get account arguments = %#v", args)
+				}
+				return accountRow("did:plc:alice", pgtype.Text{})
+			}}))
+			account, err := store.GetAccount(context.Background(), " did:plc:alice ")
+			if err != nil {
+				t.Fatalf("get account: %v", err)
 			}
-			return accountRow("did:plc:alice", pgtype.Text{})
-		}}))
-		account, err := store.GetAccount(context.Background(), " did:plc:alice ")
-		if err != nil {
-			t.Fatalf("get account: %v", err)
-		}
-		if account.DID != "did:plc:alice" || account.Handle != nil {
-			t.Fatalf("account = %#v", account)
-		}
-	})
+			if account.DID != "did:plc:alice" || account.Handle != nil {
+				t.Fatalf("account = %#v", account)
+			}
+		}},
+		{name: "missing", run: func(t *testing.T) {
+			store := NewPostgresStore(dbgen.New(stubAuthDB{queryRow: func(string, ...any) pgx.Row {
+				return stubRow{err: pgx.ErrNoRows}
+			}}))
+			_, err := store.GetAccount(context.Background(), "did:plc:missing")
+			if !errors.Is(err, ErrNotFound) {
+				t.Fatalf("error = %v, want ErrNotFound", err)
+			}
+		}},
+	}
 
-	t.Run("missing", func(t *testing.T) {
-		store := NewPostgresStore(dbgen.New(stubAuthDB{queryRow: func(string, ...any) pgx.Row {
-			return stubRow{err: pgx.ErrNoRows}
-		}}))
-		_, err := store.GetAccount(context.Background(), "did:plc:missing")
-		if !errors.Is(err, ErrNotFound) {
-			t.Fatalf("error = %v, want ErrNotFound", err)
-		}
-	})
+	for _, testCase := range testCases {
+		t.Run(testCase.name, testCase.run)
+	}
 }
 
 func TestPostgresStoreRevokeSessionScopesOwnershipAndMapsNoRows(t *testing.T) {
 	t.Parallel()
-	id := uuid.New()
-	now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
-	store := NewPostgresStore(dbgen.New(stubAuthDB{queryRow: func(query string, args ...any) pgx.Row {
-		if !strings.Contains(query, "account_did = $3") || !strings.Contains(query, "revoked_at IS NULL") || !strings.Contains(query, "expires_at > $1") {
-			t.Fatalf("revocation is not ownership-safe: %s", query)
-		}
-		if len(args) != 3 || args[0] != authPGTime(now) || args[1] != authPGUUID(id) || args[2] != "did:plc:alice" {
-			t.Fatalf("revoke arguments = %#v", args)
-		}
-		return stubRow{err: pgx.ErrNoRows}
-	}}))
+	testCases := []struct {
+		name string
+	}{
+		{name: "missing owned session"},
+	}
 
-	err := store.RevokeSession(context.Background(), "did:plc:alice", id, now)
-	if !errors.Is(err, ErrNotFound) {
-		t.Fatalf("error = %v, want ErrNotFound", err)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			id := uuid.New()
+			now := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
+			store := NewPostgresStore(dbgen.New(stubAuthDB{queryRow: func(query string, args ...any) pgx.Row {
+				if !strings.Contains(query, "account_did = $3") || !strings.Contains(query, "revoked_at IS NULL") || !strings.Contains(query, "expires_at > $1") {
+					t.Fatalf("revocation is not ownership-safe: %s", query)
+				}
+				if len(args) != 3 || args[0] != authPGTime(now) || args[1] != authPGUUID(id) || args[2] != "did:plc:alice" {
+					t.Fatalf("revoke arguments = %#v", args)
+				}
+				return stubRow{err: pgx.ErrNoRows}
+			}}))
+
+			err := store.RevokeSession(context.Background(), "did:plc:alice", id, now)
+			if !errors.Is(err, ErrNotFound) {
+				t.Fatalf("error = %v, want ErrNotFound", err)
+			}
+		})
 	}
 }
 

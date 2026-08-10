@@ -6,7 +6,7 @@ cd "$root"
 
 task="${1:-}"
 if [[ -z "$task" ]]; then
-  echo "usage: $0 <test|lint|generate|e2e|e2e-federation>" >&2
+  echo "usage: $0 <e2e|e2e-federation>" >&2
   exit 2
 fi
 
@@ -17,15 +17,6 @@ if [[ "$task" != "e2e-federation" ]]; then
 fi
 
 case "$task" in
-  test)
-    "${compose[@]}" run --rm --no-deps adenosine go test ./...
-    ;;
-  lint)
-    "${compose[@]}" run --rm --no-deps adenosine ./scripts/lint.sh
-    ;;
-  generate)
-    "${compose[@]}" run --rm --no-deps adenosine ./scripts/generate.sh
-    ;;
   e2e)
     "${compose[@]}" up --build --detach --wait postgres otel-lgtm adenosine electric web gateway
     public_url="$(grep '^ADENOSINE_BASE_URL=' .env.local | cut -d= -f2-)"

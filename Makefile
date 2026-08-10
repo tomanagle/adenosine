@@ -18,13 +18,13 @@ logs:
 	$(COMPOSE) logs -f
 
 test:
-	./scripts/docker-task.sh test
+	./scripts/test.sh
 
 lint:
-	./scripts/docker-task.sh lint
+	./scripts/lint.sh
 
 generate:
-	./scripts/docker-task.sh generate
+	./scripts/generate.sh
 
 doctor:
 	./scripts/doctor.sh
