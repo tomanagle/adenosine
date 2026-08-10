@@ -17,7 +17,7 @@
     { "name": "Pull Requests" },
     { "name": "Comments" },
     { "name": "Moderation" },
-    { "name": "Sync", "description": "Optional Electric shape streams. These endpoints use Electric's shape-log protocol rather than the nested REST resource format." }
+    { "name": "Sync", "description": "Optional Electric shape streams over eventually consistent public network projections. Anonymous requests and PATs receive the public shape. A valid adenosine_session cookie applies that account's blocked-DID and hidden-record policy to the server-owned base shape; an invalid presented session is rejected rather than downgraded. Moderated responses are private and must not be shared. Continue with Electric's handle and offset headers, restarting from offset=-1 after moderation preferences change or a must-refetch control message. REST remains the complete read fallback and canonical write API when Electric is unavailable. Clients compose activity from these documented projections; network.records and moderation tables are never exposed." }
   ],
   "paths": {
     "/health/live": {
@@ -538,7 +538,7 @@
         "operationId": "getSyncRepositories",
         "tags": ["Sync"],
         "summary": "Synchronize the public repository projection",
-        "description": "Proxies an Electric 1.7.10 shape fixed to approved columns from network.repositories. Adenosine always applies deleted_at IS NULL AND cid IS NOT NULL. The response is an Electric shape log: regular requests return an array of operation/control messages, not REST Repository objects. Insert values correspond to SyncRepository; update and delete values may contain only changed or key columns according to Electric replica semantics.",
+        "description": "Proxies an Electric 1.7.10 shape fixed to approved columns from network.repositories. Adenosine always applies deleted_at IS NULL AND cid IS NOT NULL plus optional server-owned browser-session moderation. The response is an Electric shape log: regular requests return an array of operation/control messages, not REST Repository objects. Insert values correspond to SyncRepository; update and delete values may contain only changed or key columns according to Electric replica semantics.",
         "security": [],
         "parameters": [
           { "$ref": "#/components/parameters/ElectricOffset" },
@@ -555,6 +555,7 @@
           "200": { "$ref": "#/components/responses/ElectricShape" },
           "304": { "description": "The cached shape response is still current" },
           "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
           "409": { "$ref": "#/components/responses/ElectricShapeConflict" },
           "429": { "description": "Electric is temporarily busy", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
           "502": { "description": "Electric is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
@@ -579,12 +580,88 @@
         "responses": {
           "200": { "$ref": "#/components/responses/ElectricShape" },
           "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
           "409": { "$ref": "#/components/responses/ElectricShapeConflict" },
           "413": { "description": "The subset request body exceeds 16 KiB", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
           "429": { "description": "Electric is temporarily busy", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
           "502": { "description": "Electric is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
           "503": { "description": "Realtime sync is not configured", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
+      }
+    },
+    "/api/v1/sync/profiles": {
+      "get": {
+        "operationId": "getSyncProfiles", "tags": ["Sync"], "summary": "Synchronize public profiles", "security": [],
+        "description": "Electric shape fixed by the server to approved public network.profiles columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncProfile; activity is derived by clients from the documented projections, not from network.records.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "The cached shape response is still current" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+      },
+      "post": {
+        "operationId": "postSyncProfiles", "tags": ["Sync"], "summary": "Synchronize or narrow public profiles", "security": [],
+        "description": "The optional Electric subset body can only narrow the server-owned SyncProfile shape.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } },
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+      }
+    },
+    "/api/v1/sync/stars": {
+      "get": {
+        "operationId": "getSyncStars", "tags": ["Sync"], "summary": "Synchronize public stars", "security": [], "description": "Electric shape fixed by the server to approved public network.stars columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncStar.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+      },
+      "post": {
+        "operationId": "postSyncStars", "tags": ["Sync"], "summary": "Synchronize or narrow public stars", "security": [], "description": "The optional Electric subset body can only narrow the server-owned SyncStar shape.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+      }
+    },
+    "/api/v1/sync/issues": {
+      "get": {
+        "operationId": "getSyncIssues", "tags": ["Sync"], "summary": "Synchronize public issues", "security": [], "description": "Electric shape fixed by the server to approved public network.issues columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncIssue. Issue comments are separate author-owned records available from /api/v1/sync/issue-comments.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+      },
+      "post": {
+        "operationId": "postSyncIssues", "tags": ["Sync"], "summary": "Synchronize or narrow public issues", "security": [], "description": "The optional Electric subset body can only narrow the server-owned SyncIssue shape.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+      }
+    },
+    "/api/v1/sync/issue-comments": {
+      "get": {
+        "operationId": "getSyncIssueComments", "tags": ["Sync"], "summary": "Synchronize public issue comments", "security": [], "description": "Electric shape fixed by the server to approved public network.issue_comments columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncIssueComment. These are discussion records on issues; pull-request reviews are distinct verdict-bearing records.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+      },
+      "post": {
+        "operationId": "postSyncIssueComments", "tags": ["Sync"], "summary": "Synchronize or narrow public issue comments", "security": [], "description": "The optional Electric subset body can only narrow the server-owned SyncIssueComment shape.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+      }
+    },
+    "/api/v1/sync/pull-requests": {
+      "get": {
+        "operationId": "getSyncPullRequests", "tags": ["Sync"], "summary": "Synchronize public pull requests", "security": [], "description": "Electric shape fixed by the server to approved public network.pull_requests columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncPullRequest.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+      },
+      "post": {
+        "operationId": "postSyncPullRequests", "tags": ["Sync"], "summary": "Synchronize or narrow public pull requests", "security": [], "description": "The optional Electric subset body can only narrow the server-owned SyncPullRequest shape.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+      }
+    },
+    "/api/v1/sync/pull-request-reviews": {
+      "get": {
+        "operationId": "getSyncPullRequestReviews", "tags": ["Sync"], "summary": "Synchronize public pull-request reviews", "security": [], "description": "Electric shape fixed by the server to approved public network.pull_request_reviews columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncPullRequestReview. Reviews carry pull-request verdicts and are not issue comments.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+      },
+      "post": {
+        "operationId": "postSyncPullRequestReviews", "tags": ["Sync"], "summary": "Synchronize or narrow public pull-request reviews", "security": [], "description": "The optional Electric subset body can only narrow the server-owned SyncPullRequestReview shape.",
+        "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
       }
     },
     "/api/v1/repositories/{owner}/{repo}": {
@@ -900,7 +977,7 @@
       "Conflict": { "description": "The request conflicts with existing state", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
       "UnprocessableEntity": { "description": "The request is structurally valid but semantically invalid", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
       "ElectricShape": {
-        "description": "Electric shape-log or subset-snapshot response. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved.",
+        "description": "Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.",
         "headers": {
           "electric-handle": { "schema": { "type": "string" } },
           "electric-offset": { "schema": { "type": "string" } },
@@ -1162,7 +1239,7 @@
         "type": "object",
         "additionalProperties": false,
         "description": "Flat approved network.repositories projection materialized from Electric insert rows. This is intentionally distinct from the nested REST Repository model.",
-        "required": ["uri", "cid", "owner_did", "star_count", "issue_count", "open_issue_count", "pull_request_count", "open_pull_request_count", "indexed_at"],
+        "required": ["uri", "cid", "owner_did", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "indexed_at"],
         "properties": {
           "uri": { "type": "string" },
           "cid": { "type": "string" },
@@ -1180,14 +1257,49 @@
           "star_count": { "type": "integer", "format": "int64", "minimum": 0 },
           "issue_count": { "type": "integer", "format": "int64", "minimum": 0 },
           "open_issue_count": { "type": "integer", "format": "int64", "minimum": 0 },
+          "comment_count": { "type": "integer", "format": "int64", "minimum": 0 },
           "pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 },
           "open_pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 }
         }
       },
+      "SyncProfile": {
+        "type": "object", "additionalProperties": false, "description": "Flat approved network.profiles projection.",
+        "required": ["did", "repository_count", "contribution_count", "indexed_at"],
+        "properties": {
+          "did": { "type": "string" }, "profile_uri": { "type": "string", "nullable": true }, "profile_cid": { "type": "string", "nullable": true }, "handle": { "type": "string", "nullable": true },
+          "display_name": { "type": "string", "nullable": true }, "bio": { "type": "string", "nullable": true }, "avatar_ref": { "type": "string", "nullable": true }, "website": { "type": "string", "nullable": true }, "location": { "type": "string", "nullable": true },
+          "repository_count": { "type": "integer", "format": "int64", "minimum": 0 }, "contribution_count": { "type": "integer", "format": "int64", "minimum": 0 }, "record_created_at": { "type": "string", "format": "date-time", "nullable": true }, "indexed_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SyncStar": {
+        "type": "object", "additionalProperties": false, "description": "Flat approved network.stars projection.",
+        "required": ["uri", "cid", "author_did", "repository_uri", "repository_cid", "record_created_at", "indexed_at"],
+        "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "repository_uri": { "type": "string" }, "repository_cid": { "type": "string" }, "record_created_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time" } }
+      },
+      "SyncIssue": {
+        "type": "object", "additionalProperties": false, "description": "Flat approved network.issues projection including repository-authoritative resolved state.",
+        "required": ["uri", "cid", "author_did", "repository_uri", "repository_cid", "title", "body", "state", "comment_count", "record_created_at", "record_updated_at", "indexed_at"],
+        "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "repository_uri": { "type": "string" }, "repository_cid": { "type": "string" }, "title": { "type": "string" }, "body": { "type": "string" }, "state": { "type": "string", "enum": ["open", "closed"] }, "status_uri": { "type": "string", "nullable": true }, "status_cid": { "type": "string", "nullable": true }, "status_updated_at": { "type": "string", "format": "date-time", "nullable": true }, "comment_count": { "type": "integer", "format": "int64", "minimum": 0 }, "record_created_at": { "type": "string", "format": "date-time" }, "record_updated_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time" } }
+      },
+      "SyncIssueComment": {
+        "type": "object", "additionalProperties": false, "description": "Flat approved author-owned network.issue_comments projection. Issue comments are distinct from pull-request reviews.",
+        "required": ["uri", "cid", "author_did", "issue_uri", "issue_cid", "body", "record_created_at", "record_updated_at", "indexed_at"],
+        "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "issue_uri": { "type": "string" }, "issue_cid": { "type": "string" }, "parent_uri": { "type": "string", "nullable": true }, "parent_cid": { "type": "string", "nullable": true }, "body": { "type": "string" }, "record_created_at": { "type": "string", "format": "date-time" }, "record_updated_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time" } }
+      },
+      "SyncPullRequest": {
+        "type": "object", "additionalProperties": false, "description": "Flat approved network.pull_requests projection including target-authoritative resolved state.",
+        "required": ["uri", "cid", "author_did", "source_repository_uri", "source_repository_cid", "source_branch", "target_repository_uri", "target_repository_cid", "target_branch", "head_sha", "title", "body", "state", "review_count", "record_created_at", "record_updated_at", "indexed_at"],
+        "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "source_repository_uri": { "type": "string" }, "source_repository_cid": { "type": "string" }, "source_branch": { "type": "string" }, "target_repository_uri": { "type": "string" }, "target_repository_cid": { "type": "string" }, "target_branch": { "type": "string" }, "head_sha": { "type": "string" }, "title": { "type": "string" }, "body": { "type": "string" }, "state": { "type": "string", "enum": ["open", "closed", "merged"] }, "status_uri": { "type": "string", "nullable": true }, "status_cid": { "type": "string", "nullable": true }, "status_updated_at": { "type": "string", "format": "date-time", "nullable": true }, "merged_commit_sha": { "type": "string", "nullable": true }, "review_count": { "type": "integer", "format": "int64", "minimum": 0 }, "record_created_at": { "type": "string", "format": "date-time" }, "record_updated_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time" } }
+      },
+      "SyncPullRequestReview": {
+        "type": "object", "additionalProperties": false, "description": "Flat approved verdict-bearing network.pull_request_reviews projection, distinct from issue comments.",
+        "required": ["uri", "cid", "author_did", "pull_request_uri", "pull_request_cid", "verdict", "body", "record_created_at", "record_updated_at", "indexed_at"],
+        "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "pull_request_uri": { "type": "string" }, "pull_request_cid": { "type": "string" }, "verdict": { "type": "string", "enum": ["comment", "approve", "request_changes"] }, "body": { "type": "string" }, "record_created_at": { "type": "string", "format": "date-time" }, "record_updated_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time" } }
+      },
       "SyncSubsetRequest": {
         "type": "object",
         "additionalProperties": false,
-        "description": "Electric 1.7.10 subset snapshot fields. where and order_by may reference only the approved SyncRepository columns.",
+        "description": "Electric 1.7.10 subset snapshot fields. where and order_by may reference only columns approved for the selected server-owned Sync* projection.",
         "properties": {
           "where": { "type": "string", "minLength": 1, "maxLength": 4096 },
           "params": { "type": "object", "maxProperties": 100, "additionalProperties": { "type": "string", "maxLength": 4096 } },
@@ -1204,9 +1316,23 @@
         "properties": {
           "headers": { "type": "object", "additionalProperties": true },
           "key": { "type": "string" },
-          "value": { "type": "object", "additionalProperties": true },
-          "old_value": { "type": "object", "additionalProperties": true }
+          "value": { "$ref": "#/components/schemas/ElectricShapeValue" },
+          "old_value": { "$ref": "#/components/schemas/ElectricShapeValue" }
         }
+      },
+      "ElectricShapeValue": {
+        "description": "A partial Electric operation value. The generic object branch permits update and delete values with omitted columns; the named Sync* branches document complete insert-row projections.",
+        "x-go-type": "map[string]interface{}",
+        "anyOf": [
+          { "type": "object", "additionalProperties": true },
+          { "$ref": "#/components/schemas/SyncRepository" },
+          { "$ref": "#/components/schemas/SyncProfile" },
+          { "$ref": "#/components/schemas/SyncStar" },
+          { "$ref": "#/components/schemas/SyncIssue" },
+          { "$ref": "#/components/schemas/SyncIssueComment" },
+          { "$ref": "#/components/schemas/SyncPullRequest" },
+          { "$ref": "#/components/schemas/SyncPullRequestReview" }
+        ]
       },
       "ElectricSubsetResponse": {
         "type": "object",

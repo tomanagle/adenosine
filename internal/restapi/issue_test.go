@@ -58,7 +58,7 @@ func TestIssueEndpoints(t *testing.T) {
 	indexedAt := updatedAt.Add(time.Minute)
 	repository := issue.StrongRef{URI: restIssueRepositoryURI, CID: restIssueCID}
 	created := issue.Issue{URI: restIssueURI, CID: restIssueCID, AuthorDID: "did:plc:alice", Record: issue.Record{Repository: repository, Title: "title", Body: "body", CreatedAt: createdAt, UpdatedAt: updatedAt}}
-	projected := issue.ProjectedIssue{Issue: created, State: issue.StateOpen, Status: issue.StrongRef{}, IndexedAt: indexedAt}
+	projected := issue.ProjectedIssue{Issue: created, State: issue.StateOpen, Status: issue.StrongRef{}, CommentCount: 3, IndexedAt: indexedAt}
 	status := issue.Status{URI: "at://did:plc:alice/dev.adenosine.issueStatus/key", CID: restIssueCID, AuthorDID: "did:plc:alice", StatusRecord: issue.StatusRecord{Subject: issue.StrongRef{URI: restIssueURI, CID: restIssueCID}, Repository: repository, State: issue.StateClosed, CreatedAt: createdAt, UpdatedAt: updatedAt}}
 	testCases := []struct {
 		name          string
@@ -123,7 +123,7 @@ func TestIssueEndpoints(t *testing.T) {
 				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.IssueCount != 7 || body.OpenIssueCount != 4 || len(body.Data) != 1 || body.Data[0].Uri != restIssueURI || body.Data[0].Cid != restIssueCID || body.Data[0].AuthorDid != "did:plc:alice" || body.Data[0].RepositoryUri != restIssueRepositoryURI || body.Data[0].RepositoryCid != restIssueCID || body.Data[0].Title != "title" || body.Data[0].Body != "body" || body.Data[0].State != generated.IssueState(issue.StateOpen) || body.Data[0].StatusUri != nil || body.Data[0].StatusCid != nil || body.Data[0].CreatedAt != createdAt || body.Data[0].UpdatedAt != updatedAt || body.Data[0].IndexedAt != indexedAt {
 					t.Fatalf("GET response = %#v, %v", body, err)
 				}
-				if !strings.Contains(response.Body.String(), `"status_uri":null`) || !strings.Contains(response.Body.String(), `"status_cid":null`) || !strings.Contains(response.Body.String(), `"comment_count":0`) {
+				if !strings.Contains(response.Body.String(), `"status_uri":null`) || !strings.Contains(response.Body.String(), `"status_cid":null`) || !strings.Contains(response.Body.String(), `"comment_count":3`) {
 					t.Fatalf("GET response omits nullable status identity: %s", response.Body.String())
 				}
 			}

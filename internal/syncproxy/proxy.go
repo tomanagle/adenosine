@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -18,10 +19,82 @@ import (
 
 const (
 	maxSubsetBody = 16 * 1024
-	table         = "network.repositories"
-	columns       = "uri,cid,owner_did,slug,name,description,default_branch,git_https,git_ssh,web,record_created_at,record_updated_at,indexed_at,star_count,issue_count,open_issue_count,pull_request_count,open_pull_request_count"
-	mainWhere     = "deleted_at IS NULL AND cid IS NOT NULL"
 )
+
+// Shape identifies one server-owned public projection.
+type Shape string
+
+const (
+	Repositories       Shape = "repositories"
+	Profiles           Shape = "profiles"
+	Stars              Shape = "stars"
+	Issues             Shape = "issues"
+	IssueComments      Shape = "issue-comments"
+	PullRequests       Shape = "pull-requests"
+	PullRequestReviews Shape = "pull-request-reviews"
+)
+
+type shapeDefinition struct {
+	table          string
+	columns        string
+	where          string
+	actorColumn    string
+	recordColumn   string
+	recordNullable bool
+}
+
+var shapes = map[Shape]shapeDefinition{
+	Repositories: {
+		table:        "network.repositories",
+		columns:      "uri,cid,owner_did,slug,name,description,default_branch,git_https,git_ssh,web,record_created_at,record_updated_at,indexed_at,star_count,issue_count,open_issue_count,comment_count,pull_request_count,open_pull_request_count",
+		where:        "deleted_at IS NULL AND cid IS NOT NULL",
+		actorColumn:  "owner_did",
+		recordColumn: "uri",
+	},
+	Profiles: {
+		table:          "network.profiles",
+		columns:        "did,profile_uri,profile_cid,handle,display_name,bio,avatar_ref,website,location,repository_count,contribution_count,record_created_at,indexed_at",
+		where:          "deleted_at IS NULL AND profile_cid IS NOT NULL",
+		actorColumn:    "did",
+		recordColumn:   "profile_uri",
+		recordNullable: true,
+	},
+	Stars: {
+		table:        "network.stars",
+		columns:      "uri,cid,author_did,repository_uri,repository_cid,record_created_at,indexed_at",
+		where:        "deleted_at IS NULL AND cid IS NOT NULL",
+		actorColumn:  "author_did",
+		recordColumn: "uri",
+	},
+	Issues: {
+		table:        "network.issues",
+		columns:      "uri,cid,author_did,repository_uri,repository_cid,title,body,state,status_uri,status_cid,status_updated_at,comment_count,record_created_at,record_updated_at,indexed_at",
+		where:        "deleted_at IS NULL AND cid IS NOT NULL",
+		actorColumn:  "author_did",
+		recordColumn: "uri",
+	},
+	IssueComments: {
+		table:        "network.issue_comments",
+		columns:      "uri,cid,author_did,issue_uri,issue_cid,parent_uri,parent_cid,body,record_created_at,record_updated_at,indexed_at",
+		where:        "deleted_at IS NULL AND cid IS NOT NULL",
+		actorColumn:  "author_did",
+		recordColumn: "uri",
+	},
+	PullRequests: {
+		table:        "network.pull_requests",
+		columns:      "uri,cid,author_did,source_repository_uri,source_repository_cid,source_branch,target_repository_uri,target_repository_cid,target_branch,head_sha,title,body,state,status_uri,status_cid,status_updated_at,merged_commit_sha,review_count,record_created_at,record_updated_at,indexed_at",
+		where:        "deleted_at IS NULL AND cid IS NOT NULL",
+		actorColumn:  "author_did",
+		recordColumn: "uri",
+	},
+	PullRequestReviews: {
+		table:        "network.pull_request_reviews",
+		columns:      "uri,cid,author_did,pull_request_uri,pull_request_cid,verdict,body,record_created_at,record_updated_at,indexed_at",
+		where:        "deleted_at IS NULL AND cid IS NOT NULL",
+		actorColumn:  "author_did",
+		recordColumn: "uri",
+	},
+}
 
 var (
 	ErrDisabled     = errors.New("Electric sync is disabled")
@@ -43,6 +116,13 @@ type Proxy struct {
 	shapeURL *url.URL
 	secret   string
 	client   *http.Client
+}
+
+// Policy is account-local moderation selected by the server for a browser session.
+type Policy struct {
+	BrowserSession   bool
+	BlockedDIDs      []string
+	HiddenRecordURIs []string
 }
 
 // Must constructs the optional Electric proxy or panics during startup.
@@ -77,12 +157,16 @@ func build(baseURL, secret string, transport http.RoundTripper) (*Proxy, error) 
 	return &Proxy{shapeURL: parsed, secret: secret, client: &http.Client{Transport: transport}}, nil
 }
 
-// Forward validates a public shape request and streams Electric's response.
-func (proxy *Proxy) Forward(w http.ResponseWriter, r *http.Request) error {
+// Forward validates a public request for a server-selected shape and streams Electric's response.
+func (proxy *Proxy) Forward(w http.ResponseWriter, r *http.Request, shape Shape, policy Policy) error {
 	if proxy.shapeURL == nil {
 		return ErrDisabled
 	}
-	query, err := proxy.upstreamQuery(r.Method, r.URL.Query())
+	definition, ok := shapes[shape]
+	if !ok {
+		return fmt.Errorf("%w: unsupported sync shape", ErrMalformed)
+	}
+	query, err := proxy.upstreamQuery(r.Method, r.URL.Query(), definition, policy)
 	if err != nil {
 		return err
 	}
@@ -121,12 +205,16 @@ func (proxy *Proxy) Forward(w http.ResponseWriter, r *http.Request) error {
 	}
 	copyResponseHeaders(w.Header(), response)
 	w.Header().Set("Vary", mergeVary(w.Header().Get("Vary"), "Cookie", "Authorization"))
+	if policy.BrowserSession {
+		w.Header().Set("Cache-Control", "private, no-store")
+		w.Header().Del("Expires")
+	}
 	w.WriteHeader(response.StatusCode)
 	_, _ = io.Copy(flushingWriter{ResponseWriter: w}, response.Body)
 	return nil
 }
 
-func (proxy *Proxy) upstreamQuery(method string, client url.Values) (url.Values, error) {
+func (proxy *Proxy) upstreamQuery(method string, client url.Values, definition shapeDefinition, policy Policy) (url.Values, error) {
 	allowed := getContinuationParams
 	if method == http.MethodPost {
 		allowed = postContinuationParams
@@ -159,12 +247,41 @@ func (proxy *Proxy) upstreamQuery(method string, client url.Values) (url.Values,
 	if value := query.Get("log"); value != "" && value != "full" && value != "changes_only" {
 		return nil, fmt.Errorf("%w: invalid log value", ErrMalformed)
 	}
-	query.Set("table", table)
-	query.Set("columns", columns)
-	query.Set("queryable_columns", columns)
-	query.Set("where", mainWhere)
+	query.Set("table", definition.table)
+	query.Set("columns", definition.columns)
+	query.Set("queryable_columns", definition.columns)
+	where, params := policyWhere(definition, policy)
+	query.Set("where", where)
+	for key, value := range params {
+		query.Set(key, value)
+	}
 	query.Set("secret", proxy.secret)
 	return query, nil
+}
+
+func policyWhere(definition shapeDefinition, policy Policy) (string, map[string]string) {
+	blocked := append([]string(nil), policy.BlockedDIDs...)
+	hidden := append([]string(nil), policy.HiddenRecordURIs...)
+	sort.Strings(blocked)
+	sort.Strings(hidden)
+	where := definition.where
+	params := make(map[string]string, len(blocked)+len(hidden))
+	index := 1
+	for _, did := range blocked {
+		where += fmt.Sprintf(" AND %s <> $%d", definition.actorColumn, index)
+		params[fmt.Sprintf("params[%d]", index)] = did
+		index++
+	}
+	for _, uri := range hidden {
+		if definition.recordNullable {
+			where += fmt.Sprintf(" AND (%s IS NULL OR %s <> $%d)", definition.recordColumn, definition.recordColumn, index)
+		} else {
+			where += fmt.Sprintf(" AND %s <> $%d", definition.recordColumn, index)
+		}
+		params[fmt.Sprintf("params[%d]", index)] = uri
+		index++
+	}
+	return where, params
 }
 
 type subsetRequest struct {

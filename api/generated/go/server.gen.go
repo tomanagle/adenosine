@@ -475,6 +475,66 @@ func (e StarMutationProjected) Valid() bool {
 	}
 }
 
+// Defines values for SyncIssueState.
+const (
+	SyncIssueStateClosed SyncIssueState = "closed"
+	SyncIssueStateOpen   SyncIssueState = "open"
+)
+
+// Valid indicates whether the value is a known member of the SyncIssueState enum.
+func (e SyncIssueState) Valid() bool {
+	switch e {
+	case SyncIssueStateClosed:
+		return true
+	case SyncIssueStateOpen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SyncPullRequestState.
+const (
+	SyncPullRequestStateClosed SyncPullRequestState = "closed"
+	SyncPullRequestStateMerged SyncPullRequestState = "merged"
+	SyncPullRequestStateOpen   SyncPullRequestState = "open"
+)
+
+// Valid indicates whether the value is a known member of the SyncPullRequestState enum.
+func (e SyncPullRequestState) Valid() bool {
+	switch e {
+	case SyncPullRequestStateClosed:
+		return true
+	case SyncPullRequestStateMerged:
+		return true
+	case SyncPullRequestStateOpen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SyncPullRequestReviewVerdict.
+const (
+	SyncPullRequestReviewVerdictApprove        SyncPullRequestReviewVerdict = "approve"
+	SyncPullRequestReviewVerdictComment        SyncPullRequestReviewVerdict = "comment"
+	SyncPullRequestReviewVerdictRequestChanges SyncPullRequestReviewVerdict = "request_changes"
+)
+
+// Valid indicates whether the value is a known member of the SyncPullRequestReviewVerdict enum.
+func (e SyncPullRequestReviewVerdict) Valid() bool {
+	switch e {
+	case SyncPullRequestReviewVerdictApprove:
+		return true
+	case SyncPullRequestReviewVerdictComment:
+		return true
+	case SyncPullRequestReviewVerdictRequestChanges:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for TreeEntryType.
 const (
 	TreeEntryTypeBlob   TreeEntryType = "blob"
@@ -526,6 +586,366 @@ func (e ElectricReplica) Valid() bool {
 	case ElectricReplicaDefault:
 		return true
 	case ElectricReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncIssueCommentsParamsReplica.
+const (
+	GetSyncIssueCommentsParamsReplicaDefault GetSyncIssueCommentsParamsReplica = "default"
+	GetSyncIssueCommentsParamsReplicaFull    GetSyncIssueCommentsParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncIssueCommentsParamsReplica enum.
+func (e GetSyncIssueCommentsParamsReplica) Valid() bool {
+	switch e {
+	case GetSyncIssueCommentsParamsReplicaDefault:
+		return true
+	case GetSyncIssueCommentsParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncIssueCommentsParamsLog.
+const (
+	GetSyncIssueCommentsParamsLogChangesOnly GetSyncIssueCommentsParamsLog = "changes_only"
+	GetSyncIssueCommentsParamsLogFull        GetSyncIssueCommentsParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncIssueCommentsParamsLog enum.
+func (e GetSyncIssueCommentsParamsLog) Valid() bool {
+	switch e {
+	case GetSyncIssueCommentsParamsLogChangesOnly:
+		return true
+	case GetSyncIssueCommentsParamsLogFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncIssueCommentsParamsReplica.
+const (
+	PostSyncIssueCommentsParamsReplicaDefault PostSyncIssueCommentsParamsReplica = "default"
+	PostSyncIssueCommentsParamsReplicaFull    PostSyncIssueCommentsParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncIssueCommentsParamsReplica enum.
+func (e PostSyncIssueCommentsParamsReplica) Valid() bool {
+	switch e {
+	case PostSyncIssueCommentsParamsReplicaDefault:
+		return true
+	case PostSyncIssueCommentsParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncIssueCommentsParamsLog.
+const (
+	PostSyncIssueCommentsParamsLogChangesOnly PostSyncIssueCommentsParamsLog = "changes_only"
+	PostSyncIssueCommentsParamsLogFull        PostSyncIssueCommentsParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncIssueCommentsParamsLog enum.
+func (e PostSyncIssueCommentsParamsLog) Valid() bool {
+	switch e {
+	case PostSyncIssueCommentsParamsLogChangesOnly:
+		return true
+	case PostSyncIssueCommentsParamsLogFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncIssuesParamsReplica.
+const (
+	GetSyncIssuesParamsReplicaDefault GetSyncIssuesParamsReplica = "default"
+	GetSyncIssuesParamsReplicaFull    GetSyncIssuesParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncIssuesParamsReplica enum.
+func (e GetSyncIssuesParamsReplica) Valid() bool {
+	switch e {
+	case GetSyncIssuesParamsReplicaDefault:
+		return true
+	case GetSyncIssuesParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncIssuesParamsLog.
+const (
+	GetSyncIssuesParamsLogChangesOnly GetSyncIssuesParamsLog = "changes_only"
+	GetSyncIssuesParamsLogFull        GetSyncIssuesParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncIssuesParamsLog enum.
+func (e GetSyncIssuesParamsLog) Valid() bool {
+	switch e {
+	case GetSyncIssuesParamsLogChangesOnly:
+		return true
+	case GetSyncIssuesParamsLogFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncIssuesParamsReplica.
+const (
+	PostSyncIssuesParamsReplicaDefault PostSyncIssuesParamsReplica = "default"
+	PostSyncIssuesParamsReplicaFull    PostSyncIssuesParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncIssuesParamsReplica enum.
+func (e PostSyncIssuesParamsReplica) Valid() bool {
+	switch e {
+	case PostSyncIssuesParamsReplicaDefault:
+		return true
+	case PostSyncIssuesParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncIssuesParamsLog.
+const (
+	PostSyncIssuesParamsLogChangesOnly PostSyncIssuesParamsLog = "changes_only"
+	PostSyncIssuesParamsLogFull        PostSyncIssuesParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncIssuesParamsLog enum.
+func (e PostSyncIssuesParamsLog) Valid() bool {
+	switch e {
+	case PostSyncIssuesParamsLogChangesOnly:
+		return true
+	case PostSyncIssuesParamsLogFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncProfilesParamsReplica.
+const (
+	GetSyncProfilesParamsReplicaDefault GetSyncProfilesParamsReplica = "default"
+	GetSyncProfilesParamsReplicaFull    GetSyncProfilesParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncProfilesParamsReplica enum.
+func (e GetSyncProfilesParamsReplica) Valid() bool {
+	switch e {
+	case GetSyncProfilesParamsReplicaDefault:
+		return true
+	case GetSyncProfilesParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncProfilesParamsLog.
+const (
+	GetSyncProfilesParamsLogChangesOnly GetSyncProfilesParamsLog = "changes_only"
+	GetSyncProfilesParamsLogFull        GetSyncProfilesParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncProfilesParamsLog enum.
+func (e GetSyncProfilesParamsLog) Valid() bool {
+	switch e {
+	case GetSyncProfilesParamsLogChangesOnly:
+		return true
+	case GetSyncProfilesParamsLogFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncProfilesParamsReplica.
+const (
+	PostSyncProfilesParamsReplicaDefault PostSyncProfilesParamsReplica = "default"
+	PostSyncProfilesParamsReplicaFull    PostSyncProfilesParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncProfilesParamsReplica enum.
+func (e PostSyncProfilesParamsReplica) Valid() bool {
+	switch e {
+	case PostSyncProfilesParamsReplicaDefault:
+		return true
+	case PostSyncProfilesParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncProfilesParamsLog.
+const (
+	PostSyncProfilesParamsLogChangesOnly PostSyncProfilesParamsLog = "changes_only"
+	PostSyncProfilesParamsLogFull        PostSyncProfilesParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncProfilesParamsLog enum.
+func (e PostSyncProfilesParamsLog) Valid() bool {
+	switch e {
+	case PostSyncProfilesParamsLogChangesOnly:
+		return true
+	case PostSyncProfilesParamsLogFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncPullRequestReviewsParamsReplica.
+const (
+	GetSyncPullRequestReviewsParamsReplicaDefault GetSyncPullRequestReviewsParamsReplica = "default"
+	GetSyncPullRequestReviewsParamsReplicaFull    GetSyncPullRequestReviewsParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncPullRequestReviewsParamsReplica enum.
+func (e GetSyncPullRequestReviewsParamsReplica) Valid() bool {
+	switch e {
+	case GetSyncPullRequestReviewsParamsReplicaDefault:
+		return true
+	case GetSyncPullRequestReviewsParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncPullRequestReviewsParamsLog.
+const (
+	GetSyncPullRequestReviewsParamsLogChangesOnly GetSyncPullRequestReviewsParamsLog = "changes_only"
+	GetSyncPullRequestReviewsParamsLogFull        GetSyncPullRequestReviewsParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncPullRequestReviewsParamsLog enum.
+func (e GetSyncPullRequestReviewsParamsLog) Valid() bool {
+	switch e {
+	case GetSyncPullRequestReviewsParamsLogChangesOnly:
+		return true
+	case GetSyncPullRequestReviewsParamsLogFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncPullRequestReviewsParamsReplica.
+const (
+	PostSyncPullRequestReviewsParamsReplicaDefault PostSyncPullRequestReviewsParamsReplica = "default"
+	PostSyncPullRequestReviewsParamsReplicaFull    PostSyncPullRequestReviewsParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncPullRequestReviewsParamsReplica enum.
+func (e PostSyncPullRequestReviewsParamsReplica) Valid() bool {
+	switch e {
+	case PostSyncPullRequestReviewsParamsReplicaDefault:
+		return true
+	case PostSyncPullRequestReviewsParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncPullRequestReviewsParamsLog.
+const (
+	PostSyncPullRequestReviewsParamsLogChangesOnly PostSyncPullRequestReviewsParamsLog = "changes_only"
+	PostSyncPullRequestReviewsParamsLogFull        PostSyncPullRequestReviewsParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncPullRequestReviewsParamsLog enum.
+func (e PostSyncPullRequestReviewsParamsLog) Valid() bool {
+	switch e {
+	case PostSyncPullRequestReviewsParamsLogChangesOnly:
+		return true
+	case PostSyncPullRequestReviewsParamsLogFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncPullRequestsParamsReplica.
+const (
+	GetSyncPullRequestsParamsReplicaDefault GetSyncPullRequestsParamsReplica = "default"
+	GetSyncPullRequestsParamsReplicaFull    GetSyncPullRequestsParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncPullRequestsParamsReplica enum.
+func (e GetSyncPullRequestsParamsReplica) Valid() bool {
+	switch e {
+	case GetSyncPullRequestsParamsReplicaDefault:
+		return true
+	case GetSyncPullRequestsParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncPullRequestsParamsLog.
+const (
+	GetSyncPullRequestsParamsLogChangesOnly GetSyncPullRequestsParamsLog = "changes_only"
+	GetSyncPullRequestsParamsLogFull        GetSyncPullRequestsParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncPullRequestsParamsLog enum.
+func (e GetSyncPullRequestsParamsLog) Valid() bool {
+	switch e {
+	case GetSyncPullRequestsParamsLogChangesOnly:
+		return true
+	case GetSyncPullRequestsParamsLogFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncPullRequestsParamsReplica.
+const (
+	PostSyncPullRequestsParamsReplicaDefault PostSyncPullRequestsParamsReplica = "default"
+	PostSyncPullRequestsParamsReplicaFull    PostSyncPullRequestsParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncPullRequestsParamsReplica enum.
+func (e PostSyncPullRequestsParamsReplica) Valid() bool {
+	switch e {
+	case PostSyncPullRequestsParamsReplicaDefault:
+		return true
+	case PostSyncPullRequestsParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncPullRequestsParamsLog.
+const (
+	PostSyncPullRequestsParamsLogChangesOnly PostSyncPullRequestsParamsLog = "changes_only"
+	PostSyncPullRequestsParamsLogFull        PostSyncPullRequestsParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncPullRequestsParamsLog enum.
+func (e PostSyncPullRequestsParamsLog) Valid() bool {
+	switch e {
+	case PostSyncPullRequestsParamsLogChangesOnly:
+		return true
+	case PostSyncPullRequestsParamsLogFull:
 		return true
 	default:
 		return false
@@ -598,6 +1018,78 @@ func (e PostSyncRepositoriesParamsLog) Valid() bool {
 	case PostSyncRepositoriesParamsLogChangesOnly:
 		return true
 	case PostSyncRepositoriesParamsLogFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncStarsParamsReplica.
+const (
+	GetSyncStarsParamsReplicaDefault GetSyncStarsParamsReplica = "default"
+	GetSyncStarsParamsReplicaFull    GetSyncStarsParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncStarsParamsReplica enum.
+func (e GetSyncStarsParamsReplica) Valid() bool {
+	switch e {
+	case GetSyncStarsParamsReplicaDefault:
+		return true
+	case GetSyncStarsParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetSyncStarsParamsLog.
+const (
+	GetSyncStarsParamsLogChangesOnly GetSyncStarsParamsLog = "changes_only"
+	GetSyncStarsParamsLogFull        GetSyncStarsParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the GetSyncStarsParamsLog enum.
+func (e GetSyncStarsParamsLog) Valid() bool {
+	switch e {
+	case GetSyncStarsParamsLogChangesOnly:
+		return true
+	case GetSyncStarsParamsLogFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncStarsParamsReplica.
+const (
+	PostSyncStarsParamsReplicaDefault PostSyncStarsParamsReplica = "default"
+	PostSyncStarsParamsReplicaFull    PostSyncStarsParamsReplica = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncStarsParamsReplica enum.
+func (e PostSyncStarsParamsReplica) Valid() bool {
+	switch e {
+	case PostSyncStarsParamsReplicaDefault:
+		return true
+	case PostSyncStarsParamsReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostSyncStarsParamsLog.
+const (
+	PostSyncStarsParamsLogChangesOnly PostSyncStarsParamsLog = "changes_only"
+	PostSyncStarsParamsLogFull        PostSyncStarsParamsLog = "full"
+)
+
+// Valid indicates whether the value is a known member of the PostSyncStarsParamsLog enum.
+func (e PostSyncStarsParamsLog) Valid() bool {
+	switch e {
+	case PostSyncStarsParamsLogChangesOnly:
+		return true
+	case PostSyncStarsParamsLogFull:
 		return true
 	default:
 		return false
@@ -839,11 +1331,18 @@ type DiffFile struct {
 
 // ElectricShapeMessage Electric protocol message. Operation value and old_value are partial flat row objects; insert values conform to SyncRepository while updates and deletes may omit unchanged columns.
 type ElectricShapeMessage struct {
-	Headers  map[string]interface{}  `json:"headers"`
-	Key      *string                 `json:"key,omitempty"`
-	OldValue *map[string]interface{} `json:"old_value,omitempty"`
-	Value    *map[string]interface{} `json:"value,omitempty"`
+	Headers map[string]interface{} `json:"headers"`
+	Key     *string                `json:"key,omitempty"`
+
+	// OldValue A partial Electric operation value. The generic object branch permits update and delete values with omitted columns; the named Sync* branches document complete insert-row projections.
+	OldValue *ElectricShapeValue `json:"old_value,omitempty"`
+
+	// Value A partial Electric operation value. The generic object branch permits update and delete values with omitted columns; the named Sync* branches document complete insert-row projections.
+	Value *ElectricShapeValue `json:"value,omitempty"`
 }
+
+// ElectricShapeValue A partial Electric operation value. The generic object branch permits update and delete values with omitted columns; the named Sync* branches document complete insert-row projections.
+type ElectricShapeValue = map[string]interface{}
 
 // ElectricSubsetResponse defines model for ElectricSubsetResponse.
 type ElectricSubsetResponse struct {
@@ -1304,7 +1803,140 @@ type StartATProtoLoginResponse struct {
 	AuthorizationUrl string `json:"authorization_url"`
 }
 
-// SyncSubsetRequest Electric 1.7.10 subset snapshot fields. where and order_by may reference only the approved SyncRepository columns.
+// SyncIssue Flat approved network.issues projection including repository-authoritative resolved state.
+type SyncIssue struct {
+	AuthorDid       string         `json:"author_did"`
+	Body            string         `json:"body"`
+	Cid             string         `json:"cid"`
+	CommentCount    int64          `json:"comment_count"`
+	IndexedAt       time.Time      `json:"indexed_at"`
+	RecordCreatedAt time.Time      `json:"record_created_at"`
+	RecordUpdatedAt time.Time      `json:"record_updated_at"`
+	RepositoryCid   string         `json:"repository_cid"`
+	RepositoryUri   string         `json:"repository_uri"`
+	State           SyncIssueState `json:"state"`
+	StatusCid       *string        `json:"status_cid,omitempty"`
+	StatusUpdatedAt *time.Time     `json:"status_updated_at,omitempty"`
+	StatusUri       *string        `json:"status_uri,omitempty"`
+	Title           string         `json:"title"`
+	Uri             string         `json:"uri"`
+}
+
+// SyncIssueState defines model for SyncIssue.State.
+type SyncIssueState string
+
+// SyncIssueComment Flat approved author-owned network.issue_comments projection. Issue comments are distinct from pull-request reviews.
+type SyncIssueComment struct {
+	AuthorDid       string    `json:"author_did"`
+	Body            string    `json:"body"`
+	Cid             string    `json:"cid"`
+	IndexedAt       time.Time `json:"indexed_at"`
+	IssueCid        string    `json:"issue_cid"`
+	IssueUri        string    `json:"issue_uri"`
+	ParentCid       *string   `json:"parent_cid,omitempty"`
+	ParentUri       *string   `json:"parent_uri,omitempty"`
+	RecordCreatedAt time.Time `json:"record_created_at"`
+	RecordUpdatedAt time.Time `json:"record_updated_at"`
+	Uri             string    `json:"uri"`
+}
+
+// SyncProfile Flat approved network.profiles projection.
+type SyncProfile struct {
+	AvatarRef         *string    `json:"avatar_ref,omitempty"`
+	Bio               *string    `json:"bio,omitempty"`
+	ContributionCount int64      `json:"contribution_count"`
+	Did               string     `json:"did"`
+	DisplayName       *string    `json:"display_name,omitempty"`
+	Handle            *string    `json:"handle,omitempty"`
+	IndexedAt         time.Time  `json:"indexed_at"`
+	Location          *string    `json:"location,omitempty"`
+	ProfileCid        *string    `json:"profile_cid,omitempty"`
+	ProfileUri        *string    `json:"profile_uri,omitempty"`
+	RecordCreatedAt   *time.Time `json:"record_created_at,omitempty"`
+	RepositoryCount   int64      `json:"repository_count"`
+	Website           *string    `json:"website,omitempty"`
+}
+
+// SyncPullRequest Flat approved network.pull_requests projection including target-authoritative resolved state.
+type SyncPullRequest struct {
+	AuthorDid           string               `json:"author_did"`
+	Body                string               `json:"body"`
+	Cid                 string               `json:"cid"`
+	HeadSha             string               `json:"head_sha"`
+	IndexedAt           time.Time            `json:"indexed_at"`
+	MergedCommitSha     *string              `json:"merged_commit_sha,omitempty"`
+	RecordCreatedAt     time.Time            `json:"record_created_at"`
+	RecordUpdatedAt     time.Time            `json:"record_updated_at"`
+	ReviewCount         int64                `json:"review_count"`
+	SourceBranch        string               `json:"source_branch"`
+	SourceRepositoryCid string               `json:"source_repository_cid"`
+	SourceRepositoryUri string               `json:"source_repository_uri"`
+	State               SyncPullRequestState `json:"state"`
+	StatusCid           *string              `json:"status_cid,omitempty"`
+	StatusUpdatedAt     *time.Time           `json:"status_updated_at,omitempty"`
+	StatusUri           *string              `json:"status_uri,omitempty"`
+	TargetBranch        string               `json:"target_branch"`
+	TargetRepositoryCid string               `json:"target_repository_cid"`
+	TargetRepositoryUri string               `json:"target_repository_uri"`
+	Title               string               `json:"title"`
+	Uri                 string               `json:"uri"`
+}
+
+// SyncPullRequestState defines model for SyncPullRequest.State.
+type SyncPullRequestState string
+
+// SyncPullRequestReview Flat approved verdict-bearing network.pull_request_reviews projection, distinct from issue comments.
+type SyncPullRequestReview struct {
+	AuthorDid       string                       `json:"author_did"`
+	Body            string                       `json:"body"`
+	Cid             string                       `json:"cid"`
+	IndexedAt       time.Time                    `json:"indexed_at"`
+	PullRequestCid  string                       `json:"pull_request_cid"`
+	PullRequestUri  string                       `json:"pull_request_uri"`
+	RecordCreatedAt time.Time                    `json:"record_created_at"`
+	RecordUpdatedAt time.Time                    `json:"record_updated_at"`
+	Uri             string                       `json:"uri"`
+	Verdict         SyncPullRequestReviewVerdict `json:"verdict"`
+}
+
+// SyncPullRequestReviewVerdict defines model for SyncPullRequestReview.Verdict.
+type SyncPullRequestReviewVerdict string
+
+// SyncRepository Flat approved network.repositories projection materialized from Electric insert rows. This is intentionally distinct from the nested REST Repository model.
+type SyncRepository struct {
+	Cid                  string     `json:"cid"`
+	CommentCount         int64      `json:"comment_count"`
+	DefaultBranch        *string    `json:"default_branch,omitempty"`
+	Description          *string    `json:"description,omitempty"`
+	GitHttps             *string    `json:"git_https,omitempty"`
+	GitSsh               *string    `json:"git_ssh,omitempty"`
+	IndexedAt            time.Time  `json:"indexed_at"`
+	IssueCount           int64      `json:"issue_count"`
+	Name                 *string    `json:"name,omitempty"`
+	OpenIssueCount       int64      `json:"open_issue_count"`
+	OpenPullRequestCount int64      `json:"open_pull_request_count"`
+	OwnerDid             string     `json:"owner_did"`
+	PullRequestCount     int64      `json:"pull_request_count"`
+	RecordCreatedAt      *time.Time `json:"record_created_at,omitempty"`
+	RecordUpdatedAt      *time.Time `json:"record_updated_at,omitempty"`
+	Slug                 *string    `json:"slug,omitempty"`
+	StarCount            int64      `json:"star_count"`
+	Uri                  string     `json:"uri"`
+	Web                  *string    `json:"web,omitempty"`
+}
+
+// SyncStar Flat approved network.stars projection.
+type SyncStar struct {
+	AuthorDid       string    `json:"author_did"`
+	Cid             string    `json:"cid"`
+	IndexedAt       time.Time `json:"indexed_at"`
+	RecordCreatedAt time.Time `json:"record_created_at"`
+	RepositoryCid   string    `json:"repository_cid"`
+	RepositoryUri   string    `json:"repository_uri"`
+	Uri             string    `json:"uri"`
+}
+
+// SyncSubsetRequest Electric 1.7.10 subset snapshot fields. where and order_by may reference only columns approved for the selected server-owned Sync* projection.
 type SyncSubsetRequest struct {
 	Limit   *int               `json:"limit,omitempty"`
 	Offset  *int               `json:"offset,omitempty"`
@@ -1645,6 +2277,311 @@ type PutStarParams struct {
 	Origin *MutationOrigin `json:"Origin,omitempty"`
 }
 
+// GetSyncIssueCommentsParams defines parameters for GetSyncIssueComments.
+type GetSyncIssueCommentsParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// Cursor Electric cache-busting cursor returned by a prior live request.
+	Cursor *ElectricCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+
+	// Live Wait for a long-poll response.
+	Live *ElectricLive `form:"live,omitempty" json:"live,omitempty"`
+
+	// LiveSse Use Electric server-sent events; requires live=true.
+	LiveSse *ElectricLiveSSE                   `form:"live_sse,omitempty" json:"live_sse,omitempty"`
+	Replica *GetSyncIssueCommentsParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log     *GetSyncIssueCommentsParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// GetSyncIssueCommentsParamsReplica defines parameters for GetSyncIssueComments.
+type GetSyncIssueCommentsParamsReplica string
+
+// GetSyncIssueCommentsParamsLog defines parameters for GetSyncIssueComments.
+type GetSyncIssueCommentsParamsLog string
+
+// GetSyncIssueComments200JSONResponseBody0 defines parameters for GetSyncIssueComments.
+type GetSyncIssueComments200JSONResponseBody0 = []ElectricShapeMessage
+
+// PostSyncIssueCommentsParams defines parameters for PostSyncIssueComments.
+type PostSyncIssueCommentsParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle              `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+	Replica       *PostSyncIssueCommentsParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log           *PostSyncIssueCommentsParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// PostSyncIssueCommentsParamsReplica defines parameters for PostSyncIssueComments.
+type PostSyncIssueCommentsParamsReplica string
+
+// PostSyncIssueCommentsParamsLog defines parameters for PostSyncIssueComments.
+type PostSyncIssueCommentsParamsLog string
+
+// PostSyncIssueComments200JSONResponseBody0 defines parameters for PostSyncIssueComments.
+type PostSyncIssueComments200JSONResponseBody0 = []ElectricShapeMessage
+
+// GetSyncIssuesParams defines parameters for GetSyncIssues.
+type GetSyncIssuesParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// Cursor Electric cache-busting cursor returned by a prior live request.
+	Cursor *ElectricCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+
+	// Live Wait for a long-poll response.
+	Live *ElectricLive `form:"live,omitempty" json:"live,omitempty"`
+
+	// LiveSse Use Electric server-sent events; requires live=true.
+	LiveSse *ElectricLiveSSE            `form:"live_sse,omitempty" json:"live_sse,omitempty"`
+	Replica *GetSyncIssuesParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log     *GetSyncIssuesParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// GetSyncIssuesParamsReplica defines parameters for GetSyncIssues.
+type GetSyncIssuesParamsReplica string
+
+// GetSyncIssuesParamsLog defines parameters for GetSyncIssues.
+type GetSyncIssuesParamsLog string
+
+// GetSyncIssues200JSONResponseBody0 defines parameters for GetSyncIssues.
+type GetSyncIssues200JSONResponseBody0 = []ElectricShapeMessage
+
+// PostSyncIssuesParams defines parameters for PostSyncIssues.
+type PostSyncIssuesParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle       `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+	Replica       *PostSyncIssuesParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log           *PostSyncIssuesParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// PostSyncIssuesParamsReplica defines parameters for PostSyncIssues.
+type PostSyncIssuesParamsReplica string
+
+// PostSyncIssuesParamsLog defines parameters for PostSyncIssues.
+type PostSyncIssuesParamsLog string
+
+// PostSyncIssues200JSONResponseBody0 defines parameters for PostSyncIssues.
+type PostSyncIssues200JSONResponseBody0 = []ElectricShapeMessage
+
+// GetSyncProfilesParams defines parameters for GetSyncProfiles.
+type GetSyncProfilesParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// Cursor Electric cache-busting cursor returned by a prior live request.
+	Cursor *ElectricCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+
+	// Live Wait for a long-poll response.
+	Live *ElectricLive `form:"live,omitempty" json:"live,omitempty"`
+
+	// LiveSse Use Electric server-sent events; requires live=true.
+	LiveSse *ElectricLiveSSE              `form:"live_sse,omitempty" json:"live_sse,omitempty"`
+	Replica *GetSyncProfilesParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log     *GetSyncProfilesParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// GetSyncProfilesParamsReplica defines parameters for GetSyncProfiles.
+type GetSyncProfilesParamsReplica string
+
+// GetSyncProfilesParamsLog defines parameters for GetSyncProfiles.
+type GetSyncProfilesParamsLog string
+
+// GetSyncProfiles200JSONResponseBody0 defines parameters for GetSyncProfiles.
+type GetSyncProfiles200JSONResponseBody0 = []ElectricShapeMessage
+
+// PostSyncProfilesParams defines parameters for PostSyncProfiles.
+type PostSyncProfilesParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle         `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+	Replica       *PostSyncProfilesParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log           *PostSyncProfilesParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// PostSyncProfilesParamsReplica defines parameters for PostSyncProfiles.
+type PostSyncProfilesParamsReplica string
+
+// PostSyncProfilesParamsLog defines parameters for PostSyncProfiles.
+type PostSyncProfilesParamsLog string
+
+// PostSyncProfiles200JSONResponseBody0 defines parameters for PostSyncProfiles.
+type PostSyncProfiles200JSONResponseBody0 = []ElectricShapeMessage
+
+// GetSyncPullRequestReviewsParams defines parameters for GetSyncPullRequestReviews.
+type GetSyncPullRequestReviewsParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// Cursor Electric cache-busting cursor returned by a prior live request.
+	Cursor *ElectricCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+
+	// Live Wait for a long-poll response.
+	Live *ElectricLive `form:"live,omitempty" json:"live,omitempty"`
+
+	// LiveSse Use Electric server-sent events; requires live=true.
+	LiveSse *ElectricLiveSSE                        `form:"live_sse,omitempty" json:"live_sse,omitempty"`
+	Replica *GetSyncPullRequestReviewsParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log     *GetSyncPullRequestReviewsParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// GetSyncPullRequestReviewsParamsReplica defines parameters for GetSyncPullRequestReviews.
+type GetSyncPullRequestReviewsParamsReplica string
+
+// GetSyncPullRequestReviewsParamsLog defines parameters for GetSyncPullRequestReviews.
+type GetSyncPullRequestReviewsParamsLog string
+
+// GetSyncPullRequestReviews200JSONResponseBody0 defines parameters for GetSyncPullRequestReviews.
+type GetSyncPullRequestReviews200JSONResponseBody0 = []ElectricShapeMessage
+
+// PostSyncPullRequestReviewsParams defines parameters for PostSyncPullRequestReviews.
+type PostSyncPullRequestReviewsParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle                   `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+	Replica       *PostSyncPullRequestReviewsParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log           *PostSyncPullRequestReviewsParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// PostSyncPullRequestReviewsParamsReplica defines parameters for PostSyncPullRequestReviews.
+type PostSyncPullRequestReviewsParamsReplica string
+
+// PostSyncPullRequestReviewsParamsLog defines parameters for PostSyncPullRequestReviews.
+type PostSyncPullRequestReviewsParamsLog string
+
+// PostSyncPullRequestReviews200JSONResponseBody0 defines parameters for PostSyncPullRequestReviews.
+type PostSyncPullRequestReviews200JSONResponseBody0 = []ElectricShapeMessage
+
+// GetSyncPullRequestsParams defines parameters for GetSyncPullRequests.
+type GetSyncPullRequestsParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// Cursor Electric cache-busting cursor returned by a prior live request.
+	Cursor *ElectricCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+
+	// Live Wait for a long-poll response.
+	Live *ElectricLive `form:"live,omitempty" json:"live,omitempty"`
+
+	// LiveSse Use Electric server-sent events; requires live=true.
+	LiveSse *ElectricLiveSSE                  `form:"live_sse,omitempty" json:"live_sse,omitempty"`
+	Replica *GetSyncPullRequestsParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log     *GetSyncPullRequestsParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// GetSyncPullRequestsParamsReplica defines parameters for GetSyncPullRequests.
+type GetSyncPullRequestsParamsReplica string
+
+// GetSyncPullRequestsParamsLog defines parameters for GetSyncPullRequests.
+type GetSyncPullRequestsParamsLog string
+
+// GetSyncPullRequests200JSONResponseBody0 defines parameters for GetSyncPullRequests.
+type GetSyncPullRequests200JSONResponseBody0 = []ElectricShapeMessage
+
+// PostSyncPullRequestsParams defines parameters for PostSyncPullRequests.
+type PostSyncPullRequestsParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle             `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+	Replica       *PostSyncPullRequestsParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log           *PostSyncPullRequestsParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// PostSyncPullRequestsParamsReplica defines parameters for PostSyncPullRequests.
+type PostSyncPullRequestsParamsReplica string
+
+// PostSyncPullRequestsParamsLog defines parameters for PostSyncPullRequests.
+type PostSyncPullRequestsParamsLog string
+
+// PostSyncPullRequests200JSONResponseBody0 defines parameters for PostSyncPullRequests.
+type PostSyncPullRequests200JSONResponseBody0 = []ElectricShapeMessage
+
 // GetSyncRepositoriesParams defines parameters for GetSyncRepositories.
 type GetSyncRepositoriesParams struct {
 	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
@@ -1706,6 +2643,67 @@ type PostSyncRepositoriesParamsLog string
 // PostSyncRepositories200JSONResponseBody0 defines parameters for PostSyncRepositories.
 type PostSyncRepositories200JSONResponseBody0 = []ElectricShapeMessage
 
+// GetSyncStarsParams defines parameters for GetSyncStars.
+type GetSyncStarsParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// Cursor Electric cache-busting cursor returned by a prior live request.
+	Cursor *ElectricCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+
+	// Live Wait for a long-poll response.
+	Live *ElectricLive `form:"live,omitempty" json:"live,omitempty"`
+
+	// LiveSse Use Electric server-sent events; requires live=true.
+	LiveSse *ElectricLiveSSE           `form:"live_sse,omitempty" json:"live_sse,omitempty"`
+	Replica *GetSyncStarsParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log     *GetSyncStarsParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// GetSyncStarsParamsReplica defines parameters for GetSyncStars.
+type GetSyncStarsParamsReplica string
+
+// GetSyncStarsParamsLog defines parameters for GetSyncStars.
+type GetSyncStarsParamsLog string
+
+// GetSyncStars200JSONResponseBody0 defines parameters for GetSyncStars.
+type GetSyncStars200JSONResponseBody0 = []ElectricShapeMessage
+
+// PostSyncStarsParams defines parameters for PostSyncStars.
+type PostSyncStarsParams struct {
+	// Offset Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+	Offset ElectricOffset `form:"offset" json:"offset"`
+
+	// Handle Electric shape handle required for continuation offsets.
+	Handle *ElectricHandle `form:"handle,omitempty" json:"handle,omitempty"`
+
+	// CacheBuster Electric stale-cache recovery token.
+	CacheBuster *ElectricCacheBuster `form:"cache-buster,omitempty" json:"cache-buster,omitempty"`
+
+	// ExpiredHandle Electric shape handle being replaced during stale-shape recovery.
+	ExpiredHandle *ElectricExpiredHandle      `form:"expired_handle,omitempty" json:"expired_handle,omitempty"`
+	Replica       *PostSyncStarsParamsReplica `form:"replica,omitempty" json:"replica,omitempty"`
+	Log           *PostSyncStarsParamsLog     `form:"log,omitempty" json:"log,omitempty"`
+}
+
+// PostSyncStarsParamsReplica defines parameters for PostSyncStars.
+type PostSyncStarsParamsReplica string
+
+// PostSyncStarsParamsLog defines parameters for PostSyncStars.
+type PostSyncStarsParamsLog string
+
+// PostSyncStars200JSONResponseBody0 defines parameters for PostSyncStars.
+type PostSyncStars200JSONResponseBody0 = []ElectricShapeMessage
+
 // CompleteATProtoLoginParams defines parameters for CompleteATProtoLogin.
 type CompleteATProtoLoginParams struct {
 	State            *string `form:"state,omitempty" json:"state,omitempty"`
@@ -1764,8 +2762,26 @@ type CreateRepositoryJSONRequestBody = CreateRepositoryRequest
 // CreateSSHKeyJSONRequestBody defines body for CreateSSHKey for application/json ContentType.
 type CreateSSHKeyJSONRequestBody = CreateSSHKeyRequest
 
+// PostSyncIssueCommentsJSONRequestBody defines body for PostSyncIssueComments for application/json ContentType.
+type PostSyncIssueCommentsJSONRequestBody = SyncSubsetRequest
+
+// PostSyncIssuesJSONRequestBody defines body for PostSyncIssues for application/json ContentType.
+type PostSyncIssuesJSONRequestBody = SyncSubsetRequest
+
+// PostSyncProfilesJSONRequestBody defines body for PostSyncProfiles for application/json ContentType.
+type PostSyncProfilesJSONRequestBody = SyncSubsetRequest
+
+// PostSyncPullRequestReviewsJSONRequestBody defines body for PostSyncPullRequestReviews for application/json ContentType.
+type PostSyncPullRequestReviewsJSONRequestBody = SyncSubsetRequest
+
+// PostSyncPullRequestsJSONRequestBody defines body for PostSyncPullRequests for application/json ContentType.
+type PostSyncPullRequestsJSONRequestBody = SyncSubsetRequest
+
 // PostSyncRepositoriesJSONRequestBody defines body for PostSyncRepositories for application/json ContentType.
 type PostSyncRepositoriesJSONRequestBody = SyncSubsetRequest
+
+// PostSyncStarsJSONRequestBody defines body for PostSyncStars for application/json ContentType.
+type PostSyncStarsJSONRequestBody = SyncSubsetRequest
 
 // CreateAccessTokenJSONRequestBody defines body for CreateAccessToken for application/json ContentType.
 type CreateAccessTokenJSONRequestBody = CreateAccessTokenRequest
@@ -1975,12 +2991,48 @@ type ServerInterface interface {
 	// Publish the current developer's star
 	// (PUT /api/v1/stars)
 	PutStar(w http.ResponseWriter, r *http.Request, params PutStarParams)
+	// Synchronize public issue comments
+	// (GET /api/v1/sync/issue-comments)
+	GetSyncIssueComments(w http.ResponseWriter, r *http.Request, params GetSyncIssueCommentsParams)
+	// Synchronize or narrow public issue comments
+	// (POST /api/v1/sync/issue-comments)
+	PostSyncIssueComments(w http.ResponseWriter, r *http.Request, params PostSyncIssueCommentsParams)
+	// Synchronize public issues
+	// (GET /api/v1/sync/issues)
+	GetSyncIssues(w http.ResponseWriter, r *http.Request, params GetSyncIssuesParams)
+	// Synchronize or narrow public issues
+	// (POST /api/v1/sync/issues)
+	PostSyncIssues(w http.ResponseWriter, r *http.Request, params PostSyncIssuesParams)
+	// Synchronize public profiles
+	// (GET /api/v1/sync/profiles)
+	GetSyncProfiles(w http.ResponseWriter, r *http.Request, params GetSyncProfilesParams)
+	// Synchronize or narrow public profiles
+	// (POST /api/v1/sync/profiles)
+	PostSyncProfiles(w http.ResponseWriter, r *http.Request, params PostSyncProfilesParams)
+	// Synchronize public pull-request reviews
+	// (GET /api/v1/sync/pull-request-reviews)
+	GetSyncPullRequestReviews(w http.ResponseWriter, r *http.Request, params GetSyncPullRequestReviewsParams)
+	// Synchronize or narrow public pull-request reviews
+	// (POST /api/v1/sync/pull-request-reviews)
+	PostSyncPullRequestReviews(w http.ResponseWriter, r *http.Request, params PostSyncPullRequestReviewsParams)
+	// Synchronize public pull requests
+	// (GET /api/v1/sync/pull-requests)
+	GetSyncPullRequests(w http.ResponseWriter, r *http.Request, params GetSyncPullRequestsParams)
+	// Synchronize or narrow public pull requests
+	// (POST /api/v1/sync/pull-requests)
+	PostSyncPullRequests(w http.ResponseWriter, r *http.Request, params PostSyncPullRequestsParams)
 	// Synchronize the public repository projection
 	// (GET /api/v1/sync/repositories)
 	GetSyncRepositories(w http.ResponseWriter, r *http.Request, params GetSyncRepositoriesParams)
 	// Synchronize or request a subset of the public repository projection
 	// (POST /api/v1/sync/repositories)
 	PostSyncRepositories(w http.ResponseWriter, r *http.Request, params PostSyncRepositoriesParams)
+	// Synchronize public stars
+	// (GET /api/v1/sync/stars)
+	GetSyncStars(w http.ResponseWriter, r *http.Request, params GetSyncStarsParams)
+	// Synchronize or narrow public stars
+	// (POST /api/v1/sync/stars)
+	PostSyncStars(w http.ResponseWriter, r *http.Request, params PostSyncStarsParams)
 	// List active personal access tokens
 	// (GET /api/v1/tokens)
 	ListAccessTokens(w http.ResponseWriter, r *http.Request)
@@ -4029,6 +5081,1181 @@ func (siw *ServerInterfaceWrapper) PutStar(w http.ResponseWriter, r *http.Reques
 	handler.ServeHTTP(w, r)
 }
 
+// GetSyncIssueComments operation middleware
+func (siw *ServerInterfaceWrapper) GetSyncIssueComments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSyncIssueCommentsParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live", r.URL.Query(), &params.Live, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live_sse" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live_sse", r.URL.Query(), &params.LiveSse, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live_sse"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live_sse", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSyncIssueComments(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostSyncIssueComments operation middleware
+func (siw *ServerInterfaceWrapper) PostSyncIssueComments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostSyncIssueCommentsParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostSyncIssueComments(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSyncIssues operation middleware
+func (siw *ServerInterfaceWrapper) GetSyncIssues(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSyncIssuesParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live", r.URL.Query(), &params.Live, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live_sse" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live_sse", r.URL.Query(), &params.LiveSse, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live_sse"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live_sse", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSyncIssues(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostSyncIssues operation middleware
+func (siw *ServerInterfaceWrapper) PostSyncIssues(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostSyncIssuesParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostSyncIssues(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSyncProfiles operation middleware
+func (siw *ServerInterfaceWrapper) GetSyncProfiles(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSyncProfilesParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live", r.URL.Query(), &params.Live, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live_sse" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live_sse", r.URL.Query(), &params.LiveSse, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live_sse"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live_sse", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSyncProfiles(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostSyncProfiles operation middleware
+func (siw *ServerInterfaceWrapper) PostSyncProfiles(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostSyncProfilesParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostSyncProfiles(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSyncPullRequestReviews operation middleware
+func (siw *ServerInterfaceWrapper) GetSyncPullRequestReviews(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSyncPullRequestReviewsParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live", r.URL.Query(), &params.Live, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live_sse" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live_sse", r.URL.Query(), &params.LiveSse, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live_sse"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live_sse", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSyncPullRequestReviews(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostSyncPullRequestReviews operation middleware
+func (siw *ServerInterfaceWrapper) PostSyncPullRequestReviews(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostSyncPullRequestReviewsParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostSyncPullRequestReviews(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSyncPullRequests operation middleware
+func (siw *ServerInterfaceWrapper) GetSyncPullRequests(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSyncPullRequestsParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live", r.URL.Query(), &params.Live, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live_sse" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live_sse", r.URL.Query(), &params.LiveSse, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live_sse"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live_sse", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSyncPullRequests(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostSyncPullRequests operation middleware
+func (siw *ServerInterfaceWrapper) PostSyncPullRequests(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostSyncPullRequestsParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostSyncPullRequests(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetSyncRepositories operation middleware
 func (siw *ServerInterfaceWrapper) GetSyncRepositories(w http.ResponseWriter, r *http.Request) {
 
@@ -4255,6 +6482,241 @@ func (siw *ServerInterfaceWrapper) PostSyncRepositories(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostSyncRepositories(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSyncStars operation middleware
+func (siw *ServerInterfaceWrapper) GetSyncStars(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetSyncStarsParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live", r.URL.Query(), &params.Live, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "live_sse" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "live_sse", r.URL.Query(), &params.LiveSse, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "live_sse"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "live_sse", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSyncStars(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostSyncStars operation middleware
+func (siw *ServerInterfaceWrapper) PostSyncStars(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostSyncStarsParams
+
+	// ------------- Required query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "offset"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "handle", r.URL.Query(), &params.Handle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cache-buster" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cache-buster", r.URL.Query(), &params.CacheBuster, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cache-buster"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cache-buster", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "expired_handle" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "expired_handle", r.URL.Query(), &params.ExpiredHandle, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "expired_handle"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "expired_handle", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "replica" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "replica", r.URL.Query(), &params.Replica, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "replica"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "replica", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "log" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "log", r.URL.Query(), &params.Log, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "log"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "log", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostSyncStars(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4643,8 +7105,20 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/stars", wrapper.DeleteStar)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/stars", wrapper.GetStars)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/stars", wrapper.PutStar)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/sync/issue-comments", wrapper.GetSyncIssueComments)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/sync/issue-comments", wrapper.PostSyncIssueComments)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/sync/issues", wrapper.GetSyncIssues)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/sync/issues", wrapper.PostSyncIssues)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/sync/profiles", wrapper.GetSyncProfiles)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/sync/profiles", wrapper.PostSyncProfiles)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/sync/pull-request-reviews", wrapper.GetSyncPullRequestReviews)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/sync/pull-request-reviews", wrapper.PostSyncPullRequestReviews)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/sync/pull-requests", wrapper.GetSyncPullRequests)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/sync/pull-requests", wrapper.PostSyncPullRequests)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/sync/repositories", wrapper.GetSyncRepositories)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/sync/repositories", wrapper.PostSyncRepositories)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/sync/stars", wrapper.GetSyncStars)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/sync/stars", wrapper.PostSyncStars)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/tokens", wrapper.ListAccessTokens)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/tokens", wrapper.CreateAccessToken)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/tokens/{id}", wrapper.RevokeAccessToken)

@@ -190,7 +190,6 @@ const getNetworkIssueProjection = `-- name: GetNetworkIssueProjection :many
 SELECT
     repository.issue_count,
     repository.open_issue_count,
-    repository.comment_count,
     COALESCE(projected_issue.uri, '') AS issue_uri,
     COALESCE(projected_issue.cid, '') AS issue_cid,
     COALESCE(projected_issue.author_did, '') AS author_did,
@@ -201,13 +200,14 @@ SELECT
     COALESCE(projected_issue.state, 'open') AS state,
     COALESCE(projected_issue.status_uri, '') AS status_uri,
     COALESCE(projected_issue.status_cid, '') AS status_cid,
+    COALESCE(projected_issue.comment_count, 0) AS comment_count,
     COALESCE(projected_issue.record_created_at, repository.indexed_at) AS record_created_at,
     COALESCE(projected_issue.record_updated_at, repository.indexed_at) AS record_updated_at,
     COALESCE(projected_issue.indexed_at, repository.indexed_at) AS indexed_at
 FROM network.repositories AS repository
 LEFT JOIN LATERAL (
     SELECT issue.uri, issue.cid, issue.author_did, issue.repository_cid, issue.title, issue.body,
-           issue.state, issue.status_uri, issue.status_cid, issue.record_created_at,
+           issue.state, issue.status_uri, issue.status_cid, issue.comment_count, issue.record_created_at,
            issue.record_updated_at, issue.indexed_at
     FROM network.issues AS issue
     WHERE issue.repository_uri = repository.uri
@@ -230,7 +230,6 @@ type GetNetworkIssueProjectionParams struct {
 type GetNetworkIssueProjectionRow struct {
 	IssueCount            int64              `json:"issue_count"`
 	OpenIssueCount        int64              `json:"open_issue_count"`
-	CommentCount          int64              `json:"comment_count"`
 	IssueUri              string             `json:"issue_uri"`
 	IssueCid              string             `json:"issue_cid"`
 	AuthorDid             string             `json:"author_did"`
@@ -241,6 +240,7 @@ type GetNetworkIssueProjectionRow struct {
 	State                 string             `json:"state"`
 	StatusUri             string             `json:"status_uri"`
 	StatusCid             string             `json:"status_cid"`
+	CommentCount          int64              `json:"comment_count"`
 	RecordCreatedAt       pgtype.Timestamptz `json:"record_created_at"`
 	RecordUpdatedAt       pgtype.Timestamptz `json:"record_updated_at"`
 	IndexedAt             pgtype.Timestamptz `json:"indexed_at"`
@@ -258,7 +258,6 @@ func (q *Queries) GetNetworkIssueProjection(ctx context.Context, arg GetNetworkI
 		if err := rows.Scan(
 			&i.IssueCount,
 			&i.OpenIssueCount,
-			&i.CommentCount,
 			&i.IssueUri,
 			&i.IssueCid,
 			&i.AuthorDid,
@@ -269,6 +268,7 @@ func (q *Queries) GetNetworkIssueProjection(ctx context.Context, arg GetNetworkI
 			&i.State,
 			&i.StatusUri,
 			&i.StatusCid,
+			&i.CommentCount,
 			&i.RecordCreatedAt,
 			&i.RecordUpdatedAt,
 			&i.IndexedAt,

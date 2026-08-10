@@ -200,12 +200,126 @@ export type SyncRepository = {
     star_count: number;
     issue_count: number;
     open_issue_count: number;
+    comment_count: number;
     pull_request_count: number;
     open_pull_request_count: number;
 };
 
 /**
- * Electric 1.7.10 subset snapshot fields. where and order_by may reference only the approved SyncRepository columns.
+ * Flat approved network.profiles projection.
+ */
+export type SyncProfile = {
+    did: string;
+    profile_uri?: string | null;
+    profile_cid?: string | null;
+    handle?: string | null;
+    display_name?: string | null;
+    bio?: string | null;
+    avatar_ref?: string | null;
+    website?: string | null;
+    location?: string | null;
+    repository_count: number;
+    contribution_count: number;
+    record_created_at?: string | null;
+    indexed_at: string;
+};
+
+/**
+ * Flat approved network.stars projection.
+ */
+export type SyncStar = {
+    uri: string;
+    cid: string;
+    author_did: string;
+    repository_uri: string;
+    repository_cid: string;
+    record_created_at: string;
+    indexed_at: string;
+};
+
+/**
+ * Flat approved network.issues projection including repository-authoritative resolved state.
+ */
+export type SyncIssue = {
+    uri: string;
+    cid: string;
+    author_did: string;
+    repository_uri: string;
+    repository_cid: string;
+    title: string;
+    body: string;
+    state: 'open' | 'closed';
+    status_uri?: string | null;
+    status_cid?: string | null;
+    status_updated_at?: string | null;
+    comment_count: number;
+    record_created_at: string;
+    record_updated_at: string;
+    indexed_at: string;
+};
+
+/**
+ * Flat approved author-owned network.issue_comments projection. Issue comments are distinct from pull-request reviews.
+ */
+export type SyncIssueComment = {
+    uri: string;
+    cid: string;
+    author_did: string;
+    issue_uri: string;
+    issue_cid: string;
+    parent_uri?: string | null;
+    parent_cid?: string | null;
+    body: string;
+    record_created_at: string;
+    record_updated_at: string;
+    indexed_at: string;
+};
+
+/**
+ * Flat approved network.pull_requests projection including target-authoritative resolved state.
+ */
+export type SyncPullRequest = {
+    uri: string;
+    cid: string;
+    author_did: string;
+    source_repository_uri: string;
+    source_repository_cid: string;
+    source_branch: string;
+    target_repository_uri: string;
+    target_repository_cid: string;
+    target_branch: string;
+    head_sha: string;
+    title: string;
+    body: string;
+    state: 'open' | 'closed' | 'merged';
+    status_uri?: string | null;
+    status_cid?: string | null;
+    status_updated_at?: string | null;
+    merged_commit_sha?: string | null;
+    review_count: number;
+    record_created_at: string;
+    record_updated_at: string;
+    indexed_at: string;
+};
+
+/**
+ * Flat approved verdict-bearing network.pull_request_reviews projection, distinct from issue comments.
+ */
+export type SyncPullRequestReview = {
+    uri: string;
+    cid: string;
+    author_did: string;
+    pull_request_uri: string;
+    pull_request_cid: string;
+    verdict: 'comment' | 'approve' | 'request_changes';
+    body: string;
+    record_created_at: string;
+    record_updated_at: string;
+    indexed_at: string;
+};
+
+/**
+ * Electric 1.7.10 subset snapshot fields. where and order_by may reference only columns approved for the selected server-owned Sync* projection.
  */
 export type SyncSubsetRequest = {
     where?: string;
@@ -225,13 +339,16 @@ export type ElectricShapeMessage = {
         [key: string]: unknown;
     };
     key?: string;
-    value?: {
-        [key: string]: unknown;
-    };
-    old_value?: {
-        [key: string]: unknown;
-    };
+    value?: ElectricShapeValue;
+    old_value?: ElectricShapeValue;
 };
+
+/**
+ * A partial Electric operation value. The generic object branch permits update and delete values with omitted columns; the named Sync* branches document complete insert-row projections.
+ */
+export type ElectricShapeValue = {
+    [key: string]: unknown;
+} | SyncRepository | SyncProfile | SyncStar | SyncIssue | SyncIssueComment | SyncPullRequest | SyncPullRequestReview;
 
 export type ElectricSubsetResponse = {
     data: Array<ElectricShapeMessage>;
@@ -2292,6 +2409,10 @@ export type GetSyncRepositoriesErrors = {
      */
     400: ErrorResponse;
     /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
      * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
      */
     409: Array<ElectricShapeMessage>;
@@ -2315,7 +2436,7 @@ export type GetSyncRepositoriesError = GetSyncRepositoriesErrors[keyof GetSyncRe
 
 export type GetSyncRepositoriesResponses = {
     /**
-     * Electric shape-log or subset-snapshot response. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved.
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
      */
     200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
 };
@@ -2354,6 +2475,10 @@ export type PostSyncRepositoriesErrors = {
      */
     400: ErrorResponse;
     /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
      * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
      */
     409: Array<ElectricShapeMessage>;
@@ -2381,12 +2506,876 @@ export type PostSyncRepositoriesError = PostSyncRepositoriesErrors[keyof PostSyn
 
 export type PostSyncRepositoriesResponses = {
     /**
-     * Electric shape-log or subset-snapshot response. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved.
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
      */
     200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
 };
 
 export type PostSyncRepositoriesResponse = PostSyncRepositoriesResponses[keyof PostSyncRepositoriesResponses];
+
+export type GetSyncProfilesData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric cache-busting cursor returned by a prior live request.
+         */
+        cursor?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        /**
+         * Wait for a long-poll response.
+         */
+        live?: boolean;
+        /**
+         * Use Electric server-sent events; requires live=true.
+         */
+        live_sse?: boolean;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/profiles';
+};
+
+export type GetSyncProfilesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type GetSyncProfilesError = GetSyncProfilesErrors[keyof GetSyncProfilesErrors];
+
+export type GetSyncProfilesResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type GetSyncProfilesResponse = GetSyncProfilesResponses[keyof GetSyncProfilesResponses];
+
+export type PostSyncProfilesData = {
+    body?: SyncSubsetRequest;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/profiles';
+};
+
+export type PostSyncProfilesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Subset body exceeds 16 KiB
+     */
+    413: unknown;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type PostSyncProfilesError = PostSyncProfilesErrors[keyof PostSyncProfilesErrors];
+
+export type PostSyncProfilesResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type PostSyncProfilesResponse = PostSyncProfilesResponses[keyof PostSyncProfilesResponses];
+
+export type GetSyncStarsData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric cache-busting cursor returned by a prior live request.
+         */
+        cursor?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        /**
+         * Wait for a long-poll response.
+         */
+        live?: boolean;
+        /**
+         * Use Electric server-sent events; requires live=true.
+         */
+        live_sse?: boolean;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/stars';
+};
+
+export type GetSyncStarsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type GetSyncStarsError = GetSyncStarsErrors[keyof GetSyncStarsErrors];
+
+export type GetSyncStarsResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type GetSyncStarsResponse = GetSyncStarsResponses[keyof GetSyncStarsResponses];
+
+export type PostSyncStarsData = {
+    body?: SyncSubsetRequest;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/stars';
+};
+
+export type PostSyncStarsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Subset body exceeds 16 KiB
+     */
+    413: unknown;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type PostSyncStarsError = PostSyncStarsErrors[keyof PostSyncStarsErrors];
+
+export type PostSyncStarsResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type PostSyncStarsResponse = PostSyncStarsResponses[keyof PostSyncStarsResponses];
+
+export type GetSyncIssuesData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric cache-busting cursor returned by a prior live request.
+         */
+        cursor?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        /**
+         * Wait for a long-poll response.
+         */
+        live?: boolean;
+        /**
+         * Use Electric server-sent events; requires live=true.
+         */
+        live_sse?: boolean;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/issues';
+};
+
+export type GetSyncIssuesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type GetSyncIssuesError = GetSyncIssuesErrors[keyof GetSyncIssuesErrors];
+
+export type GetSyncIssuesResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type GetSyncIssuesResponse = GetSyncIssuesResponses[keyof GetSyncIssuesResponses];
+
+export type PostSyncIssuesData = {
+    body?: SyncSubsetRequest;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/issues';
+};
+
+export type PostSyncIssuesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Subset body exceeds 16 KiB
+     */
+    413: unknown;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type PostSyncIssuesError = PostSyncIssuesErrors[keyof PostSyncIssuesErrors];
+
+export type PostSyncIssuesResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type PostSyncIssuesResponse = PostSyncIssuesResponses[keyof PostSyncIssuesResponses];
+
+export type GetSyncIssueCommentsData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric cache-busting cursor returned by a prior live request.
+         */
+        cursor?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        /**
+         * Wait for a long-poll response.
+         */
+        live?: boolean;
+        /**
+         * Use Electric server-sent events; requires live=true.
+         */
+        live_sse?: boolean;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/issue-comments';
+};
+
+export type GetSyncIssueCommentsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type GetSyncIssueCommentsError = GetSyncIssueCommentsErrors[keyof GetSyncIssueCommentsErrors];
+
+export type GetSyncIssueCommentsResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type GetSyncIssueCommentsResponse = GetSyncIssueCommentsResponses[keyof GetSyncIssueCommentsResponses];
+
+export type PostSyncIssueCommentsData = {
+    body?: SyncSubsetRequest;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/issue-comments';
+};
+
+export type PostSyncIssueCommentsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Subset body exceeds 16 KiB
+     */
+    413: unknown;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type PostSyncIssueCommentsError = PostSyncIssueCommentsErrors[keyof PostSyncIssueCommentsErrors];
+
+export type PostSyncIssueCommentsResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type PostSyncIssueCommentsResponse = PostSyncIssueCommentsResponses[keyof PostSyncIssueCommentsResponses];
+
+export type GetSyncPullRequestsData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric cache-busting cursor returned by a prior live request.
+         */
+        cursor?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        /**
+         * Wait for a long-poll response.
+         */
+        live?: boolean;
+        /**
+         * Use Electric server-sent events; requires live=true.
+         */
+        live_sse?: boolean;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/pull-requests';
+};
+
+export type GetSyncPullRequestsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type GetSyncPullRequestsError = GetSyncPullRequestsErrors[keyof GetSyncPullRequestsErrors];
+
+export type GetSyncPullRequestsResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type GetSyncPullRequestsResponse = GetSyncPullRequestsResponses[keyof GetSyncPullRequestsResponses];
+
+export type PostSyncPullRequestsData = {
+    body?: SyncSubsetRequest;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/pull-requests';
+};
+
+export type PostSyncPullRequestsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Subset body exceeds 16 KiB
+     */
+    413: unknown;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type PostSyncPullRequestsError = PostSyncPullRequestsErrors[keyof PostSyncPullRequestsErrors];
+
+export type PostSyncPullRequestsResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type PostSyncPullRequestsResponse = PostSyncPullRequestsResponses[keyof PostSyncPullRequestsResponses];
+
+export type GetSyncPullRequestReviewsData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric cache-busting cursor returned by a prior live request.
+         */
+        cursor?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        /**
+         * Wait for a long-poll response.
+         */
+        live?: boolean;
+        /**
+         * Use Electric server-sent events; requires live=true.
+         */
+        live_sse?: boolean;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/pull-request-reviews';
+};
+
+export type GetSyncPullRequestReviewsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type GetSyncPullRequestReviewsError = GetSyncPullRequestReviewsErrors[keyof GetSyncPullRequestReviewsErrors];
+
+export type GetSyncPullRequestReviewsResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type GetSyncPullRequestReviewsResponse = GetSyncPullRequestReviewsResponses[keyof GetSyncPullRequestReviewsResponses];
+
+export type PostSyncPullRequestReviewsData = {
+    body?: SyncSubsetRequest;
+    path?: never;
+    query: {
+        /**
+         * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
+         */
+        offset: string;
+        /**
+         * Electric shape handle required for continuation offsets.
+         */
+        handle?: string;
+        /**
+         * Electric stale-cache recovery token.
+         */
+        'cache-buster'?: string;
+        /**
+         * Electric shape handle being replaced during stale-shape recovery.
+         */
+        expired_handle?: string;
+        replica?: 'default' | 'full';
+        log?: 'full' | 'changes_only';
+    };
+    url: '/api/v1/sync/pull-request-reviews';
+};
+
+export type PostSyncPullRequestReviewsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.
+     */
+    409: Array<ElectricShapeMessage>;
+    /**
+     * Subset body exceeds 16 KiB
+     */
+    413: unknown;
+    /**
+     * Electric is temporarily busy
+     */
+    429: unknown;
+    /**
+     * Electric is unavailable
+     */
+    502: unknown;
+    /**
+     * Realtime sync is not configured
+     */
+    503: unknown;
+};
+
+export type PostSyncPullRequestReviewsError = PostSyncPullRequestReviewsErrors[keyof PostSyncPullRequestReviewsErrors];
+
+export type PostSyncPullRequestReviewsResponses = {
+    /**
+     * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+     */
+    200: Array<ElectricShapeMessage> | ElectricSubsetResponse;
+};
+
+export type PostSyncPullRequestReviewsResponse = PostSyncPullRequestReviewsResponses[keyof PostSyncPullRequestReviewsResponses];
 
 export type GetRepositoryData = {
     body?: never;

@@ -82,7 +82,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	eventWriter := event.NewWriter(db.Queries())
 	pullRequests := pullrequest.NewApplicationService(pullrequest.NewPostgresStore(db.Queries()), git, oauthClient, atproto.SystemClock{}, authStore, eventWriter)
 	moderationService := moderation.NewService(moderation.NewPostgresStore(db.Queries()), atproto.SystemClock{})
-	syncRepositories := syncproxy.Must(cfg.ElectricURL, cfg.ElectricSecret)
+	syncProxy := syncproxy.Must(cfg.ElectricURL, cfg.ElectricSecret)
 	var federationDependencies *restapi.FederationDependencies
 	if cfg.TapConsumer != "" {
 		federationDependencies = &restapi.FederationDependencies{
@@ -104,28 +104,28 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	)
 
 	server, err := restapi.NewServer(cfg.ListenAddr, cfg.BaseURL, db, logger, restapi.Dependencies{
-		Sessions:         auth.NewSessionAuthenticator(authStore, clock),
-		Login:            loginService,
-		LocalSessions:    sessionService,
-		Passkeys:         passkeys,
-		Accounts:         authStore,
-		OAuthMetadata:    oauthClient,
-		TokenAuth:        auth.NewTokenAuthenticator(authStore, clock),
-		Tokens:           auth.NewTokenService(authStore, clock, auth.UUIDv7Generator{}, auth.RandomSecretGenerator{}),
-		SSHKeys:          auth.NewSSHKeyService(authStore, clock, auth.UUIDv7Generator{}),
-		Profiles:         profiles,
-		Federation:       federationDependencies,
-		Repositories:     repositories,
-		Endpoints:        repositoryEndpoints,
-		Discovery:        discovery,
-		Stars:            stars,
-		Issues:           issues,
-		Comments:         comments,
-		PullRequests:     pullRequests,
-		Moderation:       moderationService,
-		Authorization:    authStore,
-		Git:              git,
-		SyncRepositories: syncRepositories,
+		Sessions:      auth.NewSessionAuthenticator(authStore, clock),
+		Login:         loginService,
+		LocalSessions: sessionService,
+		Passkeys:      passkeys,
+		Accounts:      authStore,
+		OAuthMetadata: oauthClient,
+		TokenAuth:     auth.NewTokenAuthenticator(authStore, clock),
+		Tokens:        auth.NewTokenService(authStore, clock, auth.UUIDv7Generator{}, auth.RandomSecretGenerator{}),
+		SSHKeys:       auth.NewSSHKeyService(authStore, clock, auth.UUIDv7Generator{}),
+		Profiles:      profiles,
+		Federation:    federationDependencies,
+		Repositories:  repositories,
+		Endpoints:     repositoryEndpoints,
+		Discovery:     discovery,
+		Stars:         stars,
+		Issues:        issues,
+		Comments:      comments,
+		PullRequests:  pullRequests,
+		Moderation:    moderationService,
+		Authorization: authStore,
+		Git:           git,
+		Sync:          syncProxy,
 	}, gitHTTP)
 	if err != nil {
 		db.Close()

@@ -92,7 +92,7 @@ func TestPostgresCommentQueriesAreAtomicBoundedAndViewerFiltered(t *testing.T) {
 		{name: "authenticated filtering is owner scoped", required: []string{"sqlc.narg(account_did)::text IS NULL", "blocked.account_did = sqlc.narg(account_did)", "blocked.blocked_did = comment.author_did", "hidden.account_did = sqlc.narg(account_did)", "hidden.record_uri = comment.uri"}},
 		{name: "list is chronological and bounded", required: []string{"ORDER BY visible.record_created_at, visible.uri", "LIMIT sqlc.arg(page_size)"}},
 		{name: "parent target requires active parent and issue", required: []string{"-- name: GetNetworkIssueCommentParentTarget :one", "JOIN network.issues AS issue", "comment.deleted_at IS NULL", "comment.cid IS NOT NULL"}},
-		{name: "existing count rows expose comment count", required: []string{"repository.open_issue_count,\n\trepository.comment_count", "repository.open_issue_count,\n    repository.comment_count"}},
+		{name: "repository and issue rows expose their own comment counts", required: []string{"repository.open_issue_count,\n\trepository.comment_count", "issue.comment_count", "COALESCE(projected_issue.comment_count, 0) AS comment_count"}},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {

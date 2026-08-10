@@ -4,8 +4,8 @@ import * as z from 'zod';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { BeginPasskeyLoginData, BeginPasskeyLoginErrors, BeginPasskeyLoginResponses, BeginPasskeyRegistrationData, BeginPasskeyRegistrationErrors, BeginPasskeyRegistrationResponses, CompleteAtProtoLoginData, CompleteAtProtoLoginErrors, CreateAccessTokenData, CreateAccessTokenErrors, CreateAccessTokenResponses, CreateIssueCommentData, CreateIssueCommentErrors, CreateIssueCommentResponses, CreateIssueData, CreateIssueErrors, CreateIssueResponses, CreatePullRequestData, CreatePullRequestErrors, CreatePullRequestResponses, CreatePullRequestReviewData, CreatePullRequestReviewErrors, CreatePullRequestReviewResponses, CreateRepositoryData, CreateRepositoryErrors, CreateRepositoryResponses, CreateSshKeyData, CreateSshKeyErrors, CreateSshKeyResponses, DeleteBlockedDidData, DeleteBlockedDidErrors, DeleteBlockedDidResponses, DeleteHiddenRecordData, DeleteHiddenRecordErrors, DeleteHiddenRecordResponses, DeleteIssueCommentData, DeleteIssueCommentErrors, DeleteIssueCommentResponses, DeletePasskeyData, DeletePasskeyErrors, DeletePasskeyResponses, DeleteStarData, DeleteStarErrors, DeleteStarResponses, GetCurrentIdentityData, GetCurrentIdentityErrors, GetCurrentIdentityResponses, GetDeveloperProfileData, GetDeveloperProfileErrors, GetDeveloperProfileResponses, GetIssueCommentsData, GetIssueCommentsErrors, GetIssueCommentsResponses, GetIssuesData, GetIssuesErrors, GetIssuesResponses, GetLivenessData, GetLivenessResponses, GetModerationData, GetModerationErrors, GetModerationResponses, GetOAuthClientMetadataData, GetOAuthClientMetadataResponses, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffErrors, GetPullRequestDiffResponses, GetPullRequestErrors, GetPullRequestResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRepositoryBlobData, GetRepositoryBlobErrors, GetRepositoryBlobResponses, GetRepositoryCommitData, GetRepositoryCommitErrors, GetRepositoryCommitResponses, GetRepositoryData, GetRepositoryDiffData, GetRepositoryDiffErrors, GetRepositoryDiffResponses, GetRepositoryErrors, GetRepositoryMergeBaseData, GetRepositoryMergeBaseErrors, GetRepositoryMergeBaseResponses, GetRepositoryResponses, GetRepositoryTreeData, GetRepositoryTreeErrors, GetRepositoryTreeResponses, GetStarsData, GetStarsErrors, GetStarsResponses, GetSyncRepositoriesData, GetSyncRepositoriesErrors, GetSyncRepositoriesResponses, ListAccessTokensData, ListAccessTokensErrors, ListAccessTokensResponses, ListNetworkRepositoriesData, ListNetworkRepositoriesErrors, ListNetworkRepositoriesResponses, ListPasskeysData, ListPasskeysErrors, ListPasskeysResponses, ListPullRequestReviewsData, ListPullRequestReviewsErrors, ListPullRequestReviewsResponses, ListPullRequestsData, ListPullRequestsErrors, ListPullRequestsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListRepositoryCommitsData, ListRepositoryCommitsErrors, ListRepositoryCommitsResponses, ListRepositoryTagsData, ListRepositoryTagsErrors, ListRepositoryTagsResponses, ListSshKeysData, ListSshKeysErrors, ListSshKeysResponses, LogoutData, LogoutErrors, LogoutResponses, MergePullRequestData, MergePullRequestErrors, MergePullRequestResponses, PostSyncRepositoriesData, PostSyncRepositoriesErrors, PostSyncRepositoriesResponses, PutBlockedDidData, PutBlockedDidErrors, PutBlockedDidResponses, PutHiddenRecordData, PutHiddenRecordErrors, PutHiddenRecordResponses, PutIssueStatusData, PutIssueStatusErrors, PutIssueStatusResponses, PutPullRequestStatusData, PutPullRequestStatusErrors, PutPullRequestStatusResponses, PutStarData, PutStarErrors, PutStarResponses, RevokeAccessTokenData, RevokeAccessTokenErrors, RevokeAccessTokenResponses, RevokeSshKeyData, RevokeSshKeyErrors, RevokeSshKeyResponses, StartAtProtoLoginData, StartAtProtoLoginErrors, StartAtProtoLoginResponses, UpdateDeveloperProfileData, UpdateDeveloperProfileErrors, UpdateDeveloperProfileResponses, VerifyPasskeyLoginData, VerifyPasskeyLoginErrors, VerifyPasskeyLoginResponses, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationErrors, VerifyPasskeyRegistrationResponses } from './types.gen';
-import { zBeginPasskeyLoginHeaders, zBeginPasskeyLoginResponse, zBeginPasskeyRegistrationBody, zBeginPasskeyRegistrationHeaders, zBeginPasskeyRegistrationResponse, zCompleteAtProtoLoginQuery, zCreateAccessTokenBody, zCreateAccessTokenResponse, zCreateIssueBody, zCreateIssueCommentBody, zCreateIssueCommentHeaders, zCreateIssueCommentResponse, zCreateIssueHeaders, zCreateIssueResponse, zCreatePullRequestBody, zCreatePullRequestHeaders, zCreatePullRequestResponse, zCreatePullRequestReviewBody, zCreatePullRequestReviewHeaders, zCreatePullRequestReviewResponse, zCreateRepositoryBody, zCreateRepositoryHeaders, zCreateRepositoryResponse, zCreateSshKeyBody, zCreateSshKeyResponse, zDeleteBlockedDidHeaders, zDeleteBlockedDidQuery, zDeleteBlockedDidResponse, zDeleteHiddenRecordHeaders, zDeleteHiddenRecordQuery, zDeleteHiddenRecordResponse, zDeleteIssueCommentHeaders, zDeleteIssueCommentQuery, zDeletePasskeyHeaders, zDeletePasskeyPath, zDeletePasskeyResponse, zDeleteStarHeaders, zDeleteStarQuery, zGetCurrentIdentityResponse, zGetDeveloperProfilePath, zGetDeveloperProfileResponse, zGetIssueCommentsQuery, zGetIssueCommentsResponse, zGetIssuesQuery, zGetIssuesResponse, zGetLivenessResponse, zGetModerationResponse, zGetOAuthClientMetadataResponse, zGetPullRequestDiffQuery, zGetPullRequestDiffResponse, zGetPullRequestQuery, zGetPullRequestResponse, zGetReadinessResponse, zGetRepositoryBlobPath, zGetRepositoryBlobResponse, zGetRepositoryCommitPath, zGetRepositoryCommitResponse, zGetRepositoryDiffPath, zGetRepositoryDiffQuery, zGetRepositoryDiffResponse, zGetRepositoryMergeBasePath, zGetRepositoryMergeBaseQuery, zGetRepositoryMergeBaseResponse, zGetRepositoryPath, zGetRepositoryResponse, zGetRepositoryTreePath, zGetRepositoryTreeQuery, zGetRepositoryTreeResponse, zGetStarsQuery, zGetStarsResponse, zGetSyncRepositoriesQuery, zGetSyncRepositoriesResponse, zListAccessTokensResponse, zListNetworkRepositoriesQuery, zListNetworkRepositoriesResponse, zListPasskeysResponse, zListPullRequestReviewsQuery, zListPullRequestReviewsResponse, zListPullRequestsQuery, zListPullRequestsResponse, zListRepositoryBranchesPath, zListRepositoryBranchesResponse, zListRepositoryCommitsPath, zListRepositoryCommitsQuery, zListRepositoryCommitsResponse, zListRepositoryTagsPath, zListRepositoryTagsResponse, zListSshKeysResponse, zLogoutResponse, zMergePullRequestBody, zMergePullRequestHeaders, zMergePullRequestResponse, zPostSyncRepositoriesBody, zPostSyncRepositoriesQuery, zPostSyncRepositoriesResponse, zPutBlockedDidBody, zPutBlockedDidHeaders, zPutBlockedDidResponse, zPutHiddenRecordBody, zPutHiddenRecordHeaders, zPutHiddenRecordResponse, zPutIssueStatusBody, zPutIssueStatusHeaders, zPutIssueStatusResponse, zPutPullRequestStatusBody, zPutPullRequestStatusHeaders, zPutPullRequestStatusResponse, zPutStarHeaders, zPutStarQuery, zPutStarResponse, zRevokeAccessTokenPath, zRevokeAccessTokenResponse, zRevokeSshKeyPath, zRevokeSshKeyResponse, zStartAtProtoLoginBody, zStartAtProtoLoginResponse2, zUpdateDeveloperProfileBody, zUpdateDeveloperProfileResponse, zVerifyPasskeyLoginBody, zVerifyPasskeyLoginHeaders, zVerifyPasskeyLoginResponse, zVerifyPasskeyRegistrationBody, zVerifyPasskeyRegistrationHeaders, zVerifyPasskeyRegistrationResponse } from './zod.gen';
+import type { BeginPasskeyLoginData, BeginPasskeyLoginErrors, BeginPasskeyLoginResponses, BeginPasskeyRegistrationData, BeginPasskeyRegistrationErrors, BeginPasskeyRegistrationResponses, CompleteAtProtoLoginData, CompleteAtProtoLoginErrors, CreateAccessTokenData, CreateAccessTokenErrors, CreateAccessTokenResponses, CreateIssueCommentData, CreateIssueCommentErrors, CreateIssueCommentResponses, CreateIssueData, CreateIssueErrors, CreateIssueResponses, CreatePullRequestData, CreatePullRequestErrors, CreatePullRequestResponses, CreatePullRequestReviewData, CreatePullRequestReviewErrors, CreatePullRequestReviewResponses, CreateRepositoryData, CreateRepositoryErrors, CreateRepositoryResponses, CreateSshKeyData, CreateSshKeyErrors, CreateSshKeyResponses, DeleteBlockedDidData, DeleteBlockedDidErrors, DeleteBlockedDidResponses, DeleteHiddenRecordData, DeleteHiddenRecordErrors, DeleteHiddenRecordResponses, DeleteIssueCommentData, DeleteIssueCommentErrors, DeleteIssueCommentResponses, DeletePasskeyData, DeletePasskeyErrors, DeletePasskeyResponses, DeleteStarData, DeleteStarErrors, DeleteStarResponses, GetCurrentIdentityData, GetCurrentIdentityErrors, GetCurrentIdentityResponses, GetDeveloperProfileData, GetDeveloperProfileErrors, GetDeveloperProfileResponses, GetIssueCommentsData, GetIssueCommentsErrors, GetIssueCommentsResponses, GetIssuesData, GetIssuesErrors, GetIssuesResponses, GetLivenessData, GetLivenessResponses, GetModerationData, GetModerationErrors, GetModerationResponses, GetOAuthClientMetadataData, GetOAuthClientMetadataResponses, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffErrors, GetPullRequestDiffResponses, GetPullRequestErrors, GetPullRequestResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRepositoryBlobData, GetRepositoryBlobErrors, GetRepositoryBlobResponses, GetRepositoryCommitData, GetRepositoryCommitErrors, GetRepositoryCommitResponses, GetRepositoryData, GetRepositoryDiffData, GetRepositoryDiffErrors, GetRepositoryDiffResponses, GetRepositoryErrors, GetRepositoryMergeBaseData, GetRepositoryMergeBaseErrors, GetRepositoryMergeBaseResponses, GetRepositoryResponses, GetRepositoryTreeData, GetRepositoryTreeErrors, GetRepositoryTreeResponses, GetStarsData, GetStarsErrors, GetStarsResponses, GetSyncIssueCommentsData, GetSyncIssueCommentsErrors, GetSyncIssueCommentsResponses, GetSyncIssuesData, GetSyncIssuesErrors, GetSyncIssuesResponses, GetSyncProfilesData, GetSyncProfilesErrors, GetSyncProfilesResponses, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsErrors, GetSyncPullRequestReviewsResponses, GetSyncPullRequestsData, GetSyncPullRequestsErrors, GetSyncPullRequestsResponses, GetSyncRepositoriesData, GetSyncRepositoriesErrors, GetSyncRepositoriesResponses, GetSyncStarsData, GetSyncStarsErrors, GetSyncStarsResponses, ListAccessTokensData, ListAccessTokensErrors, ListAccessTokensResponses, ListNetworkRepositoriesData, ListNetworkRepositoriesErrors, ListNetworkRepositoriesResponses, ListPasskeysData, ListPasskeysErrors, ListPasskeysResponses, ListPullRequestReviewsData, ListPullRequestReviewsErrors, ListPullRequestReviewsResponses, ListPullRequestsData, ListPullRequestsErrors, ListPullRequestsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListRepositoryCommitsData, ListRepositoryCommitsErrors, ListRepositoryCommitsResponses, ListRepositoryTagsData, ListRepositoryTagsErrors, ListRepositoryTagsResponses, ListSshKeysData, ListSshKeysErrors, ListSshKeysResponses, LogoutData, LogoutErrors, LogoutResponses, MergePullRequestData, MergePullRequestErrors, MergePullRequestResponses, PostSyncIssueCommentsData, PostSyncIssueCommentsErrors, PostSyncIssueCommentsResponses, PostSyncIssuesData, PostSyncIssuesErrors, PostSyncIssuesResponses, PostSyncProfilesData, PostSyncProfilesErrors, PostSyncProfilesResponses, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsErrors, PostSyncPullRequestReviewsResponses, PostSyncPullRequestsData, PostSyncPullRequestsErrors, PostSyncPullRequestsResponses, PostSyncRepositoriesData, PostSyncRepositoriesErrors, PostSyncRepositoriesResponses, PostSyncStarsData, PostSyncStarsErrors, PostSyncStarsResponses, PutBlockedDidData, PutBlockedDidErrors, PutBlockedDidResponses, PutHiddenRecordData, PutHiddenRecordErrors, PutHiddenRecordResponses, PutIssueStatusData, PutIssueStatusErrors, PutIssueStatusResponses, PutPullRequestStatusData, PutPullRequestStatusErrors, PutPullRequestStatusResponses, PutStarData, PutStarErrors, PutStarResponses, RevokeAccessTokenData, RevokeAccessTokenErrors, RevokeAccessTokenResponses, RevokeSshKeyData, RevokeSshKeyErrors, RevokeSshKeyResponses, StartAtProtoLoginData, StartAtProtoLoginErrors, StartAtProtoLoginResponses, UpdateDeveloperProfileData, UpdateDeveloperProfileErrors, UpdateDeveloperProfileResponses, VerifyPasskeyLoginData, VerifyPasskeyLoginErrors, VerifyPasskeyLoginResponses, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationErrors, VerifyPasskeyRegistrationResponses } from './types.gen';
+import { zBeginPasskeyLoginHeaders, zBeginPasskeyLoginResponse, zBeginPasskeyRegistrationBody, zBeginPasskeyRegistrationHeaders, zBeginPasskeyRegistrationResponse, zCompleteAtProtoLoginQuery, zCreateAccessTokenBody, zCreateAccessTokenResponse, zCreateIssueBody, zCreateIssueCommentBody, zCreateIssueCommentHeaders, zCreateIssueCommentResponse, zCreateIssueHeaders, zCreateIssueResponse, zCreatePullRequestBody, zCreatePullRequestHeaders, zCreatePullRequestResponse, zCreatePullRequestReviewBody, zCreatePullRequestReviewHeaders, zCreatePullRequestReviewResponse, zCreateRepositoryBody, zCreateRepositoryHeaders, zCreateRepositoryResponse, zCreateSshKeyBody, zCreateSshKeyResponse, zDeleteBlockedDidHeaders, zDeleteBlockedDidQuery, zDeleteBlockedDidResponse, zDeleteHiddenRecordHeaders, zDeleteHiddenRecordQuery, zDeleteHiddenRecordResponse, zDeleteIssueCommentHeaders, zDeleteIssueCommentQuery, zDeletePasskeyHeaders, zDeletePasskeyPath, zDeletePasskeyResponse, zDeleteStarHeaders, zDeleteStarQuery, zGetCurrentIdentityResponse, zGetDeveloperProfilePath, zGetDeveloperProfileResponse, zGetIssueCommentsQuery, zGetIssueCommentsResponse, zGetIssuesQuery, zGetIssuesResponse, zGetLivenessResponse, zGetModerationResponse, zGetOAuthClientMetadataResponse, zGetPullRequestDiffQuery, zGetPullRequestDiffResponse, zGetPullRequestQuery, zGetPullRequestResponse, zGetReadinessResponse, zGetRepositoryBlobPath, zGetRepositoryBlobResponse, zGetRepositoryCommitPath, zGetRepositoryCommitResponse, zGetRepositoryDiffPath, zGetRepositoryDiffQuery, zGetRepositoryDiffResponse, zGetRepositoryMergeBasePath, zGetRepositoryMergeBaseQuery, zGetRepositoryMergeBaseResponse, zGetRepositoryPath, zGetRepositoryResponse, zGetRepositoryTreePath, zGetRepositoryTreeQuery, zGetRepositoryTreeResponse, zGetStarsQuery, zGetStarsResponse, zGetSyncIssueCommentsQuery, zGetSyncIssueCommentsResponse, zGetSyncIssuesQuery, zGetSyncIssuesResponse, zGetSyncProfilesQuery, zGetSyncProfilesResponse, zGetSyncPullRequestReviewsQuery, zGetSyncPullRequestReviewsResponse, zGetSyncPullRequestsQuery, zGetSyncPullRequestsResponse, zGetSyncRepositoriesQuery, zGetSyncRepositoriesResponse, zGetSyncStarsQuery, zGetSyncStarsResponse, zListAccessTokensResponse, zListNetworkRepositoriesQuery, zListNetworkRepositoriesResponse, zListPasskeysResponse, zListPullRequestReviewsQuery, zListPullRequestReviewsResponse, zListPullRequestsQuery, zListPullRequestsResponse, zListRepositoryBranchesPath, zListRepositoryBranchesResponse, zListRepositoryCommitsPath, zListRepositoryCommitsQuery, zListRepositoryCommitsResponse, zListRepositoryTagsPath, zListRepositoryTagsResponse, zListSshKeysResponse, zLogoutResponse, zMergePullRequestBody, zMergePullRequestHeaders, zMergePullRequestResponse, zPostSyncIssueCommentsBody, zPostSyncIssueCommentsQuery, zPostSyncIssueCommentsResponse, zPostSyncIssuesBody, zPostSyncIssuesQuery, zPostSyncIssuesResponse, zPostSyncProfilesBody, zPostSyncProfilesQuery, zPostSyncProfilesResponse, zPostSyncPullRequestReviewsBody, zPostSyncPullRequestReviewsQuery, zPostSyncPullRequestReviewsResponse, zPostSyncPullRequestsBody, zPostSyncPullRequestsQuery, zPostSyncPullRequestsResponse, zPostSyncRepositoriesBody, zPostSyncRepositoriesQuery, zPostSyncRepositoriesResponse, zPostSyncStarsBody, zPostSyncStarsQuery, zPostSyncStarsResponse, zPutBlockedDidBody, zPutBlockedDidHeaders, zPutBlockedDidResponse, zPutHiddenRecordBody, zPutHiddenRecordHeaders, zPutHiddenRecordResponse, zPutIssueStatusBody, zPutIssueStatusHeaders, zPutIssueStatusResponse, zPutPullRequestStatusBody, zPutPullRequestStatusHeaders, zPutPullRequestStatusResponse, zPutStarHeaders, zPutStarQuery, zPutStarResponse, zRevokeAccessTokenPath, zRevokeAccessTokenResponse, zRevokeSshKeyPath, zRevokeSshKeyResponse, zStartAtProtoLoginBody, zStartAtProtoLoginResponse2, zUpdateDeveloperProfileBody, zUpdateDeveloperProfileResponse, zVerifyPasskeyLoginBody, zVerifyPasskeyLoginHeaders, zVerifyPasskeyLoginResponse, zVerifyPasskeyRegistrationBody, zVerifyPasskeyRegistrationHeaders, zVerifyPasskeyRegistrationResponse } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -767,7 +767,7 @@ export const listNetworkRepositories = <ThrowOnError extends boolean = false>(op
 /**
  * Synchronize the public repository projection
  *
- * Proxies an Electric 1.7.10 shape fixed to approved columns from network.repositories. Adenosine always applies deleted_at IS NULL AND cid IS NOT NULL. The response is an Electric shape log: regular requests return an array of operation/control messages, not REST Repository objects. Insert values correspond to SyncRepository; update and delete values may contain only changed or key columns according to Electric replica semantics.
+ * Proxies an Electric 1.7.10 shape fixed to approved columns from network.repositories. Adenosine always applies deleted_at IS NULL AND cid IS NOT NULL plus optional server-owned browser-session moderation. The response is an Electric shape log: regular requests return an array of operation/control messages, not REST Repository objects. Insert values correspond to SyncRepository; update and delete values may contain only changed or key columns according to Electric replica semantics.
  */
 export const getSyncRepositories = <ThrowOnError extends boolean = false>(options: Options<GetSyncRepositoriesData, ThrowOnError>): RequestResult<GetSyncRepositoriesResponses, GetSyncRepositoriesErrors, ThrowOnError> => (options.client ?? client).get<GetSyncRepositoriesResponses, GetSyncRepositoriesErrors, ThrowOnError>({
     requestValidator: async (data) => await z.object({
@@ -793,6 +793,222 @@ export const postSyncRepositories = <ThrowOnError extends boolean = false>(optio
     }).parseAsync(data),
     responseValidator: async (data) => await zPostSyncRepositoriesResponse.parseAsync(data),
     url: '/api/v1/sync/repositories',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Synchronize public profiles
+ *
+ * Electric shape fixed by the server to approved public network.profiles columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncProfile; activity is derived by clients from the documented projections, not from network.records.
+ */
+export const getSyncProfiles = <ThrowOnError extends boolean = false>(options: Options<GetSyncProfilesData, ThrowOnError>): RequestResult<GetSyncProfilesResponses, GetSyncProfilesErrors, ThrowOnError> => (options.client ?? client).get<GetSyncProfilesResponses, GetSyncProfilesErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: zGetSyncProfilesQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetSyncProfilesResponse.parseAsync(data),
+    url: '/api/v1/sync/profiles',
+    ...options
+});
+
+/**
+ * Synchronize or narrow public profiles
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncProfile shape.
+ */
+export const postSyncProfiles = <ThrowOnError extends boolean = false>(options: Options<PostSyncProfilesData, ThrowOnError>): RequestResult<PostSyncProfilesResponses, PostSyncProfilesErrors, ThrowOnError> => (options.client ?? client).post<PostSyncProfilesResponses, PostSyncProfilesErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zPostSyncProfilesBody.optional(),
+        path: z.never().optional(),
+        query: zPostSyncProfilesQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zPostSyncProfilesResponse.parseAsync(data),
+    url: '/api/v1/sync/profiles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Synchronize public stars
+ *
+ * Electric shape fixed by the server to approved public network.stars columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncStar.
+ */
+export const getSyncStars = <ThrowOnError extends boolean = false>(options: Options<GetSyncStarsData, ThrowOnError>): RequestResult<GetSyncStarsResponses, GetSyncStarsErrors, ThrowOnError> => (options.client ?? client).get<GetSyncStarsResponses, GetSyncStarsErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: zGetSyncStarsQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetSyncStarsResponse.parseAsync(data),
+    url: '/api/v1/sync/stars',
+    ...options
+});
+
+/**
+ * Synchronize or narrow public stars
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncStar shape.
+ */
+export const postSyncStars = <ThrowOnError extends boolean = false>(options: Options<PostSyncStarsData, ThrowOnError>): RequestResult<PostSyncStarsResponses, PostSyncStarsErrors, ThrowOnError> => (options.client ?? client).post<PostSyncStarsResponses, PostSyncStarsErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zPostSyncStarsBody.optional(),
+        path: z.never().optional(),
+        query: zPostSyncStarsQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zPostSyncStarsResponse.parseAsync(data),
+    url: '/api/v1/sync/stars',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Synchronize public issues
+ *
+ * Electric shape fixed by the server to approved public network.issues columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncIssue. Issue comments are separate author-owned records available from /api/v1/sync/issue-comments.
+ */
+export const getSyncIssues = <ThrowOnError extends boolean = false>(options: Options<GetSyncIssuesData, ThrowOnError>): RequestResult<GetSyncIssuesResponses, GetSyncIssuesErrors, ThrowOnError> => (options.client ?? client).get<GetSyncIssuesResponses, GetSyncIssuesErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: zGetSyncIssuesQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetSyncIssuesResponse.parseAsync(data),
+    url: '/api/v1/sync/issues',
+    ...options
+});
+
+/**
+ * Synchronize or narrow public issues
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncIssue shape.
+ */
+export const postSyncIssues = <ThrowOnError extends boolean = false>(options: Options<PostSyncIssuesData, ThrowOnError>): RequestResult<PostSyncIssuesResponses, PostSyncIssuesErrors, ThrowOnError> => (options.client ?? client).post<PostSyncIssuesResponses, PostSyncIssuesErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zPostSyncIssuesBody.optional(),
+        path: z.never().optional(),
+        query: zPostSyncIssuesQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zPostSyncIssuesResponse.parseAsync(data),
+    url: '/api/v1/sync/issues',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Synchronize public issue comments
+ *
+ * Electric shape fixed by the server to approved public network.issue_comments columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncIssueComment. These are discussion records on issues; pull-request reviews are distinct verdict-bearing records.
+ */
+export const getSyncIssueComments = <ThrowOnError extends boolean = false>(options: Options<GetSyncIssueCommentsData, ThrowOnError>): RequestResult<GetSyncIssueCommentsResponses, GetSyncIssueCommentsErrors, ThrowOnError> => (options.client ?? client).get<GetSyncIssueCommentsResponses, GetSyncIssueCommentsErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: zGetSyncIssueCommentsQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetSyncIssueCommentsResponse.parseAsync(data),
+    url: '/api/v1/sync/issue-comments',
+    ...options
+});
+
+/**
+ * Synchronize or narrow public issue comments
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncIssueComment shape.
+ */
+export const postSyncIssueComments = <ThrowOnError extends boolean = false>(options: Options<PostSyncIssueCommentsData, ThrowOnError>): RequestResult<PostSyncIssueCommentsResponses, PostSyncIssueCommentsErrors, ThrowOnError> => (options.client ?? client).post<PostSyncIssueCommentsResponses, PostSyncIssueCommentsErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zPostSyncIssueCommentsBody.optional(),
+        path: z.never().optional(),
+        query: zPostSyncIssueCommentsQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zPostSyncIssueCommentsResponse.parseAsync(data),
+    url: '/api/v1/sync/issue-comments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Synchronize public pull requests
+ *
+ * Electric shape fixed by the server to approved public network.pull_requests columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncPullRequest.
+ */
+export const getSyncPullRequests = <ThrowOnError extends boolean = false>(options: Options<GetSyncPullRequestsData, ThrowOnError>): RequestResult<GetSyncPullRequestsResponses, GetSyncPullRequestsErrors, ThrowOnError> => (options.client ?? client).get<GetSyncPullRequestsResponses, GetSyncPullRequestsErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: zGetSyncPullRequestsQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetSyncPullRequestsResponse.parseAsync(data),
+    url: '/api/v1/sync/pull-requests',
+    ...options
+});
+
+/**
+ * Synchronize or narrow public pull requests
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncPullRequest shape.
+ */
+export const postSyncPullRequests = <ThrowOnError extends boolean = false>(options: Options<PostSyncPullRequestsData, ThrowOnError>): RequestResult<PostSyncPullRequestsResponses, PostSyncPullRequestsErrors, ThrowOnError> => (options.client ?? client).post<PostSyncPullRequestsResponses, PostSyncPullRequestsErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zPostSyncPullRequestsBody.optional(),
+        path: z.never().optional(),
+        query: zPostSyncPullRequestsQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zPostSyncPullRequestsResponse.parseAsync(data),
+    url: '/api/v1/sync/pull-requests',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Synchronize public pull-request reviews
+ *
+ * Electric shape fixed by the server to approved public network.pull_request_reviews columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncPullRequestReview. Reviews carry pull-request verdicts and are not issue comments.
+ */
+export const getSyncPullRequestReviews = <ThrowOnError extends boolean = false>(options: Options<GetSyncPullRequestReviewsData, ThrowOnError>): RequestResult<GetSyncPullRequestReviewsResponses, GetSyncPullRequestReviewsErrors, ThrowOnError> => (options.client ?? client).get<GetSyncPullRequestReviewsResponses, GetSyncPullRequestReviewsErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: zGetSyncPullRequestReviewsQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetSyncPullRequestReviewsResponse.parseAsync(data),
+    url: '/api/v1/sync/pull-request-reviews',
+    ...options
+});
+
+/**
+ * Synchronize or narrow public pull-request reviews
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncPullRequestReview shape.
+ */
+export const postSyncPullRequestReviews = <ThrowOnError extends boolean = false>(options: Options<PostSyncPullRequestReviewsData, ThrowOnError>): RequestResult<PostSyncPullRequestReviewsResponses, PostSyncPullRequestReviewsErrors, ThrowOnError> => (options.client ?? client).post<PostSyncPullRequestReviewsResponses, PostSyncPullRequestReviewsErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zPostSyncPullRequestReviewsBody.optional(),
+        path: z.never().optional(),
+        query: zPostSyncPullRequestReviewsQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zPostSyncPullRequestReviewsResponse.parseAsync(data),
+    url: '/api/v1/sync/pull-request-reviews',
     ...options,
     headers: {
         'Content-Type': 'application/json',

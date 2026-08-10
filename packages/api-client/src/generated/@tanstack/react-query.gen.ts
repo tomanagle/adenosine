@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { beginPasskeyLogin, beginPasskeyRegistration, completeAtProtoLogin, createAccessToken, createIssue, createIssueComment, createPullRequest, createPullRequestReview, createRepository, createSshKey, deleteBlockedDid, deleteHiddenRecord, deleteIssueComment, deletePasskey, deleteStar, getCurrentIdentity, getDeveloperProfile, getIssueComments, getIssues, getLiveness, getModeration, getOAuthClientMetadata, getPullRequest, getPullRequestDiff, getReadiness, getRepository, getRepositoryBlob, getRepositoryCommit, getRepositoryDiff, getRepositoryMergeBase, getRepositoryTree, getStars, getSyncRepositories, listAccessTokens, listNetworkRepositories, listPasskeys, listPullRequestReviews, listPullRequests, listRepositoryBranches, listRepositoryCommits, listRepositoryTags, listSshKeys, logout, mergePullRequest, type Options, postSyncRepositories, putBlockedDid, putHiddenRecord, putIssueStatus, putPullRequestStatus, putStar, revokeAccessToken, revokeSshKey, startAtProtoLogin, updateDeveloperProfile, verifyPasskeyLogin, verifyPasskeyRegistration } from '../sdk.gen';
-import type { BeginPasskeyLoginData, BeginPasskeyLoginError, BeginPasskeyLoginResponse, BeginPasskeyRegistrationData, BeginPasskeyRegistrationError, BeginPasskeyRegistrationResponse, CompleteAtProtoLoginData, CompleteAtProtoLoginError, CreateAccessTokenData, CreateAccessTokenError, CreateAccessTokenResponse, CreateIssueCommentData, CreateIssueCommentError, CreateIssueCommentResponse, CreateIssueData, CreateIssueError, CreateIssueResponse, CreatePullRequestData, CreatePullRequestError, CreatePullRequestResponse, CreatePullRequestReviewData, CreatePullRequestReviewError, CreatePullRequestReviewResponse, CreateRepositoryData, CreateRepositoryError, CreateRepositoryResponse, CreateSshKeyData, CreateSshKeyError, CreateSshKeyResponse, DeleteBlockedDidData, DeleteBlockedDidError, DeleteBlockedDidResponse, DeleteHiddenRecordData, DeleteHiddenRecordError, DeleteHiddenRecordResponse, DeleteIssueCommentData, DeleteIssueCommentError, DeletePasskeyData, DeletePasskeyError, DeletePasskeyResponse, DeleteStarData, DeleteStarError, GetCurrentIdentityData, GetCurrentIdentityError, GetCurrentIdentityResponse, GetDeveloperProfileData, GetDeveloperProfileError, GetDeveloperProfileResponse, GetIssueCommentsData, GetIssueCommentsError, GetIssueCommentsResponse, GetIssuesData, GetIssuesError, GetIssuesResponse, GetLivenessData, GetLivenessResponse, GetModerationData, GetModerationError, GetModerationResponse, GetOAuthClientMetadataData, GetOAuthClientMetadataResponse, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffError, GetPullRequestDiffResponse, GetPullRequestError, GetPullRequestResponse, GetReadinessData, GetReadinessError, GetReadinessResponse, GetRepositoryBlobData, GetRepositoryBlobError, GetRepositoryBlobResponse, GetRepositoryCommitData, GetRepositoryCommitError, GetRepositoryCommitResponse, GetRepositoryData, GetRepositoryDiffData, GetRepositoryDiffError, GetRepositoryDiffResponse, GetRepositoryError, GetRepositoryMergeBaseData, GetRepositoryMergeBaseError, GetRepositoryMergeBaseResponse, GetRepositoryResponse, GetRepositoryTreeData, GetRepositoryTreeError, GetRepositoryTreeResponse, GetStarsData, GetStarsError, GetStarsResponse, GetSyncRepositoriesData, GetSyncRepositoriesError, GetSyncRepositoriesResponse, ListAccessTokensData, ListAccessTokensError, ListAccessTokensResponse, ListNetworkRepositoriesData, ListNetworkRepositoriesError, ListNetworkRepositoriesResponse, ListPasskeysData, ListPasskeysError, ListPasskeysResponse, ListPullRequestReviewsData, ListPullRequestReviewsError, ListPullRequestReviewsResponse, ListPullRequestsData, ListPullRequestsError, ListPullRequestsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRepositoryCommitsData, ListRepositoryCommitsError, ListRepositoryCommitsResponse, ListRepositoryTagsData, ListRepositoryTagsError, ListRepositoryTagsResponse, ListSshKeysData, ListSshKeysError, ListSshKeysResponse, LogoutData, LogoutError, LogoutResponse, MergePullRequestData, MergePullRequestError, MergePullRequestResponse, PostSyncRepositoriesData, PostSyncRepositoriesError, PostSyncRepositoriesResponse, PutBlockedDidData, PutBlockedDidError, PutBlockedDidResponse, PutHiddenRecordData, PutHiddenRecordError, PutHiddenRecordResponse, PutIssueStatusData, PutIssueStatusError, PutIssueStatusResponse, PutPullRequestStatusData, PutPullRequestStatusError, PutPullRequestStatusResponse, PutStarData, PutStarError, PutStarResponse, RevokeAccessTokenData, RevokeAccessTokenError, RevokeAccessTokenResponse, RevokeSshKeyData, RevokeSshKeyError, RevokeSshKeyResponse, StartAtProtoLoginData, StartAtProtoLoginError, StartAtProtoLoginResponse2, UpdateDeveloperProfileData, UpdateDeveloperProfileError, UpdateDeveloperProfileResponse, VerifyPasskeyLoginData, VerifyPasskeyLoginError, VerifyPasskeyLoginResponse, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationError, VerifyPasskeyRegistrationResponse } from '../types.gen';
+import { beginPasskeyLogin, beginPasskeyRegistration, completeAtProtoLogin, createAccessToken, createIssue, createIssueComment, createPullRequest, createPullRequestReview, createRepository, createSshKey, deleteBlockedDid, deleteHiddenRecord, deleteIssueComment, deletePasskey, deleteStar, getCurrentIdentity, getDeveloperProfile, getIssueComments, getIssues, getLiveness, getModeration, getOAuthClientMetadata, getPullRequest, getPullRequestDiff, getReadiness, getRepository, getRepositoryBlob, getRepositoryCommit, getRepositoryDiff, getRepositoryMergeBase, getRepositoryTree, getStars, getSyncIssueComments, getSyncIssues, getSyncProfiles, getSyncPullRequestReviews, getSyncPullRequests, getSyncRepositories, getSyncStars, listAccessTokens, listNetworkRepositories, listPasskeys, listPullRequestReviews, listPullRequests, listRepositoryBranches, listRepositoryCommits, listRepositoryTags, listSshKeys, logout, mergePullRequest, type Options, postSyncIssueComments, postSyncIssues, postSyncProfiles, postSyncPullRequestReviews, postSyncPullRequests, postSyncRepositories, postSyncStars, putBlockedDid, putHiddenRecord, putIssueStatus, putPullRequestStatus, putStar, revokeAccessToken, revokeSshKey, startAtProtoLogin, updateDeveloperProfile, verifyPasskeyLogin, verifyPasskeyRegistration } from '../sdk.gen';
+import type { BeginPasskeyLoginData, BeginPasskeyLoginError, BeginPasskeyLoginResponse, BeginPasskeyRegistrationData, BeginPasskeyRegistrationError, BeginPasskeyRegistrationResponse, CompleteAtProtoLoginData, CompleteAtProtoLoginError, CreateAccessTokenData, CreateAccessTokenError, CreateAccessTokenResponse, CreateIssueCommentData, CreateIssueCommentError, CreateIssueCommentResponse, CreateIssueData, CreateIssueError, CreateIssueResponse, CreatePullRequestData, CreatePullRequestError, CreatePullRequestResponse, CreatePullRequestReviewData, CreatePullRequestReviewError, CreatePullRequestReviewResponse, CreateRepositoryData, CreateRepositoryError, CreateRepositoryResponse, CreateSshKeyData, CreateSshKeyError, CreateSshKeyResponse, DeleteBlockedDidData, DeleteBlockedDidError, DeleteBlockedDidResponse, DeleteHiddenRecordData, DeleteHiddenRecordError, DeleteHiddenRecordResponse, DeleteIssueCommentData, DeleteIssueCommentError, DeletePasskeyData, DeletePasskeyError, DeletePasskeyResponse, DeleteStarData, DeleteStarError, GetCurrentIdentityData, GetCurrentIdentityError, GetCurrentIdentityResponse, GetDeveloperProfileData, GetDeveloperProfileError, GetDeveloperProfileResponse, GetIssueCommentsData, GetIssueCommentsError, GetIssueCommentsResponse, GetIssuesData, GetIssuesError, GetIssuesResponse, GetLivenessData, GetLivenessResponse, GetModerationData, GetModerationError, GetModerationResponse, GetOAuthClientMetadataData, GetOAuthClientMetadataResponse, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffError, GetPullRequestDiffResponse, GetPullRequestError, GetPullRequestResponse, GetReadinessData, GetReadinessError, GetReadinessResponse, GetRepositoryBlobData, GetRepositoryBlobError, GetRepositoryBlobResponse, GetRepositoryCommitData, GetRepositoryCommitError, GetRepositoryCommitResponse, GetRepositoryData, GetRepositoryDiffData, GetRepositoryDiffError, GetRepositoryDiffResponse, GetRepositoryError, GetRepositoryMergeBaseData, GetRepositoryMergeBaseError, GetRepositoryMergeBaseResponse, GetRepositoryResponse, GetRepositoryTreeData, GetRepositoryTreeError, GetRepositoryTreeResponse, GetStarsData, GetStarsError, GetStarsResponse, GetSyncIssueCommentsData, GetSyncIssueCommentsError, GetSyncIssueCommentsResponse, GetSyncIssuesData, GetSyncIssuesError, GetSyncIssuesResponse, GetSyncProfilesData, GetSyncProfilesError, GetSyncProfilesResponse, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsError, GetSyncPullRequestReviewsResponse, GetSyncPullRequestsData, GetSyncPullRequestsError, GetSyncPullRequestsResponse, GetSyncRepositoriesData, GetSyncRepositoriesError, GetSyncRepositoriesResponse, GetSyncStarsData, GetSyncStarsError, GetSyncStarsResponse, ListAccessTokensData, ListAccessTokensError, ListAccessTokensResponse, ListNetworkRepositoriesData, ListNetworkRepositoriesError, ListNetworkRepositoriesResponse, ListPasskeysData, ListPasskeysError, ListPasskeysResponse, ListPullRequestReviewsData, ListPullRequestReviewsError, ListPullRequestReviewsResponse, ListPullRequestsData, ListPullRequestsError, ListPullRequestsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRepositoryCommitsData, ListRepositoryCommitsError, ListRepositoryCommitsResponse, ListRepositoryTagsData, ListRepositoryTagsError, ListRepositoryTagsResponse, ListSshKeysData, ListSshKeysError, ListSshKeysResponse, LogoutData, LogoutError, LogoutResponse, MergePullRequestData, MergePullRequestError, MergePullRequestResponse, PostSyncIssueCommentsData, PostSyncIssueCommentsError, PostSyncIssueCommentsResponse, PostSyncIssuesData, PostSyncIssuesError, PostSyncIssuesResponse, PostSyncProfilesData, PostSyncProfilesError, PostSyncProfilesResponse, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsError, PostSyncPullRequestReviewsResponse, PostSyncPullRequestsData, PostSyncPullRequestsError, PostSyncPullRequestsResponse, PostSyncRepositoriesData, PostSyncRepositoriesError, PostSyncRepositoriesResponse, PostSyncStarsData, PostSyncStarsError, PostSyncStarsResponse, PutBlockedDidData, PutBlockedDidError, PutBlockedDidResponse, PutHiddenRecordData, PutHiddenRecordError, PutHiddenRecordResponse, PutIssueStatusData, PutIssueStatusError, PutIssueStatusResponse, PutPullRequestStatusData, PutPullRequestStatusError, PutPullRequestStatusResponse, PutStarData, PutStarError, PutStarResponse, RevokeAccessTokenData, RevokeAccessTokenError, RevokeAccessTokenResponse, RevokeSshKeyData, RevokeSshKeyError, RevokeSshKeyResponse, StartAtProtoLoginData, StartAtProtoLoginError, StartAtProtoLoginResponse2, UpdateDeveloperProfileData, UpdateDeveloperProfileError, UpdateDeveloperProfileResponse, VerifyPasskeyLoginData, VerifyPasskeyLoginError, VerifyPasskeyLoginResponse, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationError, VerifyPasskeyRegistrationResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -782,7 +782,7 @@ export const getSyncRepositoriesQueryKey = (options: Options<GetSyncRepositories
 /**
  * Synchronize the public repository projection
  *
- * Proxies an Electric 1.7.10 shape fixed to approved columns from network.repositories. Adenosine always applies deleted_at IS NULL AND cid IS NOT NULL. The response is an Electric shape log: regular requests return an array of operation/control messages, not REST Repository objects. Insert values correspond to SyncRepository; update and delete values may contain only changed or key columns according to Electric replica semantics.
+ * Proxies an Electric 1.7.10 shape fixed to approved columns from network.repositories. Adenosine always applies deleted_at IS NULL AND cid IS NOT NULL plus optional server-owned browser-session moderation. The response is an Electric shape log: regular requests return an array of operation/control messages, not REST Repository objects. Insert values correspond to SyncRepository; update and delete values may contain only changed or key columns according to Electric replica semantics.
  */
 export const getSyncRepositoriesOptions = (options: Options<GetSyncRepositoriesData>) => queryOptions<GetSyncRepositoriesResponse, GetSyncRepositoriesError, GetSyncRepositoriesResponse, ReturnType<typeof getSyncRepositoriesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -802,7 +802,7 @@ export const getSyncRepositoriesInfiniteQueryKey = (options: Options<GetSyncRepo
 /**
  * Synchronize the public repository projection
  *
- * Proxies an Electric 1.7.10 shape fixed to approved columns from network.repositories. Adenosine always applies deleted_at IS NULL AND cid IS NOT NULL. The response is an Electric shape log: regular requests return an array of operation/control messages, not REST Repository objects. Insert values correspond to SyncRepository; update and delete values may contain only changed or key columns according to Electric replica semantics.
+ * Proxies an Electric 1.7.10 shape fixed to approved columns from network.repositories. Adenosine always applies deleted_at IS NULL AND cid IS NOT NULL plus optional server-owned browser-session moderation. The response is an Electric shape log: regular requests return an array of operation/control messages, not REST Repository objects. Insert values correspond to SyncRepository; update and delete values may contain only changed or key columns according to Electric replica semantics.
  */
 export const getSyncRepositoriesInfiniteOptions = (options: Options<GetSyncRepositoriesData>) => {
     const opts = infiniteQueryOptions<GetSyncRepositoriesResponse, GetSyncRepositoriesError, InfiniteData<GetSyncRepositoriesResponse>, QueryKey<Options<GetSyncRepositoriesData>>, string | Pick<QueryKey<Options<GetSyncRepositoriesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -838,6 +838,432 @@ export const postSyncRepositoriesMutation = (options?: Partial<Options<PostSyncR
     const mutationOptions: UseMutationOptions<PostSyncRepositoriesResponse, PostSyncRepositoriesError, Options<PostSyncRepositoriesData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await postSyncRepositories({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getSyncProfilesQueryKey = (options: Options<GetSyncProfilesData>) => createQueryKey('getSyncProfiles', options, false, ['Sync']);
+
+/**
+ * Synchronize public profiles
+ *
+ * Electric shape fixed by the server to approved public network.profiles columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncProfile; activity is derived by clients from the documented projections, not from network.records.
+ */
+export const getSyncProfilesOptions = (options: Options<GetSyncProfilesData>) => queryOptions<GetSyncProfilesResponse, GetSyncProfilesError, GetSyncProfilesResponse, ReturnType<typeof getSyncProfilesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSyncProfiles({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSyncProfilesQueryKey(options)
+});
+
+export const getSyncProfilesInfiniteQueryKey = (options: Options<GetSyncProfilesData>): QueryKey<Options<GetSyncProfilesData>> => createQueryKey('getSyncProfiles', options, true);
+
+/**
+ * Synchronize public profiles
+ *
+ * Electric shape fixed by the server to approved public network.profiles columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncProfile; activity is derived by clients from the documented projections, not from network.records.
+ */
+export const getSyncProfilesInfiniteOptions = (options: Options<GetSyncProfilesData>) => {
+    const opts = infiniteQueryOptions<GetSyncProfilesResponse, GetSyncProfilesError, InfiniteData<GetSyncProfilesResponse>, QueryKey<Options<GetSyncProfilesData>>, string | Pick<QueryKey<Options<GetSyncProfilesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetSyncProfilesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    offset: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getSyncProfiles({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getSyncProfilesInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Synchronize or narrow public profiles
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncProfile shape.
+ */
+export const postSyncProfilesMutation = (options?: Partial<Options<PostSyncProfilesData>>): UseMutationOptions<PostSyncProfilesResponse, PostSyncProfilesError, Options<PostSyncProfilesData>> => {
+    const mutationOptions: UseMutationOptions<PostSyncProfilesResponse, PostSyncProfilesError, Options<PostSyncProfilesData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postSyncProfiles({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getSyncStarsQueryKey = (options: Options<GetSyncStarsData>) => createQueryKey('getSyncStars', options, false, ['Sync']);
+
+/**
+ * Synchronize public stars
+ *
+ * Electric shape fixed by the server to approved public network.stars columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncStar.
+ */
+export const getSyncStarsOptions = (options: Options<GetSyncStarsData>) => queryOptions<GetSyncStarsResponse, GetSyncStarsError, GetSyncStarsResponse, ReturnType<typeof getSyncStarsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSyncStars({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSyncStarsQueryKey(options)
+});
+
+export const getSyncStarsInfiniteQueryKey = (options: Options<GetSyncStarsData>): QueryKey<Options<GetSyncStarsData>> => createQueryKey('getSyncStars', options, true);
+
+/**
+ * Synchronize public stars
+ *
+ * Electric shape fixed by the server to approved public network.stars columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncStar.
+ */
+export const getSyncStarsInfiniteOptions = (options: Options<GetSyncStarsData>) => {
+    const opts = infiniteQueryOptions<GetSyncStarsResponse, GetSyncStarsError, InfiniteData<GetSyncStarsResponse>, QueryKey<Options<GetSyncStarsData>>, string | Pick<QueryKey<Options<GetSyncStarsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetSyncStarsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    offset: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getSyncStars({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getSyncStarsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Synchronize or narrow public stars
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncStar shape.
+ */
+export const postSyncStarsMutation = (options?: Partial<Options<PostSyncStarsData>>): UseMutationOptions<PostSyncStarsResponse, PostSyncStarsError, Options<PostSyncStarsData>> => {
+    const mutationOptions: UseMutationOptions<PostSyncStarsResponse, PostSyncStarsError, Options<PostSyncStarsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postSyncStars({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getSyncIssuesQueryKey = (options: Options<GetSyncIssuesData>) => createQueryKey('getSyncIssues', options, false, ['Sync']);
+
+/**
+ * Synchronize public issues
+ *
+ * Electric shape fixed by the server to approved public network.issues columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncIssue. Issue comments are separate author-owned records available from /api/v1/sync/issue-comments.
+ */
+export const getSyncIssuesOptions = (options: Options<GetSyncIssuesData>) => queryOptions<GetSyncIssuesResponse, GetSyncIssuesError, GetSyncIssuesResponse, ReturnType<typeof getSyncIssuesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSyncIssues({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSyncIssuesQueryKey(options)
+});
+
+export const getSyncIssuesInfiniteQueryKey = (options: Options<GetSyncIssuesData>): QueryKey<Options<GetSyncIssuesData>> => createQueryKey('getSyncIssues', options, true);
+
+/**
+ * Synchronize public issues
+ *
+ * Electric shape fixed by the server to approved public network.issues columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncIssue. Issue comments are separate author-owned records available from /api/v1/sync/issue-comments.
+ */
+export const getSyncIssuesInfiniteOptions = (options: Options<GetSyncIssuesData>) => {
+    const opts = infiniteQueryOptions<GetSyncIssuesResponse, GetSyncIssuesError, InfiniteData<GetSyncIssuesResponse>, QueryKey<Options<GetSyncIssuesData>>, string | Pick<QueryKey<Options<GetSyncIssuesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetSyncIssuesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    offset: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getSyncIssues({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getSyncIssuesInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Synchronize or narrow public issues
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncIssue shape.
+ */
+export const postSyncIssuesMutation = (options?: Partial<Options<PostSyncIssuesData>>): UseMutationOptions<PostSyncIssuesResponse, PostSyncIssuesError, Options<PostSyncIssuesData>> => {
+    const mutationOptions: UseMutationOptions<PostSyncIssuesResponse, PostSyncIssuesError, Options<PostSyncIssuesData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postSyncIssues({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getSyncIssueCommentsQueryKey = (options: Options<GetSyncIssueCommentsData>) => createQueryKey('getSyncIssueComments', options, false, ['Sync']);
+
+/**
+ * Synchronize public issue comments
+ *
+ * Electric shape fixed by the server to approved public network.issue_comments columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncIssueComment. These are discussion records on issues; pull-request reviews are distinct verdict-bearing records.
+ */
+export const getSyncIssueCommentsOptions = (options: Options<GetSyncIssueCommentsData>) => queryOptions<GetSyncIssueCommentsResponse, GetSyncIssueCommentsError, GetSyncIssueCommentsResponse, ReturnType<typeof getSyncIssueCommentsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSyncIssueComments({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSyncIssueCommentsQueryKey(options)
+});
+
+export const getSyncIssueCommentsInfiniteQueryKey = (options: Options<GetSyncIssueCommentsData>): QueryKey<Options<GetSyncIssueCommentsData>> => createQueryKey('getSyncIssueComments', options, true);
+
+/**
+ * Synchronize public issue comments
+ *
+ * Electric shape fixed by the server to approved public network.issue_comments columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncIssueComment. These are discussion records on issues; pull-request reviews are distinct verdict-bearing records.
+ */
+export const getSyncIssueCommentsInfiniteOptions = (options: Options<GetSyncIssueCommentsData>) => {
+    const opts = infiniteQueryOptions<GetSyncIssueCommentsResponse, GetSyncIssueCommentsError, InfiniteData<GetSyncIssueCommentsResponse>, QueryKey<Options<GetSyncIssueCommentsData>>, string | Pick<QueryKey<Options<GetSyncIssueCommentsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetSyncIssueCommentsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    offset: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getSyncIssueComments({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getSyncIssueCommentsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Synchronize or narrow public issue comments
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncIssueComment shape.
+ */
+export const postSyncIssueCommentsMutation = (options?: Partial<Options<PostSyncIssueCommentsData>>): UseMutationOptions<PostSyncIssueCommentsResponse, PostSyncIssueCommentsError, Options<PostSyncIssueCommentsData>> => {
+    const mutationOptions: UseMutationOptions<PostSyncIssueCommentsResponse, PostSyncIssueCommentsError, Options<PostSyncIssueCommentsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postSyncIssueComments({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getSyncPullRequestsQueryKey = (options: Options<GetSyncPullRequestsData>) => createQueryKey('getSyncPullRequests', options, false, ['Sync']);
+
+/**
+ * Synchronize public pull requests
+ *
+ * Electric shape fixed by the server to approved public network.pull_requests columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncPullRequest.
+ */
+export const getSyncPullRequestsOptions = (options: Options<GetSyncPullRequestsData>) => queryOptions<GetSyncPullRequestsResponse, GetSyncPullRequestsError, GetSyncPullRequestsResponse, ReturnType<typeof getSyncPullRequestsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSyncPullRequests({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSyncPullRequestsQueryKey(options)
+});
+
+export const getSyncPullRequestsInfiniteQueryKey = (options: Options<GetSyncPullRequestsData>): QueryKey<Options<GetSyncPullRequestsData>> => createQueryKey('getSyncPullRequests', options, true);
+
+/**
+ * Synchronize public pull requests
+ *
+ * Electric shape fixed by the server to approved public network.pull_requests columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncPullRequest.
+ */
+export const getSyncPullRequestsInfiniteOptions = (options: Options<GetSyncPullRequestsData>) => {
+    const opts = infiniteQueryOptions<GetSyncPullRequestsResponse, GetSyncPullRequestsError, InfiniteData<GetSyncPullRequestsResponse>, QueryKey<Options<GetSyncPullRequestsData>>, string | Pick<QueryKey<Options<GetSyncPullRequestsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetSyncPullRequestsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    offset: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getSyncPullRequests({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getSyncPullRequestsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Synchronize or narrow public pull requests
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncPullRequest shape.
+ */
+export const postSyncPullRequestsMutation = (options?: Partial<Options<PostSyncPullRequestsData>>): UseMutationOptions<PostSyncPullRequestsResponse, PostSyncPullRequestsError, Options<PostSyncPullRequestsData>> => {
+    const mutationOptions: UseMutationOptions<PostSyncPullRequestsResponse, PostSyncPullRequestsError, Options<PostSyncPullRequestsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postSyncPullRequests({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getSyncPullRequestReviewsQueryKey = (options: Options<GetSyncPullRequestReviewsData>) => createQueryKey('getSyncPullRequestReviews', options, false, ['Sync']);
+
+/**
+ * Synchronize public pull-request reviews
+ *
+ * Electric shape fixed by the server to approved public network.pull_request_reviews columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncPullRequestReview. Reviews carry pull-request verdicts and are not issue comments.
+ */
+export const getSyncPullRequestReviewsOptions = (options: Options<GetSyncPullRequestReviewsData>) => queryOptions<GetSyncPullRequestReviewsResponse, GetSyncPullRequestReviewsError, GetSyncPullRequestReviewsResponse, ReturnType<typeof getSyncPullRequestReviewsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSyncPullRequestReviews({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSyncPullRequestReviewsQueryKey(options)
+});
+
+export const getSyncPullRequestReviewsInfiniteQueryKey = (options: Options<GetSyncPullRequestReviewsData>): QueryKey<Options<GetSyncPullRequestReviewsData>> => createQueryKey('getSyncPullRequestReviews', options, true);
+
+/**
+ * Synchronize public pull-request reviews
+ *
+ * Electric shape fixed by the server to approved public network.pull_request_reviews columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncPullRequestReview. Reviews carry pull-request verdicts and are not issue comments.
+ */
+export const getSyncPullRequestReviewsInfiniteOptions = (options: Options<GetSyncPullRequestReviewsData>) => {
+    const opts = infiniteQueryOptions<GetSyncPullRequestReviewsResponse, GetSyncPullRequestReviewsError, InfiniteData<GetSyncPullRequestReviewsResponse>, QueryKey<Options<GetSyncPullRequestReviewsData>>, string | Pick<QueryKey<Options<GetSyncPullRequestReviewsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetSyncPullRequestReviewsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    offset: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getSyncPullRequestReviews({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getSyncPullRequestReviewsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Synchronize or narrow public pull-request reviews
+ *
+ * The optional Electric subset body can only narrow the server-owned SyncPullRequestReview shape.
+ */
+export const postSyncPullRequestReviewsMutation = (options?: Partial<Options<PostSyncPullRequestReviewsData>>): UseMutationOptions<PostSyncPullRequestReviewsResponse, PostSyncPullRequestReviewsError, Options<PostSyncPullRequestReviewsData>> => {
+    const mutationOptions: UseMutationOptions<PostSyncPullRequestReviewsResponse, PostSyncPullRequestReviewsError, Options<PostSyncPullRequestReviewsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postSyncPullRequestReviews({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
