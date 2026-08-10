@@ -52,7 +52,7 @@ Your `.env.local` is the source of truth when ports are overridden. Electric is 
 
 ```sh
 make test            # Native Go and frontend tests
-make lint            # Native Go checks and frontend type checking
+make lint            # Native Go, Oxlint, Oxfmt, and frontend type checks
 make generate        # Native pinned sqlc, OpenAPI, and client generation
 make e2e             # local stack acceptance
 make e2e-federation  # isolated two-instance federation acceptance

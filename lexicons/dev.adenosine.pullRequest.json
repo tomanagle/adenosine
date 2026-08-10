@@ -7,7 +7,17 @@
       "key": "any",
       "record": {
         "type": "object",
-        "required": ["sourceRepository", "targetRepository", "sourceBranch", "targetBranch", "headSHA", "title", "body", "createdAt", "updatedAt"],
+        "required": [
+          "sourceRepository",
+          "targetRepository",
+          "sourceBranch",
+          "targetBranch",
+          "headSHA",
+          "title",
+          "body",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "sourceRepository": {
             "type": "ref",

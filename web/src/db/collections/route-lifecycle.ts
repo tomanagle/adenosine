@@ -10,7 +10,10 @@ export type RouteElectricCollections<R extends readonly RouteElectricResource[]>
   [K in R[number]]: RouteElectricCollection<K>
 }
 
-type CollectionFactory = <R extends RouteElectricResource>(scope: string, resource: R) => RouteElectricCollection<R>
+type CollectionFactory = <R extends RouteElectricResource>(
+  scope: string,
+  resource: R,
+) => RouteElectricCollection<R>
 
 export type RouteCollectionLifecycle<R extends readonly RouteElectricResource[]> = {
   routeScope: string
@@ -67,7 +70,10 @@ export function tryCreateRouteCollectionLifecycle<R extends readonly RouteElectr
   }
 }
 
-export function useRouteElectricCollections<R extends readonly RouteElectricResource[]>(routeScope: string, resources: R) {
+export function useRouteElectricCollections<R extends readonly RouteElectricResource[]>(
+  routeScope: string,
+  resources: R,
+) {
   const key = `${routeScope}\u0000${resources.join('\u0000')}`
   const [owned, setOwned] = useState<OwnedCollections<R> | null>(null)
 
@@ -77,6 +83,8 @@ export function useRouteElectricCollections<R extends readonly RouteElectricReso
     return () => {
       if (next.lifecycle) void next.lifecycle.cleanup()
     }
+    // The stable value key deliberately controls collection ownership; array identity must not.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
   if (owned?.key !== key) return { collections: null, error: null }

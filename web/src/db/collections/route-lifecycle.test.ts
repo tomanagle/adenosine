@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { RouteElectricCollection, RouteElectricResource } from './route-electric'
-import { createRouteCollectionLifecycle, tryCreateRouteCollectionLifecycle } from './route-lifecycle'
+import {
+  createRouteCollectionLifecycle,
+  tryCreateRouteCollectionLifecycle,
+} from './route-lifecycle'
 
 describe('route collection lifecycle', () => {
   it('constructs only requested resources and cleans all of them up', async () => {
@@ -14,7 +17,11 @@ describe('route collection lifecycle', () => {
       return { cleanup } as unknown as RouteElectricCollection<R>
     }
 
-    const lifecycle = createRouteCollectionLifecycle('home', ['repositories', 'profiles'] as const, factory)
+    const lifecycle = createRouteCollectionLifecycle(
+      'home',
+      ['repositories', 'profiles'] as const,
+      factory,
+    )
     expect(created).toEqual(['home:repositories', 'home:profiles'])
 
     await lifecycle.cleanup()

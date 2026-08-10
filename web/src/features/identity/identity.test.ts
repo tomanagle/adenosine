@@ -8,7 +8,9 @@ describe('classifyIdentityResult', () => {
   })
 
   it('validates an authenticated identity with the generated schema', () => {
-    expect(classifyIdentityResult({ data: { did: 'did:plc:alice', handle: 'alice.test' } })).toEqual({
+    expect(
+      classifyIdentityResult({ data: { did: 'did:plc:alice', handle: 'alice.test' } }),
+    ).toEqual({
       did: 'did:plc:alice',
       handle: 'alice.test',
     })

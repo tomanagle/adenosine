@@ -26,7 +26,8 @@ export class PublicationReconciler<T> {
   readonly #observedReferences = new Set<string>()
 
   constructor(delayMs = 10_000) {
-    if (!Number.isFinite(delayMs) || delayMs < 0) throw new Error('Publication sync delay must be non-negative')
+    if (!Number.isFinite(delayMs) || delayMs < 0)
+      throw new Error('Publication sync delay must be non-negative')
     this.#delayMs = delayMs
   }
 
@@ -39,7 +40,8 @@ export class PublicationReconciler<T> {
   }
 
   async publish(publication: PublishPublication<T>): Promise<PublicationReference> {
-    if (this.#publications.has(publication.id)) throw new Error(`Publication already exists: ${publication.id}`)
+    if (this.#publications.has(publication.id))
+      throw new Error(`Publication already exists: ${publication.id}`)
     this.#publications.set(publication.id, {
       id: publication.id,
       optimistic: publication.optimistic,
@@ -63,19 +65,26 @@ export class PublicationReconciler<T> {
       return reference
     }
     this.#publications.set(publication.id, { ...current, reference })
-    this.#timers.set(publication.id, setTimeout(() => {
-      const pending = this.#publications.get(publication.id)
-      if (pending?.state === 'publishing') {
-        this.#publications.set(publication.id, { ...pending, state: 'sync_delayed' })
-      }
-      this.#timers.delete(publication.id)
-    }, this.#delayMs))
+    this.#timers.set(
+      publication.id,
+      setTimeout(() => {
+        const pending = this.#publications.get(publication.id)
+        if (pending?.state === 'publishing') {
+          this.#publications.set(publication.id, { ...pending, state: 'sync_delayed' })
+        }
+        this.#timers.delete(publication.id)
+      }, this.#delayMs),
+    )
     return reference
   }
 
   observe(reference: PublicationReference) {
     for (const [id, publication] of this.#publications) {
-      if (publication.reference?.uri !== reference.uri || publication.reference.cid !== reference.cid) continue
+      if (
+        publication.reference?.uri !== reference.uri ||
+        publication.reference.cid !== reference.cid
+      )
+        continue
       const timer = this.#timers.get(id)
       if (timer) clearTimeout(timer)
       this.#timers.delete(id)

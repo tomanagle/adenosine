@@ -19,6 +19,11 @@ make doctor
 
 Run `make generate` after changing generated API, database, or Lexicon inputs. The script caches a checksum-verified sqlc release and invokes the pinned OpenAPI generator through `go run`; separate global installs are not required.
 
+Oxlint and Oxfmt are pinned workspace dependencies; global installs are not needed. `make lint` runs
+their non-mutating checks. Use `bun run lint:fix` and `bun run format` to fix web code locally, or run
+`bun run lint` and `bun run format:check` independently. Editor integrations should use the workspace
+`oxlint` and `oxfmt` executables and enable format on save with Oxfmt.
+
 ## Engineering rules
 
 - Use explicit constructor injection. Do not introduce service locators or mutable dependency globals.

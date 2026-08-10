@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -62,7 +62,13 @@
 }
 
 @layer base {
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground antialiased; }
-  ::selection { @apply bg-foreground text-background; }
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  ::selection {
+    @apply bg-foreground text-background;
+  }
 }

@@ -13,7 +13,9 @@ export function LiveRepositories() {
   if (error) return <LiveUnavailable />
   if (!collections) return <LiveConnecting />
 
-  return <LiveRepositoryQuery repositories={collections.repositories} profiles={collections.profiles} />
+  return (
+    <LiveRepositoryQuery repositories={collections.repositories} profiles={collections.profiles} />
+  )
 }
 
 function LiveRepositoryQuery({
@@ -55,10 +57,16 @@ function LiveRepositoryQuery({
           {live.data?.slice(0, 5).map((repository) => (
             <li className="flex items-center justify-between gap-4 p-3" key={repository.uri}>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{repository.name ?? repository.slug ?? repository.uri}</p>
-                <p className="truncate text-xs text-muted-foreground">{repository.ownerHandle ?? repository.ownerDid}</p>
+                <p className="truncate text-sm font-medium">
+                  {repository.name ?? repository.slug ?? repository.uri}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {repository.ownerHandle ?? repository.ownerDid}
+                </p>
               </div>
-              <span className="text-xs tabular-nums text-muted-foreground">{repository.starCount.toString()} stars</span>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {repository.starCount.toString()} stars
+              </span>
             </li>
           ))}
         </ul>

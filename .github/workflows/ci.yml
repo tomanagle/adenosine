@@ -23,7 +23,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: make test
       - run: go test -race ./...
-      - run: make lint
+      - name: Lint, format, and type checks
+        run: make lint
       - name: Verify generated code
         run: make generate && git diff --exit-code
 

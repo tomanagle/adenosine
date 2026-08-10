@@ -10,20 +10,27 @@ import {
 import { FetchError } from '@electric-sql/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const adapter = vi.hoisted(() => ({
-  BTreeIndex: class BTreeIndex {},
-  createCollection: vi.fn((options: unknown) => options),
-  electricCollectionOptions: vi.fn((options: unknown) => options),
-}))
-
-vi.mock('@tanstack/db', () => ({ BTreeIndex: adapter.BTreeIndex, createCollection: adapter.createCollection }))
-vi.mock('@tanstack/electric-db-collection', () => ({ electricCollectionOptions: adapter.electricCollectionOptions }))
-
 import {
   createRouteElectricCollection,
   routeElectricResources,
   type RouteElectricResource,
 } from './route-electric'
+
+const adapter = vi.hoisted(() => ({
+  BTreeIndex: class BTreeIndex {
+    readonly type = 'btree'
+  },
+  createCollection: vi.fn((options: unknown) => options),
+  electricCollectionOptions: vi.fn((options: unknown) => options),
+}))
+
+vi.mock('@tanstack/db', () => ({
+  BTreeIndex: adapter.BTreeIndex,
+  createCollection: adapter.createCollection,
+}))
+vi.mock('@tanstack/electric-db-collection', () => ({
+  electricCollectionOptions: adapter.electricCollectionOptions,
+}))
 
 type CapturedOptions = {
   id: string
@@ -65,8 +72,12 @@ describe('createRouteElectricCollection', () => {
       shapeOptions: { url: 'http://localhost:3000/api/v1/sync/repositories', subsetMethod: 'POST' },
     })
     expect(options.getKey({ uri: 'at://repo' } as never)).toBe('at://repo')
-    expect(options.shapeOptions.onError(new FetchError(401, 'unauthorized', undefined, {}, '/sync'))).toBeUndefined()
-    expect(options.shapeOptions.onError(new FetchError(429, 'busy', undefined, {}, '/sync'))).toEqual({})
+    expect(
+      options.shapeOptions.onError(new FetchError(401, 'unauthorized', undefined, {}, '/sync')),
+    ).toBeUndefined()
+    expect(
+      options.shapeOptions.onError(new FetchError(429, 'busy', undefined, {}, '/sync')),
+    ).toEqual({})
     expect(options.shapeOptions.onError(new Error('offline'))).toEqual({})
   })
 })
@@ -80,18 +91,31 @@ describe('route Electric resource mapping', () => {
       issues: { url: '/api/v1/sync/issues', schema: zSyncIssue },
       'issue-comments': { url: '/api/v1/sync/issue-comments', schema: zSyncIssueComment },
       'pull-requests': { url: '/api/v1/sync/pull-requests', schema: zSyncPullRequest },
-      'pull-request-reviews': { url: '/api/v1/sync/pull-request-reviews', schema: zSyncPullRequestReview },
+      'pull-request-reviews': {
+        url: '/api/v1/sync/pull-request-reviews',
+        schema: zSyncPullRequestReview,
+      },
     }
 
     for (const resource of Object.keys(expected) as RouteElectricResource[]) {
       expect(routeElectricResources[resource]).toMatchObject(expected[resource])
     }
-    expect(routeElectricResources.profiles.getKey({ did: 'did:plc:alice' } as never)).toBe('did:plc:alice')
-    expect(routeElectricResources.repositories.getKey({ uri: 'at://repo' } as never)).toBe('at://repo')
+    expect(routeElectricResources.profiles.getKey({ did: 'did:plc:alice' } as never)).toBe(
+      'did:plc:alice',
+    )
+    expect(routeElectricResources.repositories.getKey({ uri: 'at://repo' } as never)).toBe(
+      'at://repo',
+    )
     expect(routeElectricResources.stars.getKey({ uri: 'at://star' } as never)).toBe('at://star')
     expect(routeElectricResources.issues.getKey({ uri: 'at://issue' } as never)).toBe('at://issue')
-    expect(routeElectricResources['issue-comments'].getKey({ uri: 'at://comment' } as never)).toBe('at://comment')
-    expect(routeElectricResources['pull-requests'].getKey({ uri: 'at://pr' } as never)).toBe('at://pr')
-    expect(routeElectricResources['pull-request-reviews'].getKey({ uri: 'at://review' } as never)).toBe('at://review')
+    expect(routeElectricResources['issue-comments'].getKey({ uri: 'at://comment' } as never)).toBe(
+      'at://comment',
+    )
+    expect(routeElectricResources['pull-requests'].getKey({ uri: 'at://pr' } as never)).toBe(
+      'at://pr',
+    )
+    expect(
+      routeElectricResources['pull-request-reviews'].getKey({ uri: 'at://review' } as never),
+    ).toBe('at://review')
   })
 })

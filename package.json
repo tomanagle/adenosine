@@ -1,13 +1,22 @@
 {
   "name": "adenosine",
   "private": true,
-  "packageManager": "bun@1.3.13",
-  "devDependencies": {
-    "@hey-api/openapi-ts": "0.99.0",
-    "typescript": "6.0.3"
-  },
   "workspaces": [
     "packages/*",
     "web"
-  ]
+  ],
+  "scripts": {
+    "format": "oxfmt --write \"**/*.{ts,tsx,json,jsonc,css}\"",
+    "format:check": "oxfmt --check \"**/*.{ts,tsx,json,jsonc,css}\"",
+    "lint": "oxlint . --deny-warnings --report-unused-disable-directives",
+    "lint:fix": "oxlint . --fix --deny-warnings --report-unused-disable-directives",
+    "test:tooling": "bun test test/tooling"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "oxfmt": "0.63.0",
+    "oxlint": "1.78.0",
+    "typescript": "6.0.3"
+  },
+  "packageManager": "bun@1.3.13"
 }

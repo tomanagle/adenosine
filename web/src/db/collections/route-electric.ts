@@ -89,7 +89,13 @@ export type RouteElectricCollection<R extends RouteElectricResource> = Collectio
 >
 
 function retryTransientSyncError(error: Error) {
-  if (error instanceof FetchError && error.status >= 400 && error.status < 500 && error.status !== 429) return
+  if (
+    error instanceof FetchError &&
+    error.status >= 400 &&
+    error.status < 500 &&
+    error.status !== 429
+  )
+    return
   return {}
 }
 
@@ -105,7 +111,8 @@ function createFixedRouteCollection<TShape extends z.ZodRawShape>(
   const options = electricCollectionOptions({
     id: `route:${routeScope}:${resource}`,
     schema: definition.schema,
-    getKey: (row: Record<string, unknown>) => definition.getKey(row as unknown as z.output<z.ZodObject<TShape>>),
+    getKey: (row: Record<string, unknown>) =>
+      definition.getKey(row as unknown as z.output<z.ZodObject<TShape>>),
     syncMode: 'on-demand',
     autoIndex: 'eager',
     defaultIndexType: BTreeIndex,
@@ -135,7 +142,11 @@ export function createRouteElectricCollection<R extends RouteElectricResource>(
       collection = createFixedRouteCollection(routeScope, resource, routeElectricResources.profiles)
       break
     case 'repositories':
-      collection = createFixedRouteCollection(routeScope, resource, routeElectricResources.repositories)
+      collection = createFixedRouteCollection(
+        routeScope,
+        resource,
+        routeElectricResources.repositories,
+      )
       break
     case 'stars':
       collection = createFixedRouteCollection(routeScope, resource, routeElectricResources.stars)
@@ -144,22 +155,41 @@ export function createRouteElectricCollection<R extends RouteElectricResource>(
       collection = createFixedRouteCollection(routeScope, resource, routeElectricResources.issues)
       break
     case 'issue-comments':
-      collection = createFixedRouteCollection(routeScope, resource, routeElectricResources['issue-comments'])
+      collection = createFixedRouteCollection(
+        routeScope,
+        resource,
+        routeElectricResources['issue-comments'],
+      )
       break
     case 'pull-requests':
-      collection = createFixedRouteCollection(routeScope, resource, routeElectricResources['pull-requests'])
+      collection = createFixedRouteCollection(
+        routeScope,
+        resource,
+        routeElectricResources['pull-requests'],
+      )
       break
     case 'pull-request-reviews':
-      collection = createFixedRouteCollection(routeScope, resource, routeElectricResources['pull-request-reviews'])
+      collection = createFixedRouteCollection(
+        routeScope,
+        resource,
+        routeElectricResources['pull-request-reviews'],
+      )
       break
   }
   return collection as unknown as RouteElectricCollection<R>
 }
 
-export const createProfileCollection = (routeScope: string) => createRouteElectricCollection(routeScope, 'profiles')
-export const createRepositoryCollection = (routeScope: string) => createRouteElectricCollection(routeScope, 'repositories')
-export const createStarCollection = (routeScope: string) => createRouteElectricCollection(routeScope, 'stars')
-export const createIssueCollection = (routeScope: string) => createRouteElectricCollection(routeScope, 'issues')
-export const createIssueCommentCollection = (routeScope: string) => createRouteElectricCollection(routeScope, 'issue-comments')
-export const createPullRequestCollection = (routeScope: string) => createRouteElectricCollection(routeScope, 'pull-requests')
-export const createPullRequestReviewCollection = (routeScope: string) => createRouteElectricCollection(routeScope, 'pull-request-reviews')
+export const createProfileCollection = (routeScope: string) =>
+  createRouteElectricCollection(routeScope, 'profiles')
+export const createRepositoryCollection = (routeScope: string) =>
+  createRouteElectricCollection(routeScope, 'repositories')
+export const createStarCollection = (routeScope: string) =>
+  createRouteElectricCollection(routeScope, 'stars')
+export const createIssueCollection = (routeScope: string) =>
+  createRouteElectricCollection(routeScope, 'issues')
+export const createIssueCommentCollection = (routeScope: string) =>
+  createRouteElectricCollection(routeScope, 'issue-comments')
+export const createPullRequestCollection = (routeScope: string) =>
+  createRouteElectricCollection(routeScope, 'pull-requests')
+export const createPullRequestReviewCollection = (routeScope: string) =>
+  createRouteElectricCollection(routeScope, 'pull-request-reviews')

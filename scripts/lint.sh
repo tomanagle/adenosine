@@ -16,6 +16,8 @@ fi
 
 go vet ./...
 go test ./test/convention
+bun run lint
+bun run format:check
 bun run --cwd web typecheck
 
 panic_uses="$(find . -name '*.go' -not -path './.air/*' -exec grep -HnF 'panic(' {} + | grep -Ev '^./internal/(config/config|di/providers|database/migration/migration|gitssh/host_key|atproto/client|repository/endpoints|passkey/service|syncproxy/proxy)\.go:' || true)"

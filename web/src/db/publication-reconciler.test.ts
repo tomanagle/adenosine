@@ -45,7 +45,9 @@ describe('PublicationReconciler', () => {
 
   it('reconciles an Electric observation that arrives before the REST response', async () => {
     let resolveRequest: ((reference: { uri: string; cid: string }) => void) | undefined
-    const request = new Promise<{ uri: string; cid: string }>((resolve) => { resolveRequest = resolve })
+    const request = new Promise<{ uri: string; cid: string }>((resolve) => {
+      resolveRequest = resolve
+    })
     const reconciler = new PublicationReconciler(1_000)
     const publishing = reconciler.publish({
       id: 'fast-index',
@@ -66,12 +68,16 @@ describe('PublicationReconciler', () => {
     const rollback = vi.fn()
     const failure = new Error('REST rejected publication')
 
-    await expect(reconciler.publish({
-      id: 'new-comment',
-      optimistic: {},
-      request: async () => { throw failure },
-      rollback,
-    })).rejects.toBe(failure)
+    await expect(
+      reconciler.publish({
+        id: 'new-comment',
+        optimistic: {},
+        request: async () => {
+          throw failure
+        },
+        rollback,
+      }),
+    ).rejects.toBe(failure)
     expect(reconciler.get('new-comment')).toBeUndefined()
     expect(rollback).toHaveBeenCalledOnce()
   })
