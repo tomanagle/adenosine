@@ -76,10 +76,10 @@
         "summary": "Start AT Protocol OAuth login",
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StartATProtoLoginRequest" } } } },
         "responses": {
-          "200": { "description": "Authorization URL", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StartATProtoLoginResponse" } } } },
+          "200": { "description": "Authorization URL", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StartATProtoLoginResponse" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "502": { "description": "AT Protocol identity or OAuth provider unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "502": { "description": "AT Protocol identity or OAuth provider unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -90,7 +90,7 @@
         "summary": "Revoke the current local browser session",
         "security": [{ "sessionCookie": [] }],
         "responses": {
-          "204": { "description": "Session revoked" },
+          "204": { "description": "Session revoked", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }
@@ -141,7 +141,7 @@
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BeginPasskeyRegistrationRequest" } } } },
         "responses": {
-          "200": { "description": "WebAuthn registration options", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasskeyCeremonyOptions" } } } },
+          "200": { "description": "WebAuthn registration options", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasskeyCeremonyOptions" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
@@ -161,7 +161,7 @@
         "responses": {
           "201": {
             "description": "Passkey registered",
-            "headers": { "Location": { "description": "Canonical API URL for the passkey", "schema": { "type": "string", "format": "uri-reference" } } },
+            "headers": { "Location": { "description": "Canonical API URL for the passkey", "schema": { "type": "string", "format": "uri-reference" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } },
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Passkey" } } }
           },
           "400": { "$ref": "#/components/responses/BadRequest" },
@@ -180,7 +180,7 @@
         "security": [],
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "responses": {
-          "200": { "description": "WebAuthn login options", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasskeyCeremonyOptions" } } } },
+          "200": { "description": "WebAuthn login options", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasskeyCeremonyOptions" } } } },
           "403": { "$ref": "#/components/responses/Forbidden" },
           "409": { "$ref": "#/components/responses/Conflict" }
         }
@@ -195,7 +195,7 @@
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VerifyPasskeyCeremonyRequest" } } } },
         "responses": {
-          "204": { "description": "Local browser session created", "headers": { "Set-Cookie": { "schema": { "type": "string" } } } },
+          "204": { "description": "Local browser session created", "headers": { "Set-Cookie": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
@@ -209,7 +209,7 @@
         "summary": "List passkey metadata for the current browser session",
         "security": [{ "sessionCookie": [] }],
         "responses": {
-          "200": { "description": "Active passkey metadata", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasskeyList" } } } },
+          "200": { "description": "Active passkey metadata", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasskeyList" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -226,7 +226,7 @@
           { "$ref": "#/components/parameters/ExactOrigin" }
         ],
         "responses": {
-          "204": { "description": "Passkey revoked" },
+          "204": { "description": "Passkey revoked", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
@@ -250,7 +250,7 @@
           },
           "404": { "$ref": "#/components/responses/NotFound" },
           "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "502": { "description": "The profile provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "502": { "description": "The profile provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -265,12 +265,12 @@
           "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateDeveloperProfileRequest" } } }
         },
         "responses": {
-          "200": { "description": "Updated shared developer profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeveloperProfile" } } } },
+          "200": { "description": "Updated shared developer profile", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeveloperProfile" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
           "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "502": { "description": "The profile provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "502": { "description": "The profile provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -318,7 +318,7 @@
           "202": { "description": "Star published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StarMutation" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" },
           "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "502": { "description": "The AT Protocol star provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "502": { "description": "The AT Protocol star provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       },
       "delete": {
@@ -328,7 +328,7 @@
           "202": { "description": "Star deleted; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } },
           "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" },
           "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "502": { "description": "The AT Protocol star provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "502": { "description": "The AT Protocol star provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -346,10 +346,10 @@
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateIssueRequest" } } } },
         "responses": {
-          "202": { "description": "Issue published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueMutation" } } } },
+          "202": { "description": "Issue published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueMutation" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "502": { "description": "The AT Protocol issue provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "502": { "description": "The AT Protocol issue provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       },
       "put": {
@@ -357,10 +357,10 @@
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutIssueStatusRequest" } } } },
         "responses": {
-          "202": { "description": "Issue status published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueStatusMutation" } } } },
+          "202": { "description": "Issue status published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueStatusMutation" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "502": { "description": "The AT Protocol issue provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "502": { "description": "The AT Protocol issue provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -369,7 +369,7 @@
         "operationId": "getIssueComments", "tags": ["Comments"], "summary": "Get projected comments for an issue", "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
         "parameters": [{ "$ref": "#/components/parameters/IssueURI" }],
         "responses": {
-          "200": { "description": "Current bounded comment projection, personalized for a valid browser session", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommentList" } } } },
+          "200": { "description": "Current bounded comment projection, personalized for a valid browser session", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommentList" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
         }
@@ -379,20 +379,20 @@
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateCommentRequest" } } } },
         "responses": {
-          "202": { "description": "Comment published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommentMutation" } } } },
+          "202": { "description": "Comment published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommentMutation" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "502": { "description": "The AT Protocol comment provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "502": { "description": "The AT Protocol comment provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       },
       "delete": {
         "operationId": "deleteIssueComment", "tags": ["Comments"], "summary": "Delete the current developer's issue comment", "security": [{ "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/CommentURI" }, { "$ref": "#/components/parameters/ExactOrigin" }],
         "responses": {
-          "202": { "description": "Comment deleted; projection update is pending" },
+          "202": { "description": "Comment deleted; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } },
           "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" },
           "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "502": { "description": "The AT Protocol comment provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "502": { "description": "The AT Protocol comment provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -401,7 +401,7 @@
         "operationId": "listPullRequests", "tags": ["Pull Requests"], "summary": "List projected pull requests targeting a repository", "security": [],
         "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }],
         "responses": {
-          "200": { "description": "Current bounded pull request projection", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestList" } } } },
+          "200": { "description": "Current bounded pull request projection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestList" } } } },
           "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
         }
       },
@@ -410,10 +410,10 @@
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatePullRequestRequest" } } } },
         "responses": {
-          "202": { "description": "Pull request published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestMutation" } } } },
+          "202": { "description": "Pull request published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestMutation" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "502": { "description": "The AT Protocol pull request provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "502": { "description": "The AT Protocol pull request provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -421,7 +421,7 @@
       "get": {
         "operationId": "getPullRequest", "tags": ["Pull Requests"], "summary": "Get one current projected pull request", "security": [],
         "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }],
-        "responses": { "200": { "description": "Current projected pull request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequest" } } } }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+        "responses": { "200": { "description": "Current projected pull request", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequest" } } } }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
       }
     },
     "/api/v1/pull-requests/diff": {
@@ -429,8 +429,8 @@
         "operationId": "getPullRequestDiff", "tags": ["Pull Requests"], "summary": "Refresh and return a verified pull request diff", "security": [],
         "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }],
         "responses": {
-          "200": { "description": "Verified bounded pull request diff", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestDiff" } } } },
-          "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "413": { "description": "Diff exceeds the bounded output limit", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "200": { "description": "Verified bounded pull request diff", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestDiff" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "413": { "description": "Diff exceeds the bounded output limit", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -438,16 +438,16 @@
       "get": {
         "operationId": "listPullRequestReviews", "tags": ["Pull Requests"], "summary": "List reviews for the exact current pull request CID", "security": [],
         "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }],
-        "responses": { "200": { "description": "Current bounded reviews", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestReviewList" } } } }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+        "responses": { "200": { "description": "Current bounded reviews", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestReviewList" } } } }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
       },
       "post": {
         "operationId": "createPullRequestReview", "tags": ["Pull Requests"], "summary": "Publish a reviewer-authored review", "security": [{ "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatePullRequestReviewRequest" } } } },
         "responses": {
-          "202": { "description": "Review published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestReviewMutation" } } } },
+          "202": { "description": "Review published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestReviewMutation" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "description": "The AT Protocol pull request provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "description": "The AT Protocol pull request provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -457,9 +457,9 @@
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutPullRequestStatusRequest" } } } },
         "responses": {
-          "202": { "description": "Status published; projection update is pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestStatusMutation" } } } },
+          "202": { "description": "Status published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestStatusMutation" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" },
-          "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "description": "The AT Protocol pull request provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "description": "The AT Protocol pull request provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -469,12 +469,12 @@
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MergePullRequestRequest" } } } },
         "responses": {
-          "200": { "description": "Pull request merged and target-owner status published", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestMerge" } } } },
+          "200": { "description": "Pull request merged and target-owner status published", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestMerge" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "500": { "description": "The durable merge event could not be recorded", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "502": { "description": "The target owner's AT Protocol provider is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "503": { "description": "The Git repository is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "500": { "description": "The durable merge event could not be recorded", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "502": { "description": "The target owner's AT Protocol provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "503": { "description": "The Git repository is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -482,7 +482,7 @@
       "get": {
         "operationId": "getModeration", "tags": ["Moderation"], "summary": "List moderation rules owned by the current browser session", "security": [{ "sessionCookie": [] }],
         "responses": {
-          "200": { "description": "Current account-scoped moderation rules", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Moderation" } } } },
+          "200": { "description": "Current account-scoped moderation rules", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Moderation" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }
         }
       }
@@ -492,12 +492,12 @@
         "operationId": "putBlockedDID", "tags": ["Moderation"], "summary": "Block a DID for the current browser session", "security": [{ "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutBlockedDIDRequest" } } } },
-        "responses": { "204": { "description": "DID blocked" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+        "responses": { "204": { "description": "DID blocked", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
       },
       "delete": {
         "operationId": "deleteBlockedDID", "tags": ["Moderation"], "summary": "Unblock a DID for the current browser session", "security": [{ "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/BlockedDID" }, { "$ref": "#/components/parameters/ExactOrigin" }],
-        "responses": { "204": { "description": "DID unblocked" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+        "responses": { "204": { "description": "DID unblocked", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
       }
     },
     "/api/v1/moderation/hidden-records": {
@@ -505,12 +505,12 @@
         "operationId": "putHiddenRecord", "tags": ["Moderation"], "summary": "Hide a record for the current browser session", "security": [{ "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutHiddenRecordRequest" } } } },
-        "responses": { "204": { "description": "Record hidden" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+        "responses": { "204": { "description": "Record hidden", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
       },
       "delete": {
         "operationId": "deleteHiddenRecord", "tags": ["Moderation"], "summary": "Unhide a record for the current browser session", "security": [{ "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/RecordURI" }, { "$ref": "#/components/parameters/ExactOrigin" }],
-        "responses": { "204": { "description": "Record unhidden" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+        "responses": { "204": { "description": "Record unhidden", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
       }
     },
     "/api/v1/network/repositories": {
@@ -553,13 +553,13 @@
         ],
         "responses": {
           "200": { "$ref": "#/components/responses/ElectricShape" },
-          "304": { "description": "The cached shape response is still current" },
+          "304": { "description": "The cached shape response is still current", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "409": { "$ref": "#/components/responses/ElectricShapeConflict" },
-          "429": { "description": "Electric is temporarily busy", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
-          "502": { "description": "Electric is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "503": { "description": "Realtime sync is not configured", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
+          "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       },
       "post": {
@@ -582,10 +582,10 @@
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "409": { "$ref": "#/components/responses/ElectricShapeConflict" },
-          "413": { "description": "The subset request body exceeds 16 KiB", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "429": { "description": "Electric is temporarily busy", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
-          "502": { "description": "Electric is unavailable", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "503": { "description": "Realtime sync is not configured", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "413": { "description": "The subset request body exceeds 16 KiB", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
+          "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
         }
       }
     },
@@ -594,74 +594,74 @@
         "operationId": "getSyncProfiles", "tags": ["Sync"], "summary": "Synchronize public profiles", "security": [],
         "description": "Electric shape fixed by the server to approved public network.profiles columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncProfile; activity is derived by clients from the documented projections, not from network.records.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
-        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "The cached shape response is still current" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "The cached shape response is still current", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       },
       "post": {
         "operationId": "postSyncProfiles", "tags": ["Sync"], "summary": "Synchronize or narrow public profiles", "security": [],
         "description": "The optional Electric subset body can only narrow the server-owned SyncProfile shape.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
         "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } },
-        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       }
     },
     "/api/v1/sync/stars": {
       "get": {
         "operationId": "getSyncStars", "tags": ["Sync"], "summary": "Synchronize public stars", "security": [], "description": "Electric shape fixed by the server to approved public network.stars columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncStar.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
-        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       },
       "post": {
         "operationId": "postSyncStars", "tags": ["Sync"], "summary": "Synchronize or narrow public stars", "security": [], "description": "The optional Electric subset body can only narrow the server-owned SyncStar shape.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
-        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       }
     },
     "/api/v1/sync/issues": {
       "get": {
         "operationId": "getSyncIssues", "tags": ["Sync"], "summary": "Synchronize public issues", "security": [], "description": "Electric shape fixed by the server to approved public network.issues columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncIssue. Issue comments are separate author-owned records available from /api/v1/sync/issue-comments.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
-        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       },
       "post": {
         "operationId": "postSyncIssues", "tags": ["Sync"], "summary": "Synchronize or narrow public issues", "security": [], "description": "The optional Electric subset body can only narrow the server-owned SyncIssue shape.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
-        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       }
     },
     "/api/v1/sync/issue-comments": {
       "get": {
         "operationId": "getSyncIssueComments", "tags": ["Sync"], "summary": "Synchronize public issue comments", "security": [], "description": "Electric shape fixed by the server to approved public network.issue_comments columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncIssueComment. These are discussion records on issues; pull-request reviews are distinct verdict-bearing records.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
-        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       },
       "post": {
         "operationId": "postSyncIssueComments", "tags": ["Sync"], "summary": "Synchronize or narrow public issue comments", "security": [], "description": "The optional Electric subset body can only narrow the server-owned SyncIssueComment shape.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
-        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       }
     },
     "/api/v1/sync/pull-requests": {
       "get": {
         "operationId": "getSyncPullRequests", "tags": ["Sync"], "summary": "Synchronize public pull requests", "security": [], "description": "Electric shape fixed by the server to approved public network.pull_requests columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncPullRequest.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
-        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       },
       "post": {
         "operationId": "postSyncPullRequests", "tags": ["Sync"], "summary": "Synchronize or narrow public pull requests", "security": [], "description": "The optional Electric subset body can only narrow the server-owned SyncPullRequest shape.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
-        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       }
     },
     "/api/v1/sync/pull-request-reviews": {
       "get": {
         "operationId": "getSyncPullRequestReviews", "tags": ["Sync"], "summary": "Synchronize public pull-request reviews", "security": [], "description": "Electric shape fixed by the server to approved public network.pull_request_reviews columns, with optional browser-session moderation as described for Sync. Insert values conform to SyncPullRequestReview. Reviews carry pull-request verdicts and are not issue comments.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCursor" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricLive" }, { "$ref": "#/components/parameters/ElectricLiveSSE" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
-        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "304": { "description": "Not modified", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       },
       "post": {
         "operationId": "postSyncPullRequestReviews", "tags": ["Sync"], "summary": "Synchronize or narrow public pull-request reviews", "security": [], "description": "The optional Electric subset body can only narrow the server-owned SyncPullRequestReview shape.",
         "parameters": [{ "$ref": "#/components/parameters/ElectricOffset" }, { "$ref": "#/components/parameters/ElectricHandle" }, { "$ref": "#/components/parameters/ElectricCacheBuster" }, { "$ref": "#/components/parameters/ElectricExpiredHandle" }, { "$ref": "#/components/parameters/ElectricReplica" }, { "$ref": "#/components/parameters/ElectricLog" }],
-        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB" }, "429": { "description": "Electric is temporarily busy" }, "502": { "description": "Electric is unavailable" }, "503": { "description": "Realtime sync is not configured" } }
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SyncSubsetRequest" } } } }, "responses": { "200": { "$ref": "#/components/responses/ElectricShape" }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "409": { "$ref": "#/components/responses/ElectricShapeConflict" }, "413": { "description": "Subset body exceeds 16 KiB", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "429": { "description": "Electric is temporarily busy", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "502": { "description": "Electric is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "503": { "description": "Realtime sync is not configured", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } } }
       }
     },
     "/api/v1/repositories/{owner}/{repo}": {
@@ -695,7 +695,7 @@
           { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }
         ],
         "responses": {
-          "200": { "description": "Repository branches", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchList" } } } },
+          "200": { "description": "Repository branches", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchList" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" }
         }
@@ -712,7 +712,7 @@
           { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }
         ],
         "responses": {
-          "200": { "description": "Repository tags", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TagList" } } } },
+          "200": { "description": "Repository tags", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TagList" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" }
         }
@@ -731,7 +731,7 @@
           { "name": "path", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 4096 } }
         ],
         "responses": {
-          "200": { "description": "Resolved tree directory", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Tree" } } } },
+          "200": { "description": "Resolved tree directory", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Tree" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
@@ -780,7 +780,7 @@
           { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 } }
         ],
         "responses": {
-          "200": { "description": "Commit history", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommitList" } } } },
+          "200": { "description": "Commit history", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommitList" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
@@ -800,7 +800,7 @@
           { "name": "revision", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 1024 } }
         ],
         "responses": {
-          "200": { "description": "Commit details", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Commit" } } } },
+          "200": { "description": "Commit details", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Commit" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
@@ -821,11 +821,11 @@
           { "name": "head", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 1024 } }
         ],
         "responses": {
-          "200": { "description": "Resolved diff and patch", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Diff" } } } },
+          "200": { "description": "Resolved diff and patch", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Diff" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
-          "413": { "description": "Diff exceeds the bounded output limit", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "413": { "description": "Diff exceeds the bounded output limit", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
           "422": { "$ref": "#/components/responses/UnprocessableEntity" }
         }
       }
@@ -843,7 +843,7 @@
           { "name": "b", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 1024 } }
         ],
         "responses": {
-          "200": { "description": "Merge base", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MergeBase" } } } },
+          "200": { "description": "Merge base", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MergeBase" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "404": { "$ref": "#/components/responses/NotFound" },
@@ -858,7 +858,7 @@
         "summary": "List active personal access tokens",
         "security": [{ "sessionCookie": [] }],
         "responses": {
-          "200": { "description": "Active personal access tokens", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AccessTokenList" } } } },
+          "200": { "description": "Active personal access tokens", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AccessTokenList" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -870,7 +870,7 @@
         "security": [{ "sessionCookie": [] }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateAccessTokenRequest" } } } },
         "responses": {
-          "201": { "description": "Personal access token created; plaintext is returned once", "headers": { "Location": { "schema": { "type": "string" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatedAccessToken" } } } },
+          "201": { "description": "Personal access token created; plaintext is returned once", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatedAccessToken" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
@@ -886,7 +886,7 @@
         "security": [{ "sessionCookie": [] }],
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
         "responses": {
-          "204": { "description": "Personal access token revoked" },
+          "204": { "description": "Personal access token revoked", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
@@ -901,7 +901,7 @@
         "summary": "List active SSH public keys",
         "security": [{ "sessionCookie": [] }],
         "responses": {
-          "200": { "description": "Active SSH public keys", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SSHKeyList" } } } },
+          "200": { "description": "Active SSH public keys", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SSHKeyList" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" }
         }
@@ -913,7 +913,7 @@
         "security": [{ "sessionCookie": [] }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateSSHKeyRequest" } } } },
         "responses": {
-          "201": { "description": "SSH public key registered", "headers": { "Location": { "schema": { "type": "string" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SSHKey" } } } },
+          "201": { "description": "SSH public key registered", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SSHKey" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
@@ -930,7 +930,7 @@
         "security": [{ "sessionCookie": [] }],
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
         "responses": {
-          "204": { "description": "SSH public key revoked" },
+          "204": { "description": "SSH public key revoked", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
@@ -970,15 +970,16 @@
       ,"ElectricLog": { "name": "log", "in": "query", "required": false, "schema": { "type": "string", "enum": ["full", "changes_only"] } }
     },
     "responses": {
-      "BadRequest": { "description": "Malformed request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "Unauthorized": { "description": "Authentication required", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "Forbidden": { "description": "The identity is not authorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "NotFound": { "description": "The requested resource was not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "Conflict": { "description": "The request conflicts with existing state", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-      "UnprocessableEntity": { "description": "The request is structurally valid but semantically invalid", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "BadRequest": { "description": "Malformed request", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "Unauthorized": { "description": "Authentication required", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "Forbidden": { "description": "The identity is not authorized", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "NotFound": { "description": "The requested resource was not found", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "Conflict": { "description": "The request conflicts with existing state", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "UnprocessableEntity": { "description": "The request is structurally valid but semantically invalid", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
       "ElectricShape": {
         "description": "Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.",
         "headers": {
+          "X-Request-ID": { "$ref": "#/components/headers/RequestID" },
           "electric-handle": { "schema": { "type": "string" } },
           "electric-offset": { "schema": { "type": "string" } },
           "electric-cursor": { "schema": { "type": "string" } },
@@ -994,7 +995,7 @@
       },
       "ElectricShapeConflict": {
         "description": "The requested offset no longer exists. The body contains Electric's must-refetch control message and electric-handle may identify the replacement shape.",
-        "headers": { "electric-handle": { "schema": { "type": "string" } } },
+        "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" }, "electric-handle": { "schema": { "type": "string" } } },
         "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ElectricShapeMessage" } } } }
       }
     },
