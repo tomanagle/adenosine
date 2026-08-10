@@ -54,7 +54,7 @@ export function LandingPage() {
             <Link to="/login" className={cn(buttonVariants({ size: 'lg' }))}>
               Sign in to your forge <ArrowRight className="size-4" />
             </Link>
-            <a href="/api/docs" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}>
+            <a href="/docs/api" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}>
               Read the API
             </a>
           </div>
