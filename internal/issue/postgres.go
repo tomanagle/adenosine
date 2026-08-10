@@ -37,7 +37,7 @@ func (store *PostgresStore) GetProjection(ctx context.Context, repositoryURI str
 				Repository: StrongRef{URI: row.RepositoryUri, CID: row.ObservedRepositoryCid}, Title: row.Title, Body: row.Body,
 				CreatedAt: row.RecordCreatedAt.Time, UpdatedAt: row.RecordUpdatedAt.Time,
 			}},
-			State: State(row.State), Status: StrongRef{URI: row.StatusUri, CID: row.StatusCid}, IndexedAt: row.IndexedAt.Time,
+			State: State(row.State), Status: StrongRef{URI: row.StatusUri, CID: row.StatusCid}, CommentCount: row.CommentCount, IndexedAt: row.IndexedAt.Time,
 		})
 	}
 	return projection, nil

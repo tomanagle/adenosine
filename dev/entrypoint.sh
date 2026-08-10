@@ -30,18 +30,27 @@ WHERE NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'electric') \g
 
 ALTER ROLE electric WITH LOGIN REPLICATION NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT
   PASSWORD :'electric_password';
-REVOKE ALL PRIVILEGES ON SCHEMA public, auth, core, network, ops FROM electric;
-REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public, auth, core, network, ops FROM electric;
-REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public, auth, core, network, ops FROM electric;
+REVOKE ALL PRIVILEGES ON SCHEMA public, auth, core, network, moderation, ops FROM electric;
+REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public, auth, core, network, moderation, ops FROM electric;
+REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public, auth, core, network, moderation, ops FROM electric;
 GRANT USAGE ON SCHEMA network TO electric;
-GRANT SELECT ON TABLE network.repositories TO electric;
+GRANT SELECT ON TABLE network.repositories, network.profiles, network.stars, network.issues,
+  network.issue_comments, network.pull_requests, network.pull_request_reviews TO electric;
 ALTER TABLE network.repositories REPLICA IDENTITY FULL;
+ALTER TABLE network.profiles REPLICA IDENTITY FULL;
+ALTER TABLE network.stars REPLICA IDENTITY FULL;
+ALTER TABLE network.issues REPLICA IDENTITY FULL;
+ALTER TABLE network.issue_comments REPLICA IDENTITY FULL;
+ALTER TABLE network.pull_requests REPLICA IDENTITY FULL;
+ALTER TABLE network.pull_request_reviews REPLICA IDENTITY FULL;
 
 SELECT 'CREATE PUBLICATION electric_publication_default'
 WHERE NOT EXISTS (
   SELECT FROM pg_catalog.pg_publication WHERE pubname = 'electric_publication_default'
 ) \gexec
-ALTER PUBLICATION electric_publication_default SET TABLE network.repositories;
+ALTER PUBLICATION electric_publication_default SET TABLE network.repositories, network.profiles,
+  network.stars, network.issues, network.issue_comments, network.pull_requests,
+  network.pull_request_reviews;
 SQL
     unset ELECTRIC_DATABASE_PASSWORD
   fi

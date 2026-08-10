@@ -158,8 +158,8 @@ type GitReader interface {
 	MergeBase(context.Context, repository.ID, string, string) (string, error)
 }
 
-type SyncRepositoryProxy interface {
-	Forward(http.ResponseWriter, *http.Request) error
+type SyncProxy interface {
+	Forward(http.ResponseWriter, *http.Request, syncproxy.Shape, syncproxy.Policy) error
 }
 
 // FederationProcessor applies a single event delivered by Tap.
@@ -175,28 +175,28 @@ type FederationDependencies struct {
 
 // Dependencies contains the application capabilities exposed by REST.
 type Dependencies struct {
-	Sessions         SessionAuthenticator
-	Login            LoginService
-	LocalSessions    LocalSessionManager
-	Passkeys         PasskeyManager
-	Accounts         AccountReader
-	OAuthMetadata    OAuthMetadataProvider
-	TokenAuth        TokenAuthenticator
-	Tokens           TokenManager
-	SSHKeys          SSHKeyManager
-	Profiles         ProfileManager
-	Repositories     RepositoryManager
-	Endpoints        RepositoryEndpointBuilder
-	Discovery        NetworkRepositoryDiscovery
-	Stars            StarManager
-	Issues           IssueManager
-	PullRequests     PullRequestManager
-	Comments         CommentManager
-	Moderation       ModerationManager
-	Authorization    RepositoryAuthorizer
-	Git              GitReader
-	SyncRepositories SyncRepositoryProxy
-	Federation       *FederationDependencies
+	Sessions      SessionAuthenticator
+	Login         LoginService
+	LocalSessions LocalSessionManager
+	Passkeys      PasskeyManager
+	Accounts      AccountReader
+	OAuthMetadata OAuthMetadataProvider
+	TokenAuth     TokenAuthenticator
+	Tokens        TokenManager
+	SSHKeys       SSHKeyManager
+	Profiles      ProfileManager
+	Repositories  RepositoryManager
+	Endpoints     RepositoryEndpointBuilder
+	Discovery     NetworkRepositoryDiscovery
+	Stars         StarManager
+	Issues        IssueManager
+	PullRequests  PullRequestManager
+	Comments      CommentManager
+	Moderation    ModerationManager
+	Authorization RepositoryAuthorizer
+	Git           GitReader
+	Sync          SyncProxy
+	Federation    *FederationDependencies
 }
 
 type principal struct {
@@ -657,20 +657,96 @@ func (handler *apiHandler) ListNetworkRepositories(w http.ResponseWriter, r *htt
 }
 
 func (handler *apiHandler) GetSyncRepositories(w http.ResponseWriter, r *http.Request, _ generated.GetSyncRepositoriesParams) {
-	handler.syncRepositories(w, r)
+	handler.sync(w, r, syncproxy.Repositories)
 }
 
 func (handler *apiHandler) PostSyncRepositories(w http.ResponseWriter, r *http.Request, _ generated.PostSyncRepositoriesParams) {
-	handler.syncRepositories(w, r)
+	handler.sync(w, r, syncproxy.Repositories)
 }
 
-func (handler *apiHandler) syncRepositories(w http.ResponseWriter, r *http.Request) {
+func (handler *apiHandler) GetSyncProfiles(w http.ResponseWriter, r *http.Request, _ generated.GetSyncProfilesParams) {
+	handler.sync(w, r, syncproxy.Profiles)
+}
+
+func (handler *apiHandler) PostSyncProfiles(w http.ResponseWriter, r *http.Request, _ generated.PostSyncProfilesParams) {
+	handler.sync(w, r, syncproxy.Profiles)
+}
+
+func (handler *apiHandler) GetSyncStars(w http.ResponseWriter, r *http.Request, _ generated.GetSyncStarsParams) {
+	handler.sync(w, r, syncproxy.Stars)
+}
+
+func (handler *apiHandler) PostSyncStars(w http.ResponseWriter, r *http.Request, _ generated.PostSyncStarsParams) {
+	handler.sync(w, r, syncproxy.Stars)
+}
+
+func (handler *apiHandler) GetSyncIssues(w http.ResponseWriter, r *http.Request, _ generated.GetSyncIssuesParams) {
+	handler.sync(w, r, syncproxy.Issues)
+}
+
+func (handler *apiHandler) PostSyncIssues(w http.ResponseWriter, r *http.Request, _ generated.PostSyncIssuesParams) {
+	handler.sync(w, r, syncproxy.Issues)
+}
+
+func (handler *apiHandler) GetSyncIssueComments(w http.ResponseWriter, r *http.Request, _ generated.GetSyncIssueCommentsParams) {
+	handler.sync(w, r, syncproxy.IssueComments)
+}
+
+func (handler *apiHandler) PostSyncIssueComments(w http.ResponseWriter, r *http.Request, _ generated.PostSyncIssueCommentsParams) {
+	handler.sync(w, r, syncproxy.IssueComments)
+}
+
+func (handler *apiHandler) GetSyncPullRequests(w http.ResponseWriter, r *http.Request, _ generated.GetSyncPullRequestsParams) {
+	handler.sync(w, r, syncproxy.PullRequests)
+}
+
+func (handler *apiHandler) PostSyncPullRequests(w http.ResponseWriter, r *http.Request, _ generated.PostSyncPullRequestsParams) {
+	handler.sync(w, r, syncproxy.PullRequests)
+}
+
+func (handler *apiHandler) GetSyncPullRequestReviews(w http.ResponseWriter, r *http.Request, _ generated.GetSyncPullRequestReviewsParams) {
+	handler.sync(w, r, syncproxy.PullRequestReviews)
+}
+
+func (handler *apiHandler) PostSyncPullRequestReviews(w http.ResponseWriter, r *http.Request, _ generated.PostSyncPullRequestReviewsParams) {
+	handler.sync(w, r, syncproxy.PullRequestReviews)
+}
+
+func (handler *apiHandler) sync(w http.ResponseWriter, r *http.Request, shape syncproxy.Shape) {
 	w.Header().Set("Vary", "Cookie, Authorization")
-	if handler.deps.SyncRepositories == nil {
+	if handler.deps.Sync == nil {
 		handler.writeAPIError(w, r, http.StatusServiceUnavailable, "sync_disabled", "Realtime sync is not configured", syncproxy.ErrDisabled)
 		return
 	}
-	if err := handler.deps.SyncRepositories.Forward(w, r); err != nil {
+	viewerDID, err := handler.optionalSessionViewer(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	policy := syncproxy.Policy{BrowserSession: viewerDID != ""}
+	if viewerDID != "" {
+		if handler.deps.Moderation == nil {
+			handler.writeAPIError(w, r, http.StatusBadGateway, "sync_unavailable", "Realtime sync is unavailable", errors.New("sync moderation is unavailable"))
+			return
+		}
+		blocks, err := handler.deps.Moderation.ListBlocks(r.Context(), viewerDID)
+		if err != nil {
+			handler.writeAPIError(w, r, http.StatusBadGateway, "sync_unavailable", "Realtime sync is unavailable", err)
+			return
+		}
+		hidden, err := handler.deps.Moderation.ListHidden(r.Context(), viewerDID)
+		if err != nil {
+			handler.writeAPIError(w, r, http.StatusBadGateway, "sync_unavailable", "Realtime sync is unavailable", err)
+			return
+		}
+		for _, value := range blocks {
+			policy.BlockedDIDs = append(policy.BlockedDIDs, value.DID)
+		}
+		for _, value := range hidden {
+			policy.HiddenRecordURIs = append(policy.HiddenRecordURIs, value.URI)
+		}
+	}
+	if err := handler.deps.Sync.Forward(w, r, shape, policy); err != nil {
 		if r.Context().Err() != nil {
 			return
 		}
@@ -1598,7 +1674,7 @@ func projectedIssueResponse(value issue.ProjectedIssue) projectedIssueJSON {
 		RepositoryURI: value.Repository.URI, RepositoryCID: value.Repository.CID,
 		Title: value.Title, Body: value.Body, State: generated.IssueState(value.State),
 		StatusURI: pointerUnlessEmpty(value.Status.URI), StatusCID: pointerUnlessEmpty(value.Status.CID),
-		CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt, IndexedAt: value.IndexedAt,
+		CommentCount: value.CommentCount, CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt, IndexedAt: value.IndexedAt,
 	}
 }
 

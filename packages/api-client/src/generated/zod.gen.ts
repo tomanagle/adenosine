@@ -185,12 +185,134 @@ export const zSyncRepository = z.object({
     star_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     issue_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     open_issue_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    comment_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     pull_request_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     open_pull_request_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
 });
 
 /**
- * Electric 1.7.10 subset snapshot fields. where and order_by may reference only the approved SyncRepository columns.
+ * Flat approved network.profiles projection.
+ */
+export const zSyncProfile = z.object({
+    did: z.string(),
+    profile_uri: z.string().nullish(),
+    profile_cid: z.string().nullish(),
+    handle: z.string().nullish(),
+    display_name: z.string().nullish(),
+    bio: z.string().nullish(),
+    avatar_ref: z.string().nullish(),
+    website: z.string().nullish(),
+    location: z.string().nullish(),
+    repository_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    contribution_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    record_created_at: z.iso.datetime({ offset: true }).nullish(),
+    indexed_at: z.iso.datetime({ offset: true })
+});
+
+/**
+ * Flat approved network.stars projection.
+ */
+export const zSyncStar = z.object({
+    uri: z.string(),
+    cid: z.string(),
+    author_did: z.string(),
+    repository_uri: z.string(),
+    repository_cid: z.string(),
+    record_created_at: z.iso.datetime({ offset: true }),
+    indexed_at: z.iso.datetime({ offset: true })
+});
+
+/**
+ * Flat approved network.issues projection including repository-authoritative resolved state.
+ */
+export const zSyncIssue = z.object({
+    uri: z.string(),
+    cid: z.string(),
+    author_did: z.string(),
+    repository_uri: z.string(),
+    repository_cid: z.string(),
+    title: z.string(),
+    body: z.string(),
+    state: z.enum(['open', 'closed']),
+    status_uri: z.string().nullish(),
+    status_cid: z.string().nullish(),
+    status_updated_at: z.iso.datetime({ offset: true }).nullish(),
+    comment_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    record_created_at: z.iso.datetime({ offset: true }),
+    record_updated_at: z.iso.datetime({ offset: true }),
+    indexed_at: z.iso.datetime({ offset: true })
+});
+
+/**
+ * Flat approved author-owned network.issue_comments projection. Issue comments are distinct from pull-request reviews.
+ */
+export const zSyncIssueComment = z.object({
+    uri: z.string(),
+    cid: z.string(),
+    author_did: z.string(),
+    issue_uri: z.string(),
+    issue_cid: z.string(),
+    parent_uri: z.string().nullish(),
+    parent_cid: z.string().nullish(),
+    body: z.string(),
+    record_created_at: z.iso.datetime({ offset: true }),
+    record_updated_at: z.iso.datetime({ offset: true }),
+    indexed_at: z.iso.datetime({ offset: true })
+});
+
+/**
+ * Flat approved network.pull_requests projection including target-authoritative resolved state.
+ */
+export const zSyncPullRequest = z.object({
+    uri: z.string(),
+    cid: z.string(),
+    author_did: z.string(),
+    source_repository_uri: z.string(),
+    source_repository_cid: z.string(),
+    source_branch: z.string(),
+    target_repository_uri: z.string(),
+    target_repository_cid: z.string(),
+    target_branch: z.string(),
+    head_sha: z.string(),
+    title: z.string(),
+    body: z.string(),
+    state: z.enum([
+        'open',
+        'closed',
+        'merged'
+    ]),
+    status_uri: z.string().nullish(),
+    status_cid: z.string().nullish(),
+    status_updated_at: z.iso.datetime({ offset: true }).nullish(),
+    merged_commit_sha: z.string().nullish(),
+    review_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    record_created_at: z.iso.datetime({ offset: true }),
+    record_updated_at: z.iso.datetime({ offset: true }),
+    indexed_at: z.iso.datetime({ offset: true })
+});
+
+/**
+ * Flat approved verdict-bearing network.pull_request_reviews projection, distinct from issue comments.
+ */
+export const zSyncPullRequestReview = z.object({
+    uri: z.string(),
+    cid: z.string(),
+    author_did: z.string(),
+    pull_request_uri: z.string(),
+    pull_request_cid: z.string(),
+    verdict: z.enum([
+        'comment',
+        'approve',
+        'request_changes'
+    ]),
+    body: z.string(),
+    record_created_at: z.iso.datetime({ offset: true }),
+    record_updated_at: z.iso.datetime({ offset: true }),
+    indexed_at: z.iso.datetime({ offset: true })
+});
+
+/**
+ * Electric 1.7.10 subset snapshot fields. where and order_by may reference only columns approved for the selected server-owned Sync* projection.
  */
 export const zSyncSubsetRequest = z.object({
     where: z.string().min(1).max(4096).optional(),
@@ -201,13 +323,27 @@ export const zSyncSubsetRequest = z.object({
 });
 
 /**
+ * A partial Electric operation value. The generic object branch permits update and delete values with omitted columns; the named Sync* branches document complete insert-row projections.
+ */
+export const zElectricShapeValue = z.union([
+    z.record(z.string(), z.unknown()),
+    zSyncRepository,
+    zSyncProfile,
+    zSyncStar,
+    zSyncIssue,
+    zSyncIssueComment,
+    zSyncPullRequest,
+    zSyncPullRequestReview
+]);
+
+/**
  * Electric protocol message. Operation value and old_value are partial flat row objects; insert values conform to SyncRepository while updates and deletes may omit unchanged columns.
  */
 export const zElectricShapeMessage = z.object({
     headers: z.record(z.string(), z.unknown()),
     key: z.string().optional(),
-    value: z.record(z.string(), z.unknown()).optional(),
-    old_value: z.record(z.string(), z.unknown()).optional()
+    value: zElectricShapeValue.optional(),
+    old_value: zElectricShapeValue.optional()
 });
 
 export const zElectricSubsetResponse = z.object({
@@ -1087,7 +1223,7 @@ export const zGetSyncRepositoriesQuery = z.object({
 });
 
 /**
- * Electric shape-log or subset-snapshot response. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved.
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
  */
 export const zGetSyncRepositoriesResponse = z.union([
     z.array(zElectricShapeMessage),
@@ -1106,9 +1242,243 @@ export const zPostSyncRepositoriesQuery = z.object({
 });
 
 /**
- * Electric shape-log or subset-snapshot response. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved.
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
  */
 export const zPostSyncRepositoriesResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zGetSyncProfilesQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    cursor: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    live: z.boolean().optional(),
+    live_sse: z.boolean().optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zGetSyncProfilesResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zPostSyncProfilesBody = zSyncSubsetRequest;
+
+export const zPostSyncProfilesQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zPostSyncProfilesResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zGetSyncStarsQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    cursor: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    live: z.boolean().optional(),
+    live_sse: z.boolean().optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zGetSyncStarsResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zPostSyncStarsBody = zSyncSubsetRequest;
+
+export const zPostSyncStarsQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zPostSyncStarsResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zGetSyncIssuesQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    cursor: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    live: z.boolean().optional(),
+    live_sse: z.boolean().optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zGetSyncIssuesResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zPostSyncIssuesBody = zSyncSubsetRequest;
+
+export const zPostSyncIssuesQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zPostSyncIssuesResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zGetSyncIssueCommentsQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    cursor: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    live: z.boolean().optional(),
+    live_sse: z.boolean().optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zGetSyncIssueCommentsResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zPostSyncIssueCommentsBody = zSyncSubsetRequest;
+
+export const zPostSyncIssueCommentsQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zPostSyncIssueCommentsResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zGetSyncPullRequestsQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    cursor: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    live: z.boolean().optional(),
+    live_sse: z.boolean().optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zGetSyncPullRequestsResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zPostSyncPullRequestsBody = zSyncSubsetRequest;
+
+export const zPostSyncPullRequestsQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zPostSyncPullRequestsResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zGetSyncPullRequestReviewsQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    cursor: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    live: z.boolean().optional(),
+    live_sse: z.boolean().optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zGetSyncPullRequestReviewsResponse = z.union([
+    z.array(zElectricShapeMessage),
+    zElectricSubsetResponse
+]);
+
+export const zPostSyncPullRequestReviewsBody = zSyncSubsetRequest;
+
+export const zPostSyncPullRequestReviewsQuery = z.object({
+    offset: z.string().min(1).max(255),
+    handle: z.string().max(255).optional(),
+    'cache-buster': z.string().max(255).optional(),
+    expired_handle: z.string().max(255).optional(),
+    replica: z.enum(['default', 'full']).optional(),
+    log: z.enum(['full', 'changes_only']).optional()
+});
+
+/**
+ * Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.
+ */
+export const zPostSyncPullRequestReviewsResponse = z.union([
     z.array(zElectricShapeMessage),
     zElectricSubsetResponse
 ]);

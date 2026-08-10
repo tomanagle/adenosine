@@ -90,9 +90,10 @@ type Comment struct {
 // ProjectedIssue is the current locally indexed issue and authoritative state.
 type ProjectedIssue struct {
 	Issue
-	State     State
-	Status    StrongRef
-	IndexedAt time.Time
+	State        State
+	Status       StrongRef
+	CommentCount int64
+	IndexedAt    time.Time
 }
 
 // Projection is the bounded current issue projection for one repository.
