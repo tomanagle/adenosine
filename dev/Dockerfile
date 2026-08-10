@@ -31,6 +31,15 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/adenosine ./cmd/adenosine
 
+FROM tools AS federation-test
+COPY . .
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -o /usr/local/bin/realtime-boundary ./test/realtimeboundary \
+    && go build -o /usr/local/bin/realtime-gateway ./test/realtimegateway \
+    && go build -o /usr/local/bin/realtime-observer ./test/realtimeobserver \
+    && go build -o /usr/local/bin/realtime-producer ./test/realtimeproducer
+
 FROM alpine:3.21 AS production
 RUN apk add --no-cache ca-certificates git tzdata \
     && addgroup -S adenosine \
