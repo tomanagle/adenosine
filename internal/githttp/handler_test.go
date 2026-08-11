@@ -65,7 +65,7 @@ func (resolver fixedResolver) GetByOwnerSlug(_ context.Context, owner, slug stri
 
 func TestUploadPackSupportsRealClone(t *testing.T) {
 	t.Parallel()
-	testCases := []struct{ name string }{{name: "real clone and push"}}
+	testCases := []struct{ name string }{{name: "real clone and ref lifecycle"}}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			binary, err := exec.LookPath("git")
@@ -116,6 +116,12 @@ func TestUploadPackSupportsRealClone(t *testing.T) {
 			events := &pushEvents{}
 			server := httptest.NewServer(NewHandler(fixedResolver{repository: repo}, git, authorizer, events))
 			defer server.Close()
+			assertPushEvents := func(want int) {
+				t.Helper()
+				if events.count != want {
+					t.Fatalf("push events = %d, want %d", events.count, want)
+				}
+			}
 			writeURL := strings.Replace(server.URL, "http://", "http://alice:"+plaintextToken+"@", 1) + "/alice/hello-world.git"
 			clone := filepath.Join(t.TempDir(), "clone")
 			runGit(t, binary, "-c", "protocol.version=2", "clone", server.URL+"/alice/hello-world.git", clone)
@@ -134,12 +140,39 @@ func TestUploadPackSupportsRealClone(t *testing.T) {
 			runGit(t, binary, "-C", source, "add", "README.md")
 			runGit(t, binary, "-C", source, "-c", "user.name=Adenosine Test", "-c", "user.email=test@example.com", "commit", "-m", "update")
 			runGit(t, binary, "-C", source, "push", writeURL, "main")
+			assertPushEvents(1)
+
+			branch := "feature/smart-http"
+			branchRef := "refs/heads/" + branch
+			trackingRef := "refs/remotes/origin/" + branch
+			runGit(t, binary, "-C", source, "switch", "-c", branch)
+			if err := os.WriteFile(filepath.Join(source, "feature.txt"), []byte("branch lifecycle\n"), 0o600); err != nil {
+				t.Fatalf("write branch file: %v", err)
+			}
+			runGit(t, binary, "-C", source, "add", "feature.txt")
+			runGit(t, binary, "-C", source, "-c", "user.name=Adenosine Test", "-c", "user.email=test@example.com", "commit", "-m", "add feature")
+			branchCommit := gitOutput(t, binary, "-C", source, "rev-parse", "--verify", branchRef)
+			runGit(t, binary, "-C", source, "push", writeURL, branchRef+":"+branchRef)
+			assertPushEvents(2)
+
+			runGit(t, binary, "-C", clone, "fetch", "origin")
+			if got := gitOutput(t, binary, "-C", clone, "for-each-ref", "--format=%(refname) %(objectname)", trackingRef); got != trackingRef+" "+branchCommit {
+				t.Fatalf("fetched branch = %q, want %q", got, trackingRef+" "+branchCommit)
+			}
+
+			runGit(t, binary, "-C", source, "push", writeURL, ":"+branchRef)
+			assertPushEvents(3)
+			runGit(t, binary, "-C", clone, "fetch", "--prune", "origin")
+			if got := gitOutput(t, binary, "-C", clone, "for-each-ref", "--format=%(refname)", trackingRef); got != "" {
+				t.Fatalf("remote-tracking branch after prune = %q, want no ref", got)
+			}
+
+			runGit(t, binary, "-C", source, "switch", "main")
 			runGit(t, binary, "-C", source, "tag", "v1.0.0")
 			runGit(t, binary, "-C", source, "push", writeURL, "v1.0.0")
+			assertPushEvents(4)
 			runGit(t, binary, "-C", source, "push", writeURL, ":refs/tags/v1.0.0")
-			if events.count != 3 {
-				t.Fatalf("push events = %d, want 3", events.count)
-			}
+			assertPushEvents(5)
 		})
 	}
 }
@@ -170,8 +203,18 @@ func TestParsePath(t *testing.T) {
 
 func runGit(t *testing.T, binary string, arguments ...string) {
 	t.Helper()
-	command := exec.Command(binary, arguments...)
-	if output, err := command.CombinedOutput(); err != nil {
+	gitOutput(t, binary, arguments...)
+}
+
+func gitOutput(t *testing.T, binary string, arguments ...string) string {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	command := exec.CommandContext(ctx, binary, arguments...)
+	command.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
+	output, err := command.CombinedOutput()
+	if err != nil {
 		t.Fatalf("git %v: %v: %s", arguments, err, output)
 	}
+	return strings.TrimSpace(string(output))
 }
