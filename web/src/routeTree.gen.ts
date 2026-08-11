@@ -12,6 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as OwnerRepoRouteImport } from './routes/$owner.$repo'
+import { Route as OwnerRepoIndexRouteImport } from './routes/$owner.$repo.index'
+import { Route as OwnerRepoCommitsRouteImport } from './routes/$owner.$repo.commits'
+import { Route as OwnerRepoCompareRouteImport } from './routes/$owner.$repo.compare'
+import { Route as OwnerRepoBlobSplatRouteImport } from './routes/$owner.$repo.blob.$'
+import { Route as OwnerRepoCommitRevisionRouteImport } from './routes/$owner.$repo.commit.$revision'
+import { Route as OwnerRepoTreeSplatRouteImport } from './routes/$owner.$repo.tree.$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +35,121 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OwnerRepoRoute = OwnerRepoRouteImport.update({
+  id: '/$owner/$repo',
+  path: '/$owner/$repo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerRepoIndexRoute = OwnerRepoIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoCommitsRoute = OwnerRepoCommitsRouteImport.update({
+  id: '/commits',
+  path: '/commits',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoCompareRoute = OwnerRepoCompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoBlobSplatRoute = OwnerRepoBlobSplatRouteImport.update({
+  id: '/blob/$',
+  path: '/blob/$',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoCommitRevisionRoute = OwnerRepoCommitRevisionRouteImport.update({
+  id: '/commit/$revision',
+  path: '/commit/$revision',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoTreeSplatRoute = OwnerRepoTreeSplatRouteImport.update({
+  id: '/tree/$',
+  path: '/tree/$',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/$owner/$repo': typeof OwnerRepoRouteWithChildren
+  '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
+  '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
+  '/$owner/$repo/': typeof OwnerRepoIndexRoute
+  '/$owner/$repo/blob/$': typeof OwnerRepoBlobSplatRoute
+  '/$owner/$repo/commit/$revision': typeof OwnerRepoCommitRevisionRoute
+  '/$owner/$repo/tree/$': typeof OwnerRepoTreeSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
+  '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
+  '/$owner/$repo': typeof OwnerRepoIndexRoute
+  '/$owner/$repo/blob/$': typeof OwnerRepoBlobSplatRoute
+  '/$owner/$repo/commit/$revision': typeof OwnerRepoCommitRevisionRoute
+  '/$owner/$repo/tree/$': typeof OwnerRepoTreeSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/$owner/$repo': typeof OwnerRepoRouteWithChildren
+  '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
+  '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
+  '/$owner/$repo/': typeof OwnerRepoIndexRoute
+  '/$owner/$repo/blob/$': typeof OwnerRepoBlobSplatRoute
+  '/$owner/$repo/commit/$revision': typeof OwnerRepoCommitRevisionRoute
+  '/$owner/$repo/tree/$': typeof OwnerRepoTreeSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/explore' | '/login'
+  fullPaths:
+    | '/'
+    | '/explore'
+    | '/login'
+    | '/$owner/$repo'
+    | '/$owner/$repo/commits'
+    | '/$owner/$repo/compare'
+    | '/$owner/$repo/'
+    | '/$owner/$repo/blob/$'
+    | '/$owner/$repo/commit/$revision'
+    | '/$owner/$repo/tree/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/explore' | '/login'
-  id: '__root__' | '/' | '/explore' | '/login'
+  to:
+    | '/'
+    | '/explore'
+    | '/login'
+    | '/$owner/$repo/commits'
+    | '/$owner/$repo/compare'
+    | '/$owner/$repo'
+    | '/$owner/$repo/blob/$'
+    | '/$owner/$repo/commit/$revision'
+    | '/$owner/$repo/tree/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/explore'
+    | '/login'
+    | '/$owner/$repo'
+    | '/$owner/$repo/commits'
+    | '/$owner/$repo/compare'
+    | '/$owner/$repo/'
+    | '/$owner/$repo/blob/$'
+    | '/$owner/$repo/commit/$revision'
+    | '/$owner/$repo/tree/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExploreRoute: typeof ExploreRoute
   LoginRoute: typeof LoginRoute
+  OwnerRepoRoute: typeof OwnerRepoRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -82,13 +175,85 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$owner/$repo': {
+      id: '/$owner/$repo'
+      path: '/$owner/$repo'
+      fullPath: '/$owner/$repo'
+      preLoaderRoute: typeof OwnerRepoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$owner/$repo/': {
+      id: '/$owner/$repo/'
+      path: '/'
+      fullPath: '/$owner/$repo/'
+      preLoaderRoute: typeof OwnerRepoIndexRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
+    '/$owner/$repo/commits': {
+      id: '/$owner/$repo/commits'
+      path: '/commits'
+      fullPath: '/$owner/$repo/commits'
+      preLoaderRoute: typeof OwnerRepoCommitsRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
+    '/$owner/$repo/compare': {
+      id: '/$owner/$repo/compare'
+      path: '/compare'
+      fullPath: '/$owner/$repo/compare'
+      preLoaderRoute: typeof OwnerRepoCompareRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
+    '/$owner/$repo/blob/$': {
+      id: '/$owner/$repo/blob/$'
+      path: '/blob/$'
+      fullPath: '/$owner/$repo/blob/$'
+      preLoaderRoute: typeof OwnerRepoBlobSplatRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
+    '/$owner/$repo/commit/$revision': {
+      id: '/$owner/$repo/commit/$revision'
+      path: '/commit/$revision'
+      fullPath: '/$owner/$repo/commit/$revision'
+      preLoaderRoute: typeof OwnerRepoCommitRevisionRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
+    '/$owner/$repo/tree/$': {
+      id: '/$owner/$repo/tree/$'
+      path: '/tree/$'
+      fullPath: '/$owner/$repo/tree/$'
+      preLoaderRoute: typeof OwnerRepoTreeSplatRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
   }
 }
+
+interface OwnerRepoRouteChildren {
+  OwnerRepoCommitsRoute: typeof OwnerRepoCommitsRoute
+  OwnerRepoCompareRoute: typeof OwnerRepoCompareRoute
+  OwnerRepoIndexRoute: typeof OwnerRepoIndexRoute
+  OwnerRepoBlobSplatRoute: typeof OwnerRepoBlobSplatRoute
+  OwnerRepoCommitRevisionRoute: typeof OwnerRepoCommitRevisionRoute
+  OwnerRepoTreeSplatRoute: typeof OwnerRepoTreeSplatRoute
+}
+
+const OwnerRepoRouteChildren: OwnerRepoRouteChildren = {
+  OwnerRepoCommitsRoute: OwnerRepoCommitsRoute,
+  OwnerRepoCompareRoute: OwnerRepoCompareRoute,
+  OwnerRepoIndexRoute: OwnerRepoIndexRoute,
+  OwnerRepoBlobSplatRoute: OwnerRepoBlobSplatRoute,
+  OwnerRepoCommitRevisionRoute: OwnerRepoCommitRevisionRoute,
+  OwnerRepoTreeSplatRoute: OwnerRepoTreeSplatRoute,
+}
+
+const OwnerRepoRouteWithChildren = OwnerRepoRoute._addFileChildren(
+  OwnerRepoRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExploreRoute: ExploreRoute,
   LoginRoute: LoginRoute,
+  OwnerRepoRoute: OwnerRepoRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

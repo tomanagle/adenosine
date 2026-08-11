@@ -1,0 +1,88 @@
+import {
+  deleteStarMutation,
+  getRepositoryBlobOptions,
+  getRepositoryCommitOptions,
+  getRepositoryDiffOptions,
+  getRepositoryMergeBaseOptions,
+  getRepositoryOptions,
+  getRepositoryTreeOptions,
+  getStarsOptions,
+  listRepositoryBranchesOptions,
+  listRepositoryCommitsOptions,
+  listRepositoryTagsOptions,
+  putStarMutation,
+} from '@adenosine/api-client/query'
+
+import { browserApiClient } from '@/api/browser-client'
+
+export type RepositoryRouteParams = { owner: string; repo: string }
+
+const path = ({ owner, repo }: RepositoryRouteParams) => ({ owner, repo })
+
+export const repositoryQueryOptions = (params: RepositoryRouteParams) =>
+  getRepositoryOptions({ client: browserApiClient, path: path(params) })
+
+export const starsQueryOptions = (repositoryUri: string) =>
+  getStarsOptions({ client: browserApiClient, query: { repository_uri: repositoryUri } })
+
+export const putStarMutationOptions = () => putStarMutation({ client: browserApiClient })
+
+export const deleteStarMutationOptions = () => deleteStarMutation({ client: browserApiClient })
+
+export const branchesQueryOptions = (params: RepositoryRouteParams) => ({
+  ...listRepositoryBranchesOptions({ client: browserApiClient, path: path(params) }),
+  retryOnMount: false,
+})
+
+export const tagsQueryOptions = (params: RepositoryRouteParams) => ({
+  ...listRepositoryTagsOptions({ client: browserApiClient, path: path(params) }),
+  retryOnMount: false,
+})
+
+export const treeQueryOptions = (params: RepositoryRouteParams, revision: string, treePath = '') =>
+  getRepositoryTreeOptions({
+    client: browserApiClient,
+    path: path(params),
+    query: { rev: revision, path: treePath || undefined },
+  })
+
+export const blobQueryOptions = (params: RepositoryRouteParams, sha: string) =>
+  getRepositoryBlobOptions({
+    client: browserApiClient,
+    path: { ...path(params), sha },
+  })
+
+export const commitsQueryOptions = (params: RepositoryRouteParams, ref: string, limit: number) =>
+  listRepositoryCommitsOptions({
+    client: browserApiClient,
+    path: path(params),
+    query: { ref, limit },
+  })
+
+export const commitQueryOptions = (params: RepositoryRouteParams, revision: string) =>
+  getRepositoryCommitOptions({
+    client: browserApiClient,
+    path: { ...path(params), revision },
+  })
+
+export const diffQueryOptions = (params: RepositoryRouteParams, base: string, head: string) => ({
+  ...getRepositoryDiffOptions({
+    client: browserApiClient,
+    path: path(params),
+    query: { base, head },
+  }),
+  retryOnMount: false,
+})
+
+export const mergeBaseQueryOptions = (
+  params: RepositoryRouteParams,
+  first: string,
+  second: string,
+) => ({
+  ...getRepositoryMergeBaseOptions({
+    client: browserApiClient,
+    path: path(params),
+    query: { a: first, b: second },
+  }),
+  retryOnMount: false,
+})
