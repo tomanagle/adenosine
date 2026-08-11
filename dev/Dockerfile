@@ -41,7 +41,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     && go build -o /usr/local/bin/realtime-producer ./test/realtimeproducer
 
 FROM alpine:3.21 AS production
-RUN apk add --no-cache ca-certificates git tzdata \
+RUN apk add --no-cache ca-certificates git openssh-keygen tzdata \
     && addgroup -S adenosine \
     && adduser -S -G adenosine adenosine \
     && mkdir -p /var/lib/adenosine/repos /var/lib/adenosine/state \
