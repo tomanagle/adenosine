@@ -46,13 +46,13 @@ func Must() Config {
 func load() (Config, error) {
 	cfg := Config{
 		BaseURL:          valueOrDefault("ADENOSINE_BASE_URL", "http://127.0.0.1:8080"),
-		ListenAddr:       valueOrDefault("ADENOSINE_LISTEN_ADDR", ":8080"),
+		ListenAddr:       listenAddrOrDefault("ADENOSINE_LISTEN_ADDR", ":8080"),
 		DatabaseURL:      strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		ElectricURL:      strings.TrimSpace(os.Getenv("ADENOSINE_ELECTRIC_URL")),
 		ElectricSecret:   strings.TrimSpace(os.Getenv("ADENOSINE_ELECTRIC_SECRET")),
 		RepositoryRoot:   valueOrDefault("ADENOSINE_REPO_ROOT", "/var/lib/adenosine/repos"),
 		GitBinary:        valueOrDefault("ADENOSINE_GIT_BINARY", "git"),
-		SSHListenAddr:    valueOrDefault("ADENOSINE_SSH_LISTEN_ADDR", ":2222"),
+		SSHListenAddr:    listenAddrOrDefault("ADENOSINE_SSH_LISTEN_ADDR", ":2222"),
 		SSHHost:          valueOrDefault("ADENOSINE_SSH_HOST", "localhost"),
 		SSHPort:          2222,
 		SSHHostKeyPath:   valueOrDefault("ADENOSINE_SSH_HOST_KEY_PATH", "/var/lib/adenosine/state/ssh_host_ed25519_key"),
@@ -98,8 +98,8 @@ func (c Config) Validate() error {
 	if err != nil || baseURL.Host == "" || (baseURL.Scheme != "http" && baseURL.Scheme != "https") {
 		return fmt.Errorf("ADENOSINE_BASE_URL must be an absolute HTTP or HTTPS URL")
 	}
-	if strings.TrimSpace(c.ListenAddr) == "" {
-		return fmt.Errorf("ADENOSINE_LISTEN_ADDR must not be empty")
+	if !validTCPListenAddr(c.ListenAddr) {
+		return fmt.Errorf("ADENOSINE_LISTEN_ADDR must be a valid TCP host/port address")
 	}
 	if strings.TrimSpace(c.DatabaseURL) == "" {
 		return fmt.Errorf("DATABASE_URL must not be empty")
@@ -125,8 +125,8 @@ func (c Config) Validate() error {
 	if strings.TrimSpace(c.GitBinary) == "" {
 		return fmt.Errorf("ADENOSINE_GIT_BINARY must not be empty")
 	}
-	if strings.TrimSpace(c.SSHListenAddr) == "" {
-		return fmt.Errorf("ADENOSINE_SSH_LISTEN_ADDR must not be empty")
+	if !validTCPListenAddr(c.SSHListenAddr) {
+		return fmt.Errorf("ADENOSINE_SSH_LISTEN_ADDR must be a valid TCP host/port address")
 	}
 	if !validSSHHost(c.SSHHost) {
 		return fmt.Errorf("ADENOSINE_SSH_HOST must be a host name or IP address")
@@ -180,6 +180,25 @@ func validSSHHost(host string) bool {
 	}
 	parsed, err := url.Parse("ssh://" + host)
 	return err == nil && parsed.Hostname() == host && parsed.Port() == ""
+}
+
+func validTCPListenAddr(address string) bool {
+	if address == "" || strings.TrimSpace(address) != address {
+		return false
+	}
+	host, port, err := net.SplitHostPort(address)
+	if err != nil || (host != "" && !validSSHHost(host)) {
+		return false
+	}
+	value, err := strconv.ParseUint(port, 10, 16)
+	return err == nil && value != 0
+}
+
+func listenAddrOrDefault(name, fallback string) string {
+	if value := os.Getenv(name); value != "" {
+		return value
+	}
+	return fallback
 }
 
 func valueOrDefault(name, fallback string) string {

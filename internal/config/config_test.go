@@ -31,13 +31,23 @@ func TestConfigValidate(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name    string
-		mutate  func(*Config)
-		wantErr bool
+		name      string
+		mutate    func(*Config)
+		wantErr   bool
+		wantError string
 	}{
 		{name: "valid"},
+		{name: "valid IPv4 listen addresses", mutate: func(c *Config) { c.ListenAddr = "127.0.0.1:8080"; c.SSHListenAddr = "127.0.0.1:2222" }},
+		{name: "valid IPv6 listen addresses", mutate: func(c *Config) { c.ListenAddr = "[::1]:8080"; c.SSHListenAddr = "[::1]:2222" }},
 		{name: "invalid base URL", mutate: func(c *Config) { c.BaseURL = "code.example.com" }, wantErr: true},
-		{name: "empty listen address", mutate: func(c *Config) { c.ListenAddr = "" }, wantErr: true},
+		{name: "empty listen address", mutate: func(c *Config) { c.ListenAddr = "" }, wantError: "ADENOSINE_LISTEN_ADDR"},
+		{name: "HTTP listen address missing port", mutate: func(c *Config) { c.ListenAddr = "127.0.0.1" }, wantError: "ADENOSINE_LISTEN_ADDR"},
+		{name: "HTTP listen address nonnumeric port", mutate: func(c *Config) { c.ListenAddr = ":http" }, wantError: "ADENOSINE_LISTEN_ADDR"},
+		{name: "HTTP listen address out-of-range port", mutate: func(c *Config) { c.ListenAddr = ":65536" }, wantError: "ADENOSINE_LISTEN_ADDR"},
+		{name: "HTTP listen address zero port", mutate: func(c *Config) { c.ListenAddr = ":0" }, wantError: "ADENOSINE_LISTEN_ADDR"},
+		{name: "HTTP listen address malformed IPv6", mutate: func(c *Config) { c.ListenAddr = "[::1:8080" }, wantError: "ADENOSINE_LISTEN_ADDR"},
+		{name: "HTTP listen address path", mutate: func(c *Config) { c.ListenAddr = "/tmp/adenosine:8080" }, wantError: "ADENOSINE_LISTEN_ADDR"},
+		{name: "HTTP listen address surrounding whitespace", mutate: func(c *Config) { c.ListenAddr = " :8080" }, wantError: "ADENOSINE_LISTEN_ADDR"},
 		{name: "empty database URL", mutate: func(c *Config) { c.DatabaseURL = "" }, wantErr: true},
 		{name: "Electric URL without secret", mutate: func(c *Config) { c.ElectricSecret = "" }, wantErr: true},
 		{name: "Electric secret without URL", mutate: func(c *Config) { c.ElectricURL = "" }, wantErr: true},
@@ -49,7 +59,14 @@ func TestConfigValidate(t *testing.T) {
 		{name: "Electric secret whitespace", mutate: func(c *Config) { c.ElectricSecret = " secret" }, wantErr: true},
 		{name: "empty repository root", mutate: func(c *Config) { c.RepositoryRoot = "" }, wantErr: true},
 		{name: "empty Git binary", mutate: func(c *Config) { c.GitBinary = "" }, wantErr: true},
-		{name: "empty SSH listen address", mutate: func(c *Config) { c.SSHListenAddr = "" }, wantErr: true},
+		{name: "empty SSH listen address", mutate: func(c *Config) { c.SSHListenAddr = "" }, wantError: "ADENOSINE_SSH_LISTEN_ADDR"},
+		{name: "SSH listen address missing port", mutate: func(c *Config) { c.SSHListenAddr = "127.0.0.1" }, wantError: "ADENOSINE_SSH_LISTEN_ADDR"},
+		{name: "SSH listen address nonnumeric port", mutate: func(c *Config) { c.SSHListenAddr = ":ssh" }, wantError: "ADENOSINE_SSH_LISTEN_ADDR"},
+		{name: "SSH listen address out-of-range port", mutate: func(c *Config) { c.SSHListenAddr = ":65536" }, wantError: "ADENOSINE_SSH_LISTEN_ADDR"},
+		{name: "SSH listen address zero port", mutate: func(c *Config) { c.SSHListenAddr = ":0" }, wantError: "ADENOSINE_SSH_LISTEN_ADDR"},
+		{name: "SSH listen address malformed IPv6", mutate: func(c *Config) { c.SSHListenAddr = "[::1]2222" }, wantError: "ADENOSINE_SSH_LISTEN_ADDR"},
+		{name: "SSH listen address path", mutate: func(c *Config) { c.SSHListenAddr = "/tmp/adenosine:2222" }, wantError: "ADENOSINE_SSH_LISTEN_ADDR"},
+		{name: "SSH listen address surrounding whitespace", mutate: func(c *Config) { c.SSHListenAddr = ":2222 " }, wantError: "ADENOSINE_SSH_LISTEN_ADDR"},
 		{name: "empty SSH host", mutate: func(c *Config) { c.SSHHost = "" }, wantErr: true},
 		{name: "invalid SSH port", mutate: func(c *Config) { c.SSHPort = 0 }, wantErr: true},
 		{name: "empty SSH host key path", mutate: func(c *Config) { c.SSHHostKeyPath = "" }, wantErr: true},
@@ -67,11 +84,40 @@ func TestConfigValidate(t *testing.T) {
 				testCase.mutate(&cfg)
 			}
 			err := cfg.Validate()
+			if testCase.wantError != "" {
+				if err == nil || !strings.Contains(err.Error(), testCase.wantError) {
+					t.Fatalf("error = %v, want containing %q", err, testCase.wantError)
+				}
+				return
+			}
 			if testCase.wantErr && err == nil {
 				t.Fatal("expected validation error")
 			}
 			if !testCase.wantErr && err != nil {
 				t.Fatalf("valid config rejected: %v", err)
+			}
+		})
+	}
+}
+
+func TestLoadRejectsListenAddressWhitespace(t *testing.T) {
+	key := base64.StdEncoding.EncodeToString(make([]byte, 32))
+	t.Setenv("DATABASE_URL", "postgres://localhost/adenosine")
+	t.Setenv("ADENOSINE_OAUTH_STATE_KEY", key)
+	t.Setenv("ADENOSINE_OAUTH_CREDENTIAL_KEY", key)
+
+	testCases := []struct {
+		name, envName, value string
+	}{
+		{name: "HTTP", envName: "ADENOSINE_LISTEN_ADDR", value: " :8080"},
+		{name: "SSH", envName: "ADENOSINE_SSH_LISTEN_ADDR", value: ":2222 "},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Setenv(testCase.envName, testCase.value)
+			_, err := load()
+			if err == nil || !strings.Contains(err.Error(), testCase.envName) {
+				t.Fatalf("error = %v, want containing %q", err, testCase.envName)
 			}
 		})
 	}
