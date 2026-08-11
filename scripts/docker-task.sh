@@ -18,10 +18,69 @@ fi
 
 case "$task" in
   e2e)
+    postgres_stopped=false
+    cleanup_e2e() {
+      status=$?
+      if [[ $status -ne 0 ]]; then
+        "${compose[@]}" ps --all >&2 || true
+        "${compose[@]}" logs --no-color --tail 200 postgres adenosine gateway >&2 || true
+      fi
+      if [[ "$postgres_stopped" == true ]]; then
+        "${compose[@]}" start postgres >/dev/null 2>&1 || true
+      fi
+      trap - EXIT INT TERM
+      exit "$status"
+    }
+    trap cleanup_e2e EXIT INT TERM
+
+    wait_for_status() {
+      endpoint=$1
+      expected=$2
+      last_status=000
+      for attempt in $(seq 1 60); do
+        if ! last_status=$(curl --silent --show-error --max-time 2 --output /dev/null --write-out '%{http_code}' "$public_url$endpoint" 2>/dev/null); then
+          last_status=000
+        fi
+        if [[ "$last_status" == "$expected" ]]; then
+          return 0
+        fi
+        sleep 0.5
+      done
+      echo "timed out waiting for $endpoint to return $expected (last status: $last_status)" >&2
+      return 1
+    }
+
+    application_identity() {
+      container_id=$("${compose[@]}" ps --quiet adenosine)
+      test -n "$container_id"
+      container_identity=$(docker inspect --format '{{.Id}}:{{.State.Pid}}:{{.State.StartedAt}}:{{.RestartCount}}' "$container_id")
+      application_pid=$("${compose[@]}" exec -T adenosine sh -c 'for process in /proc/[0-9]*; do if [ "$(readlink "$process/exe" 2>/dev/null || true)" = /workspace/.air/adenosine ]; then printf "%s\n" "${process##*/}"; fi; done')
+      test -n "$application_pid"
+      printf '%s:application-pid=%s\n' "$container_identity" "$application_pid"
+    }
+
     "${compose[@]}" up --build --detach --wait postgres otel-lgtm adenosine electric web gateway
     public_url="$(grep '^ADENOSINE_BASE_URL=' .env.local | cut -d= -f2-)"
-    curl -fsS "$public_url/health/ready" >/dev/null
+    wait_for_status /health/live 200
+    wait_for_status /health/ready 200
     curl -fsS "$public_url/" | grep -q "Build in public"
+    identity_before=$(application_identity)
+
+    postgres_stopped=true
+    "${compose[@]}" stop postgres
+    wait_for_status /health/live 200
+    wait_for_status /health/ready 503
+
+    "${compose[@]}" start postgres
+    postgres_stopped=false
+    wait_for_status /health/ready 200
+    identity_after=$(application_identity)
+    if [[ "$identity_after" != "$identity_before" ]]; then
+      echo "Adenosine restarted during the PostgreSQL outage" >&2
+      echo "before: $identity_before" >&2
+      echo "after:  $identity_after" >&2
+      false
+    fi
     ;;
   e2e-federation)
     project="adenosine-federation-$PPID-$$"
