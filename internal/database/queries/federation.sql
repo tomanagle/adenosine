@@ -494,6 +494,8 @@ SELECT
 	repository.issue_count,
 	repository.open_issue_count,
 	repository.comment_count,
+	repository.pull_request_count,
+	repository.open_pull_request_count,
     repository.local_repository_id,
     repository.owner_did,
     identity.handle,

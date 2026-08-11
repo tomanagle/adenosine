@@ -592,6 +592,60 @@ func (e ElectricReplica) Valid() bool {
 	}
 }
 
+// Defines values for SearchSort.
+const (
+	SearchSortRecent    SearchSort = "recent"
+	SearchSortRelevance SearchSort = "relevance"
+)
+
+// Valid indicates whether the value is a known member of the SearchSort enum.
+func (e SearchSort) Valid() bool {
+	switch e {
+	case SearchSortRecent:
+		return true
+	case SearchSortRelevance:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SearchProfilesParamsSort.
+const (
+	SearchProfilesParamsSortRecent    SearchProfilesParamsSort = "recent"
+	SearchProfilesParamsSortRelevance SearchProfilesParamsSort = "relevance"
+)
+
+// Valid indicates whether the value is a known member of the SearchProfilesParamsSort enum.
+func (e SearchProfilesParamsSort) Valid() bool {
+	switch e {
+	case SearchProfilesParamsSortRecent:
+		return true
+	case SearchProfilesParamsSortRelevance:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SearchRepositoriesParamsSort.
+const (
+	Recent    SearchRepositoriesParamsSort = "recent"
+	Relevance SearchRepositoriesParamsSort = "relevance"
+)
+
+// Valid indicates whether the value is a known member of the SearchRepositoriesParamsSort enum.
+func (e SearchRepositoriesParamsSort) Valid() bool {
+	switch e {
+	case Recent:
+		return true
+	case Relevance:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for GetSyncIssueCommentsParamsReplica.
 const (
 	GetSyncIssueCommentsParamsReplicaDefault GetSyncIssueCommentsParamsReplica = "default"
@@ -1511,6 +1565,12 @@ type PasskeyList struct {
 	Data []Passkey `json:"data"`
 }
 
+// ProfileSearchPage defines model for ProfileSearchPage.
+type ProfileSearchPage struct {
+	Data []DeveloperProfile `json:"data"`
+	Page Page               `json:"page"`
+}
+
 // PullRequest defines model for PullRequest.
 type PullRequest struct {
 	AuthorDid           string           `json:"author_did"`
@@ -1735,6 +1795,12 @@ type RepositoryHosting struct {
 type RepositoryOwner struct {
 	Did    string  `json:"did"`
 	Handle *string `json:"handle,omitempty"`
+}
+
+// RepositorySearchPage defines model for RepositorySearchPage.
+type RepositorySearchPage struct {
+	Data []Repository `json:"data"`
+	Page Page         `json:"page"`
 }
 
 // RepositorySlug defines model for RepositorySlug.
@@ -2048,6 +2114,18 @@ type RecordURI = string
 // RepositoryURI defines model for RepositoryURI.
 type RepositoryURI = string
 
+// SearchCursor defines model for SearchCursor.
+type SearchCursor = string
+
+// SearchLimit defines model for SearchLimit.
+type SearchLimit = int
+
+// SearchQuery defines model for SearchQuery.
+type SearchQuery = string
+
+// SearchSort defines model for SearchSort.
+type SearchSort string
+
 // BadRequest defines model for BadRequest.
 type BadRequest = ErrorResponse
 
@@ -2255,6 +2333,34 @@ type GetRepositoryTreeParams struct {
 	Rev  *string `form:"rev,omitempty" json:"rev,omitempty"`
 	Path *string `form:"path,omitempty" json:"path,omitempty"`
 }
+
+// SearchProfilesParams defines parameters for SearchProfiles.
+type SearchProfilesParams struct {
+	// Q UTF-8 text matched against fields documented by the operation
+	Q     SearchQuery               `form:"q" json:"q"`
+	Sort  *SearchProfilesParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
+	Limit *SearchLimit              `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Cursor Opaque keyset cursor bound to the operation, query, and sort
+	Cursor *SearchCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// SearchProfilesParamsSort defines parameters for SearchProfiles.
+type SearchProfilesParamsSort string
+
+// SearchRepositoriesParams defines parameters for SearchRepositories.
+type SearchRepositoriesParams struct {
+	// Q UTF-8 text matched against fields documented by the operation
+	Q     SearchQuery                   `form:"q" json:"q"`
+	Sort  *SearchRepositoriesParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
+	Limit *SearchLimit                  `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Cursor Opaque keyset cursor bound to the operation, query, and sort
+	Cursor *SearchCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// SearchRepositoriesParamsSort defines parameters for SearchRepositories.
+type SearchRepositoriesParamsSort string
 
 // DeleteStarParams defines parameters for DeleteStar.
 type DeleteStarParams struct {
@@ -2973,6 +3079,12 @@ type ServerInterface interface {
 	// List one repository tree directory
 	// (GET /api/v1/repositories/{owner}/{repo}/tree)
 	GetRepositoryTree(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryTreeParams)
+	// Search profiles in the local network index
+	// (GET /api/v1/search/profiles)
+	SearchProfiles(w http.ResponseWriter, r *http.Request, params SearchProfilesParams)
+	// Search public repositories in the local network index
+	// (GET /api/v1/search/repositories)
+	SearchRepositories(w http.ResponseWriter, r *http.Request, params SearchRepositoriesParams)
 	// List active SSH public keys
 	// (GET /api/v1/ssh-keys)
 	ListSSHKeys(w http.ResponseWriter, r *http.Request)
@@ -4847,6 +4959,162 @@ func (siw *ServerInterfaceWrapper) GetRepositoryTree(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepositoryTree(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SearchProfiles operation middleware
+func (siw *ServerInterfaceWrapper) SearchProfiles(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchProfilesParams
+
+	// ------------- Required query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "sort" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sort", r.URL.Query(), &params.Sort, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "sort"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sort", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SearchProfiles(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SearchRepositories operation middleware
+func (siw *ServerInterfaceWrapper) SearchRepositories(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchRepositoriesParams
+
+	// ------------- Required query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "sort" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sort", r.URL.Query(), &params.Sort, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "sort"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sort", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SearchRepositories(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -7099,6 +7367,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/merge-base", wrapper.GetRepositoryMergeBase)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tags", wrapper.ListRepositoryTags)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tree", wrapper.GetRepositoryTree)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/search/profiles", wrapper.SearchProfiles)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/search/repositories", wrapper.SearchRepositories)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/ssh-keys", wrapper.ListSSHKeys)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/ssh-keys", wrapper.CreateSSHKey)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/ssh-keys/{id}", wrapper.RevokeSSHKey)

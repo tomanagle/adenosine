@@ -969,6 +969,8 @@ SELECT
 	repository.issue_count,
 	repository.open_issue_count,
 	repository.comment_count,
+	repository.pull_request_count,
+	repository.open_pull_request_count,
     repository.local_repository_id,
     repository.owner_did,
     identity.handle,
@@ -1004,25 +1006,27 @@ type ListNetworkRepositoriesParams struct {
 }
 
 type ListNetworkRepositoriesRow struct {
-	Uri               string             `json:"uri"`
-	Cid               pgtype.Text        `json:"cid"`
-	StarCount         int64              `json:"star_count"`
-	IssueCount        int64              `json:"issue_count"`
-	OpenIssueCount    int64              `json:"open_issue_count"`
-	CommentCount      int64              `json:"comment_count"`
-	LocalRepositoryID pgtype.UUID        `json:"local_repository_id"`
-	OwnerDid          string             `json:"owner_did"`
-	Handle            pgtype.Text        `json:"handle"`
-	Slug              pgtype.Text        `json:"slug"`
-	Name              pgtype.Text        `json:"name"`
-	Description       pgtype.Text        `json:"description"`
-	DefaultBranch     pgtype.Text        `json:"default_branch"`
-	GitHttps          pgtype.Text        `json:"git_https"`
-	GitSsh            pgtype.Text        `json:"git_ssh"`
-	Web               pgtype.Text        `json:"web"`
-	RecordCreatedAt   pgtype.Timestamptz `json:"record_created_at"`
-	RecordUpdatedAt   pgtype.Timestamptz `json:"record_updated_at"`
-	IndexedAt         pgtype.Timestamptz `json:"indexed_at"`
+	Uri                  string             `json:"uri"`
+	Cid                  pgtype.Text        `json:"cid"`
+	StarCount            int64              `json:"star_count"`
+	IssueCount           int64              `json:"issue_count"`
+	OpenIssueCount       int64              `json:"open_issue_count"`
+	CommentCount         int64              `json:"comment_count"`
+	PullRequestCount     int64              `json:"pull_request_count"`
+	OpenPullRequestCount int64              `json:"open_pull_request_count"`
+	LocalRepositoryID    pgtype.UUID        `json:"local_repository_id"`
+	OwnerDid             string             `json:"owner_did"`
+	Handle               pgtype.Text        `json:"handle"`
+	Slug                 pgtype.Text        `json:"slug"`
+	Name                 pgtype.Text        `json:"name"`
+	Description          pgtype.Text        `json:"description"`
+	DefaultBranch        pgtype.Text        `json:"default_branch"`
+	GitHttps             pgtype.Text        `json:"git_https"`
+	GitSsh               pgtype.Text        `json:"git_ssh"`
+	Web                  pgtype.Text        `json:"web"`
+	RecordCreatedAt      pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt      pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt            pgtype.Timestamptz `json:"indexed_at"`
 }
 
 func (q *Queries) ListNetworkRepositories(ctx context.Context, arg ListNetworkRepositoriesParams) ([]ListNetworkRepositoriesRow, error) {
@@ -1041,6 +1045,8 @@ func (q *Queries) ListNetworkRepositories(ctx context.Context, arg ListNetworkRe
 			&i.IssueCount,
 			&i.OpenIssueCount,
 			&i.CommentCount,
+			&i.PullRequestCount,
+			&i.OpenPullRequestCount,
 			&i.LocalRepositoryID,
 			&i.OwnerDid,
 			&i.Handle,

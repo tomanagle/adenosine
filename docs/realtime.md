@@ -25,6 +25,11 @@ restart from `offset=-1` when instructed by the OpenAPI contract.
 4. Dispose collections when their route scope changes.
 5. If Electric fails, retain the snapshot, show that live updates are unavailable, and use REST refetching and mutations.
 
+`/explore` deliberately remains REST-only. Ranked full-text result pages are bounded server
+queries and are not represented by the broad repository/profile Electric shapes. This
+prevents an explore visit from synchronizing the network into the browser and means stopped
+or unconfigured Electric cannot break search.
+
 Application readiness intentionally does not depend on Electric. The black-box realtime
 suite proves an already-open live request, continuation resume, create/delete replay and
 stale guards, instance isolation, and unchanged REST discovery while Electric is stopped.

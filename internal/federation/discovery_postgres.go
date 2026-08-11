@@ -39,6 +39,7 @@ func (store *PostgresDiscoveryStore) ListNetworkRepositories(ctx context.Context
 			GitHTTPS: row.GitHttps.String, GitSSH: row.GitSsh.String, Web: row.Web.String,
 			CreatedAt: row.RecordCreatedAt.Time, UpdatedAt: row.RecordUpdatedAt.Time, IndexedAt: row.IndexedAt.Time,
 			StarCount: row.StarCount, IssueCount: row.IssueCount, OpenIssueCount: row.OpenIssueCount,
+			CommentCount: row.CommentCount, PullRequestCount: row.PullRequestCount, OpenPullRequestCount: row.OpenPullRequestCount,
 		}
 	}
 	return repositories, nil

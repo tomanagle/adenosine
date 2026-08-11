@@ -23,6 +23,7 @@ import (
 const (
 	tapPath           = "/internal/federation/tap"
 	networkPath       = "/api/v1/network/repositories"
+	searchPath        = "/api/v1/search/repositories"
 	testCID           = "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
 	hostedDID         = "did:plc:cccccccccccccccccccccccc"
 	hostedRKey        = "0198a8512a897ae2a370dc68883e3af5"
@@ -214,6 +215,23 @@ func seed(instances map[string]instance, password string) error {
 			return fmt.Errorf("%s: %w", assertion.name, err)
 		}
 	}
+	searchCases := []struct {
+		name      string
+		at        instance
+		wantLocal bool
+	}{
+		{name: "A finds its hosted projection", at: instances["a"], wantLocal: true},
+		{name: "B finds A hosted projection equally", at: instances["b"], wantLocal: false},
+	}
+	for _, testCase := range searchCases {
+		matches, err := searchRepositories(testCase.at, "Hosted repository")
+		if err != nil {
+			return fmt.Errorf("%s: %w", testCase.name, err)
+		}
+		if len(matches) != 1 || matches[0].URI != hostedURI || matches[0].Hosting.Local != testCase.wantLocal || matches[0].Hosting.GitHTTPSURL != hostedGit {
+			return fmt.Errorf("%s results = %#v", testCase.name, matches)
+		}
+	}
 
 	replays := []struct {
 		name    string
@@ -262,6 +280,10 @@ func seed(instances map[string]instance, password string) error {
 }
 
 func final(b instance) error {
+	matches, err := searchRepositories(b, "Hosted repository")
+	if err != nil || len(matches) != 1 || matches[0].URI != hostedURI || matches[0].Hosting.Local {
+		return fmt.Errorf("B search after A and Electric stop = %#v: %w", matches, err)
+	}
 	if err := verifyStars([]instance{b}); err != nil {
 		return fmt.Errorf("B star projection after A stops: %w", err)
 	}
@@ -310,6 +332,24 @@ func final(b instance) error {
 		}
 	}
 	return nil
+}
+
+func searchRepositories(at instance, query string) ([]repository, error) {
+	requestURL := at.url + searchPath + "?q=" + url.QueryEscape(query) + "&limit=10"
+	response, err := client.Get(requestURL)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(response.Body)
+		return nil, fmt.Errorf("GET search status %d: %s", response.StatusCode, body)
+	}
+	var result page
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result.Data, nil
 }
 
 func verifyIssues(instances []instance) error {

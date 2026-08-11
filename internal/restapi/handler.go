@@ -28,6 +28,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/profile"
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
 	"github.com/adenosine-dev/adenosine/internal/repository"
+	searchservice "github.com/adenosine-dev/adenosine/internal/search"
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/syncproxy"
 	"github.com/google/uuid"
@@ -97,6 +98,11 @@ type RepositoryEndpointBuilder interface {
 
 type NetworkRepositoryDiscovery interface {
 	ListNetworkRepositories(context.Context, int, string) (federation.DiscoveryPage, error)
+}
+
+type SearchManager interface {
+	Repositories(context.Context, string, searchservice.Sort, int, string, string) (searchservice.RepositoryPage, error)
+	Profiles(context.Context, string, searchservice.Sort, int, string, string) (searchservice.ProfilePage, error)
 }
 
 type StarManager interface {
@@ -188,6 +194,7 @@ type Dependencies struct {
 	Repositories  RepositoryManager
 	Endpoints     RepositoryEndpointBuilder
 	Discovery     NetworkRepositoryDiscovery
+	Search        SearchManager
 	Stars         StarManager
 	Issues        IssueManager
 	PullRequests  PullRequestManager
@@ -654,6 +661,77 @@ func (handler *apiHandler) ListNetworkRepositories(w http.ResponseWriter, r *htt
 		data[index] = networkRepositoryResponse(repo)
 	}
 	writeJSON(w, http.StatusOK, generated.NetworkRepositoryList{Data: data, Page: generated.Page{NextCursor: page.NextCursor}})
+}
+
+func (handler *apiHandler) SearchRepositories(w http.ResponseWriter, r *http.Request, params generated.SearchRepositoriesParams) {
+	viewerDID, err := handler.optionalSessionViewer(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, cursor, sort := searchParameters(r, params.Limit, params.Cursor, params.Sort)
+	page, err := handler.deps.Search.Repositories(r.Context(), string(params.Q), searchservice.Sort(sort), limit, cursor, viewerDID)
+	if err != nil {
+		if searchRequestError(err) {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+		handler.writeError(w, r, err)
+		return
+	}
+	data := make([]generated.Repository, len(page.Repositories))
+	for index, repository := range page.Repositories {
+		data[index] = networkRepositoryResponse(repository)
+	}
+	w.Header().Set("Vary", "Cookie")
+	writeJSON(w, http.StatusOK, generated.RepositorySearchPage{Data: data, Page: generated.Page{NextCursor: page.NextCursor}})
+}
+
+func (handler *apiHandler) SearchProfiles(w http.ResponseWriter, r *http.Request, params generated.SearchProfilesParams) {
+	viewerDID, err := handler.optionalSessionViewer(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, cursor, sort := searchParameters(r, params.Limit, params.Cursor, params.Sort)
+	page, err := handler.deps.Search.Profiles(r.Context(), string(params.Q), searchservice.Sort(sort), limit, cursor, viewerDID)
+	if err != nil {
+		if searchRequestError(err) {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+		handler.writeError(w, r, err)
+		return
+	}
+	data := make([]generated.DeveloperProfile, len(page.Profiles))
+	for index, developerProfile := range page.Profiles {
+		data[index] = developerProfileResponse(developerProfile)
+	}
+	w.Header().Set("Vary", "Cookie")
+	writeJSON(w, http.StatusOK, generated.ProfileSearchPage{Data: data, Page: generated.Page{NextCursor: page.NextCursor}})
+}
+
+func searchParameters[S ~string](r *http.Request, limit *generated.SearchLimit, cursor *generated.SearchCursor, sort *S) (int, string, string) {
+	var limitValue int
+	if limit != nil {
+		limitValue = int(*limit)
+	}
+	var cursorValue, sortValue string
+	if cursor != nil {
+		cursorValue = string(*cursor)
+	}
+	if sort != nil {
+		sortValue = string(*sort)
+	}
+	if _, presented := r.URL.Query()["sort"]; presented {
+		sortValue = r.URL.Query().Get("sort")
+	}
+	return limitValue, cursorValue, sortValue
+}
+
+func searchRequestError(err error) bool {
+	return errors.Is(err, searchservice.ErrInvalidQuery) || errors.Is(err, searchservice.ErrInvalidSort) ||
+		errors.Is(err, searchservice.ErrInvalidLimit) || errors.Is(err, searchservice.ErrInvalidCursor)
 }
 
 func (handler *apiHandler) GetSyncRepositories(w http.ResponseWriter, r *http.Request, _ generated.GetSyncRepositoriesParams) {
@@ -1624,6 +1702,7 @@ func networkRepositoryResponse(repo federation.DiscoveryRepository) generated.Re
 		State: generated.Active, DefaultBranch: repo.DefaultBranch,
 		Owner:     generated.RepositoryOwner{Did: repo.OwnerDID, Handle: pointerUnlessEmpty(repo.OwnerHandle)},
 		StarCount: repo.StarCount, IssueCount: repo.IssueCount, OpenIssueCount: repo.OpenIssueCount,
+		CommentCount: repo.CommentCount, PullRequestCount: repo.PullRequestCount, OpenPullRequestCount: repo.OpenPullRequestCount,
 		Hosting: generated.RepositoryHosting{Local: repo.LocalRepositoryID != nil, WebUrl: repo.Web,
 			GitHttpsUrl: repo.GitHTTPS, GitSshUrl: pointerUnlessEmpty(repo.GitSSH)},
 		CreatedAt: repo.CreatedAt, UpdatedAt: repo.UpdatedAt,

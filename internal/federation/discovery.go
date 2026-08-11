@@ -28,24 +28,27 @@ var (
 
 // DiscoveryRepository is public repository metadata projected from the network index.
 type DiscoveryRepository struct {
-	URI               string
-	CID               string
-	LocalRepositoryID *uuid.UUID
-	OwnerDID          string
-	OwnerHandle       string
-	Slug              string
-	Name              string
-	Description       string
-	DefaultBranch     string
-	GitHTTPS          string
-	GitSSH            string
-	Web               string
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	IndexedAt         time.Time
-	StarCount         int64
-	IssueCount        int64
-	OpenIssueCount    int64
+	URI                  string
+	CID                  string
+	LocalRepositoryID    *uuid.UUID
+	OwnerDID             string
+	OwnerHandle          string
+	Slug                 string
+	Name                 string
+	Description          string
+	DefaultBranch        string
+	GitHTTPS             string
+	GitSSH               string
+	Web                  string
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	IndexedAt            time.Time
+	StarCount            int64
+	IssueCount           int64
+	OpenIssueCount       int64
+	CommentCount         int64
+	PullRequestCount     int64
+	OpenPullRequestCount int64
 }
 
 // DiscoveryPage contains one stable page of network repositories.
