@@ -4,8 +4,18 @@ import (
 	"encoding/json"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 )
+
+const requestIDHeaderReference = "#/components/headers/RequestID"
+
+type openAPIResponse struct {
+	Reference string `json:"$ref"`
+	Headers   map[string]struct {
+		Reference string `json:"$ref"`
+	} `json:"headers"`
+}
 
 func TestSyncOpenAPIContract(t *testing.T) {
 	var document struct {
@@ -57,4 +67,65 @@ func TestSyncOpenAPIContract(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOpenAPIResponsesIncludeRequestID(t *testing.T) {
+	var document struct {
+		Paths map[string]map[string]struct {
+			Responses map[string]openAPIResponse `json:"responses"`
+		} `json:"paths"`
+		Components struct {
+			Responses map[string]openAPIResponse `json:"responses"`
+		} `json:"components"`
+	}
+	if err := json.Unmarshal(OpenAPI, &document); err != nil {
+		t.Fatalf("decode OpenAPI: %v", err)
+	}
+
+	testCases := []struct {
+		name         string
+		pathPrefixes []string
+	}{
+		{name: "public health and API operations", pathPrefixes: []string{"/health/", "/api/v1/"}},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			for path, pathItem := range document.Paths {
+				if !hasAnyPrefix(path, testCase.pathPrefixes) {
+					continue
+				}
+				for method, operation := range pathItem {
+					for status, response := range operation.Responses {
+						if response.Reference != "" {
+							const responseReferencePrefix = "#/components/responses/"
+							name, found := strings.CutPrefix(response.Reference, responseReferencePrefix)
+							if !found {
+								t.Errorf("%s %s response %s has unsupported reference %q", strings.ToUpper(method), path, status, response.Reference)
+								continue
+							}
+							var exists bool
+							response, exists = document.Components.Responses[name]
+							if !exists {
+								t.Errorf("%s %s response %s references missing response %q", strings.ToUpper(method), path, status, name)
+								continue
+							}
+						}
+						if got := response.Headers["X-Request-ID"].Reference; got != requestIDHeaderReference {
+							t.Errorf("%s %s response %s X-Request-ID reference = %q, want %q", strings.ToUpper(method), path, status, got, requestIDHeaderReference)
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+func hasAnyPrefix(value string, prefixes []string) bool {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(value, prefix) {
+			return true
+		}
+	}
+	return false
 }
