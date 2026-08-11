@@ -22,6 +22,10 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/profile"
 	"github.com/adenosine-dev/adenosine/internal/repository"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
 type fakeReadiness struct {
@@ -326,6 +330,129 @@ func TestHealthEndpoints(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRequestObservabilityUsesMatchedRoute(t *testing.T) {
+	testCases := []struct {
+		name        string
+		path        string
+		deps        Dependencies
+		wantStatus  int
+		wantRoute   string
+		identifiers []string
+	}{
+		{
+			name: "parameterized API route",
+			path: "/api/v1/profiles/did:plc:concreteidentifier",
+			deps: Dependencies{Profiles: &fakeProfiles{value: profile.Profile{
+				DID: "did:plc:concreteidentifier", Handle: "alice.example", IndexedAt: time.Now(),
+			}}},
+			wantStatus:  http.StatusOK,
+			wantRoute:   "GET /api/v1/profiles/{did}",
+			identifiers: []string{"did:plc:concreteidentifier"},
+		},
+		{
+			name:        "unmatched route",
+			path:        "/concrete-unmatched-identifier?token=concrete-query-identifier",
+			wantStatus:  http.StatusNotFound,
+			wantRoute:   "unmatched",
+			identifiers: []string{"concrete-unmatched-identifier", "concrete-query-identifier"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			reader := sdkmetric.NewManualReader()
+			provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+			previousProvider := otel.GetMeterProvider()
+			otel.SetMeterProvider(provider)
+			t.Cleanup(func() {
+				otel.SetMeterProvider(previousProvider)
+				if err := provider.Shutdown(context.Background()); err != nil {
+					t.Errorf("shut down meter provider: %v", err)
+				}
+			})
+
+			var logs bytes.Buffer
+			logger := slog.New(slog.NewJSONHandler(&logs, nil))
+			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, logger, testCase.deps, nil)
+			if err != nil {
+				t.Fatalf("create server: %v", err)
+			}
+			httpServer := httptest.NewServer(server.Handler)
+			t.Cleanup(httpServer.Close)
+
+			response, err := http.Get(httpServer.URL + testCase.path)
+			if err != nil {
+				t.Fatalf("request server: %v", err)
+			}
+			defer response.Body.Close()
+			if response.StatusCode != testCase.wantStatus {
+				t.Fatalf("status = %d, want %d", response.StatusCode, testCase.wantStatus)
+			}
+			requestID := response.Header.Get("X-Request-ID")
+			if requestID == "" {
+				t.Fatal("missing request ID")
+			}
+
+			var metrics metricdata.ResourceMetrics
+			if err := reader.Collect(context.Background(), &metrics); err != nil {
+				t.Fatalf("collect metrics: %v", err)
+			}
+			for _, metricName := range []string{"adenosine.http.server.requests", "adenosine.http.server.duration"} {
+				attributes := metricAttributes(metrics, metricName)
+				if len(attributes) == 0 {
+					t.Fatalf("metric %q has no data point attributes", metricName)
+				}
+				for _, keyValue := range attributes {
+					for _, identifier := range testCase.identifiers {
+						if strings.Contains(keyValue.Value.Emit(), identifier) {
+							t.Errorf("metric %q attribute %q contains identifier %q", metricName, keyValue.Key, identifier)
+						}
+					}
+				}
+				attributeSet := attribute.NewSet(attributes...)
+				route, found := attributeSet.Value("http.route")
+				if !found || route.AsString() != testCase.wantRoute {
+					t.Errorf("metric %q http.route = %q, want %q", metricName, route.AsString(), testCase.wantRoute)
+				}
+			}
+
+			var event map[string]any
+			if err := json.Unmarshal(logs.Bytes(), &event); err != nil {
+				t.Fatalf("decode request log: %v", err)
+			}
+			if event["route"] != testCase.wantRoute || event["request_id"] != requestID {
+				t.Errorf("request log route/request ID = %q, %q; want %q, %q", event["route"], event["request_id"], testCase.wantRoute, requestID)
+			}
+			for _, identifier := range testCase.identifiers {
+				if strings.Contains(logs.String(), identifier) {
+					t.Errorf("request log contains identifier %q", identifier)
+				}
+			}
+		})
+	}
+}
+
+func metricAttributes(metrics metricdata.ResourceMetrics, name string) []attribute.KeyValue {
+	for _, scope := range metrics.ScopeMetrics {
+		for _, current := range scope.Metrics {
+			if current.Name != name {
+				continue
+			}
+			switch data := current.Data.(type) {
+			case metricdata.Sum[int64]:
+				if len(data.DataPoints) != 0 {
+					return data.DataPoints[0].Attributes.ToSlice()
+				}
+			case metricdata.Histogram[float64]:
+				if len(data.DataPoints) != 0 {
+					return data.DataPoints[0].Attributes.ToSlice()
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func TestCredentialEndpointsRequireSessionAndOrigin(t *testing.T) {
