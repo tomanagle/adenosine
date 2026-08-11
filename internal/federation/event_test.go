@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/adenosine-dev/adenosine/internal/issue"
+	"github.com/adenosine-dev/adenosine/internal/pullrequest"
 	"github.com/adenosine-dev/adenosine/internal/star"
 )
 
@@ -13,7 +15,7 @@ const (
 	testCID = "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
 )
 
-func TestDecodeEventAcceptsOfficialTapEventsAndRecordExtensions(t *testing.T) {
+func TestDecodeEventAcceptsOfficialTapEvents(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		name       string
@@ -22,15 +24,15 @@ func TestDecodeEventAcceptsOfficialTapEventsAndRecordExtensions(t *testing.T) {
 		wantAction string
 	}{
 		{
-			name: "profile create with extension",
+			name: "profile create",
 			body: recordEnvelope(1, ProfileCollection, "self", "create",
-				`{"$type":"dev.adenosine.profile","displayName":"Alice","createdAt":"2026-08-09T12:00:00Z","extension":{"enabled":true}}`),
+				`{"$type":"dev.adenosine.profile","displayName":"Alice","createdAt":"2026-08-09T12:00:00Z"}`),
 			wantType: "record", wantAction: "create",
 		},
 		{
-			name: "repository update with extension",
+			name: "repository update",
 			body: recordEnvelope(2, RepositoryCollection, "project", "update",
-				`{"$type":"dev.adenosine.repo","slug":"project","name":"Project","defaultBranch":"main","git":{"https":"https://code.example/project.git","ssh":"ssh://git@code.example/project.git"},"web":"https://code.example/project","createdAt":"2026-08-09T12:00:00Z","updatedAt":"2026-08-09T13:00:00Z","extension":"accepted"}`),
+				`{"$type":"dev.adenosine.repo","slug":"project","name":"Project","defaultBranch":"main","git":{"https":"https://code.example/project.git","ssh":"ssh://git@code.example/project.git"},"web":"https://code.example/project","createdAt":"2026-08-09T12:00:00Z","updatedAt":"2026-08-09T13:00:00Z"}`),
 			wantType: "record", wantAction: "update",
 		},
 		{
@@ -56,6 +58,61 @@ func TestDecodeEventAcceptsOfficialTapEventsAndRecordExtensions(t *testing.T) {
 			}
 			if event.Record != nil && event.Record.Action != testCase.wantAction {
 				t.Fatalf("action = %q", event.Record.Action)
+			}
+		})
+	}
+}
+
+func TestDecodeEventRejectsUnknownCollectionRecordFields(t *testing.T) {
+	t.Parallel()
+	repositoryURI := "at://" + testDID + "/" + RepositoryCollection + "/project"
+	issueURI := "at://" + testBobDID + "/" + IssueCollection + "/issue1"
+	pullRequestURI := "at://" + testBobDID + "/" + PullRequestCollection + "/pr1"
+	starRKey, err := star.RecordKey(repositoryURI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	issueStatusRKey, err := issue.StatusRecordKey(issueURI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pullRequestStatusRKey, err := pullrequest.StatusRecordKey(pullRequestURI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	unknownTopLevel := func(record string) string {
+		return strings.TrimSuffix(record, "}") + `,"unexpected":true}`
+	}
+	validProfile := `{"$type":"dev.adenosine.profile","createdAt":"2026-08-09T12:00:00Z"}`
+	validRepository := repositoryRecord("Project")
+	validIssue := issueRecord(repositoryURI, "Title")
+	testCases := []struct {
+		name       string
+		collection string
+		rkey       string
+		record     string
+	}{
+		{name: "profile top level", collection: ProfileCollection, rkey: "self", record: unknownTopLevel(validProfile)},
+		{name: "repository top level", collection: RepositoryCollection, rkey: "project", record: unknownTopLevel(validRepository)},
+		{name: "star top level", collection: StarCollection, rkey: starRKey, record: unknownTopLevel(starRecord(repositoryURI, testCID, "2026-08-09T12:00:00Z"))},
+		{name: "issue top level", collection: IssueCollection, rkey: "issue1", record: unknownTopLevel(validIssue)},
+		{name: "issue comment top level", collection: issue.CommentCollection, rkey: "comment1", record: unknownTopLevel(issueCommentRecord(issueURI, "", "Comment"))},
+		{name: "issue status top level", collection: IssueStatusCollection, rkey: issueStatusRKey, record: unknownTopLevel(issueStatusRecord(issueURI, repositoryURI, "open"))},
+		{name: "pull request top level", collection: PullRequestCollection, rkey: "pr1", record: unknownTopLevel(pullRequestRecord(repositoryURI, repositoryURI, "Title"))},
+		{name: "pull request status top level", collection: PullRequestStatusCollection, rkey: pullRequestStatusRKey, record: unknownTopLevel(pullRequestStatusRecord(pullRequestURI, repositoryURI, "open", ""))},
+		{name: "pull request review top level", collection: PullRequestReviewCollection, rkey: "review1", record: unknownTopLevel(pullRequestReviewRecord(pullRequestURI, "comment", "Review"))},
+		{name: "repository git object", collection: RepositoryCollection, rkey: "project", record: strings.Replace(validRepository, `"git":{"https":"https://code.example/project.git"}`, `"git":{"https":"https://code.example/project.git","unexpected":true}`, 1)},
+		{name: "issue repository strong ref", collection: IssueCollection, rkey: "issue1", record: strings.Replace(validIssue, `"cid":"`+testCID+`"`, `"cid":"`+testCID+`","unexpected":true`, 1)},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			body := recordEnvelopeForDID(27, testBobDID, testCase.collection, testCase.rkey, "create", testCase.record)
+			if eventID, ok := EventID([]byte(body)); !ok || eventID != 27 {
+				t.Fatalf("EventID() = %d, %t", eventID, ok)
+			}
+			_, err := DecodeEvent([]byte(body))
+			if !errors.Is(err, ErrInvalidEvent) {
+				t.Fatalf("DecodeEvent() error = %v", err)
 			}
 		})
 	}

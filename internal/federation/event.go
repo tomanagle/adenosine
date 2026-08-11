@@ -357,7 +357,7 @@ func decodePullRequestRecord(raw []byte) (pullrequest.Record, error) {
 		CreatedAt        string                `json:"createdAt"`
 		UpdatedAt        string                `json:"updatedAt"`
 	}
-	if err := json.Unmarshal(raw, &wire); err != nil {
+	if err := decodeStrict(raw, &wire); err != nil {
 		return pullrequest.Record{}, invalid("decode pull request record: %v", err)
 	}
 	if wire.Type != PullRequestCollection {
@@ -392,7 +392,7 @@ func decodePullRequestStatusRecord(raw []byte) (pullrequest.StatusRecord, error)
 		CreatedAt        string                `json:"createdAt"`
 		UpdatedAt        string                `json:"updatedAt"`
 	}
-	if err := json.Unmarshal(raw, &wire); err != nil {
+	if err := decodeStrict(raw, &wire); err != nil {
 		return pullrequest.StatusRecord{}, invalid("decode pull request status record: %v", err)
 	}
 	if wire.Type != PullRequestStatusCollection {
@@ -425,7 +425,7 @@ func decodePullRequestReviewRecord(raw []byte) (pullrequest.ReviewRecord, error)
 		CreatedAt string                `json:"createdAt"`
 		UpdatedAt string                `json:"updatedAt"`
 	}
-	if err := json.Unmarshal(raw, &wire); err != nil {
+	if err := decodeStrict(raw, &wire); err != nil {
 		return pullrequest.ReviewRecord{}, invalid("decode pull request review record: %v", err)
 	}
 	if wire.Type != PullRequestReviewCollection {
@@ -455,7 +455,7 @@ func decodeIssueCommentRecord(raw []byte) (issue.CommentRecord, error) {
 		CreatedAt string           `json:"createdAt"`
 		UpdatedAt string           `json:"updatedAt"`
 	}
-	if err := json.Unmarshal(raw, &wire); err != nil {
+	if err := decodeStrict(raw, &wire); err != nil {
 		return issue.CommentRecord{}, invalid("decode issue comment record: %v", err)
 	}
 	if wire.Type != issue.CommentCollection {
@@ -485,7 +485,7 @@ func decodeIssueRecord(raw []byte) (issue.Record, error) {
 		CreatedAt  string          `json:"createdAt"`
 		UpdatedAt  string          `json:"updatedAt"`
 	}
-	if err := json.Unmarshal(raw, &wire); err != nil {
+	if err := decodeStrict(raw, &wire); err != nil {
 		return issue.Record{}, invalid("decode issue record: %v", err)
 	}
 	if wire.Type != IssueCollection {
@@ -515,7 +515,7 @@ func decodeIssueStatusRecord(raw []byte) (issue.StatusRecord, error) {
 		CreatedAt  string          `json:"createdAt"`
 		UpdatedAt  string          `json:"updatedAt"`
 	}
-	if err := json.Unmarshal(raw, &wire); err != nil {
+	if err := decodeStrict(raw, &wire); err != nil {
 		return issue.StatusRecord{}, invalid("decode issue status record: %v", err)
 	}
 	if wire.Type != IssueStatusCollection {
@@ -545,7 +545,7 @@ func decodeStarRecord(raw []byte) (StarRecord, error) {
 		} `json:"subject"`
 		CreatedAt string `json:"createdAt"`
 	}
-	if err := json.Unmarshal(raw, &wire); err != nil {
+	if err := decodeStrict(raw, &wire); err != nil {
 		return StarRecord{}, invalid("decode star record: %v", err)
 	}
 	if wire.Type != StarCollection {
@@ -591,7 +591,7 @@ func decodeProfileRecord(raw []byte) (ProfileRecord, error) {
 		Location    string `json:"location,omitempty"`
 		CreatedAt   string `json:"createdAt"`
 	}
-	if err := json.Unmarshal(raw, &wire); err != nil {
+	if err := decodeStrict(raw, &wire); err != nil {
 		return ProfileRecord{}, invalid("decode profile record: %v", err)
 	}
 	if wire.Type != ProfileCollection {
@@ -622,7 +622,7 @@ func decodeRepositoryRecord(raw []byte) (RepositoryRecord, error) {
 		CreatedAt string `json:"createdAt"`
 		UpdatedAt string `json:"updatedAt"`
 	}
-	if err := json.Unmarshal(raw, &wire); err != nil {
+	if err := decodeStrict(raw, &wire); err != nil {
 		return RepositoryRecord{}, invalid("decode repository record: %v", err)
 	}
 	if wire.Type != RepositoryCollection {
