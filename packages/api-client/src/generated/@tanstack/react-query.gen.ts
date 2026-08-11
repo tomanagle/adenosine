@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { beginPasskeyLogin, beginPasskeyRegistration, completeAtProtoLogin, createAccessToken, createIssue, createIssueComment, createPullRequest, createPullRequestReview, createRepository, createSshKey, deleteBlockedDid, deleteHiddenRecord, deleteIssueComment, deletePasskey, deleteStar, getCurrentIdentity, getDeveloperProfile, getIssueComments, getIssues, getLiveness, getModeration, getOAuthClientMetadata, getPullRequest, getPullRequestDiff, getReadiness, getRepository, getRepositoryBlob, getRepositoryCommit, getRepositoryDiff, getRepositoryMergeBase, getRepositoryTree, getStars, getSyncIssueComments, getSyncIssues, getSyncProfiles, getSyncPullRequestReviews, getSyncPullRequests, getSyncRepositories, getSyncStars, listAccessTokens, listNetworkRepositories, listPasskeys, listPullRequestReviews, listPullRequests, listRepositoryBranches, listRepositoryCommits, listRepositoryTags, listSshKeys, logout, mergePullRequest, type Options, postSyncIssueComments, postSyncIssues, postSyncProfiles, postSyncPullRequestReviews, postSyncPullRequests, postSyncRepositories, postSyncStars, putBlockedDid, putHiddenRecord, putIssueStatus, putPullRequestStatus, putStar, revokeAccessToken, revokeSshKey, startAtProtoLogin, updateDeveloperProfile, verifyPasskeyLogin, verifyPasskeyRegistration } from '../sdk.gen';
-import type { BeginPasskeyLoginData, BeginPasskeyLoginError, BeginPasskeyLoginResponse, BeginPasskeyRegistrationData, BeginPasskeyRegistrationError, BeginPasskeyRegistrationResponse, CompleteAtProtoLoginData, CompleteAtProtoLoginError, CreateAccessTokenData, CreateAccessTokenError, CreateAccessTokenResponse, CreateIssueCommentData, CreateIssueCommentError, CreateIssueCommentResponse, CreateIssueData, CreateIssueError, CreateIssueResponse, CreatePullRequestData, CreatePullRequestError, CreatePullRequestResponse, CreatePullRequestReviewData, CreatePullRequestReviewError, CreatePullRequestReviewResponse, CreateRepositoryData, CreateRepositoryError, CreateRepositoryResponse, CreateSshKeyData, CreateSshKeyError, CreateSshKeyResponse, DeleteBlockedDidData, DeleteBlockedDidError, DeleteBlockedDidResponse, DeleteHiddenRecordData, DeleteHiddenRecordError, DeleteHiddenRecordResponse, DeleteIssueCommentData, DeleteIssueCommentError, DeletePasskeyData, DeletePasskeyError, DeletePasskeyResponse, DeleteStarData, DeleteStarError, GetCurrentIdentityData, GetCurrentIdentityError, GetCurrentIdentityResponse, GetDeveloperProfileData, GetDeveloperProfileError, GetDeveloperProfileResponse, GetIssueCommentsData, GetIssueCommentsError, GetIssueCommentsResponse, GetIssuesData, GetIssuesError, GetIssuesResponse, GetLivenessData, GetLivenessResponse, GetModerationData, GetModerationError, GetModerationResponse, GetOAuthClientMetadataData, GetOAuthClientMetadataResponse, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffError, GetPullRequestDiffResponse, GetPullRequestError, GetPullRequestResponse, GetReadinessData, GetReadinessError, GetReadinessResponse, GetRepositoryBlobData, GetRepositoryBlobError, GetRepositoryBlobResponse, GetRepositoryCommitData, GetRepositoryCommitError, GetRepositoryCommitResponse, GetRepositoryData, GetRepositoryDiffData, GetRepositoryDiffError, GetRepositoryDiffResponse, GetRepositoryError, GetRepositoryMergeBaseData, GetRepositoryMergeBaseError, GetRepositoryMergeBaseResponse, GetRepositoryResponse, GetRepositoryTreeData, GetRepositoryTreeError, GetRepositoryTreeResponse, GetStarsData, GetStarsError, GetStarsResponse, GetSyncIssueCommentsData, GetSyncIssueCommentsError, GetSyncIssueCommentsResponse, GetSyncIssuesData, GetSyncIssuesError, GetSyncIssuesResponse, GetSyncProfilesData, GetSyncProfilesError, GetSyncProfilesResponse, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsError, GetSyncPullRequestReviewsResponse, GetSyncPullRequestsData, GetSyncPullRequestsError, GetSyncPullRequestsResponse, GetSyncRepositoriesData, GetSyncRepositoriesError, GetSyncRepositoriesResponse, GetSyncStarsData, GetSyncStarsError, GetSyncStarsResponse, ListAccessTokensData, ListAccessTokensError, ListAccessTokensResponse, ListNetworkRepositoriesData, ListNetworkRepositoriesError, ListNetworkRepositoriesResponse, ListPasskeysData, ListPasskeysError, ListPasskeysResponse, ListPullRequestReviewsData, ListPullRequestReviewsError, ListPullRequestReviewsResponse, ListPullRequestsData, ListPullRequestsError, ListPullRequestsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRepositoryCommitsData, ListRepositoryCommitsError, ListRepositoryCommitsResponse, ListRepositoryTagsData, ListRepositoryTagsError, ListRepositoryTagsResponse, ListSshKeysData, ListSshKeysError, ListSshKeysResponse, LogoutData, LogoutError, LogoutResponse, MergePullRequestData, MergePullRequestError, MergePullRequestResponse, PostSyncIssueCommentsData, PostSyncIssueCommentsError, PostSyncIssueCommentsResponse, PostSyncIssuesData, PostSyncIssuesError, PostSyncIssuesResponse, PostSyncProfilesData, PostSyncProfilesError, PostSyncProfilesResponse, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsError, PostSyncPullRequestReviewsResponse, PostSyncPullRequestsData, PostSyncPullRequestsError, PostSyncPullRequestsResponse, PostSyncRepositoriesData, PostSyncRepositoriesError, PostSyncRepositoriesResponse, PostSyncStarsData, PostSyncStarsError, PostSyncStarsResponse, PutBlockedDidData, PutBlockedDidError, PutBlockedDidResponse, PutHiddenRecordData, PutHiddenRecordError, PutHiddenRecordResponse, PutIssueStatusData, PutIssueStatusError, PutIssueStatusResponse, PutPullRequestStatusData, PutPullRequestStatusError, PutPullRequestStatusResponse, PutStarData, PutStarError, PutStarResponse, RevokeAccessTokenData, RevokeAccessTokenError, RevokeAccessTokenResponse, RevokeSshKeyData, RevokeSshKeyError, RevokeSshKeyResponse, StartAtProtoLoginData, StartAtProtoLoginError, StartAtProtoLoginResponse2, UpdateDeveloperProfileData, UpdateDeveloperProfileError, UpdateDeveloperProfileResponse, VerifyPasskeyLoginData, VerifyPasskeyLoginError, VerifyPasskeyLoginResponse, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationError, VerifyPasskeyRegistrationResponse } from '../types.gen';
+import { beginPasskeyLogin, beginPasskeyRegistration, completeAtProtoLogin, createAccessToken, createIssue, createIssueComment, createPullRequest, createPullRequestReview, createRepository, createSshKey, deleteBlockedDid, deleteHiddenRecord, deleteIssueComment, deletePasskey, deleteStar, getCurrentIdentity, getDeveloperProfile, getIssueComments, getIssues, getLiveness, getModeration, getOAuthClientMetadata, getPullRequest, getPullRequestDiff, getReadiness, getRepository, getRepositoryBlob, getRepositoryCommit, getRepositoryDiff, getRepositoryMergeBase, getRepositoryTree, getStars, getSyncIssueComments, getSyncIssues, getSyncProfiles, getSyncPullRequestReviews, getSyncPullRequests, getSyncRepositories, getSyncStars, listAccessTokens, listNetworkRepositories, listPasskeys, listPullRequestReviews, listPullRequests, listRepositoryBranches, listRepositoryCommits, listRepositoryTags, listSshKeys, logout, mergePullRequest, type Options, postSyncIssueComments, postSyncIssues, postSyncProfiles, postSyncPullRequestReviews, postSyncPullRequests, postSyncRepositories, postSyncStars, putBlockedDid, putHiddenRecord, putIssueStatus, putPullRequestStatus, putStar, revokeAccessToken, revokeSshKey, searchProfiles, searchRepositories, startAtProtoLogin, updateDeveloperProfile, verifyPasskeyLogin, verifyPasskeyRegistration } from '../sdk.gen';
+import type { BeginPasskeyLoginData, BeginPasskeyLoginError, BeginPasskeyLoginResponse, BeginPasskeyRegistrationData, BeginPasskeyRegistrationError, BeginPasskeyRegistrationResponse, CompleteAtProtoLoginData, CompleteAtProtoLoginError, CreateAccessTokenData, CreateAccessTokenError, CreateAccessTokenResponse, CreateIssueCommentData, CreateIssueCommentError, CreateIssueCommentResponse, CreateIssueData, CreateIssueError, CreateIssueResponse, CreatePullRequestData, CreatePullRequestError, CreatePullRequestResponse, CreatePullRequestReviewData, CreatePullRequestReviewError, CreatePullRequestReviewResponse, CreateRepositoryData, CreateRepositoryError, CreateRepositoryResponse, CreateSshKeyData, CreateSshKeyError, CreateSshKeyResponse, DeleteBlockedDidData, DeleteBlockedDidError, DeleteBlockedDidResponse, DeleteHiddenRecordData, DeleteHiddenRecordError, DeleteHiddenRecordResponse, DeleteIssueCommentData, DeleteIssueCommentError, DeletePasskeyData, DeletePasskeyError, DeletePasskeyResponse, DeleteStarData, DeleteStarError, GetCurrentIdentityData, GetCurrentIdentityError, GetCurrentIdentityResponse, GetDeveloperProfileData, GetDeveloperProfileError, GetDeveloperProfileResponse, GetIssueCommentsData, GetIssueCommentsError, GetIssueCommentsResponse, GetIssuesData, GetIssuesError, GetIssuesResponse, GetLivenessData, GetLivenessResponse, GetModerationData, GetModerationError, GetModerationResponse, GetOAuthClientMetadataData, GetOAuthClientMetadataResponse, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffError, GetPullRequestDiffResponse, GetPullRequestError, GetPullRequestResponse, GetReadinessData, GetReadinessError, GetReadinessResponse, GetRepositoryBlobData, GetRepositoryBlobError, GetRepositoryBlobResponse, GetRepositoryCommitData, GetRepositoryCommitError, GetRepositoryCommitResponse, GetRepositoryData, GetRepositoryDiffData, GetRepositoryDiffError, GetRepositoryDiffResponse, GetRepositoryError, GetRepositoryMergeBaseData, GetRepositoryMergeBaseError, GetRepositoryMergeBaseResponse, GetRepositoryResponse, GetRepositoryTreeData, GetRepositoryTreeError, GetRepositoryTreeResponse, GetStarsData, GetStarsError, GetStarsResponse, GetSyncIssueCommentsData, GetSyncIssueCommentsError, GetSyncIssueCommentsResponse, GetSyncIssuesData, GetSyncIssuesError, GetSyncIssuesResponse, GetSyncProfilesData, GetSyncProfilesError, GetSyncProfilesResponse, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsError, GetSyncPullRequestReviewsResponse, GetSyncPullRequestsData, GetSyncPullRequestsError, GetSyncPullRequestsResponse, GetSyncRepositoriesData, GetSyncRepositoriesError, GetSyncRepositoriesResponse, GetSyncStarsData, GetSyncStarsError, GetSyncStarsResponse, ListAccessTokensData, ListAccessTokensError, ListAccessTokensResponse, ListNetworkRepositoriesData, ListNetworkRepositoriesError, ListNetworkRepositoriesResponse, ListPasskeysData, ListPasskeysError, ListPasskeysResponse, ListPullRequestReviewsData, ListPullRequestReviewsError, ListPullRequestReviewsResponse, ListPullRequestsData, ListPullRequestsError, ListPullRequestsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRepositoryCommitsData, ListRepositoryCommitsError, ListRepositoryCommitsResponse, ListRepositoryTagsData, ListRepositoryTagsError, ListRepositoryTagsResponse, ListSshKeysData, ListSshKeysError, ListSshKeysResponse, LogoutData, LogoutError, LogoutResponse, MergePullRequestData, MergePullRequestError, MergePullRequestResponse, PostSyncIssueCommentsData, PostSyncIssueCommentsError, PostSyncIssueCommentsResponse, PostSyncIssuesData, PostSyncIssuesError, PostSyncIssuesResponse, PostSyncProfilesData, PostSyncProfilesError, PostSyncProfilesResponse, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsError, PostSyncPullRequestReviewsResponse, PostSyncPullRequestsData, PostSyncPullRequestsError, PostSyncPullRequestsResponse, PostSyncRepositoriesData, PostSyncRepositoriesError, PostSyncRepositoriesResponse, PostSyncStarsData, PostSyncStarsError, PostSyncStarsResponse, PutBlockedDidData, PutBlockedDidError, PutBlockedDidResponse, PutHiddenRecordData, PutHiddenRecordError, PutHiddenRecordResponse, PutIssueStatusData, PutIssueStatusError, PutIssueStatusResponse, PutPullRequestStatusData, PutPullRequestStatusError, PutPullRequestStatusResponse, PutStarData, PutStarError, PutStarResponse, RevokeAccessTokenData, RevokeAccessTokenError, RevokeAccessTokenResponse, RevokeSshKeyData, RevokeSshKeyError, RevokeSshKeyResponse, SearchProfilesData, SearchProfilesError, SearchProfilesResponse, SearchRepositoriesData, SearchRepositoriesError, SearchRepositoriesResponse, StartAtProtoLoginData, StartAtProtoLoginError, StartAtProtoLoginResponse2, UpdateDeveloperProfileData, UpdateDeveloperProfileError, UpdateDeveloperProfileResponse, VerifyPasskeyLoginData, VerifyPasskeyLoginError, VerifyPasskeyLoginResponse, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationError, VerifyPasskeyRegistrationResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -773,6 +773,110 @@ export const listNetworkRepositoriesInfiniteOptions = (options?: Options<ListNet
             return data;
         },
         queryKey: listNetworkRepositoriesInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const searchRepositoriesQueryKey = (options: Options<SearchRepositoriesData>) => createQueryKey('searchRepositories', options, false, ['Search']);
+
+/**
+ * Search public repositories in the local network index
+ *
+ * Searches only this instance's eventually consistent network.repositories AppView projection. Results may be hosted here or on another indexed forge; ranking does not prefer either. No remote host is contacted at request time. Topics are not searched because dev.adenosine.repo and network.repositories do not currently define them.
+ */
+export const searchRepositoriesOptions = (options: Options<SearchRepositoriesData>) => queryOptions<SearchRepositoriesResponse, SearchRepositoriesError, SearchRepositoriesResponse, ReturnType<typeof searchRepositoriesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await searchRepositories({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: searchRepositoriesQueryKey(options)
+});
+
+export const searchRepositoriesInfiniteQueryKey = (options: Options<SearchRepositoriesData>): QueryKey<Options<SearchRepositoriesData>> => createQueryKey('searchRepositories', options, true);
+
+/**
+ * Search public repositories in the local network index
+ *
+ * Searches only this instance's eventually consistent network.repositories AppView projection. Results may be hosted here or on another indexed forge; ranking does not prefer either. No remote host is contacted at request time. Topics are not searched because dev.adenosine.repo and network.repositories do not currently define them.
+ */
+export const searchRepositoriesInfiniteOptions = (options: Options<SearchRepositoriesData>) => {
+    const opts = infiniteQueryOptions<SearchRepositoriesResponse, SearchRepositoriesError, InfiniteData<SearchRepositoriesResponse>, QueryKey<Options<SearchRepositoriesData>>, string | Pick<QueryKey<Options<SearchRepositoriesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<SearchRepositoriesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await searchRepositories({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: searchRepositoriesInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const searchProfilesQueryKey = (options: Options<SearchProfilesData>) => createQueryKey('searchProfiles', options, false, ['Search']);
+
+/**
+ * Search profiles in the local network index
+ *
+ * Searches indexed handles and display names only in this instance's eventually consistent network.profiles AppView projection. No remote identity or profile service is contacted at request time.
+ */
+export const searchProfilesOptions = (options: Options<SearchProfilesData>) => queryOptions<SearchProfilesResponse, SearchProfilesError, SearchProfilesResponse, ReturnType<typeof searchProfilesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await searchProfiles({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: searchProfilesQueryKey(options)
+});
+
+export const searchProfilesInfiniteQueryKey = (options: Options<SearchProfilesData>): QueryKey<Options<SearchProfilesData>> => createQueryKey('searchProfiles', options, true);
+
+/**
+ * Search profiles in the local network index
+ *
+ * Searches indexed handles and display names only in this instance's eventually consistent network.profiles AppView projection. No remote identity or profile service is contacted at request time.
+ */
+export const searchProfilesInfiniteOptions = (options: Options<SearchProfilesData>) => {
+    const opts = infiniteQueryOptions<SearchProfilesResponse, SearchProfilesError, InfiniteData<SearchProfilesResponse>, QueryKey<Options<SearchProfilesData>>, string | Pick<QueryKey<Options<SearchProfilesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<SearchProfilesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await searchProfiles({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: searchProfilesInfiniteQueryKey(options)
     });
     return opts as Omit<typeof opts, 'initialData'>;
 };

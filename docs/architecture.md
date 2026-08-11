@@ -37,6 +37,10 @@ The Go service owns REST, Git Smart HTTP, SSH, authorization, ATProto publicatio
 projection, and the Electric proxy. The first-party web application has no private data
 path: it uses the same generated REST client and documented sync endpoints as other
 clients. REST is authoritative for writes. Electric is an optional projection read path.
+The browser owns `/explore` navigation and validated URL state, while REST owns its initial
+and fallback search reads. Search is a PostgreSQL-backed read of local `network.*`
+projections; it does not request remote instances, require remote Git mirrors, or rank
+repositories differently based on hosting location.
 
 ## Consistency and failures
 

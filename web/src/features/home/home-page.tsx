@@ -1,5 +1,6 @@
 import { GitFork, Star } from 'lucide-react'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -17,9 +18,18 @@ export function HomePage() {
       <header className="border-b bg-background">
         <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
           <div className="font-semibold tracking-tight">Adenosine</div>
-          <div className="min-w-0 text-right">
-            <p className="truncate text-sm font-medium">{identity?.handle ?? 'Signed in'}</p>
-            <p className="truncate text-xs text-muted-foreground">{identity?.did}</p>
+          <div className="flex min-w-0 items-center gap-4 text-right">
+            <Link
+              to="/explore"
+              search={{ q: '', type: 'repositories', sort: 'relevance' }}
+              className="text-sm font-medium underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Explore
+            </Link>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{identity?.handle ?? 'Signed in'}</p>
+              <p className="truncate text-xs text-muted-foreground">{identity?.did}</p>
+            </div>
           </div>
         </div>
       </header>

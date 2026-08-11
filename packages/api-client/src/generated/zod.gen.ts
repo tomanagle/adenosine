@@ -783,6 +783,16 @@ export const zNetworkRepositoryList = z.object({
     page: zPage
 });
 
+export const zRepositorySearchPage = z.object({
+    data: z.array(zRepository),
+    page: zPage
+});
+
+export const zProfileSearchPage = z.object({
+    data: z.array(zDeveloperProfile),
+    page: zPage
+});
+
 export const zRepositoryUri = z.string().min(1);
 
 export const zIssueUri = z.string().min(1);
@@ -810,6 +820,20 @@ export const zIdempotencyKey = z.string().min(1).max(255);
 export const zLimit = z.int().gte(1).lte(100).default(30);
 
 export const zCursor = z.string();
+
+/**
+ * UTF-8 text matched against fields documented by the operation
+ */
+export const zSearchQuery = z.string().min(1).max(200);
+
+export const zSearchSort = z.enum(['relevance', 'recent']).default('relevance');
+
+export const zSearchLimit = z.int().gte(1).lte(50).default(20);
+
+/**
+ * Opaque keyset cursor bound to the operation, query, and sort
+ */
+export const zSearchCursor = z.string().max(4096);
 
 /**
  * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
@@ -1209,6 +1233,30 @@ export const zListNetworkRepositoriesQuery = z.object({
  * A page of public network repositories
  */
 export const zListNetworkRepositoriesResponse = zNetworkRepositoryList;
+
+export const zSearchRepositoriesQuery = z.object({
+    q: z.string().min(1).max(200),
+    sort: z.enum(['relevance', 'recent']).optional().default('relevance'),
+    limit: z.int().gte(1).lte(50).optional().default(20),
+    cursor: z.string().max(4096).optional()
+});
+
+/**
+ * A stable keyset page of visible repository matches
+ */
+export const zSearchRepositoriesResponse = zRepositorySearchPage;
+
+export const zSearchProfilesQuery = z.object({
+    q: z.string().min(1).max(200),
+    sort: z.enum(['relevance', 'recent']).optional().default('relevance'),
+    limit: z.int().gte(1).lte(50).optional().default(20),
+    cursor: z.string().max(4096).optional()
+});
+
+/**
+ * A stable keyset page of visible profile matches
+ */
+export const zSearchProfilesResponse = zProfileSearchPage;
 
 export const zGetSyncRepositoriesQuery = z.object({
     offset: z.string().min(1).max(255),

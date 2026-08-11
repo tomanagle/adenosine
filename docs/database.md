@@ -29,6 +29,19 @@ together, such as a Tap receipt, cursor, raw record, derived row, and counters. 
 event/CID guards in SQL so duplicates and stale create/update/delete events cannot regress
 state.
 
+## Search indexes
+
+Migration `000012_search.sql` enables PostgreSQL `pg_trgm` and adds explicit GIN full-text
+and trigram indexes for the supported local AppView search fields. Repository search covers
+`network.repositories.name`, `slug`, `description`, and the projected owner handle cache;
+profile search covers indexed handle and display name. The queries apply live/public and
+account-local moderation predicates before ordering and keyset pagination. Local and remote
+rows share the same rank expression.
+
+Topics are intentionally absent: `dev.adenosine.repo` and `network.repositories` do not
+currently define a topic field. Adding topic search requires a Lexicon and projection schema
+change first; clients must not infer topic support from description text.
+
 ## Replay and recovery
 
 `network.*` is derived from validated Tap events and can be rebuilt by replaying the

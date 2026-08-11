@@ -26,6 +26,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
 	"github.com/adenosine-dev/adenosine/internal/repository"
 	"github.com/adenosine-dev/adenosine/internal/restapi"
+	"github.com/adenosine-dev/adenosine/internal/search"
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/storage"
 	"github.com/adenosine-dev/adenosine/internal/syncproxy"
@@ -76,6 +77,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	loginService := identity.NewLoginService(oauthClient, authStore, sessionService, clock)
 	profiles := profile.NewService(profile.NewPostgresStore(db.Queries()), oauthClient, clock)
 	discovery := federation.NewDiscoveryService(federation.NewPostgresDiscoveryStore(db.Queries()))
+	searchService := search.NewService(search.NewPostgresStore(db.Queries()))
 	stars := star.NewService(star.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{})
 	issues := issue.NewService(issue.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{})
 	comments := comment.NewService(comment.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{})
@@ -118,6 +120,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		Repositories:  repositories,
 		Endpoints:     repositoryEndpoints,
 		Discovery:     discovery,
+		Search:        searchService,
 		Stars:         stars,
 		Issues:        issues,
 		Comments:      comments,

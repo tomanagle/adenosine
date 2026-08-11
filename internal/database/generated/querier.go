@@ -103,6 +103,8 @@ type Querier interface {
 	RevokePasskeyCredential(ctx context.Context, arg RevokePasskeyCredentialParams) (AuthPasskeyCredential, error)
 	RevokeSSHKey(ctx context.Context, arg RevokeSSHKeyParams) (AuthSshKey, error)
 	RevokeSession(ctx context.Context, arg RevokeSessionParams) (AuthSession, error)
+	SearchProfiles(ctx context.Context, arg SearchProfilesParams) ([]SearchProfilesRow, error)
+	SearchRepositories(ctx context.Context, arg SearchRepositoriesParams) ([]SearchRepositoriesRow, error)
 	TombstoneFederationIssue(ctx context.Context, arg TombstoneFederationIssueParams) (string, error)
 	TombstoneFederationIssueComment(ctx context.Context, arg TombstoneFederationIssueCommentParams) (string, error)
 	TombstoneFederationIssueStatus(ctx context.Context, arg TombstoneFederationIssueStatusParams) (TombstoneFederationIssueStatusRow, error)

@@ -180,6 +180,16 @@ export type NetworkRepositoryList = {
     page: Page;
 };
 
+export type RepositorySearchPage = {
+    data: Array<Repository>;
+    page: Page;
+};
+
+export type ProfileSearchPage = {
+    data: Array<DeveloperProfile>;
+    page: Page;
+};
+
 /**
  * Flat approved network.repositories projection materialized from Electric insert rows. This is intentionally distinct from the nested REST Repository model.
  */
@@ -782,6 +792,20 @@ export type IdempotencyKey = string;
 export type Limit = number;
 
 export type Cursor = string;
+
+/**
+ * UTF-8 text matched against fields documented by the operation
+ */
+export type SearchQuery = string;
+
+export type SearchSort = 'relevance' | 'recent';
+
+export type SearchLimit = number;
+
+/**
+ * Opaque keyset cursor bound to the operation, query, and sort
+ */
+export type SearchCursor = string;
 
 /**
  * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
@@ -2364,6 +2388,86 @@ export type ListNetworkRepositoriesResponses = {
 };
 
 export type ListNetworkRepositoriesResponse = ListNetworkRepositoriesResponses[keyof ListNetworkRepositoriesResponses];
+
+export type SearchRepositoriesData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * UTF-8 text matched against fields documented by the operation
+         */
+        q: string;
+        sort?: 'relevance' | 'recent';
+        limit?: number;
+        /**
+         * Opaque keyset cursor bound to the operation, query, and sort
+         */
+        cursor?: string;
+    };
+    url: '/api/v1/search/repositories';
+};
+
+export type SearchRepositoriesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+};
+
+export type SearchRepositoriesError = SearchRepositoriesErrors[keyof SearchRepositoriesErrors];
+
+export type SearchRepositoriesResponses = {
+    /**
+     * A stable keyset page of visible repository matches
+     */
+    200: RepositorySearchPage;
+};
+
+export type SearchRepositoriesResponse = SearchRepositoriesResponses[keyof SearchRepositoriesResponses];
+
+export type SearchProfilesData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * UTF-8 text matched against fields documented by the operation
+         */
+        q: string;
+        sort?: 'relevance' | 'recent';
+        limit?: number;
+        /**
+         * Opaque keyset cursor bound to the operation, query, and sort
+         */
+        cursor?: string;
+    };
+    url: '/api/v1/search/profiles';
+};
+
+export type SearchProfilesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+};
+
+export type SearchProfilesError = SearchProfilesErrors[keyof SearchProfilesErrors];
+
+export type SearchProfilesResponses = {
+    /**
+     * A stable keyset page of visible profile matches
+     */
+    200: ProfileSearchPage;
+};
+
+export type SearchProfilesResponse = SearchProfilesResponses[keyof SearchProfilesResponses];
 
 export type GetSyncRepositoriesData = {
     body?: never;
