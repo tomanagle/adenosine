@@ -18,6 +18,53 @@ fi
 
 case "$task" in
   e2e)
+    project="adenosine-production-smoke-$PPID-$$"
+    production_compose=(docker compose --project-name "$project" --env-file .env.local --profile production-smoke -f dev/docker-compose.yml)
+    cleanup_production_smoke() {
+      status=$?
+      if [[ $status -ne 0 ]]; then
+        echo "production image smoke test failed; container state and logs follow" >&2
+        "${production_compose[@]}" ps --all >&2 || true
+        "${production_compose[@]}" logs --no-color production-postgres production-adenosine >&2 || true
+        production_container=$("${production_compose[@]}" ps --all --quiet production-adenosine 2>/dev/null || true)
+        if [[ -n "$production_container" ]]; then
+          docker inspect "$production_container" >&2 || true
+        fi
+      fi
+      "${production_compose[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
+      trap - EXIT INT TERM
+      exit "$status"
+    }
+    trap cleanup_production_smoke EXIT INT TERM
+
+    "${production_compose[@]}" build production-adenosine
+    "${production_compose[@]}" up --detach --wait --wait-timeout 120 production-postgres production-adenosine
+
+    production_image=$("${production_compose[@]}" images --quiet production-adenosine)
+    test -n "$production_image"
+    test "$(docker image inspect "$production_image" --format '{{.Config.User}}')" = adenosine
+    test "$(docker image inspect "$production_image" --format '{{json .Config.Entrypoint}}')" = '["adenosine"]'
+    test "$(docker image inspect "$production_image" --format '{{json .Config.Cmd}}')" = '["serve"]'
+    test "$("${production_compose[@]}" exec -T production-adenosine id -un)" = adenosine
+    test "$("${production_compose[@]}" exec -T production-adenosine id -u)" != 0
+    "${production_compose[@]}" exec -T production-adenosine git --version
+    "${production_compose[@]}" exec -T production-adenosine sh -ec '
+      test -w "$ADENOSINE_REPO_ROOT"
+      test -w "$(dirname "$ADENOSINE_SSH_HOST_KEY_PATH")"
+      touch "$ADENOSINE_REPO_ROOT/.production-smoke-write"
+      touch "$(dirname "$ADENOSINE_SSH_HOST_KEY_PATH")/.production-smoke-write"
+      rm "$ADENOSINE_REPO_ROOT/.production-smoke-write" "$(dirname "$ADENOSINE_SSH_HOST_KEY_PATH")/.production-smoke-write"
+      ! test -w /
+      ! test -w /etc
+      ! test -w /usr/local/bin
+    '
+    test "$("${production_compose[@]}" exec -T production-postgres psql -U adenosine -d adenosine -tAc 'SELECT count(*) > 0 FROM public.schema_migrations')" = t
+    "${production_compose[@]}" exec -T production-adenosine sh -ec 'wget -S --spider http://localhost:8080/health/ready 2>&1 | grep -q "HTTP/1.1 200 OK"'
+    "${production_compose[@]}" exec -T production-adenosine sh -ec 'wget -qO- http://localhost:8080/openapi.json | grep -q '"'"'"openapi"'"'"''
+
+    "${production_compose[@]}" down --volumes --remove-orphans
+    trap - EXIT INT TERM
+
     "${compose[@]}" up --build --detach --wait postgres otel-lgtm adenosine electric web gateway
     public_url="$(grep '^ADENOSINE_BASE_URL=' .env.local | cut -d= -f2-)"
     curl -fsS "$public_url/health/ready" >/dev/null
