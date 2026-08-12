@@ -165,6 +165,88 @@ func TestServerSupportsRealCloneAndPush(t *testing.T) {
 	}
 }
 
+func TestServerConnectionDeadlinesReleaseSlots(t *testing.T) {
+	testCases := []struct {
+		name      string
+		handshake bool
+	}{
+		{name: "handshake timeout", handshake: true},
+		{name: "authenticated pre-exec idle timeout"},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			hostSigner := testSigner(t)
+			userSigner := testSigner(t)
+			keys := &fixedSSHKeys{publicKey: userSigner.PublicKey()}
+			server := NewServer("", hostSigner, slog.New(slog.NewTextHandler(io.Discard, nil)), keys, nil, nil, nil, nil)
+			server.handshakeTimeout = time.Second
+			if testCase.handshake {
+				server.handshakeTimeout = 30 * time.Millisecond
+			}
+			server.sessionIdleTimeout = 30 * time.Millisecond
+			listener, err := net.Listen("tcp", "127.0.0.1:0")
+			if err != nil {
+				t.Fatalf("listen: %v", err)
+			}
+			defer listener.Close()
+			done := make(chan struct{})
+			go func() {
+				connection, acceptErr := listener.Accept()
+				if acceptErr == nil {
+					server.connectionSlots <- struct{}{}
+					server.wait.Add(1)
+					server.handleConnection(connection)
+				}
+				close(done)
+			}()
+			clientSide, err := net.Dial("tcp", listener.Addr().String())
+			if err != nil {
+				t.Fatalf("dial: %v", err)
+			}
+
+			if !testCase.handshake {
+				clientConnection, channels, requests, err := ssh.NewClientConn(clientSide, listener.Addr().String(), &ssh.ClientConfig{
+					User: "git", Auth: []ssh.AuthMethod{ssh.PublicKeys(userSigner)}, HostKeyCallback: ssh.InsecureIgnoreHostKey(), Timeout: time.Second,
+				})
+				if err != nil {
+					t.Fatalf("authenticate client: %v", err)
+				}
+				client := ssh.NewClient(clientConnection, channels, requests)
+				defer client.Close()
+				channel, channelRequests, err := client.OpenChannel("session", nil)
+				if err != nil {
+					t.Fatalf("open session: %v", err)
+				}
+				defer channel.Close()
+				go ssh.DiscardRequests(channelRequests)
+				waitForSlot(t, server.sessionSlots)
+			}
+
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+				t.Fatal("timed connection did not close")
+			}
+			_ = clientSide.Close()
+			if len(server.connectionSlots) != 0 || len(server.sessionSlots) != 0 {
+				t.Fatalf("slots after cleanup = connection:%d session:%d", len(server.connectionSlots), len(server.sessionSlots))
+			}
+		})
+	}
+}
+
+func waitForSlot(t *testing.T, slots chan struct{}) {
+	t.Helper()
+	deadline := time.Now().Add(time.Second)
+	for len(slots) == 0 && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	if len(slots) == 0 {
+		t.Fatal("session slot was not acquired")
+	}
+}
+
 func testSigner(t *testing.T) ssh.Signer {
 	t.Helper()
 	_, privateKey, err := ed25519.GenerateKey(rand.Reader)

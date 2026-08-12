@@ -20,6 +20,11 @@ Use the OpenAPI operation rather than guessing behavior. The current conventions
 - JSON request bodies reject malformed input; raw Git blob responses are byte streams.
 - List envelopes contain `data` and `page.next_cursor`. Network repository discovery uses
   opaque cursor pagination with a bounded `limit`; do not inspect or construct cursors.
+- `GET /api/v1/search/repositories` and `GET /api/v1/search/profiles` are the canonical
+  search reads. Their opaque cursors are bound to the operation, query, and sort. They read
+  only the local AppView, accept anonymous requests, and apply account-local moderation for
+  a valid browser session. An invalid presented session returns `401` rather than becoming
+  anonymous.
 - Filters are operation-specific query parameters. Sync subset predicates may only narrow
   a server-owned shape; they cannot broaden visibility.
 - Errors use `{"error":{"code":"...","message":"...","request_id":"..."}}` and the
@@ -58,6 +63,9 @@ External clients can generate from an instance's `/openapi.json` or call REST di
 Federated records are eventually consistent: a successful publishing response can precede
 its appearance in list, projection, or sync results. Use returned AT URI/CID values to
 reconcile; retain REST reads and normal refetching when Electric is delayed or unavailable.
+Search has the same projection lag: it never fans out to a remote forge or fetches a remote
+profile at request time. Repository results include indexed canonical web and Git
+destinations, and ranking has no local-host preference.
 
 ## Generated ownership
 

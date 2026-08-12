@@ -26,6 +26,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
 	"github.com/adenosine-dev/adenosine/internal/repository"
 	"github.com/adenosine-dev/adenosine/internal/restapi"
+	"github.com/adenosine-dev/adenosine/internal/search"
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/storage"
 	"github.com/adenosine-dev/adenosine/internal/syncproxy"
@@ -41,10 +42,7 @@ func Must(ctx context.Context, cfg config.Config) *app.Application {
 }
 
 func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
-	logger, shutdownTelemetry, err := observability.Setup(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("set up observability: %w", err)
-	}
+	logger, shutdownTelemetry := observability.Must(ctx)
 
 	db, err := database.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -76,6 +74,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	loginService := identity.NewLoginService(oauthClient, authStore, sessionService, clock)
 	profiles := profile.NewService(profile.NewPostgresStore(db.Queries()), oauthClient, clock)
 	discovery := federation.NewDiscoveryService(federation.NewPostgresDiscoveryStore(db.Queries()))
+	searchService := search.NewService(search.NewPostgresStore(db.Queries()))
 	stars := star.NewService(star.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{})
 	issues := issue.NewService(issue.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{})
 	comments := comment.NewService(comment.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{})
@@ -118,6 +117,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		Repositories:  repositories,
 		Endpoints:     repositoryEndpoints,
 		Discovery:     discovery,
+		Search:        searchService,
 		Stars:         stars,
 		Issues:        issues,
 		Comments:      comments,
@@ -150,10 +150,13 @@ type federationProcessor struct {
 func (processor federationProcessor) Process(ctx context.Context, body []byte) error {
 	result, err := processor.processor.Process(ctx, body)
 	if err != nil {
+		attrs := []any{"component", "federation", "operation", "process", "error_class", "processing"}
+		processor.logger.ErrorContext(ctx, "federation event processing failed", append(attrs, observability.CorrelationAttrs(ctx)...)...)
 		return err
 	}
 	if result.Outcome == "rejected" {
-		processor.logger.WarnContext(ctx, "federation event rejected", "component", "indexer", "event_id", result.EventID)
+		attrs := []any{"component", "federation", "operation", "validate", "event_id", result.EventID}
+		processor.logger.WarnContext(ctx, "federation event rejected", append(attrs, observability.CorrelationAttrs(ctx)...)...)
 	}
 	return nil
 }

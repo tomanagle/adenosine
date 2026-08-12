@@ -6,12 +6,59 @@ import (
 	"testing"
 
 	"github.com/adenosine-dev/adenosine/internal/star"
+	"go.opentelemetry.io/otel"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
 type memoryRecord struct {
 	eventID int64
 	value   *RepositoryRecord
 	deleted bool
+}
+
+func TestProcessorMetrics(t *testing.T) {
+	testCases := []struct {
+		name string
+		body string
+		want []string
+	}{
+		{name: "records processing outcome", body: recordEnvelope(80, RepositoryCollection, "metrics", "create", repositoryRecord("Metrics")), want: []string{
+			"adenosine.federation.events", "adenosine.federation.processing.duration",
+		}},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			reader := sdkmetric.NewManualReader()
+			provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+			previous := otel.GetMeterProvider()
+			otel.SetMeterProvider(provider)
+			defer func() {
+				otel.SetMeterProvider(previous)
+				_ = provider.Shutdown(context.Background())
+			}()
+			store := newMemoryStore()
+			if _, err := (&Processor{store: store}).Process(context.Background(), []byte(testCase.body)); err != nil {
+				t.Fatalf("Process() error = %v", err)
+			}
+			var metrics metricdata.ResourceMetrics
+			if err := reader.Collect(context.Background(), &metrics); err != nil {
+				t.Fatalf("collect metrics: %v", err)
+			}
+			names := map[string]bool{}
+			for _, scope := range metrics.ScopeMetrics {
+				for _, value := range scope.Metrics {
+					names[value.Name] = true
+				}
+			}
+			for _, name := range testCase.want {
+				if !names[name] {
+					t.Errorf("metric %q was not recorded", name)
+				}
+			}
+		})
+	}
 }
 
 type memoryStore struct {

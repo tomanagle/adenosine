@@ -239,6 +239,7 @@
         "operationId": "getDeveloperProfile",
         "tags": ["Profiles"],
         "summary": "Get a shared developer profile",
+        "security": [{}, { "sessionCookie": [] }],
         "parameters": [
           { "name": "did", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }
         ],
@@ -304,7 +305,7 @@
     },
     "/api/v1/stars": {
       "get": {
-        "operationId": "getStars", "tags": ["Stars"], "summary": "Get projected stars for a repository", "security": [],
+        "operationId": "getStars", "tags": ["Stars"], "summary": "Get projected stars for a repository", "security": [{}, { "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }],
         "responses": {
           "200": { "description": "Current bounded star projection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StarList" } } } },
@@ -334,7 +335,7 @@
     },
     "/api/v1/issues": {
       "get": {
-        "operationId": "getIssues", "tags": ["Issues"], "summary": "Get projected issues for a repository", "security": [],
+        "operationId": "getIssues", "tags": ["Issues"], "summary": "Get projected issues for a repository", "security": [{}, { "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }],
         "responses": {
           "200": { "description": "Current bounded issue projection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueList" } } } },
@@ -361,6 +362,16 @@
           "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
           "502": { "description": "The AT Protocol issue provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/issues/detail": {
+      "get": {
+        "operationId": "getIssue", "tags": ["Issues"], "summary": "Get one current projected issue", "security": [{}, { "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }, { "$ref": "#/components/parameters/IssueURI" }],
+        "responses": {
+          "200": { "description": "Current projected issue", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Issue" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
         }
       }
     },
@@ -398,7 +409,7 @@
     },
     "/api/v1/pull-requests": {
       "get": {
-        "operationId": "listPullRequests", "tags": ["Pull Requests"], "summary": "List projected pull requests targeting a repository", "security": [],
+        "operationId": "listPullRequests", "tags": ["Pull Requests"], "summary": "List projected pull requests targeting a repository", "security": [{}, { "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }],
         "responses": {
           "200": { "description": "Current bounded pull request projection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestList" } } } },
@@ -419,14 +430,14 @@
     },
     "/api/v1/pull-requests/detail": {
       "get": {
-        "operationId": "getPullRequest", "tags": ["Pull Requests"], "summary": "Get one current projected pull request", "security": [],
+        "operationId": "getPullRequest", "tags": ["Pull Requests"], "summary": "Get one current projected pull request", "security": [{}, { "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }],
         "responses": { "200": { "description": "Current projected pull request", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequest" } } } }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
       }
     },
     "/api/v1/pull-requests/diff": {
       "get": {
-        "operationId": "getPullRequestDiff", "tags": ["Pull Requests"], "summary": "Refresh and return a verified pull request diff", "security": [],
+        "operationId": "getPullRequestDiff", "tags": ["Pull Requests"], "summary": "Refresh and return a verified pull request diff", "security": [{}, { "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }],
         "responses": {
           "200": { "description": "Verified bounded pull request diff", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestDiff" } } } },
@@ -436,7 +447,7 @@
     },
     "/api/v1/pull-requests/reviews": {
       "get": {
-        "operationId": "listPullRequestReviews", "tags": ["Pull Requests"], "summary": "List reviews for the exact current pull request CID", "security": [],
+        "operationId": "listPullRequestReviews", "tags": ["Pull Requests"], "summary": "List reviews for the exact current pull request CID", "security": [{}, { "sessionCookie": [] }],
         "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }],
         "responses": { "200": { "description": "Current bounded reviews", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestReviewList" } } } }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
       },
@@ -530,6 +541,30 @@
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NetworkRepositoryList" } } }
           },
           "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/v1/search/repositories": {
+      "get": {
+        "operationId": "searchRepositories", "tags": ["Search"], "summary": "Search public repositories in the local network index",
+        "description": "Searches only this instance's eventually consistent network.repositories AppView projection. Results may be hosted here or on another indexed forge; ranking does not prefer either. No remote host is contacted at request time. Topics are not searched because dev.adenosine.repo and network.repositories do not currently define them.",
+        "security": [{}, { "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SearchQuery" }, { "$ref": "#/components/parameters/SearchSort" }, { "$ref": "#/components/parameters/SearchLimit" }, { "$ref": "#/components/parameters/SearchCursor" }],
+        "responses": {
+          "200": { "description": "A stable keyset page of visible repository matches", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositorySearchPage" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/v1/search/profiles": {
+      "get": {
+        "operationId": "searchProfiles", "tags": ["Search"], "summary": "Search profiles in the local network index",
+        "description": "Searches indexed handles and display names only in this instance's eventually consistent network.profiles AppView projection. No remote identity or profile service is contacted at request time.",
+        "security": [{}, { "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SearchQuery" }, { "$ref": "#/components/parameters/SearchSort" }, { "$ref": "#/components/parameters/SearchLimit" }, { "$ref": "#/components/parameters/SearchCursor" }],
+        "responses": {
+          "200": { "description": "A stable keyset page of visible profile matches", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProfileSearchPage" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
@@ -669,6 +704,7 @@
         "operationId": "getRepository",
         "tags": ["Repositories"],
         "summary": "Get a local or federated repository",
+        "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
         "parameters": [
           { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
           { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }
@@ -958,7 +994,11 @@
       "ExactOrigin": { "name": "Origin", "in": "header", "required": false, "description": "Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.", "schema": { "type": "string", "format": "uri" } },
       "IdempotencyKey": { "name": "Idempotency-Key", "in": "header", "required": false, "schema": { "type": "string", "minLength": 1, "maxLength": 255 } },
       "Limit": { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 } },
-      "Cursor": { "name": "cursor", "in": "query", "required": false, "schema": { "type": "string" } }
+      "Cursor": { "name": "cursor", "in": "query", "required": false, "schema": { "type": "string" } },
+      "SearchQuery": { "name": "q", "in": "query", "required": true, "description": "UTF-8 text matched against fields documented by the operation", "schema": { "type": "string", "minLength": 1, "maxLength": 200 } },
+      "SearchSort": { "name": "sort", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "recent"], "default": "relevance" } },
+      "SearchLimit": { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 50, "default": 20 } },
+      "SearchCursor": { "name": "cursor", "in": "query", "required": false, "description": "Opaque keyset cursor bound to the operation, query, and sort", "schema": { "type": "string", "maxLength": 4096 } }
       ,"ElectricOffset": { "name": "offset", "in": "query", "required": true, "description": "Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.", "schema": { "type": "string", "minLength": 1, "maxLength": 255 } }
       ,"ElectricHandle": { "name": "handle", "in": "query", "required": false, "description": "Electric shape handle required for continuation offsets.", "schema": { "type": "string", "maxLength": 255 } }
       ,"ElectricCursor": { "name": "cursor", "in": "query", "required": false, "description": "Electric cache-busting cursor returned by a prior live request.", "schema": { "type": "string", "maxLength": 255 } }
@@ -1195,12 +1235,15 @@
       },
       "RepositoryHosting": {
         "type": "object",
-        "required": ["local", "web_url", "git_https_url"],
+        "additionalProperties": false,
+        "description": "Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.",
+        "required": ["local", "web_url", "git_https_url", "source_browsing"],
         "properties": {
           "local": { "type": "boolean" },
           "web_url": { "type": "string", "format": "uri" },
           "git_https_url": { "type": "string", "format": "uri" },
-          "git_ssh_url": { "type": "string", "nullable": true }
+          "git_ssh_url": { "type": "string", "nullable": true },
+          "source_browsing": { "type": "string", "enum": ["local", "canonical_host"] }
         }
       },
       "Repository": {
@@ -1235,6 +1278,14 @@
           "data": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } },
           "page": { "$ref": "#/components/schemas/Page" }
         }
+      },
+      "RepositorySearchPage": {
+        "type": "object", "additionalProperties": false, "required": ["data", "page"],
+        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }, "page": { "$ref": "#/components/schemas/Page" } }
+      },
+      "ProfileSearchPage": {
+        "type": "object", "additionalProperties": false, "required": ["data", "page"],
+        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeveloperProfile" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "SyncRepository": {
         "type": "object",

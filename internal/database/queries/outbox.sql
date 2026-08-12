@@ -1,15 +1,15 @@
 -- name: CreateOutboxEvent :one
 INSERT INTO ops.outbox_events (
-    id, type, aggregate_type, aggregate_id, payload, created_at, available_at
+    id, type, aggregate_type, aggregate_id, payload, created_at, available_at, traceparent, tracestate
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING *;
 
 -- name: CreateOutboxEventIfAbsent :exec
 INSERT INTO ops.outbox_events (
-    id, type, aggregate_type, aggregate_id, payload, created_at, available_at
+    id, type, aggregate_type, aggregate_id, payload, created_at, available_at, traceparent, tracestate
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 ON CONFLICT (id) DO NOTHING;
 
 -- name: ClaimOutboxEvents :many

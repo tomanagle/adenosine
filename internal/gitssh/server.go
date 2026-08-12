@@ -9,20 +9,28 @@ import (
 	"log/slog"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/adenosine-dev/adenosine/internal/auth"
+	gitservice "github.com/adenosine-dev/adenosine/internal/git"
+	"github.com/adenosine-dev/adenosine/internal/observability"
 	"github.com/adenosine-dev/adenosine/internal/repository"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/crypto/ssh"
 )
 
 const (
-	accountDIDPermission = "adenosine.account_did"
-	keyIDPermission      = "adenosine.ssh_key_id"
+	accountDIDPermission      = "adenosine.account_did"
+	keyIDPermission           = "adenosine.ssh_key_id"
+	maxConnections            = 128
+	maxSessions               = 64
+	defaultHandshakeTimeout   = 10 * time.Second
+	defaultSessionIdleTimeout = 2 * time.Minute
 )
 
 type keyAuthenticator interface {
@@ -59,23 +67,31 @@ type Server struct {
 	git          sessionPacker
 	events       pushEventWriter
 
-	mu          sync.Mutex
-	listener    net.Listener
-	connections map[net.Conn]struct{}
-	wait        sync.WaitGroup
+	mu                 sync.Mutex
+	listener           net.Listener
+	connections        map[net.Conn]struct{}
+	wait               sync.WaitGroup
+	connectionSlots    chan struct{}
+	sessionSlots       chan struct{}
+	handshakeTimeout   time.Duration
+	sessionIdleTimeout time.Duration
 }
 
 // NewServer constructs an SSH Git server from initialized dependencies.
 func NewServer(address string, signer ssh.Signer, logger *slog.Logger, keys keyAuthenticator, repositories repositoryResolver, authorizer repositoryAuthorizer, git sessionPacker, events pushEventWriter) *Server {
 	server := &Server{
-		address:      address,
-		logger:       logger,
-		keys:         keys,
-		repositories: repositories,
-		authorizer:   authorizer,
-		git:          git,
-		events:       events,
-		connections:  make(map[net.Conn]struct{}),
+		address:            address,
+		logger:             logger,
+		keys:               keys,
+		repositories:       repositories,
+		authorizer:         authorizer,
+		git:                git,
+		events:             events,
+		connections:        make(map[net.Conn]struct{}),
+		connectionSlots:    make(chan struct{}, maxConnections),
+		sessionSlots:       make(chan struct{}, maxSessions),
+		handshakeTimeout:   defaultHandshakeTimeout,
+		sessionIdleTimeout: defaultSessionIdleTimeout,
 	}
 	server.config = &ssh.ServerConfig{
 		MaxAuthTries:  3,
@@ -138,6 +154,12 @@ func (server *Server) serve(listener net.Listener) error {
 			}
 			return fmt.Errorf("accept SSH connection: %w", err)
 		}
+		select {
+		case server.connectionSlots <- struct{}{}:
+		default:
+			_ = connection.Close()
+			continue
+		}
 		server.mu.Lock()
 		server.connections[connection] = struct{}{}
 		server.mu.Unlock()
@@ -177,16 +199,20 @@ func (server *Server) Shutdown(ctx context.Context) error {
 
 func (server *Server) handleConnection(connection net.Conn) {
 	defer server.wait.Done()
+	defer func() { <-server.connectionSlots }()
 	defer func() {
 		server.mu.Lock()
 		delete(server.connections, connection)
 		server.mu.Unlock()
 		_ = connection.Close()
 	}()
-	sshConnection, channels, requests, err := ssh.NewServerConn(connection, server.config)
+	activity := newActivityConn(connection)
+	activity.setTimeout(server.handshakeTimeout)
+	sshConnection, channels, requests, err := ssh.NewServerConn(activity, server.config)
 	if err != nil {
 		return
 	}
+	activity.setTimeout(server.sessionIdleTimeout)
 	defer sshConnection.Close()
 	go ssh.DiscardRequests(requests)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -205,9 +231,16 @@ func (server *Server) handleConnection(connection net.Conn) {
 		if err != nil {
 			continue
 		}
+		select {
+		case server.sessionSlots <- struct{}{}:
+		default:
+			_ = accepted.Close()
+			continue
+		}
 		sessions.Add(1)
 		go func() {
 			defer sessions.Done()
+			defer func() { <-server.sessionSlots }()
 			server.handleSession(ctx, sshConnection, accepted, channelRequests)
 		}()
 	}
@@ -252,9 +285,18 @@ func (server *Server) handleSession(ctx context.Context, connection *ssh.ServerC
 	}
 }
 
-func (server *Server) execute(ctx context.Context, accountDID string, parsed command, protocol string, channel ssh.Channel) error {
+func (server *Server) execute(ctx context.Context, accountDID string, parsed command, protocol string, channel ssh.Channel) (resultErr error) {
+	ctx = gitservice.WithTransport(ctx, "ssh")
 	ctx, span := otel.Tracer("github.com/adenosine-dev/adenosine/internal/gitssh").Start(ctx, "gitssh."+parsed.operation)
-	defer span.End()
+	defer func() {
+		if resultErr != nil {
+			span.SetStatus(codes.Error, "Git SSH operation failed")
+			attrs := []any{"component", "git-ssh", "operation", parsed.operation}
+			attrs = append(attrs, gitservice.FailureAttrs(resultErr)...)
+			server.logger.ErrorContext(ctx, "Git SSH operation failed", append(attrs, observability.CorrelationAttrs(ctx)...)...)
+		}
+		span.End()
+	}()
 	span.SetAttributes(attribute.String("git.operation", parsed.operation))
 	repo, err := server.repositories.GetByOwnerSlug(ctx, parsed.owner, parsed.slug)
 	if err != nil || repo.State != repository.StateActive {
@@ -262,11 +304,18 @@ func (server *Server) execute(ctx context.Context, accountDID string, parsed com
 		return repository.ErrNotFound
 	}
 	allowed := false
+	authorizeCtx, authorizeSpan := otel.Tracer("github.com/adenosine-dev/adenosine/internal/gitssh").Start(ctx, "gitssh.authorize",
+		trace.WithAttributes(attribute.String("git.operation", parsed.operation), attribute.String("git.transport", "ssh")))
 	if parsed.operation == "upload-pack" {
-		allowed, err = server.authorizer.CanReadRepository(ctx, accountDID, repo.ID)
+		allowed, err = server.authorizer.CanReadRepository(authorizeCtx, accountDID, repo.ID)
 	} else {
-		allowed, err = server.authorizer.CanWriteRepository(ctx, accountDID, repo.ID)
+		allowed, err = server.authorizer.CanWriteRepository(authorizeCtx, accountDID, repo.ID)
 	}
+	authorizeSpan.SetAttributes(attribute.Bool("authorization.allowed", allowed && err == nil))
+	if err != nil || !allowed {
+		authorizeSpan.SetStatus(codes.Error, "authorization denied")
+	}
+	authorizeSpan.End()
 	if err != nil {
 		return fmt.Errorf("authorize SSH repository operation: %w", err)
 	}
@@ -282,6 +331,37 @@ func (server *Server) execute(ctx context.Context, accountDID string, parsed com
 	eventContext, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 	defer cancel()
 	return server.events.GitPushReceived(eventContext, repo)
+}
+
+type activityConn struct {
+	net.Conn
+	timeoutNanos atomic.Int64
+}
+
+func newActivityConn(connection net.Conn) *activityConn {
+	return &activityConn{Conn: connection}
+}
+
+func (connection *activityConn) setTimeout(timeout time.Duration) {
+	connection.timeoutNanos.Store(int64(timeout))
+	connection.refreshDeadline()
+}
+
+func (connection *activityConn) Read(value []byte) (int, error) {
+	connection.refreshDeadline()
+	return connection.Conn.Read(value)
+}
+
+func (connection *activityConn) Write(value []byte) (int, error) {
+	connection.refreshDeadline()
+	return connection.Conn.Write(value)
+}
+
+func (connection *activityConn) refreshDeadline() {
+	timeout := time.Duration(connection.timeoutNanos.Load())
+	if timeout > 0 {
+		_ = connection.Conn.SetDeadline(time.Now().Add(timeout))
+	}
 }
 
 func ignoreClosed(err error) error {

@@ -33,6 +33,37 @@ type fakeIssues struct {
 	calls         int
 }
 
+func TestIssueDetailEndpoint(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name       string
+		issueURI   string
+		wantStatus int
+	}{
+		{name: "stable URI match", issueURI: restIssueURI, wantStatus: http.StatusOK},
+		{name: "unknown URI", issueURI: "at://did:plc:bob/dev.adenosine.issue/other", wantStatus: http.StatusNotFound},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			projected := issue.ProjectedIssue{Issue: issue.Issue{URI: restIssueURI, CID: restIssueCID, AuthorDID: "did:plc:bob", Record: issue.Record{Repository: issue.StrongRef{URI: restIssueRepositoryURI, CID: restIssueCID}, Title: "detail"}}, State: issue.StateOpen}
+			manager := &fakeIssues{projection: issue.Projection{Issues: []issue.ProjectedIssue{projected}}}
+			server := testAPIServer(t, Dependencies{Issues: manager})
+			path := "/api/v1/issues/detail?repository_uri=" + restIssueRepositoryURI + "&issue_uri=" + testCase.issueURI
+			response := httptest.NewRecorder()
+			server.Handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
+			if response.Code != testCase.wantStatus || manager.repositoryURI != restIssueRepositoryURI {
+				t.Fatalf("status/repository = %d/%q, want %d/%q: %s", response.Code, manager.repositoryURI, testCase.wantStatus, restIssueRepositoryURI, response.Body.String())
+			}
+			if testCase.wantStatus == http.StatusOK {
+				var body generated.Issue
+				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.Uri != restIssueURI || body.Title != "detail" {
+					t.Fatalf("issue = %#v, %v", body, err)
+				}
+			}
+		})
+	}
+}
+
 func (manager *fakeIssues) Get(_ context.Context, uri string) (issue.Projection, error) {
 	manager.calls++
 	manager.operation, manager.repositoryURI = "get", uri

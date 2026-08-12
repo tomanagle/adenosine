@@ -1,0 +1,52 @@
+{
+  "uid": "adenosine-git-v1",
+  "title": "Adenosine Git v1",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Active Git commands",
+      "targets": [
+        { "expr": "sum by (git_operation,git_transport) (adenosine_git_commands_active)" }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Git results",
+      "targets": [
+        {
+          "expr": "sum by (git_operation,git_transport,git_result) (rate(adenosine_git_commands_total[5m]))"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Git p95 seconds",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le,git_operation,git_transport) (rate(adenosine_git_command_duration_seconds_bucket[5m])))"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Git bytes per second",
+      "targets": [
+        {
+          "expr": "sum by (git_operation,git_transport,git_direction) (rate(adenosine_git_bytes_total[5m]))"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 }
+    }
+  ]
+}

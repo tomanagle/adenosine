@@ -35,9 +35,18 @@ export function LandingPage() {
           >
             Adenosine
           </Link>
-          <Link to="/login" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
-            Sign in
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/explore"
+              search={{ q: '', type: 'repositories', sort: 'relevance' }}
+              className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+            >
+              Explore
+            </Link>
+            <Link to="/login" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
+              Sign in
+            </Link>
+          </div>
         </div>
       </header>
       <section className="mx-auto grid max-w-6xl gap-12 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">

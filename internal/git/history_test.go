@@ -355,7 +355,7 @@ func (fixture *historyFixture) git(t *testing.T, arguments ...string) string {
 
 func (fixture *historyFixture) gitInput(t *testing.T, input []byte, environment []string, arguments ...string) string {
 	t.Helper()
-	command := exec.Command(fixture.binary, append([]string{"-C", fixture.worktree}, arguments...)...)
+	command := exec.Command(fixture.binary, append([]string{"-c", "commit.gpgSign=false", "-c", "tag.gpgSign=false", "-C", fixture.worktree}, arguments...)...)
 	command.Stdin = bytes.NewReader(input)
 	command.Env = append(command.Environ(), environment...)
 	output, err := command.CombinedOutput()

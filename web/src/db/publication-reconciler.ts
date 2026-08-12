@@ -24,6 +24,7 @@ export class PublicationReconciler<T> {
   readonly #publications = new Map<string, Publication<T>>()
   readonly #timers = new Map<string, ReturnType<typeof setTimeout>>()
   readonly #observedReferences = new Set<string>()
+  readonly #listeners = new Set<() => void>()
 
   constructor(delayMs = 10_000) {
     if (!Number.isFinite(delayMs) || delayMs < 0)
@@ -39,6 +40,11 @@ export class PublicationReconciler<T> {
     return [...this.#publications.values()]
   }
 
+  subscribe(listener: () => void) {
+    this.#listeners.add(listener)
+    return () => this.#listeners.delete(listener)
+  }
+
   async publish(publication: PublishPublication<T>): Promise<PublicationReference> {
     if (this.#publications.has(publication.id))
       throw new Error(`Publication already exists: ${publication.id}`)
@@ -47,12 +53,14 @@ export class PublicationReconciler<T> {
       optimistic: publication.optimistic,
       state: 'publishing',
     })
+    this.#notify()
 
     let reference: PublicationReference
     try {
       reference = await publication.request()
     } catch (error) {
       this.#publications.delete(publication.id)
+      this.#notify()
       publication.rollback()
       throw error
     }
@@ -62,15 +70,18 @@ export class PublicationReconciler<T> {
     const referenceKey = this.#referenceKey(reference)
     if (this.#observedReferences.delete(referenceKey)) {
       this.#publications.set(publication.id, { ...current, reference, state: 'indexed' })
+      this.#notify()
       return reference
     }
     this.#publications.set(publication.id, { ...current, reference })
+    this.#notify()
     this.#timers.set(
       publication.id,
       setTimeout(() => {
         const pending = this.#publications.get(publication.id)
         if (pending?.state === 'publishing') {
           this.#publications.set(publication.id, { ...pending, state: 'sync_delayed' })
+          this.#notify()
         }
         this.#timers.delete(publication.id)
       }, this.#delayMs),
@@ -89,6 +100,7 @@ export class PublicationReconciler<T> {
       if (timer) clearTimeout(timer)
       this.#timers.delete(id)
       this.#publications.set(id, { ...publication, state: 'indexed' })
+      this.#notify()
       return true
     }
     const referenceKey = this.#referenceKey(reference)
@@ -105,9 +117,14 @@ export class PublicationReconciler<T> {
     this.#timers.clear()
     this.#observedReferences.clear()
     this.#publications.clear()
+    this.#listeners.clear()
   }
 
   #referenceKey(reference: PublicationReference) {
     return `${reference.uri}\u0000${reference.cid}`
+  }
+
+  #notify() {
+    for (const listener of this.#listeners) listener()
   }
 }

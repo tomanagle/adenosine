@@ -130,11 +130,15 @@ export const zRepositoryOwner = z.object({
     handle: z.string().nullish()
 });
 
+/**
+ * Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.
+ */
 export const zRepositoryHosting = z.object({
     local: z.boolean(),
     web_url: z.url(),
     git_https_url: z.url(),
-    git_ssh_url: z.string().nullish()
+    git_ssh_url: z.string().nullish(),
+    source_browsing: z.enum(['local', 'canonical_host'])
 });
 
 export const zRepository = z.object({
@@ -783,6 +787,16 @@ export const zNetworkRepositoryList = z.object({
     page: zPage
 });
 
+export const zRepositorySearchPage = z.object({
+    data: z.array(zRepository),
+    page: zPage
+});
+
+export const zProfileSearchPage = z.object({
+    data: z.array(zDeveloperProfile),
+    page: zPage
+});
+
 export const zRepositoryUri = z.string().min(1);
 
 export const zIssueUri = z.string().min(1);
@@ -810,6 +824,20 @@ export const zIdempotencyKey = z.string().min(1).max(255);
 export const zLimit = z.int().gte(1).lte(100).default(30);
 
 export const zCursor = z.string();
+
+/**
+ * UTF-8 text matched against fields documented by the operation
+ */
+export const zSearchQuery = z.string().min(1).max(200);
+
+export const zSearchSort = z.enum(['relevance', 'recent']).default('relevance');
+
+export const zSearchLimit = z.int().gte(1).lte(50).default(20);
+
+/**
+ * Opaque keyset cursor bound to the operation, query, and sort
+ */
+export const zSearchCursor = z.string().max(4096);
 
 /**
  * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
@@ -1039,6 +1067,16 @@ export const zPutIssueStatusHeaders = z.object({
  */
 export const zPutIssueStatusResponse = zIssueStatusMutation;
 
+export const zGetIssueQuery = z.object({
+    repository_uri: z.string().min(1),
+    issue_uri: z.string().min(1)
+});
+
+/**
+ * Current projected issue
+ */
+export const zGetIssueResponse = zIssue;
+
 export const zDeleteIssueCommentHeaders = z.object({
     Origin: z.url().optional()
 });
@@ -1209,6 +1247,30 @@ export const zListNetworkRepositoriesQuery = z.object({
  * A page of public network repositories
  */
 export const zListNetworkRepositoriesResponse = zNetworkRepositoryList;
+
+export const zSearchRepositoriesQuery = z.object({
+    q: z.string().min(1).max(200),
+    sort: z.enum(['relevance', 'recent']).optional().default('relevance'),
+    limit: z.int().gte(1).lte(50).optional().default(20),
+    cursor: z.string().max(4096).optional()
+});
+
+/**
+ * A stable keyset page of visible repository matches
+ */
+export const zSearchRepositoriesResponse = zRepositorySearchPage;
+
+export const zSearchProfilesQuery = z.object({
+    q: z.string().min(1).max(200),
+    sort: z.enum(['relevance', 'recent']).optional().default('relevance'),
+    limit: z.int().gte(1).lte(50).optional().default(20),
+    cursor: z.string().max(4096).optional()
+});
+
+/**
+ * A stable keyset page of visible profile matches
+ */
+export const zSearchProfilesResponse = zProfileSearchPage;
 
 export const zGetSyncRepositoriesQuery = z.object({
     offset: z.string().min(1).max(255),

@@ -5,13 +5,24 @@ import (
 	"context"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/adenosine-dev/adenosine/internal/auth"
 	gitservice "github.com/adenosine-dev/adenosine/internal/git"
+	"github.com/adenosine-dev/adenosine/internal/observability"
 	"github.com/adenosine-dev/adenosine/internal/repository"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+)
+
+const (
+	maxUploadPackRequest  = 16 << 20
+	maxReceivePackRequest = 2 << 30
 )
 
 type repositoryResolver interface {
@@ -65,6 +76,11 @@ func (handler *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	ctx, span := otel.Tracer("github.com/adenosine-dev/adenosine/internal/githttp").Start(r.Context(), "githttp."+operation)
+	defer span.End()
+	span.SetAttributes(attribute.String("git.operation", operation), attribute.String("git.transport", "http"))
+	ctx = gitservice.WithTransport(ctx, "http")
+	r = r.WithContext(ctx)
 
 	w.Header().Set("Cache-Control", "no-cache, max-age=0, must-revalidate")
 	w.Header().Set("Expires", "Fri, 01 Jan 1980 00:00:00 GMT")
@@ -82,14 +98,19 @@ func (handler *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if _, err := io.WriteString(w, "001e# service=git-upload-pack\n0000"); err != nil {
 			return
 		}
-		_ = handler.git.UploadPack(r.Context(), repo.ID, nil, w, gitservice.PackOptions{
+		if err := handler.git.UploadPack(r.Context(), repo.ID, nil, w, gitservice.PackOptions{
 			AdvertiseRefs: true,
 			Protocol:      protocol,
-		})
+		}); err != nil {
+			handler.logFailure(r.Context(), span, repo, operation, err)
+		}
 	case r.Method == http.MethodPost && operation == "git-upload-pack":
+		r.Body = http.MaxBytesReader(w, r.Body, maxUploadPackRequest)
 		w.Header().Set("Content-Type", "application/x-git-upload-pack-result")
 		w.WriteHeader(http.StatusOK)
-		_ = handler.git.UploadPack(r.Context(), repo.ID, r.Body, w, gitservice.PackOptions{Protocol: protocol})
+		if err := handler.git.UploadPack(r.Context(), repo.ID, r.Body, w, gitservice.PackOptions{Protocol: protocol}); err != nil {
+			handler.logFailure(r.Context(), span, repo, operation, err)
+		}
 	case r.Method == http.MethodGet && operation == "info/refs" && r.URL.Query().Get("service") == "git-receive-pack":
 		if !handler.authorizeWrite(w, r, repo) {
 			return
@@ -99,26 +120,46 @@ func (handler *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if _, err := io.WriteString(w, "001f# service=git-receive-pack\n0000"); err != nil {
 			return
 		}
-		_ = handler.git.ReceivePack(r.Context(), repo.ID, nil, w, gitservice.PackOptions{AdvertiseRefs: true, Protocol: protocol})
+		if err := handler.git.ReceivePack(r.Context(), repo.ID, nil, w, gitservice.PackOptions{AdvertiseRefs: true, Protocol: protocol}); err != nil {
+			handler.logFailure(r.Context(), span, repo, operation, err)
+		}
 	case r.Method == http.MethodPost && operation == "git-receive-pack":
 		if !handler.authorizeWrite(w, r, repo) {
 			return
 		}
+		r.Body = http.MaxBytesReader(w, r.Body, maxReceivePackRequest)
 		w.Header().Set("Content-Type", "application/x-git-receive-pack-result")
 		w.WriteHeader(http.StatusOK)
 		if err := handler.git.ReceivePack(r.Context(), repo.ID, r.Body, w, gitservice.PackOptions{Protocol: protocol}); err != nil {
+			handler.logFailure(r.Context(), span, repo, operation, err)
 			return
 		}
 		eventContext, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), 2*time.Second)
 		defer cancel()
-		_ = handler.events.GitPushReceived(eventContext, repo)
+		if err := handler.events.GitPushReceived(eventContext, repo); err != nil {
+			handler.logFailure(eventContext, span, repo, "publish-push", err)
+		}
 	default:
 		http.NotFound(w, r)
 	}
 }
 
+func (handler *Handler) logFailure(ctx context.Context, span trace.Span, repo repository.Repository, operation string, err error) {
+	span.SetStatus(codes.Error, "Git HTTP operation failed")
+	attrs := []any{"component", "git-http", "operation", operation, "repository_id", repo.ID.String()}
+	attrs = append(attrs, gitservice.FailureAttrs(err)...)
+	slog.Default().ErrorContext(ctx, "Git HTTP operation failed", append(attrs, observability.CorrelationAttrs(ctx)...)...)
+}
+
 func (handler *Handler) authorizeWrite(w http.ResponseWriter, r *http.Request, repo repository.Repository) bool {
-	err := handler.authorizer.AuthorizeWrite(r.Context(), r, repo)
+	ctx, span := otel.Tracer("github.com/adenosine-dev/adenosine/internal/githttp").Start(r.Context(), "githttp.authorize",
+		trace.WithAttributes(attribute.String("git.operation", "receive-pack"), attribute.String("git.transport", "http")))
+	err := handler.authorizer.AuthorizeWrite(ctx, r.WithContext(ctx), repo)
+	span.SetAttributes(attribute.Bool("authorization.allowed", err == nil))
+	if err != nil {
+		span.SetStatus(codes.Error, "authorization denied")
+	}
+	span.End()
 	switch {
 	case err == nil:
 		return true

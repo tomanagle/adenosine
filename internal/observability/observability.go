@@ -4,8 +4,13 @@ package observability
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"math"
 	"os"
+	"runtime/debug"
+	"strconv"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -18,30 +23,35 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 )
 
+const shutdownTimeout = 5 * time.Second
+
 // Shutdown flushes all telemetry providers.
 type Shutdown func(context.Context) error
 
-// Setup configures structured stdout logging and optional OTLP export. Export
-// failures are reported at startup but never make request handling depend on
-// the collector's availability.
-func Setup(ctx context.Context) (*slog.Logger, Shutdown, error) {
+// Must configures telemetry or panics because the service cannot start with a
+// partially initialized telemetry pipeline.
+func Must(ctx context.Context) (*slog.Logger, Shutdown) {
+	logger, shutdown, err := setup(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return logger, shutdown
+}
+
+func setup(ctx context.Context) (*slog.Logger, Shutdown, error) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
 
-	serviceName := os.Getenv("OTEL_SERVICE_NAME")
-	if serviceName == "" {
-		serviceName = "adenosine"
-	}
-	res, err := resource.New(ctx,
-		resource.WithFromEnv(),
-		resource.WithTelemetrySDK(),
-		resource.WithAttributes(semconv.ServiceName(serviceName)),
-	)
+	res, err := buildResource(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	traceOptions := []trace.TracerProviderOption{trace.WithResource(res)}
+	sampler, err := samplerFromEnv()
+	if err != nil {
+		return nil, nil, err
+	}
+	traceOptions := []trace.TracerProviderOption{trace.WithResource(res), trace.WithSampler(sampler)}
 	metricOptions := []metric.Option{metric.WithResource(res)}
 	if os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") != "" {
 		traceExporter, err := otlptracehttp.New(ctx)
@@ -68,10 +78,95 @@ func Setup(ctx context.Context) (*slog.Logger, Shutdown, error) {
 	))
 
 	shutdown := func(ctx context.Context) error {
+		ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
+		defer cancel()
 		return errors.Join(
 			meterProvider.Shutdown(ctx),
 			tracerProvider.Shutdown(ctx),
 		)
 	}
 	return logger, shutdown, nil
+}
+
+func buildResource(ctx context.Context) (*resource.Resource, error) {
+	instanceID, err := instanceID()
+	if err != nil {
+		return nil, err
+	}
+	res, err := resource.New(ctx,
+		resource.WithAttributes(
+			semconv.ServiceName("adenosine"),
+			semconv.ServiceVersion(serviceVersion()),
+			semconv.ServiceInstanceID(instanceID),
+			semconv.DeploymentEnvironmentName(environment()),
+		),
+		resource.WithFromEnv(),
+		resource.WithTelemetrySDK(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if serviceName := strings.TrimSpace(os.Getenv("OTEL_SERVICE_NAME")); serviceName != "" {
+		res, err = resource.Merge(res, resource.NewSchemaless(semconv.ServiceName(serviceName)))
+		if err != nil {
+			return nil, fmt.Errorf("apply OTEL_SERVICE_NAME: %w", err)
+		}
+	}
+	return res, nil
+}
+
+func serviceVersion() string {
+	info, ok := debug.ReadBuildInfo()
+	if ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	if ok {
+		for _, setting := range info.Settings {
+			if setting.Key == "vcs.revision" && setting.Value != "" {
+				return setting.Value
+			}
+		}
+	}
+	return "unknown"
+}
+
+func instanceID() (string, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "", errors.New("determine telemetry service instance ID")
+	}
+	return hostname, nil
+}
+
+func environment() string {
+	return "development"
+}
+
+func samplerFromEnv() (trace.Sampler, error) {
+	name := strings.ToLower(strings.TrimSpace(os.Getenv("OTEL_TRACES_SAMPLER")))
+	if name == "" {
+		name = "parentbased_always_on"
+	}
+	switch name {
+	case "always_on":
+		return trace.AlwaysSample(), nil
+	case "always_off":
+		return trace.NeverSample(), nil
+	case "parentbased_always_on":
+		return trace.ParentBased(trace.AlwaysSample()), nil
+	case "parentbased_always_off":
+		return trace.ParentBased(trace.NeverSample()), nil
+	case "traceidratio", "parentbased_traceidratio":
+		ratio, err := strconv.ParseFloat(strings.TrimSpace(os.Getenv("OTEL_TRACES_SAMPLER_ARG")), 64)
+		if err != nil || math.IsNaN(ratio) || math.IsInf(ratio, 0) || ratio < 0 || ratio > 1 {
+			return nil, fmt.Errorf("OTEL_TRACES_SAMPLER_ARG must be a number between 0 and 1 for %s", name)
+		}
+		sampler := trace.TraceIDRatioBased(ratio)
+		if name == "parentbased_traceidratio" {
+			return trace.ParentBased(sampler), nil
+		}
+		return sampler, nil
+	default:
+		return nil, fmt.Errorf("unsupported OTEL_TRACES_SAMPLER %q", name)
+	}
 }

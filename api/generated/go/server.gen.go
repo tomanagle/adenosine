@@ -460,6 +460,24 @@ func (e RepositoryVisibility) Valid() bool {
 	}
 }
 
+// Defines values for RepositoryHostingSourceBrowsing.
+const (
+	CanonicalHost RepositoryHostingSourceBrowsing = "canonical_host"
+	Local         RepositoryHostingSourceBrowsing = "local"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryHostingSourceBrowsing enum.
+func (e RepositoryHostingSourceBrowsing) Valid() bool {
+	switch e {
+	case CanonicalHost:
+		return true
+	case Local:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for StarMutationProjected.
 const (
 	False StarMutationProjected = false
@@ -586,6 +604,60 @@ func (e ElectricReplica) Valid() bool {
 	case ElectricReplicaDefault:
 		return true
 	case ElectricReplicaFull:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SearchSort.
+const (
+	SearchSortRecent    SearchSort = "recent"
+	SearchSortRelevance SearchSort = "relevance"
+)
+
+// Valid indicates whether the value is a known member of the SearchSort enum.
+func (e SearchSort) Valid() bool {
+	switch e {
+	case SearchSortRecent:
+		return true
+	case SearchSortRelevance:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SearchProfilesParamsSort.
+const (
+	SearchProfilesParamsSortRecent    SearchProfilesParamsSort = "recent"
+	SearchProfilesParamsSortRelevance SearchProfilesParamsSort = "relevance"
+)
+
+// Valid indicates whether the value is a known member of the SearchProfilesParamsSort enum.
+func (e SearchProfilesParamsSort) Valid() bool {
+	switch e {
+	case SearchProfilesParamsSortRecent:
+		return true
+	case SearchProfilesParamsSortRelevance:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SearchRepositoriesParamsSort.
+const (
+	Recent    SearchRepositoriesParamsSort = "recent"
+	Relevance SearchRepositoriesParamsSort = "relevance"
+)
+
+// Valid indicates whether the value is a known member of the SearchRepositoriesParamsSort enum.
+func (e SearchRepositoriesParamsSort) Valid() bool {
+	switch e {
+	case Recent:
+		return true
+	case Relevance:
 		return true
 	default:
 		return false
@@ -1511,6 +1583,12 @@ type PasskeyList struct {
 	Data []Passkey `json:"data"`
 }
 
+// ProfileSearchPage defines model for ProfileSearchPage.
+type ProfileSearchPage struct {
+	Data []DeveloperProfile `json:"data"`
+	Page Page               `json:"page"`
+}
+
 // PullRequest defines model for PullRequest.
 type PullRequest struct {
 	AuthorDid           string           `json:"author_did"`
@@ -1696,12 +1774,14 @@ type PutPullRequestStatusRequestState string
 
 // Repository defines model for Repository.
 type Repository struct {
-	Cid                  *string              `json:"cid,omitempty"`
-	CommentCount         int64                `json:"comment_count"`
-	CreatedAt            time.Time            `json:"created_at"`
-	DefaultBranch        string               `json:"default_branch"`
-	Description          *string              `json:"description,omitempty"`
-	DisplayName          *string              `json:"display_name,omitempty"`
+	Cid           *string   `json:"cid,omitempty"`
+	CommentCount  int64     `json:"comment_count"`
+	CreatedAt     time.Time `json:"created_at"`
+	DefaultBranch string    `json:"default_branch"`
+	Description   *string   `json:"description,omitempty"`
+	DisplayName   *string   `json:"display_name,omitempty"`
+
+	// Hosting Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.
 	Hosting              RepositoryHosting    `json:"hosting"`
 	Id                   *openapi_types.UUID  `json:"id,omitempty"`
 	IssueCount           int64                `json:"issue_count"`
@@ -1723,18 +1803,28 @@ type RepositoryState string
 // RepositoryVisibility defines model for Repository.Visibility.
 type RepositoryVisibility string
 
-// RepositoryHosting defines model for RepositoryHosting.
+// RepositoryHosting Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.
 type RepositoryHosting struct {
-	GitHttpsUrl string  `json:"git_https_url"`
-	GitSshUrl   *string `json:"git_ssh_url,omitempty"`
-	Local       bool    `json:"local"`
-	WebUrl      string  `json:"web_url"`
+	GitHttpsUrl    string                          `json:"git_https_url"`
+	GitSshUrl      *string                         `json:"git_ssh_url,omitempty"`
+	Local          bool                            `json:"local"`
+	SourceBrowsing RepositoryHostingSourceBrowsing `json:"source_browsing"`
+	WebUrl         string                          `json:"web_url"`
 }
+
+// RepositoryHostingSourceBrowsing defines model for RepositoryHosting.SourceBrowsing.
+type RepositoryHostingSourceBrowsing string
 
 // RepositoryOwner defines model for RepositoryOwner.
 type RepositoryOwner struct {
 	Did    string  `json:"did"`
 	Handle *string `json:"handle,omitempty"`
+}
+
+// RepositorySearchPage defines model for RepositorySearchPage.
+type RepositorySearchPage struct {
+	Data []Repository `json:"data"`
+	Page Page         `json:"page"`
 }
 
 // RepositorySlug defines model for RepositorySlug.
@@ -2048,6 +2138,18 @@ type RecordURI = string
 // RepositoryURI defines model for RepositoryURI.
 type RepositoryURI = string
 
+// SearchCursor defines model for SearchCursor.
+type SearchCursor = string
+
+// SearchLimit defines model for SearchLimit.
+type SearchLimit = int
+
+// SearchQuery defines model for SearchQuery.
+type SearchQuery = string
+
+// SearchSort defines model for SearchSort.
+type SearchSort string
+
 // BadRequest defines model for BadRequest.
 type BadRequest = ErrorResponse
 
@@ -2117,6 +2219,12 @@ type GetIssueCommentsParams struct {
 type CreateIssueCommentParams struct {
 	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
 	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// GetIssueParams defines parameters for GetIssue.
+type GetIssueParams struct {
+	RepositoryUri RepositoryURI `form:"repository_uri" json:"repository_uri"`
+	IssueUri      IssueURI      `form:"issue_uri" json:"issue_uri"`
 }
 
 // DeleteBlockedDIDParams defines parameters for DeleteBlockedDID.
@@ -2255,6 +2363,34 @@ type GetRepositoryTreeParams struct {
 	Rev  *string `form:"rev,omitempty" json:"rev,omitempty"`
 	Path *string `form:"path,omitempty" json:"path,omitempty"`
 }
+
+// SearchProfilesParams defines parameters for SearchProfiles.
+type SearchProfilesParams struct {
+	// Q UTF-8 text matched against fields documented by the operation
+	Q     SearchQuery               `form:"q" json:"q"`
+	Sort  *SearchProfilesParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
+	Limit *SearchLimit              `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Cursor Opaque keyset cursor bound to the operation, query, and sort
+	Cursor *SearchCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// SearchProfilesParamsSort defines parameters for SearchProfiles.
+type SearchProfilesParamsSort string
+
+// SearchRepositoriesParams defines parameters for SearchRepositories.
+type SearchRepositoriesParams struct {
+	// Q UTF-8 text matched against fields documented by the operation
+	Q     SearchQuery                   `form:"q" json:"q"`
+	Sort  *SearchRepositoriesParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
+	Limit *SearchLimit                  `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Cursor Opaque keyset cursor bound to the operation, query, and sort
+	Cursor *SearchCursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// SearchRepositoriesParamsSort defines parameters for SearchRepositories.
+type SearchRepositoriesParamsSort string
 
 // DeleteStarParams defines parameters for DeleteStar.
 type DeleteStarParams struct {
@@ -2874,6 +3010,9 @@ type ServerInterface interface {
 	// Publish an author-owned issue comment
 	// (POST /api/v1/issues/comments)
 	CreateIssueComment(w http.ResponseWriter, r *http.Request, params CreateIssueCommentParams)
+	// Get one current projected issue
+	// (GET /api/v1/issues/detail)
+	GetIssue(w http.ResponseWriter, r *http.Request, params GetIssueParams)
 	// Get the authenticated identity
 	// (GET /api/v1/me)
 	GetCurrentIdentity(w http.ResponseWriter, r *http.Request)
@@ -2973,6 +3112,12 @@ type ServerInterface interface {
 	// List one repository tree directory
 	// (GET /api/v1/repositories/{owner}/{repo}/tree)
 	GetRepositoryTree(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryTreeParams)
+	// Search profiles in the local network index
+	// (GET /api/v1/search/profiles)
+	SearchProfiles(w http.ResponseWriter, r *http.Request, params SearchProfilesParams)
+	// Search public repositories in the local network index
+	// (GET /api/v1/search/repositories)
+	SearchRepositories(w http.ResponseWriter, r *http.Request, params SearchRepositoriesParams)
 	// List active SSH public keys
 	// (GET /api/v1/ssh-keys)
 	ListSSHKeys(w http.ResponseWriter, r *http.Request)
@@ -3104,6 +3249,12 @@ func (siw *ServerInterfaceWrapper) GetIssues(w http.ResponseWriter, r *http.Requ
 
 	var err error
 	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetIssuesParams
@@ -3365,6 +3516,58 @@ func (siw *ServerInterfaceWrapper) CreateIssueComment(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateIssueComment(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetIssue operation middleware
+func (siw *ServerInterfaceWrapper) GetIssue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetIssueParams
+
+	// ------------- Required query parameter "repository_uri" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "repository_uri", r.URL.Query(), &params.RepositoryUri, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "repository_uri"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository_uri", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "issue_uri" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "issue_uri", r.URL.Query(), &params.IssueUri, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "issue_uri"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issue_uri", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetIssue(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3963,6 +4166,12 @@ func (siw *ServerInterfaceWrapper) GetDeveloperProfile(w http.ResponseWriter, r 
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDeveloperProfile(w, r, did)
 	}))
@@ -3979,6 +4188,12 @@ func (siw *ServerInterfaceWrapper) ListPullRequests(w http.ResponseWriter, r *ht
 
 	var err error
 	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListPullRequestsParams
@@ -4060,6 +4275,12 @@ func (siw *ServerInterfaceWrapper) GetPullRequest(w http.ResponseWriter, r *http
 	var err error
 	_ = err
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetPullRequestParams
 
@@ -4092,6 +4313,12 @@ func (siw *ServerInterfaceWrapper) GetPullRequestDiff(w http.ResponseWriter, r *
 
 	var err error
 	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetPullRequestDiffParams
@@ -4172,6 +4399,12 @@ func (siw *ServerInterfaceWrapper) ListPullRequestReviews(w http.ResponseWriter,
 
 	var err error
 	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListPullRequestReviewsParams
@@ -4366,6 +4599,14 @@ func (siw *ServerInterfaceWrapper) GetRepository(w http.ResponseWriter, r *http.
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
 		return
 	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepository(w, r, owner, repo)
@@ -4856,6 +5097,162 @@ func (siw *ServerInterfaceWrapper) GetRepositoryTree(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// SearchProfiles operation middleware
+func (siw *ServerInterfaceWrapper) SearchProfiles(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchProfilesParams
+
+	// ------------- Required query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "sort" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sort", r.URL.Query(), &params.Sort, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "sort"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sort", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SearchProfiles(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SearchRepositories operation middleware
+func (siw *ServerInterfaceWrapper) SearchRepositories(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SearchRepositoriesParams
+
+	// ------------- Required query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "sort" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "sort", r.URL.Query(), &params.Sort, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "sort"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sort", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SearchRepositories(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListSSHKeys operation middleware
 func (siw *ServerInterfaceWrapper) ListSSHKeys(w http.ResponseWriter, r *http.Request) {
 
@@ -4993,6 +5390,12 @@ func (siw *ServerInterfaceWrapper) GetStars(w http.ResponseWriter, r *http.Reque
 
 	var err error
 	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetStarsParams
@@ -7066,6 +7469,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/issues/comments", wrapper.DeleteIssueComment)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/issues/comments", wrapper.GetIssueComments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/issues/comments", wrapper.CreateIssueComment)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/issues/detail", wrapper.GetIssue)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/me", wrapper.GetCurrentIdentity)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/moderation", wrapper.GetModeration)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/moderation/blocked-dids", wrapper.DeleteBlockedDID)
@@ -7099,6 +7503,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/merge-base", wrapper.GetRepositoryMergeBase)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tags", wrapper.ListRepositoryTags)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tree", wrapper.GetRepositoryTree)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/search/profiles", wrapper.SearchProfiles)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/search/repositories", wrapper.SearchRepositories)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/ssh-keys", wrapper.ListSSHKeys)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/ssh-keys", wrapper.CreateSSHKey)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/ssh-keys/{id}", wrapper.RevokeSSHKey)

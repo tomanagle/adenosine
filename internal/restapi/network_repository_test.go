@@ -55,7 +55,7 @@ func TestNetworkRepositoryDiscoveryEndpoint(t *testing.T) {
 			name: "anonymous remote and local repositories", path: "/api/v1/network/repositories?limit=2",
 			repositories: []federation.DiscoveryRepository{remote, local}, wantStatus: http.StatusOK, wantCount: 2, wantStoreCall: 1,
 			assert: func(t *testing.T, body generated.NetworkRepositoryList) {
-				if body.Data[0].Id != nil || body.Data[0].Hosting.Local || body.Data[0].Uri == nil || *body.Data[0].Uri != remote.URI || body.Data[0].Cid == nil || *body.Data[0].Cid != remote.CID {
+				if body.Data[0].Id != nil || body.Data[0].Hosting.Local || body.Data[0].Hosting.SourceBrowsing != generated.CanonicalHost || body.Data[0].Uri == nil || *body.Data[0].Uri != remote.URI || body.Data[0].Cid == nil || *body.Data[0].Cid != remote.CID {
 					t.Fatalf("remote repository identity/hosting = %#v", body.Data[0])
 				}
 				if body.Data[0].Owner.Handle == nil || *body.Data[0].Owner.Handle != "alice.test" || body.Data[0].Visibility != generated.RepositoryVisibilityPublic || body.Data[0].State != generated.Active {
@@ -64,7 +64,7 @@ func TestNetworkRepositoryDiscoveryEndpoint(t *testing.T) {
 				if body.Data[0].StarCount != 12 || body.Data[0].IssueCount != 9 || body.Data[0].OpenIssueCount != 5 {
 					t.Fatalf("remote repository counts = %d/%d/%d", body.Data[0].StarCount, body.Data[0].IssueCount, body.Data[0].OpenIssueCount)
 				}
-				if body.Data[1].Id == nil || uuid.UUID(*body.Data[1].Id) != localID || !body.Data[1].Hosting.Local {
+				if body.Data[1].Id == nil || uuid.UUID(*body.Data[1].Id) != localID || !body.Data[1].Hosting.Local || body.Data[1].Hosting.SourceBrowsing != generated.Local {
 					t.Fatalf("local repository identity/hosting = %#v", body.Data[1])
 				}
 			},
@@ -108,6 +108,52 @@ func TestNetworkRepositoryDiscoveryEndpoint(t *testing.T) {
 			}
 			if testCase.assert != nil {
 				testCase.assert(t, body)
+			}
+		})
+	}
+}
+
+type resolvingRESTSearch struct {
+	restSearch
+	repository federation.DiscoveryRepository
+	viewerDID  string
+}
+
+func (search *resolvingRESTSearch) ResolveRepository(_ context.Context, owner, slug, viewerDID string) (federation.DiscoveryRepository, error) {
+	search.viewerDID = viewerDID
+	if owner != "alice.test" || slug != search.repository.Slug {
+		return federation.DiscoveryRepository{}, repository.ErrNotFound
+	}
+	return search.repository, nil
+}
+
+func TestRemoteRepositoryMetadataEndpoint(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name       string
+		cookie     string
+		wantStatus int
+		wantViewer string
+	}{
+		{name: "anonymous", wantStatus: http.StatusOK},
+		{name: "moderated session viewer", cookie: "valid-session", wantStatus: http.StatusOK, wantViewer: "did:plc:alice"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			search := &resolvingRESTSearch{repository: federation.DiscoveryRepository{URI: "at://did:plc:alice/dev.adenosine.repo/project", OwnerDID: "did:plc:alice", OwnerHandle: "alice.test", Slug: "project", Web: "https://remote.example/alice/project", GitHTTPS: "https://remote.example/alice/project.git"}}
+			server := testAPIServer(t, Dependencies{Repositories: fakeRepositories{}, Search: search, Sessions: fakeSessions{}})
+			request := httptest.NewRequest(http.MethodGet, "/api/v1/repositories/alice.test/project", nil)
+			if testCase.cookie != "" {
+				request.AddCookie(&http.Cookie{Name: "adenosine_session", Value: testCase.cookie})
+			}
+			response := httptest.NewRecorder()
+			server.Handler.ServeHTTP(response, request)
+			if response.Code != testCase.wantStatus || search.viewerDID != testCase.wantViewer {
+				t.Fatalf("status/viewer = %d/%q, want %d/%q: %s", response.Code, search.viewerDID, testCase.wantStatus, testCase.wantViewer, response.Body.String())
+			}
+			var body generated.Repository
+			if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.Hosting.SourceBrowsing != generated.CanonicalHost || body.Hosting.Local {
+				t.Fatalf("repository = %#v, %v", body, err)
 			}
 		})
 	}

@@ -1,0 +1,34 @@
+{
+	servers {
+		timeouts {
+			read_body 1h
+			write 1h
+			idle 5m
+		}
+	}
+}
+
+{$ADENOSINE_DOMAIN} {
+	@internal path /internal/*
+	respond @internal 404
+
+	@git path_regexp smart_git ^/[^/]+/[^/]+\.git/(info/refs|git-upload-pack|git-receive-pack)$
+	handle @git {
+		reverse_proxy app:8080 {
+			flush_interval -1
+			transport http {
+				response_header_timeout 1h
+			}
+		}
+	}
+
+	@api path /api/* /oauth/* /health/* /docs/api /openapi.json /openapi.yaml
+	handle @api {
+		reverse_proxy app:8080
+	}
+
+	handle {
+		encode zstd gzip
+		reverse_proxy web:3000
+	}
+}

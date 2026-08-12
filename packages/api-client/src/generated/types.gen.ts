@@ -146,11 +146,15 @@ export type RepositoryOwner = {
     handle?: string | null;
 };
 
+/**
+ * Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.
+ */
 export type RepositoryHosting = {
     local: boolean;
     web_url: string;
     git_https_url: string;
     git_ssh_url?: string | null;
+    source_browsing: 'local' | 'canonical_host';
 };
 
 export type Repository = {
@@ -177,6 +181,16 @@ export type Repository = {
 
 export type NetworkRepositoryList = {
     data: Array<Repository>;
+    page: Page;
+};
+
+export type RepositorySearchPage = {
+    data: Array<Repository>;
+    page: Page;
+};
+
+export type ProfileSearchPage = {
+    data: Array<DeveloperProfile>;
     page: Page;
 };
 
@@ -782,6 +796,20 @@ export type IdempotencyKey = string;
 export type Limit = number;
 
 export type Cursor = string;
+
+/**
+ * UTF-8 text matched against fields documented by the operation
+ */
+export type SearchQuery = string;
+
+export type SearchSort = 'relevance' | 'recent';
+
+export type SearchLimit = number;
+
+/**
+ * Opaque keyset cursor bound to the operation, query, and sort
+ */
+export type SearchCursor = string;
 
 /**
  * Electric shape-log offset. Use -1 for an initial sync or the electric-offset response header for continuation.
@@ -1631,6 +1659,38 @@ export type PutIssueStatusResponses = {
 
 export type PutIssueStatusResponse = PutIssueStatusResponses[keyof PutIssueStatusResponses];
 
+export type GetIssueData = {
+    body?: never;
+    path?: never;
+    query: {
+        repository_uri: string;
+        issue_uri: string;
+    };
+    url: '/api/v1/issues/detail';
+};
+
+export type GetIssueErrors = {
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type GetIssueError = GetIssueErrors[keyof GetIssueErrors];
+
+export type GetIssueResponses = {
+    /**
+     * Current projected issue
+     */
+    200: Issue;
+};
+
+export type GetIssueResponse = GetIssueResponses[keyof GetIssueResponses];
+
 export type DeleteIssueCommentData = {
     body?: never;
     headers?: {
@@ -2364,6 +2424,86 @@ export type ListNetworkRepositoriesResponses = {
 };
 
 export type ListNetworkRepositoriesResponse = ListNetworkRepositoriesResponses[keyof ListNetworkRepositoriesResponses];
+
+export type SearchRepositoriesData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * UTF-8 text matched against fields documented by the operation
+         */
+        q: string;
+        sort?: 'relevance' | 'recent';
+        limit?: number;
+        /**
+         * Opaque keyset cursor bound to the operation, query, and sort
+         */
+        cursor?: string;
+    };
+    url: '/api/v1/search/repositories';
+};
+
+export type SearchRepositoriesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+};
+
+export type SearchRepositoriesError = SearchRepositoriesErrors[keyof SearchRepositoriesErrors];
+
+export type SearchRepositoriesResponses = {
+    /**
+     * A stable keyset page of visible repository matches
+     */
+    200: RepositorySearchPage;
+};
+
+export type SearchRepositoriesResponse = SearchRepositoriesResponses[keyof SearchRepositoriesResponses];
+
+export type SearchProfilesData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * UTF-8 text matched against fields documented by the operation
+         */
+        q: string;
+        sort?: 'relevance' | 'recent';
+        limit?: number;
+        /**
+         * Opaque keyset cursor bound to the operation, query, and sort
+         */
+        cursor?: string;
+    };
+    url: '/api/v1/search/profiles';
+};
+
+export type SearchProfilesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+};
+
+export type SearchProfilesError = SearchProfilesErrors[keyof SearchProfilesErrors];
+
+export type SearchProfilesResponses = {
+    /**
+     * A stable keyset page of visible profile matches
+     */
+    200: ProfileSearchPage;
+};
+
+export type SearchProfilesResponse = SearchProfilesResponses[keyof SearchProfilesResponses];
 
 export type GetSyncRepositoriesData = {
     body?: never;

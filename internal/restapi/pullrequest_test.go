@@ -130,6 +130,9 @@ func TestPullRequestEndpoints(t *testing.T) {
 			if response.Code != testCase.wantStatus || testCase.manager.calls != testCase.wantCalls || testCase.manager.operation != testCase.operation {
 				t.Fatalf("status/calls/operation = %d/%d/%q, want %d/%d/%q body=%s", response.Code, testCase.manager.calls, testCase.manager.operation, testCase.wantStatus, testCase.wantCalls, testCase.operation, response.Body.String())
 			}
+			if testCase.method == http.MethodGet && testCase.wantStatus == http.StatusOK && response.Header().Get("Vary") != "Cookie" {
+				t.Fatalf("Vary = %q, want Cookie", response.Header().Get("Vary"))
+			}
 			if testCase.wantStatus == http.StatusAccepted && (testCase.manager.author != "did:plc:alice" || !strings.Contains(response.Body.String(), `"projected":false`)) {
 				t.Fatalf("mutation response/author = %s/%q", response.Body.String(), testCase.manager.author)
 			}

@@ -15,6 +15,9 @@ import (
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var eventSHAPattern = regexp.MustCompile(`^(?:[0-9a-f]{40}|[0-9a-f]{64})$`)
@@ -55,6 +58,7 @@ func (writer *Writer) GitPushReceived(ctx context.Context, repo repository.Repos
 		return fmt.Errorf("encode push event: %w", err)
 	}
 	now := time.Now().UTC()
+	traceparent, tracestate := traceContext(ctx)
 	if _, err := writer.queries.CreateOutboxEvent(ctx, dbgen.CreateOutboxEventParams{
 		ID:            pgtype.UUID{Bytes: id, Valid: true},
 		Type:          "git.push_received",
@@ -63,6 +67,8 @@ func (writer *Writer) GitPushReceived(ctx context.Context, repo repository.Repos
 		Payload:       payload,
 		CreatedAt:     pgtype.Timestamptz{Time: now, Valid: true},
 		AvailableAt:   pgtype.Timestamptz{Time: now, Valid: true},
+		Traceparent:   traceparent,
+		Tracestate:    tracestate,
 	}); err != nil {
 		return fmt.Errorf("create push outbox event: %w", err)
 	}
@@ -89,14 +95,44 @@ func (writer *Writer) GitRefsUpdated(ctx context.Context, input GitRefsUpdated) 
 		return fmt.Errorf("encode refs-updated event: %w", err)
 	}
 	now := time.Now().UTC()
+	traceparent, tracestate := traceContext(ctx)
 	if err := writer.queries.CreateOutboxEventIfAbsent(ctx, dbgen.CreateOutboxEventIfAbsentParams{
 		ID: pgtype.UUID{Bytes: id, Valid: true}, Type: "git.refs_updated", AggregateType: "repository",
 		AggregateID: input.RepositoryID.String(), Payload: payload,
 		CreatedAt: pgtype.Timestamptz{Time: now, Valid: true}, AvailableAt: pgtype.Timestamptz{Time: now, Valid: true},
+		Traceparent: traceparent, Tracestate: tracestate,
 	}); err != nil {
 		return fmt.Errorf("create refs-updated outbox event: %w", err)
 	}
 	return nil
+}
+
+// ContextFromOutbox attaches a valid persisted remote parent to the worker
+// context. Missing or malformed fields deliberately leave ctx unchanged.
+func ContextFromOutbox(ctx context.Context, outboxEvent dbgen.OpsOutboxEvent) context.Context {
+	carrier := propagation.MapCarrier{}
+	if outboxEvent.Traceparent.Valid {
+		carrier.Set("traceparent", outboxEvent.Traceparent.String)
+	}
+	if outboxEvent.Tracestate.Valid {
+		carrier.Set("tracestate", outboxEvent.Tracestate.String)
+	}
+	extracted := otel.GetTextMapPropagator().Extract(context.Background(), carrier)
+	spanContext := trace.SpanContextFromContext(extracted)
+	if !spanContext.IsValid() {
+		return ctx
+	}
+	return trace.ContextWithRemoteSpanContext(ctx, spanContext)
+}
+
+func traceContext(ctx context.Context) (pgtype.Text, pgtype.Text) {
+	carrier := propagation.MapCarrier{}
+	otel.GetTextMapPropagator().Inject(ctx, carrier)
+	return nullableText(carrier.Get("traceparent")), nullableText(carrier.Get("tracestate"))
+}
+
+func nullableText(value string) pgtype.Text {
+	return pgtype.Text{String: value, Valid: value != ""}
 }
 
 func validateGitRefsUpdated(input GitRefsUpdated) error {

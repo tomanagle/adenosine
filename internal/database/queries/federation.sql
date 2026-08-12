@@ -494,6 +494,8 @@ SELECT
 	repository.issue_count,
 	repository.open_issue_count,
 	repository.comment_count,
+	repository.pull_request_count,
+	repository.open_pull_request_count,
     repository.local_repository_id,
     repository.owner_did,
     identity.handle,
@@ -615,9 +617,13 @@ ORDER BY projected_issue.record_created_at DESC, projected_issue.uri DESC;
 WITH target AS (
     SELECT issue.uri
     FROM network.issues AS issue
+    JOIN network.repositories repository ON repository.uri = issue.repository_uri
     WHERE issue.uri = sqlc.arg(issue_uri)
       AND issue.deleted_at IS NULL
       AND issue.cid IS NOT NULL
+      AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids blocked WHERE blocked.account_did = sqlc.narg(account_did) AND blocked.blocked_did IN (repository.owner_did, issue.author_did))
+      AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(account_did) AND hidden.record_uri IN (repository.uri, issue.uri))
 ), visible AS MATERIALIZED (
     SELECT comment.*
     FROM network.issue_comments AS comment
