@@ -7,10 +7,25 @@ trap 'rm -rf "$temporary"' EXIT
 env_file="$temporary/production.env"
 
 "$root/scripts/bootstrap.sh" --env-file "$env_file" --domain code.test --version v1.2.3 --env-only >/dev/null
-[[ "$(stat -f %Lp "$env_file" 2>/dev/null || stat -c %a "$env_file")" == 600 ]]
-before="$(shasum -a 256 "$env_file")"
+if stat -c %a "$env_file" >/dev/null 2>&1; then
+  mode="$(stat -c %a "$env_file")"
+else
+  mode="$(stat -f %Lp "$env_file")"
+fi
+if [[ "$mode" != 600 ]]; then
+  echo "environment file mode is $mode, want 600" >&2
+  exit 1
+fi
+checksum() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1"
+  else
+    shasum -a 256 "$1"
+  fi
+}
+before="$(checksum "$env_file")"
 "$root/scripts/bootstrap.sh" --env-file "$env_file" --env-only >/dev/null
-after="$(shasum -a 256 "$env_file")"
+after="$(checksum "$env_file")"
 [[ "$before" == "$after" ]]
 grep -q '^ADENOSINE_BASE_URL=https://code.test$' "$env_file"
 ! grep -q '=GENERATED$' "$env_file"
