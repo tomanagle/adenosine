@@ -1,0 +1,48 @@
+{
+  "uid": "adenosine-federation-v1",
+  "title": "Adenosine Federation v1",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Federation throughput",
+      "targets": [
+        {
+          "expr": "sum by (federation_result,federation_collection) (rate(adenosine_federation_events_total[5m]))"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Federation errors",
+      "targets": [
+        { "expr": "sum by (federation_stage) (rate(adenosine_federation_errors_total[5m]))" }
+      ],
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Processing p95 seconds",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le,federation_collection) (rate(adenosine_federation_processing_duration_seconds_bucket[5m])))"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Outbox telemetry status",
+      "targets": [{ "expr": "absent(adenosine_outbox_pending)" }],
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 }
+    }
+  ]
+}

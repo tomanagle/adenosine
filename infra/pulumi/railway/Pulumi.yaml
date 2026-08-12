@@ -1,0 +1,6 @@
+name: adenosine-railway
+runtime:
+  name: nodejs
+  options:
+    packagemanager: npm
+description: Opinionated Railway deployment for Adenosine

@@ -1,0 +1,17 @@
+{
+  "name": "adenosine-railway",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test index.test.ts"
+  },
+  "dependencies": {
+    "@pulumi/pulumi": "3.256.0",
+    "@pulumi/random": "4.21.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.2.1",
+    "tsx": "4.20.5",
+    "typescript": "6.0.3"
+  }
+}

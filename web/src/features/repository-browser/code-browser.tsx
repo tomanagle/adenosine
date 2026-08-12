@@ -4,13 +4,16 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Download, File, FileCode2, FileQuestion, Folder, GitCommitHorizontal } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 import { MAX_README, MAX_RENDERED_BLOB } from './loaders'
 import { SafeMarkdown } from './markdown'
 import {
+  branchesQueryOptions,
   blobQueryOptions,
   repositoryQueryOptions,
+  tagsQueryOptions,
   treeQueryOptions,
   type RepositoryRouteParams,
 } from './queries'
@@ -20,6 +23,19 @@ import { splitBlobPath } from './validation'
 
 export function RepositoryOverview({ params }: { params: RepositoryRouteParams }) {
   const { data: repository } = useSuspenseQuery(repositoryQueryOptions(params))
+  if (repository.hosting.source_browsing !== 'local') {
+    return <RemoteSourceState webUrl={repository.hosting.web_url} />
+  }
+  return <LocalRepositoryOverview params={params} repository={repository} />
+}
+
+function LocalRepositoryOverview({
+  params,
+  repository,
+}: {
+  params: RepositoryRouteParams
+  repository: { default_branch: string }
+}) {
   const tree = useQuery(treeQueryOptions(params, repository.default_branch))
   if (tree.isPending)
     return <output className="block p-6 text-sm text-muted-foreground">Loading files...</output>
@@ -70,6 +86,9 @@ export function TreeBrowser({
   ref?: string
 }) {
   const { data: repository } = useSuspenseQuery(repositoryQueryOptions(params))
+  if (repository.hosting.source_browsing !== 'local') {
+    return <RemoteSourceState webUrl={repository.hosting.web_url} />
+  }
   const revision = ref ?? repository.default_branch
   return (
     <div className="space-y-4">
@@ -168,25 +187,44 @@ function BrowserToolbar({
   revision: string
 }) {
   const navigate = useNavigate()
+  const branches = useQuery(branchesQueryOptions(params))
+  const tags = useQuery(tagsQueryOptions(params))
   const segments = path ? path.split('/') : []
   return (
     <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:items-center">
       <label className="flex items-center gap-2 text-sm">
         <span className="sr-only">Revision</span>
-        <input
+        <select
           className="h-9 w-full rounded-md border bg-background px-3 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-52"
-          defaultValue={revision}
-          key={revision}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              void navigate({
-                to: '/$owner/$repo/tree/$',
-                params: { ...params, _splat: path },
-                search: { ref: event.currentTarget.value },
-              })
-            }
+          value={revision}
+          onChange={(event) => {
+            void navigate({
+              to: '/$owner/$repo/tree/$',
+              params: { ...params, _splat: path },
+              search: { ref: event.currentTarget.value },
+            })
           }}
-        />
+        >
+          {!branches.data?.data.some((branch) => branch.name === revision) &&
+          !tags.data?.data.some((tag) => tag.name === revision) ? (
+            <option value={revision}>{revision}</option>
+          ) : null}
+          <optgroup label="Branches">
+            {branches.data?.data.map((branch) => (
+              <option key={branch.name} value={branch.name}>
+                {branch.name}
+                {branch.default ? ' (default)' : ''}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Tags">
+            {tags.data?.data.map((tag) => (
+              <option key={tag.name} value={tag.name}>
+                {tag.name}
+              </option>
+            ))}
+          </optgroup>
+        </select>
       </label>
       <nav
         className="flex min-w-0 items-center gap-1 overflow-x-auto text-sm"
@@ -242,7 +280,27 @@ export function BlobBrowser({
   ref?: string
 }) {
   const { data: repository } = useSuspenseQuery(repositoryQueryOptions(params))
-  const revision = ref ?? repository.default_branch
+  if (repository.hosting.source_browsing !== 'local') {
+    return <RemoteSourceState webUrl={repository.hosting.web_url} />
+  }
+  return (
+    <LocalBlobBrowser
+      params={params}
+      routePath={routePath}
+      revision={ref ?? repository.default_branch}
+    />
+  )
+}
+
+function LocalBlobBrowser({
+  params,
+  routePath,
+  revision,
+}: {
+  params: RepositoryRouteParams
+  routePath: string
+  revision: string
+}) {
   const file = splitBlobPath(routePath)
   const { data: tree } = useSuspenseQuery(treeQueryOptions(params, revision, file.parentPath))
   const entry = tree.entries.find((candidate) => candidate.name === file.name)
@@ -268,15 +326,13 @@ export function BlobBrowser({
               {shortSha(entry.sha)}
             </p>
           </div>
-          {entry.size != null && entry.size <= MAX_RENDERED_BLOB ? (
-            <BlobActions name={file.name} params={params} sha={entry.sha} />
-          ) : null}
+          <BlobActions name={file.name} params={params} sha={entry.sha} />
         </div>
         {entry.size == null || entry.size > MAX_RENDERED_BLOB ? (
           <div className="p-8 text-center">
             <p className="font-medium">File is too large to display safely</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Clone the repository to inspect this
+              Download this
               {entry.size != null ? ` ${formatBytes(entry.size)}` : ''} file.
             </p>
           </div>
@@ -302,22 +358,34 @@ function BlobActions({
   params: RepositoryRouteParams
   sha: string
 }) {
-  const { data: blob } = useSuspenseQuery(blobQueryOptions(params, sha))
-  function download() {
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = name
-    anchor.hidden = true
-    document.body.append(anchor)
-    anchor.click()
-    anchor.remove()
-    window.setTimeout(() => URL.revokeObjectURL(url), 0)
-  }
+  const href = `/api/v1/repositories/${encodeURIComponent(params.owner)}/${encodeURIComponent(params.repo)}/blobs/${sha}`
   return (
-    <Button onClick={download} size="sm" variant="outline">
+    <a
+      className={cn(buttonVariants({ size: 'sm', variant: 'outline' }))}
+      download={name}
+      href={href}
+    >
       <Download className="size-3.5" /> Download file
-    </Button>
+    </a>
+  )
+}
+
+export function RemoteSourceState({ webUrl }: { webUrl: string }) {
+  return (
+    <div className="rounded-lg border border-dashed p-8 text-center">
+      <p className="font-medium">Source browsing is available on the canonical host</p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        This instance does not mirror or probe remote Git objects.
+      </p>
+      <a
+        className="mt-4 inline-block underline underline-offset-4"
+        href={webUrl}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Visit canonical host<span className="sr-only"> (opens in a new tab)</span>
+      </a>
+    </div>
   )
 }
 

@@ -4,8 +4,8 @@ import * as z from 'zod';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { BeginPasskeyLoginData, BeginPasskeyLoginErrors, BeginPasskeyLoginResponses, BeginPasskeyRegistrationData, BeginPasskeyRegistrationErrors, BeginPasskeyRegistrationResponses, CompleteAtProtoLoginData, CompleteAtProtoLoginErrors, CreateAccessTokenData, CreateAccessTokenErrors, CreateAccessTokenResponses, CreateIssueCommentData, CreateIssueCommentErrors, CreateIssueCommentResponses, CreateIssueData, CreateIssueErrors, CreateIssueResponses, CreatePullRequestData, CreatePullRequestErrors, CreatePullRequestResponses, CreatePullRequestReviewData, CreatePullRequestReviewErrors, CreatePullRequestReviewResponses, CreateRepositoryData, CreateRepositoryErrors, CreateRepositoryResponses, CreateSshKeyData, CreateSshKeyErrors, CreateSshKeyResponses, DeleteBlockedDidData, DeleteBlockedDidErrors, DeleteBlockedDidResponses, DeleteHiddenRecordData, DeleteHiddenRecordErrors, DeleteHiddenRecordResponses, DeleteIssueCommentData, DeleteIssueCommentErrors, DeleteIssueCommentResponses, DeletePasskeyData, DeletePasskeyErrors, DeletePasskeyResponses, DeleteStarData, DeleteStarErrors, DeleteStarResponses, GetCurrentIdentityData, GetCurrentIdentityErrors, GetCurrentIdentityResponses, GetDeveloperProfileData, GetDeveloperProfileErrors, GetDeveloperProfileResponses, GetIssueCommentsData, GetIssueCommentsErrors, GetIssueCommentsResponses, GetIssuesData, GetIssuesErrors, GetIssuesResponses, GetLivenessData, GetLivenessResponses, GetModerationData, GetModerationErrors, GetModerationResponses, GetOAuthClientMetadataData, GetOAuthClientMetadataResponses, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffErrors, GetPullRequestDiffResponses, GetPullRequestErrors, GetPullRequestResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRepositoryBlobData, GetRepositoryBlobErrors, GetRepositoryBlobResponses, GetRepositoryCommitData, GetRepositoryCommitErrors, GetRepositoryCommitResponses, GetRepositoryData, GetRepositoryDiffData, GetRepositoryDiffErrors, GetRepositoryDiffResponses, GetRepositoryErrors, GetRepositoryMergeBaseData, GetRepositoryMergeBaseErrors, GetRepositoryMergeBaseResponses, GetRepositoryResponses, GetRepositoryTreeData, GetRepositoryTreeErrors, GetRepositoryTreeResponses, GetStarsData, GetStarsErrors, GetStarsResponses, GetSyncIssueCommentsData, GetSyncIssueCommentsErrors, GetSyncIssueCommentsResponses, GetSyncIssuesData, GetSyncIssuesErrors, GetSyncIssuesResponses, GetSyncProfilesData, GetSyncProfilesErrors, GetSyncProfilesResponses, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsErrors, GetSyncPullRequestReviewsResponses, GetSyncPullRequestsData, GetSyncPullRequestsErrors, GetSyncPullRequestsResponses, GetSyncRepositoriesData, GetSyncRepositoriesErrors, GetSyncRepositoriesResponses, GetSyncStarsData, GetSyncStarsErrors, GetSyncStarsResponses, ListAccessTokensData, ListAccessTokensErrors, ListAccessTokensResponses, ListNetworkRepositoriesData, ListNetworkRepositoriesErrors, ListNetworkRepositoriesResponses, ListPasskeysData, ListPasskeysErrors, ListPasskeysResponses, ListPullRequestReviewsData, ListPullRequestReviewsErrors, ListPullRequestReviewsResponses, ListPullRequestsData, ListPullRequestsErrors, ListPullRequestsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListRepositoryCommitsData, ListRepositoryCommitsErrors, ListRepositoryCommitsResponses, ListRepositoryTagsData, ListRepositoryTagsErrors, ListRepositoryTagsResponses, ListSshKeysData, ListSshKeysErrors, ListSshKeysResponses, LogoutData, LogoutErrors, LogoutResponses, MergePullRequestData, MergePullRequestErrors, MergePullRequestResponses, PostSyncIssueCommentsData, PostSyncIssueCommentsErrors, PostSyncIssueCommentsResponses, PostSyncIssuesData, PostSyncIssuesErrors, PostSyncIssuesResponses, PostSyncProfilesData, PostSyncProfilesErrors, PostSyncProfilesResponses, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsErrors, PostSyncPullRequestReviewsResponses, PostSyncPullRequestsData, PostSyncPullRequestsErrors, PostSyncPullRequestsResponses, PostSyncRepositoriesData, PostSyncRepositoriesErrors, PostSyncRepositoriesResponses, PostSyncStarsData, PostSyncStarsErrors, PostSyncStarsResponses, PutBlockedDidData, PutBlockedDidErrors, PutBlockedDidResponses, PutHiddenRecordData, PutHiddenRecordErrors, PutHiddenRecordResponses, PutIssueStatusData, PutIssueStatusErrors, PutIssueStatusResponses, PutPullRequestStatusData, PutPullRequestStatusErrors, PutPullRequestStatusResponses, PutStarData, PutStarErrors, PutStarResponses, RevokeAccessTokenData, RevokeAccessTokenErrors, RevokeAccessTokenResponses, RevokeSshKeyData, RevokeSshKeyErrors, RevokeSshKeyResponses, SearchProfilesData, SearchProfilesErrors, SearchProfilesResponses, SearchRepositoriesData, SearchRepositoriesErrors, SearchRepositoriesResponses, StartAtProtoLoginData, StartAtProtoLoginErrors, StartAtProtoLoginResponses, UpdateDeveloperProfileData, UpdateDeveloperProfileErrors, UpdateDeveloperProfileResponses, VerifyPasskeyLoginData, VerifyPasskeyLoginErrors, VerifyPasskeyLoginResponses, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationErrors, VerifyPasskeyRegistrationResponses } from './types.gen';
-import { zBeginPasskeyLoginHeaders, zBeginPasskeyLoginResponse, zBeginPasskeyRegistrationBody, zBeginPasskeyRegistrationHeaders, zBeginPasskeyRegistrationResponse, zCompleteAtProtoLoginQuery, zCreateAccessTokenBody, zCreateAccessTokenResponse, zCreateIssueBody, zCreateIssueCommentBody, zCreateIssueCommentHeaders, zCreateIssueCommentResponse, zCreateIssueHeaders, zCreateIssueResponse, zCreatePullRequestBody, zCreatePullRequestHeaders, zCreatePullRequestResponse, zCreatePullRequestReviewBody, zCreatePullRequestReviewHeaders, zCreatePullRequestReviewResponse, zCreateRepositoryBody, zCreateRepositoryHeaders, zCreateRepositoryResponse, zCreateSshKeyBody, zCreateSshKeyResponse, zDeleteBlockedDidHeaders, zDeleteBlockedDidQuery, zDeleteBlockedDidResponse, zDeleteHiddenRecordHeaders, zDeleteHiddenRecordQuery, zDeleteHiddenRecordResponse, zDeleteIssueCommentHeaders, zDeleteIssueCommentQuery, zDeletePasskeyHeaders, zDeletePasskeyPath, zDeletePasskeyResponse, zDeleteStarHeaders, zDeleteStarQuery, zGetCurrentIdentityResponse, zGetDeveloperProfilePath, zGetDeveloperProfileResponse, zGetIssueCommentsQuery, zGetIssueCommentsResponse, zGetIssuesQuery, zGetIssuesResponse, zGetLivenessResponse, zGetModerationResponse, zGetOAuthClientMetadataResponse, zGetPullRequestDiffQuery, zGetPullRequestDiffResponse, zGetPullRequestQuery, zGetPullRequestResponse, zGetReadinessResponse, zGetRepositoryBlobPath, zGetRepositoryBlobResponse, zGetRepositoryCommitPath, zGetRepositoryCommitResponse, zGetRepositoryDiffPath, zGetRepositoryDiffQuery, zGetRepositoryDiffResponse, zGetRepositoryMergeBasePath, zGetRepositoryMergeBaseQuery, zGetRepositoryMergeBaseResponse, zGetRepositoryPath, zGetRepositoryResponse, zGetRepositoryTreePath, zGetRepositoryTreeQuery, zGetRepositoryTreeResponse, zGetStarsQuery, zGetStarsResponse, zGetSyncIssueCommentsQuery, zGetSyncIssueCommentsResponse, zGetSyncIssuesQuery, zGetSyncIssuesResponse, zGetSyncProfilesQuery, zGetSyncProfilesResponse, zGetSyncPullRequestReviewsQuery, zGetSyncPullRequestReviewsResponse, zGetSyncPullRequestsQuery, zGetSyncPullRequestsResponse, zGetSyncRepositoriesQuery, zGetSyncRepositoriesResponse, zGetSyncStarsQuery, zGetSyncStarsResponse, zListAccessTokensResponse, zListNetworkRepositoriesQuery, zListNetworkRepositoriesResponse, zListPasskeysResponse, zListPullRequestReviewsQuery, zListPullRequestReviewsResponse, zListPullRequestsQuery, zListPullRequestsResponse, zListRepositoryBranchesPath, zListRepositoryBranchesResponse, zListRepositoryCommitsPath, zListRepositoryCommitsQuery, zListRepositoryCommitsResponse, zListRepositoryTagsPath, zListRepositoryTagsResponse, zListSshKeysResponse, zLogoutResponse, zMergePullRequestBody, zMergePullRequestHeaders, zMergePullRequestResponse, zPostSyncIssueCommentsBody, zPostSyncIssueCommentsQuery, zPostSyncIssueCommentsResponse, zPostSyncIssuesBody, zPostSyncIssuesQuery, zPostSyncIssuesResponse, zPostSyncProfilesBody, zPostSyncProfilesQuery, zPostSyncProfilesResponse, zPostSyncPullRequestReviewsBody, zPostSyncPullRequestReviewsQuery, zPostSyncPullRequestReviewsResponse, zPostSyncPullRequestsBody, zPostSyncPullRequestsQuery, zPostSyncPullRequestsResponse, zPostSyncRepositoriesBody, zPostSyncRepositoriesQuery, zPostSyncRepositoriesResponse, zPostSyncStarsBody, zPostSyncStarsQuery, zPostSyncStarsResponse, zPutBlockedDidBody, zPutBlockedDidHeaders, zPutBlockedDidResponse, zPutHiddenRecordBody, zPutHiddenRecordHeaders, zPutHiddenRecordResponse, zPutIssueStatusBody, zPutIssueStatusHeaders, zPutIssueStatusResponse, zPutPullRequestStatusBody, zPutPullRequestStatusHeaders, zPutPullRequestStatusResponse, zPutStarHeaders, zPutStarQuery, zPutStarResponse, zRevokeAccessTokenPath, zRevokeAccessTokenResponse, zRevokeSshKeyPath, zRevokeSshKeyResponse, zSearchProfilesQuery, zSearchProfilesResponse, zSearchRepositoriesQuery, zSearchRepositoriesResponse, zStartAtProtoLoginBody, zStartAtProtoLoginResponse2, zUpdateDeveloperProfileBody, zUpdateDeveloperProfileResponse, zVerifyPasskeyLoginBody, zVerifyPasskeyLoginHeaders, zVerifyPasskeyLoginResponse, zVerifyPasskeyRegistrationBody, zVerifyPasskeyRegistrationHeaders, zVerifyPasskeyRegistrationResponse } from './zod.gen';
+import type { BeginPasskeyLoginData, BeginPasskeyLoginErrors, BeginPasskeyLoginResponses, BeginPasskeyRegistrationData, BeginPasskeyRegistrationErrors, BeginPasskeyRegistrationResponses, CompleteAtProtoLoginData, CompleteAtProtoLoginErrors, CreateAccessTokenData, CreateAccessTokenErrors, CreateAccessTokenResponses, CreateIssueCommentData, CreateIssueCommentErrors, CreateIssueCommentResponses, CreateIssueData, CreateIssueErrors, CreateIssueResponses, CreatePullRequestData, CreatePullRequestErrors, CreatePullRequestResponses, CreatePullRequestReviewData, CreatePullRequestReviewErrors, CreatePullRequestReviewResponses, CreateRepositoryData, CreateRepositoryErrors, CreateRepositoryResponses, CreateSshKeyData, CreateSshKeyErrors, CreateSshKeyResponses, DeleteBlockedDidData, DeleteBlockedDidErrors, DeleteBlockedDidResponses, DeleteHiddenRecordData, DeleteHiddenRecordErrors, DeleteHiddenRecordResponses, DeleteIssueCommentData, DeleteIssueCommentErrors, DeleteIssueCommentResponses, DeletePasskeyData, DeletePasskeyErrors, DeletePasskeyResponses, DeleteStarData, DeleteStarErrors, DeleteStarResponses, GetCurrentIdentityData, GetCurrentIdentityErrors, GetCurrentIdentityResponses, GetDeveloperProfileData, GetDeveloperProfileErrors, GetDeveloperProfileResponses, GetIssueCommentsData, GetIssueCommentsErrors, GetIssueCommentsResponses, GetIssueData, GetIssueErrors, GetIssueResponses, GetIssuesData, GetIssuesErrors, GetIssuesResponses, GetLivenessData, GetLivenessResponses, GetModerationData, GetModerationErrors, GetModerationResponses, GetOAuthClientMetadataData, GetOAuthClientMetadataResponses, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffErrors, GetPullRequestDiffResponses, GetPullRequestErrors, GetPullRequestResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRepositoryBlobData, GetRepositoryBlobErrors, GetRepositoryBlobResponses, GetRepositoryCommitData, GetRepositoryCommitErrors, GetRepositoryCommitResponses, GetRepositoryData, GetRepositoryDiffData, GetRepositoryDiffErrors, GetRepositoryDiffResponses, GetRepositoryErrors, GetRepositoryMergeBaseData, GetRepositoryMergeBaseErrors, GetRepositoryMergeBaseResponses, GetRepositoryResponses, GetRepositoryTreeData, GetRepositoryTreeErrors, GetRepositoryTreeResponses, GetStarsData, GetStarsErrors, GetStarsResponses, GetSyncIssueCommentsData, GetSyncIssueCommentsErrors, GetSyncIssueCommentsResponses, GetSyncIssuesData, GetSyncIssuesErrors, GetSyncIssuesResponses, GetSyncProfilesData, GetSyncProfilesErrors, GetSyncProfilesResponses, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsErrors, GetSyncPullRequestReviewsResponses, GetSyncPullRequestsData, GetSyncPullRequestsErrors, GetSyncPullRequestsResponses, GetSyncRepositoriesData, GetSyncRepositoriesErrors, GetSyncRepositoriesResponses, GetSyncStarsData, GetSyncStarsErrors, GetSyncStarsResponses, ListAccessTokensData, ListAccessTokensErrors, ListAccessTokensResponses, ListNetworkRepositoriesData, ListNetworkRepositoriesErrors, ListNetworkRepositoriesResponses, ListPasskeysData, ListPasskeysErrors, ListPasskeysResponses, ListPullRequestReviewsData, ListPullRequestReviewsErrors, ListPullRequestReviewsResponses, ListPullRequestsData, ListPullRequestsErrors, ListPullRequestsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListRepositoryCommitsData, ListRepositoryCommitsErrors, ListRepositoryCommitsResponses, ListRepositoryTagsData, ListRepositoryTagsErrors, ListRepositoryTagsResponses, ListSshKeysData, ListSshKeysErrors, ListSshKeysResponses, LogoutData, LogoutErrors, LogoutResponses, MergePullRequestData, MergePullRequestErrors, MergePullRequestResponses, PostSyncIssueCommentsData, PostSyncIssueCommentsErrors, PostSyncIssueCommentsResponses, PostSyncIssuesData, PostSyncIssuesErrors, PostSyncIssuesResponses, PostSyncProfilesData, PostSyncProfilesErrors, PostSyncProfilesResponses, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsErrors, PostSyncPullRequestReviewsResponses, PostSyncPullRequestsData, PostSyncPullRequestsErrors, PostSyncPullRequestsResponses, PostSyncRepositoriesData, PostSyncRepositoriesErrors, PostSyncRepositoriesResponses, PostSyncStarsData, PostSyncStarsErrors, PostSyncStarsResponses, PutBlockedDidData, PutBlockedDidErrors, PutBlockedDidResponses, PutHiddenRecordData, PutHiddenRecordErrors, PutHiddenRecordResponses, PutIssueStatusData, PutIssueStatusErrors, PutIssueStatusResponses, PutPullRequestStatusData, PutPullRequestStatusErrors, PutPullRequestStatusResponses, PutStarData, PutStarErrors, PutStarResponses, RevokeAccessTokenData, RevokeAccessTokenErrors, RevokeAccessTokenResponses, RevokeSshKeyData, RevokeSshKeyErrors, RevokeSshKeyResponses, SearchProfilesData, SearchProfilesErrors, SearchProfilesResponses, SearchRepositoriesData, SearchRepositoriesErrors, SearchRepositoriesResponses, StartAtProtoLoginData, StartAtProtoLoginErrors, StartAtProtoLoginResponses, UpdateDeveloperProfileData, UpdateDeveloperProfileErrors, UpdateDeveloperProfileResponses, VerifyPasskeyLoginData, VerifyPasskeyLoginErrors, VerifyPasskeyLoginResponses, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationErrors, VerifyPasskeyRegistrationResponses } from './types.gen';
+import { zBeginPasskeyLoginHeaders, zBeginPasskeyLoginResponse, zBeginPasskeyRegistrationBody, zBeginPasskeyRegistrationHeaders, zBeginPasskeyRegistrationResponse, zCompleteAtProtoLoginQuery, zCreateAccessTokenBody, zCreateAccessTokenResponse, zCreateIssueBody, zCreateIssueCommentBody, zCreateIssueCommentHeaders, zCreateIssueCommentResponse, zCreateIssueHeaders, zCreateIssueResponse, zCreatePullRequestBody, zCreatePullRequestHeaders, zCreatePullRequestResponse, zCreatePullRequestReviewBody, zCreatePullRequestReviewHeaders, zCreatePullRequestReviewResponse, zCreateRepositoryBody, zCreateRepositoryHeaders, zCreateRepositoryResponse, zCreateSshKeyBody, zCreateSshKeyResponse, zDeleteBlockedDidHeaders, zDeleteBlockedDidQuery, zDeleteBlockedDidResponse, zDeleteHiddenRecordHeaders, zDeleteHiddenRecordQuery, zDeleteHiddenRecordResponse, zDeleteIssueCommentHeaders, zDeleteIssueCommentQuery, zDeletePasskeyHeaders, zDeletePasskeyPath, zDeletePasskeyResponse, zDeleteStarHeaders, zDeleteStarQuery, zGetCurrentIdentityResponse, zGetDeveloperProfilePath, zGetDeveloperProfileResponse, zGetIssueCommentsQuery, zGetIssueCommentsResponse, zGetIssueQuery, zGetIssueResponse, zGetIssuesQuery, zGetIssuesResponse, zGetLivenessResponse, zGetModerationResponse, zGetOAuthClientMetadataResponse, zGetPullRequestDiffQuery, zGetPullRequestDiffResponse, zGetPullRequestQuery, zGetPullRequestResponse, zGetReadinessResponse, zGetRepositoryBlobPath, zGetRepositoryBlobResponse, zGetRepositoryCommitPath, zGetRepositoryCommitResponse, zGetRepositoryDiffPath, zGetRepositoryDiffQuery, zGetRepositoryDiffResponse, zGetRepositoryMergeBasePath, zGetRepositoryMergeBaseQuery, zGetRepositoryMergeBaseResponse, zGetRepositoryPath, zGetRepositoryResponse, zGetRepositoryTreePath, zGetRepositoryTreeQuery, zGetRepositoryTreeResponse, zGetStarsQuery, zGetStarsResponse, zGetSyncIssueCommentsQuery, zGetSyncIssueCommentsResponse, zGetSyncIssuesQuery, zGetSyncIssuesResponse, zGetSyncProfilesQuery, zGetSyncProfilesResponse, zGetSyncPullRequestReviewsQuery, zGetSyncPullRequestReviewsResponse, zGetSyncPullRequestsQuery, zGetSyncPullRequestsResponse, zGetSyncRepositoriesQuery, zGetSyncRepositoriesResponse, zGetSyncStarsQuery, zGetSyncStarsResponse, zListAccessTokensResponse, zListNetworkRepositoriesQuery, zListNetworkRepositoriesResponse, zListPasskeysResponse, zListPullRequestReviewsQuery, zListPullRequestReviewsResponse, zListPullRequestsQuery, zListPullRequestsResponse, zListRepositoryBranchesPath, zListRepositoryBranchesResponse, zListRepositoryCommitsPath, zListRepositoryCommitsQuery, zListRepositoryCommitsResponse, zListRepositoryTagsPath, zListRepositoryTagsResponse, zListSshKeysResponse, zLogoutResponse, zMergePullRequestBody, zMergePullRequestHeaders, zMergePullRequestResponse, zPostSyncIssueCommentsBody, zPostSyncIssueCommentsQuery, zPostSyncIssueCommentsResponse, zPostSyncIssuesBody, zPostSyncIssuesQuery, zPostSyncIssuesResponse, zPostSyncProfilesBody, zPostSyncProfilesQuery, zPostSyncProfilesResponse, zPostSyncPullRequestReviewsBody, zPostSyncPullRequestReviewsQuery, zPostSyncPullRequestReviewsResponse, zPostSyncPullRequestsBody, zPostSyncPullRequestsQuery, zPostSyncPullRequestsResponse, zPostSyncRepositoriesBody, zPostSyncRepositoriesQuery, zPostSyncRepositoriesResponse, zPostSyncStarsBody, zPostSyncStarsQuery, zPostSyncStarsResponse, zPutBlockedDidBody, zPutBlockedDidHeaders, zPutBlockedDidResponse, zPutHiddenRecordBody, zPutHiddenRecordHeaders, zPutHiddenRecordResponse, zPutIssueStatusBody, zPutIssueStatusHeaders, zPutIssueStatusResponse, zPutPullRequestStatusBody, zPutPullRequestStatusHeaders, zPutPullRequestStatusResponse, zPutStarHeaders, zPutStarQuery, zPutStarResponse, zRevokeAccessTokenPath, zRevokeAccessTokenResponse, zRevokeSshKeyPath, zRevokeSshKeyResponse, zSearchProfilesQuery, zSearchProfilesResponse, zSearchRepositoriesQuery, zSearchRepositoriesResponse, zStartAtProtoLoginBody, zStartAtProtoLoginResponse2, zUpdateDeveloperProfileBody, zUpdateDeveloperProfileResponse, zVerifyPasskeyLoginBody, zVerifyPasskeyLoginHeaders, zVerifyPasskeyLoginResponse, zVerifyPasskeyRegistrationBody, zVerifyPasskeyRegistrationHeaders, zVerifyPasskeyRegistrationResponse } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -263,6 +263,11 @@ export const getDeveloperProfile = <ThrowOnError extends boolean = false>(option
         query: z.never().optional()
     }).parseAsync(data),
     responseValidator: async (data) => await zGetDeveloperProfileResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }],
     url: '/api/v1/profiles/{did}',
     ...options
 });
@@ -343,6 +348,11 @@ export const getStars = <ThrowOnError extends boolean = false>(options: Options<
         query: zGetStarsQuery
     }).parseAsync(data),
     responseValidator: async (data) => await zGetStarsResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }],
     url: '/api/v1/stars',
     ...options
 });
@@ -377,6 +387,11 @@ export const getIssues = <ThrowOnError extends boolean = false>(options: Options
         query: zGetIssuesQuery
     }).parseAsync(data),
     responseValidator: async (data) => await zGetIssuesResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }],
     url: '/api/v1/issues',
     ...options
 });
@@ -427,6 +442,25 @@ export const putIssueStatus = <ThrowOnError extends boolean = false>(options: Op
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Get one current projected issue
+ */
+export const getIssue = <ThrowOnError extends boolean = false>(options: Options<GetIssueData, ThrowOnError>): RequestResult<GetIssueResponses, GetIssueErrors, ThrowOnError> => (options.client ?? client).get<GetIssueResponses, GetIssueErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: zGetIssueQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetIssueResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/issues/detail',
+    ...options
 });
 
 /**
@@ -501,6 +535,11 @@ export const listPullRequests = <ThrowOnError extends boolean = false>(options: 
         query: zListPullRequestsQuery
     }).parseAsync(data),
     responseValidator: async (data) => await zListPullRequestsResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }],
     url: '/api/v1/pull-requests',
     ...options
 });
@@ -539,6 +578,11 @@ export const getPullRequest = <ThrowOnError extends boolean = false>(options: Op
         query: zGetPullRequestQuery
     }).parseAsync(data),
     responseValidator: async (data) => await zGetPullRequestResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }],
     url: '/api/v1/pull-requests/detail',
     ...options
 });
@@ -553,6 +597,11 @@ export const getPullRequestDiff = <ThrowOnError extends boolean = false>(options
         query: zGetPullRequestDiffQuery
     }).parseAsync(data),
     responseValidator: async (data) => await zGetPullRequestDiffResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }],
     url: '/api/v1/pull-requests/diff',
     ...options
 });
@@ -567,6 +616,11 @@ export const listPullRequestReviews = <ThrowOnError extends boolean = false>(opt
         query: zListPullRequestReviewsQuery
     }).parseAsync(data),
     responseValidator: async (data) => await zListPullRequestReviewsResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }],
     url: '/api/v1/pull-requests/reviews',
     ...options
 });
@@ -1068,6 +1122,11 @@ export const getRepository = <ThrowOnError extends boolean = false>(options: Opt
         query: z.never().optional()
     }).parseAsync(data),
     responseValidator: async (data) => await zGetRepositoryResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
     url: '/api/v1/repositories/{owner}/{repo}',
     ...options
 });

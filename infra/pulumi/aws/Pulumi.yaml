@@ -1,0 +1,6 @@
+name: adenosine-aws
+runtime:
+  name: nodejs
+  options:
+    packagemanager: npm
+description: Single-region ECS on EC2, RDS, and EFS deployment for Adenosine

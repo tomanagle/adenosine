@@ -11,10 +11,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/adenosine-dev/adenosine/internal/federation"
+	"github.com/adenosine-dev/adenosine/internal/issue"
 	"github.com/adenosine-dev/adenosine/internal/profile"
+	"github.com/adenosine-dev/adenosine/internal/pullrequest"
+	"github.com/adenosine-dev/adenosine/internal/star"
 )
 
 const (
@@ -29,6 +33,7 @@ var (
 	ErrInvalidSort   = errors.New("search sort must be relevance or recent")
 	ErrInvalidLimit  = errors.New("search limit must be between 1 and 50")
 	ErrInvalidCursor = errors.New("invalid search cursor")
+	ErrNotFound      = errors.New("search result not found")
 )
 
 type Sort string
@@ -69,9 +74,92 @@ type Store interface {
 	SearchProfiles(context.Context, string, Sort, int, string, *Cursor) ([]ProfileResult, error)
 }
 
+type repositoryResolverStore interface {
+	ResolveRepository(context.Context, string, string, string) (federation.DiscoveryRepository, error)
+}
+
+type issueResolverStore interface {
+	ResolveIssue(context.Context, string, string, string) (issue.ProjectedIssue, error)
+}
+
+type collaborationStore interface {
+	ResolveProfile(context.Context, string, string) (profile.Profile, error)
+	ListIssues(context.Context, string, string, int) (issue.Projection, error)
+	ListStars(context.Context, string, string, int) (star.Projection, error)
+	ListPullRequests(context.Context, string, string, int) (pullrequest.Projection, error)
+	ResolvePullRequest(context.Context, string, string) (pullrequest.ProjectedPullRequest, error)
+	ListPullRequestReviews(context.Context, string, string, int) ([]pullrequest.ProjectedReview, error)
+}
+
 type Service struct{ store Store }
 
 func NewService(store Store) *Service { return &Service{store: store} }
+
+// ResolveRepository resolves an exact mutable owner/slug alias from the moderated local AppView.
+func (service *Service) ResolveRepository(ctx context.Context, owner, slug, viewerDID string) (federation.DiscoveryRepository, error) {
+	resolver, ok := service.store.(repositoryResolverStore)
+	if !ok {
+		return federation.DiscoveryRepository{}, ErrNotFound
+	}
+	return resolver.ResolveRepository(ctx, owner, slug, viewerDID)
+}
+
+// ResolveIssue resolves one exact issue identity from the moderated local AppView.
+func (service *Service) ResolveIssue(ctx context.Context, repositoryURI, issueURI, viewerDID string) (issue.ProjectedIssue, error) {
+	resolver, ok := service.store.(issueResolverStore)
+	if !ok {
+		return issue.ProjectedIssue{}, ErrNotFound
+	}
+	return resolver.ResolveIssue(ctx, repositoryURI, issueURI, viewerDID)
+}
+
+func (service *Service) ResolveProfile(ctx context.Context, did, viewerDID string) (profile.Profile, error) {
+	store, ok := service.store.(collaborationStore)
+	if !ok {
+		return profile.Profile{}, ErrNotFound
+	}
+	return store.ResolveProfile(ctx, did, viewerDID)
+}
+
+func (service *Service) ListIssues(ctx context.Context, repositoryURI, viewerDID string) (issue.Projection, error) {
+	store, ok := service.store.(collaborationStore)
+	if !ok {
+		return issue.Projection{}, ErrNotFound
+	}
+	return store.ListIssues(ctx, repositoryURI, viewerDID, 100)
+}
+
+func (service *Service) ListStars(ctx context.Context, repositoryURI, viewerDID string) (star.Projection, error) {
+	store, ok := service.store.(collaborationStore)
+	if !ok {
+		return star.Projection{}, ErrNotFound
+	}
+	return store.ListStars(ctx, repositoryURI, viewerDID, 100)
+}
+
+func (service *Service) ListPullRequests(ctx context.Context, repositoryURI, viewerDID string) (pullrequest.Projection, error) {
+	store, ok := service.store.(collaborationStore)
+	if !ok {
+		return pullrequest.Projection{}, ErrNotFound
+	}
+	return store.ListPullRequests(ctx, repositoryURI, viewerDID, 100)
+}
+
+func (service *Service) ResolvePullRequest(ctx context.Context, uri, viewerDID string) (pullrequest.ProjectedPullRequest, error) {
+	store, ok := service.store.(collaborationStore)
+	if !ok {
+		return pullrequest.ProjectedPullRequest{}, ErrNotFound
+	}
+	return store.ResolvePullRequest(ctx, uri, viewerDID)
+}
+
+func (service *Service) ListPullRequestReviews(ctx context.Context, uri, viewerDID string) ([]pullrequest.ProjectedReview, error) {
+	store, ok := service.store.(collaborationStore)
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return store.ListPullRequestReviews(ctx, uri, viewerDID, 100)
+}
 
 func (service *Service) Repositories(ctx context.Context, query string, sort Sort, limit int, cursor, viewerDID string) (RepositoryPage, error) {
 	query, sort, limit, decoded, err := validate(query, sort, limit, cursor, "repository")
@@ -117,7 +205,8 @@ func (service *Service) Profiles(ctx context.Context, query string, sort Sort, l
 
 func validate(query string, sort Sort, limit int, encodedCursor, kind string) (string, Sort, int, *Cursor, error) {
 	query = strings.TrimSpace(query)
-	if query == "" || len(query) > maxQueryBytes || !utf8.ValidString(query) {
+	query = strings.Join(strings.Fields(query), " ")
+	if query == "" || len(query) > maxQueryBytes || !utf8.ValidString(query) || !containsSearchText(query) {
 		return "", "", 0, nil, ErrInvalidQuery
 	}
 	if sort == "" {
@@ -140,6 +229,15 @@ func validate(query string, sort Sort, limit int, encodedCursor, kind string) (s
 		return "", "", 0, nil, err
 	}
 	return query, sort, limit, &cursor, nil
+}
+
+func containsSearchText(value string) bool {
+	for _, character := range value {
+		if unicode.IsLetter(character) || unicode.IsNumber(character) {
+			return true
+		}
+	}
+	return false
 }
 
 func encodeCursor(kind, query string, sort Sort, cursor Cursor) string {

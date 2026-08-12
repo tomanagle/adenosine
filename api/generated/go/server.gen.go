@@ -460,6 +460,24 @@ func (e RepositoryVisibility) Valid() bool {
 	}
 }
 
+// Defines values for RepositoryHostingSourceBrowsing.
+const (
+	CanonicalHost RepositoryHostingSourceBrowsing = "canonical_host"
+	Local         RepositoryHostingSourceBrowsing = "local"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryHostingSourceBrowsing enum.
+func (e RepositoryHostingSourceBrowsing) Valid() bool {
+	switch e {
+	case CanonicalHost:
+		return true
+	case Local:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for StarMutationProjected.
 const (
 	False StarMutationProjected = false
@@ -1756,12 +1774,14 @@ type PutPullRequestStatusRequestState string
 
 // Repository defines model for Repository.
 type Repository struct {
-	Cid                  *string              `json:"cid,omitempty"`
-	CommentCount         int64                `json:"comment_count"`
-	CreatedAt            time.Time            `json:"created_at"`
-	DefaultBranch        string               `json:"default_branch"`
-	Description          *string              `json:"description,omitempty"`
-	DisplayName          *string              `json:"display_name,omitempty"`
+	Cid           *string   `json:"cid,omitempty"`
+	CommentCount  int64     `json:"comment_count"`
+	CreatedAt     time.Time `json:"created_at"`
+	DefaultBranch string    `json:"default_branch"`
+	Description   *string   `json:"description,omitempty"`
+	DisplayName   *string   `json:"display_name,omitempty"`
+
+	// Hosting Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.
 	Hosting              RepositoryHosting    `json:"hosting"`
 	Id                   *openapi_types.UUID  `json:"id,omitempty"`
 	IssueCount           int64                `json:"issue_count"`
@@ -1783,13 +1803,17 @@ type RepositoryState string
 // RepositoryVisibility defines model for Repository.Visibility.
 type RepositoryVisibility string
 
-// RepositoryHosting defines model for RepositoryHosting.
+// RepositoryHosting Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.
 type RepositoryHosting struct {
-	GitHttpsUrl string  `json:"git_https_url"`
-	GitSshUrl   *string `json:"git_ssh_url,omitempty"`
-	Local       bool    `json:"local"`
-	WebUrl      string  `json:"web_url"`
+	GitHttpsUrl    string                          `json:"git_https_url"`
+	GitSshUrl      *string                         `json:"git_ssh_url,omitempty"`
+	Local          bool                            `json:"local"`
+	SourceBrowsing RepositoryHostingSourceBrowsing `json:"source_browsing"`
+	WebUrl         string                          `json:"web_url"`
 }
+
+// RepositoryHostingSourceBrowsing defines model for RepositoryHosting.SourceBrowsing.
+type RepositoryHostingSourceBrowsing string
 
 // RepositoryOwner defines model for RepositoryOwner.
 type RepositoryOwner struct {
@@ -2195,6 +2219,12 @@ type GetIssueCommentsParams struct {
 type CreateIssueCommentParams struct {
 	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
 	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// GetIssueParams defines parameters for GetIssue.
+type GetIssueParams struct {
+	RepositoryUri RepositoryURI `form:"repository_uri" json:"repository_uri"`
+	IssueUri      IssueURI      `form:"issue_uri" json:"issue_uri"`
 }
 
 // DeleteBlockedDIDParams defines parameters for DeleteBlockedDID.
@@ -2980,6 +3010,9 @@ type ServerInterface interface {
 	// Publish an author-owned issue comment
 	// (POST /api/v1/issues/comments)
 	CreateIssueComment(w http.ResponseWriter, r *http.Request, params CreateIssueCommentParams)
+	// Get one current projected issue
+	// (GET /api/v1/issues/detail)
+	GetIssue(w http.ResponseWriter, r *http.Request, params GetIssueParams)
 	// Get the authenticated identity
 	// (GET /api/v1/me)
 	GetCurrentIdentity(w http.ResponseWriter, r *http.Request)
@@ -3216,6 +3249,12 @@ func (siw *ServerInterfaceWrapper) GetIssues(w http.ResponseWriter, r *http.Requ
 
 	var err error
 	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetIssuesParams
@@ -3477,6 +3516,58 @@ func (siw *ServerInterfaceWrapper) CreateIssueComment(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateIssueComment(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetIssue operation middleware
+func (siw *ServerInterfaceWrapper) GetIssue(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetIssueParams
+
+	// ------------- Required query parameter "repository_uri" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "repository_uri", r.URL.Query(), &params.RepositoryUri, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "repository_uri"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository_uri", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "issue_uri" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "issue_uri", r.URL.Query(), &params.IssueUri, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "issue_uri"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issue_uri", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetIssue(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4075,6 +4166,12 @@ func (siw *ServerInterfaceWrapper) GetDeveloperProfile(w http.ResponseWriter, r 
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDeveloperProfile(w, r, did)
 	}))
@@ -4091,6 +4188,12 @@ func (siw *ServerInterfaceWrapper) ListPullRequests(w http.ResponseWriter, r *ht
 
 	var err error
 	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListPullRequestsParams
@@ -4172,6 +4275,12 @@ func (siw *ServerInterfaceWrapper) GetPullRequest(w http.ResponseWriter, r *http
 	var err error
 	_ = err
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetPullRequestParams
 
@@ -4204,6 +4313,12 @@ func (siw *ServerInterfaceWrapper) GetPullRequestDiff(w http.ResponseWriter, r *
 
 	var err error
 	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetPullRequestDiffParams
@@ -4284,6 +4399,12 @@ func (siw *ServerInterfaceWrapper) ListPullRequestReviews(w http.ResponseWriter,
 
 	var err error
 	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListPullRequestReviewsParams
@@ -4478,6 +4599,14 @@ func (siw *ServerInterfaceWrapper) GetRepository(w http.ResponseWriter, r *http.
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
 		return
 	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepository(w, r, owner, repo)
@@ -5261,6 +5390,12 @@ func (siw *ServerInterfaceWrapper) GetStars(w http.ResponseWriter, r *http.Reque
 
 	var err error
 	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetStarsParams
@@ -7334,6 +7469,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/issues/comments", wrapper.DeleteIssueComment)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/issues/comments", wrapper.GetIssueComments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/issues/comments", wrapper.CreateIssueComment)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/issues/detail", wrapper.GetIssue)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/me", wrapper.GetCurrentIdentity)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/moderation", wrapper.GetModeration)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/moderation/blocked-dids", wrapper.DeleteBlockedDID)

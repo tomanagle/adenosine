@@ -308,7 +308,7 @@ func (fixture *readFixture) git(t *testing.T, arguments ...string) string {
 
 func (fixture *readFixture) gitInput(t *testing.T, input []byte, arguments ...string) string {
 	t.Helper()
-	args := append([]string{"--git-dir=" + fixture.repository}, arguments...)
+	args := append([]string{"-c", "commit.gpgSign=false", "-c", "tag.gpgSign=false", "--git-dir=" + fixture.repository}, arguments...)
 	command := exec.Command(fixture.binary, args...)
 	command.Stdin = bytes.NewReader(input)
 	command.Env = append(command.Environ(),

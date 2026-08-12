@@ -184,14 +184,17 @@ function RepositoryResults({ search }: { search: ExploreSearch }) {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <a
-                    href={repository.hosting.web_url}
+                  <Link
                     className="font-serif text-xl underline-offset-4 group-hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    rel="noreferrer"
+                    params={{
+                      owner: repository.owner.handle ?? repository.owner.did,
+                      repo: repository.slug,
+                    }}
+                    to="/$owner/$repo"
                   >
                     {repository.owner.handle ?? repository.owner.did} /{' '}
                     {repository.display_name ?? repository.slug}
-                  </a>
+                  </Link>
                   <ArrowUpRight className="size-4 text-muted-foreground" aria-hidden="true" />
                 </div>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -243,7 +246,13 @@ function ProfileResults({ search }: { search: ExploreSearch }) {
               </span>
               <div className="min-w-0">
                 <h2 className="truncate font-serif text-xl">
-                  {profile.display_name ?? profile.handle ?? 'Unnamed developer'}
+                  <Link
+                    className="underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    params={{ identity: profile.did }}
+                    to="/profiles/$identity"
+                  >
+                    {profile.display_name ?? profile.handle ?? 'Unnamed developer'}
+                  </Link>
                 </h2>
                 <p className="truncate text-sm text-muted-foreground">
                   {profile.handle ? `@${profile.handle}` : profile.did}

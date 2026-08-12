@@ -116,6 +116,9 @@ func TestCommentEndpoints(t *testing.T) {
 				t.Fatalf("deleted comment URI = %q", testCase.manager.commentURI)
 			}
 			if testCase.wantStatus == http.StatusOK {
+				if response.Header().Get("Vary") != "Cookie" {
+					t.Fatalf("Vary = %q, want Cookie", response.Header().Get("Vary"))
+				}
 				var body generated.CommentList
 				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.CommentCount != 3 || len(body.Data) != 1 || body.Data[0].Uri != restCommentURI || body.Data[0].IssueUri != restIssueURI || body.Data[0].ParentUri != nil || body.Data[0].ParentCid != nil || body.Data[0].IndexedAt != indexedAt {
 					t.Fatalf("GET response = %#v, %v", body, err)

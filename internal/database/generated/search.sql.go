@@ -11,16 +11,681 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countSearchIssues = `-- name: CountSearchIssues :one
+SELECT count(*) AS visible_issue_count, count(*) FILTER (WHERE issue.state = 'open') AS visible_open_issue_count
+FROM network.issues issue JOIN network.repositories repository ON repository.uri = issue.repository_uri
+WHERE issue.repository_uri = $1::text AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did IN (repository.owner_did, issue.author_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri IN (repository.uri, issue.uri))
+`
+
+type CountSearchIssuesParams struct {
+	RepositoryUri string      `json:"repository_uri"`
+	ViewerDid     pgtype.Text `json:"viewer_did"`
+}
+
+type CountSearchIssuesRow struct {
+	VisibleIssueCount     int64 `json:"visible_issue_count"`
+	VisibleOpenIssueCount int64 `json:"visible_open_issue_count"`
+}
+
+func (q *Queries) CountSearchIssues(ctx context.Context, arg CountSearchIssuesParams) (CountSearchIssuesRow, error) {
+	row := q.db.QueryRow(ctx, countSearchIssues, arg.RepositoryUri, arg.ViewerDid)
+	var i CountSearchIssuesRow
+	err := row.Scan(&i.VisibleIssueCount, &i.VisibleOpenIssueCount)
+	return i, err
+}
+
+const countSearchPullRequests = `-- name: CountSearchPullRequests :one
+SELECT count(*) AS visible_pull_request_count, count(*) FILTER (WHERE pull.state = 'open') AS visible_open_pull_request_count
+FROM network.pull_requests pull JOIN network.repositories repository ON repository.uri = pull.target_repository_uri
+WHERE pull.target_repository_uri = $1::text AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did IN (repository.owner_did, pull.author_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri IN (repository.uri, pull.uri))
+`
+
+type CountSearchPullRequestsParams struct {
+	RepositoryUri string      `json:"repository_uri"`
+	ViewerDid     pgtype.Text `json:"viewer_did"`
+}
+
+type CountSearchPullRequestsRow struct {
+	VisiblePullRequestCount     int64 `json:"visible_pull_request_count"`
+	VisibleOpenPullRequestCount int64 `json:"visible_open_pull_request_count"`
+}
+
+func (q *Queries) CountSearchPullRequests(ctx context.Context, arg CountSearchPullRequestsParams) (CountSearchPullRequestsRow, error) {
+	row := q.db.QueryRow(ctx, countSearchPullRequests, arg.RepositoryUri, arg.ViewerDid)
+	var i CountSearchPullRequestsRow
+	err := row.Scan(&i.VisiblePullRequestCount, &i.VisibleOpenPullRequestCount)
+	return i, err
+}
+
+const countSearchStars = `-- name: CountSearchStars :one
+SELECT count(*) FROM network.stars star JOIN network.repositories repository ON repository.uri = star.repository_uri
+WHERE star.repository_uri = $1::text AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did IN (repository.owner_did, star.author_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri IN (repository.uri, star.uri))
+`
+
+type CountSearchStarsParams struct {
+	RepositoryUri string      `json:"repository_uri"`
+	ViewerDid     pgtype.Text `json:"viewer_did"`
+}
+
+func (q *Queries) CountSearchStars(ctx context.Context, arg CountSearchStarsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countSearchStars, arg.RepositoryUri, arg.ViewerDid)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const listSearchIssues = `-- name: ListSearchIssues :many
+SELECT issue.uri, issue.cid, issue.author_did, issue.rkey, issue.repository_uri, issue.repository_cid, issue.title, issue.body, issue.record_created_at, issue.record_updated_at, issue.indexed_at, issue.deleted_at, issue.source_event_id, issue.state, issue.status_uri, issue.status_cid, issue.status_updated_at, issue.status_source_event_id, issue.comment_count,
+       (SELECT count(*) FROM network.issue_comments comment WHERE comment.issue_uri = issue.uri AND comment.deleted_at IS NULL AND comment.cid IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = comment.author_did)
+          AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = comment.uri)) AS visible_comment_count
+FROM network.issues issue JOIN network.repositories repository ON repository.uri = issue.repository_uri
+WHERE issue.repository_uri = $2::text AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, issue.author_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, issue.uri))
+ORDER BY issue.record_created_at DESC, issue.uri DESC LIMIT $3
+`
+
+type ListSearchIssuesParams struct {
+	ViewerDid     pgtype.Text `json:"viewer_did"`
+	RepositoryUri string      `json:"repository_uri"`
+	ResultLimit   int32       `json:"result_limit"`
+}
+
+type ListSearchIssuesRow struct {
+	Uri                 string             `json:"uri"`
+	Cid                 pgtype.Text        `json:"cid"`
+	AuthorDid           string             `json:"author_did"`
+	Rkey                string             `json:"rkey"`
+	RepositoryUri       string             `json:"repository_uri"`
+	RepositoryCid       string             `json:"repository_cid"`
+	Title               string             `json:"title"`
+	Body                string             `json:"body"`
+	RecordCreatedAt     pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt     pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt           pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt           pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID       int64              `json:"source_event_id"`
+	State               string             `json:"state"`
+	StatusUri           pgtype.Text        `json:"status_uri"`
+	StatusCid           pgtype.Text        `json:"status_cid"`
+	StatusUpdatedAt     pgtype.Timestamptz `json:"status_updated_at"`
+	StatusSourceEventID pgtype.Int8        `json:"status_source_event_id"`
+	CommentCount        int64              `json:"comment_count"`
+	VisibleCommentCount int64              `json:"visible_comment_count"`
+}
+
+func (q *Queries) ListSearchIssues(ctx context.Context, arg ListSearchIssuesParams) ([]ListSearchIssuesRow, error) {
+	rows, err := q.db.Query(ctx, listSearchIssues, arg.ViewerDid, arg.RepositoryUri, arg.ResultLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSearchIssuesRow{}
+	for rows.Next() {
+		var i ListSearchIssuesRow
+		if err := rows.Scan(
+			&i.Uri,
+			&i.Cid,
+			&i.AuthorDid,
+			&i.Rkey,
+			&i.RepositoryUri,
+			&i.RepositoryCid,
+			&i.Title,
+			&i.Body,
+			&i.RecordCreatedAt,
+			&i.RecordUpdatedAt,
+			&i.IndexedAt,
+			&i.DeletedAt,
+			&i.SourceEventID,
+			&i.State,
+			&i.StatusUri,
+			&i.StatusCid,
+			&i.StatusUpdatedAt,
+			&i.StatusSourceEventID,
+			&i.CommentCount,
+			&i.VisibleCommentCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSearchPullRequestReviews = `-- name: ListSearchPullRequestReviews :many
+SELECT review.uri, review.cid, review.author_did, review.rkey, review.pull_request_uri, review.pull_request_cid, review.body, review.verdict, review.record_created_at, review.record_updated_at, review.indexed_at, review.deleted_at, review.source_event_id FROM network.pull_request_reviews review
+JOIN network.pull_requests pull ON pull.uri = review.pull_request_uri AND pull.cid = review.pull_request_cid
+JOIN network.repositories repository ON repository.uri = pull.target_repository_uri
+WHERE pull.uri = $1::text AND review.deleted_at IS NULL AND review.cid IS NOT NULL AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did IN (repository.owner_did, pull.author_did, review.author_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri IN (repository.uri, pull.uri, review.uri))
+ORDER BY review.record_created_at, review.uri LIMIT $3
+`
+
+type ListSearchPullRequestReviewsParams struct {
+	PullRequestUri string      `json:"pull_request_uri"`
+	ViewerDid      pgtype.Text `json:"viewer_did"`
+	ResultLimit    int32       `json:"result_limit"`
+}
+
+func (q *Queries) ListSearchPullRequestReviews(ctx context.Context, arg ListSearchPullRequestReviewsParams) ([]NetworkPullRequestReview, error) {
+	rows, err := q.db.Query(ctx, listSearchPullRequestReviews, arg.PullRequestUri, arg.ViewerDid, arg.ResultLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []NetworkPullRequestReview{}
+	for rows.Next() {
+		var i NetworkPullRequestReview
+		if err := rows.Scan(
+			&i.Uri,
+			&i.Cid,
+			&i.AuthorDid,
+			&i.Rkey,
+			&i.PullRequestUri,
+			&i.PullRequestCid,
+			&i.Body,
+			&i.Verdict,
+			&i.RecordCreatedAt,
+			&i.RecordUpdatedAt,
+			&i.IndexedAt,
+			&i.DeletedAt,
+			&i.SourceEventID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSearchPullRequests = `-- name: ListSearchPullRequests :many
+SELECT pull.uri, pull.cid, pull.author_did, pull.rkey, pull.source_repository_uri, pull.source_repository_cid, pull.source_branch, pull.target_repository_uri, pull.target_repository_cid, pull.target_branch, pull.head_sha, pull.title, pull.body, pull.record_created_at, pull.record_updated_at, pull.indexed_at, pull.deleted_at, pull.source_event_id, pull.state, pull.status_uri, pull.status_cid, pull.status_updated_at, pull.status_source_event_id, pull.merged_commit_sha, pull.review_count,
+       (SELECT count(*) FROM network.pull_request_reviews review WHERE review.pull_request_uri = pull.uri AND review.pull_request_cid = pull.cid AND review.deleted_at IS NULL AND review.cid IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = review.author_did)
+          AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = review.uri)) AS visible_review_count
+FROM network.pull_requests pull JOIN network.repositories repository ON repository.uri = pull.target_repository_uri
+WHERE pull.target_repository_uri = $2::text AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, pull.author_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, pull.uri))
+ORDER BY pull.record_created_at DESC, pull.uri DESC LIMIT $3
+`
+
+type ListSearchPullRequestsParams struct {
+	ViewerDid     pgtype.Text `json:"viewer_did"`
+	RepositoryUri string      `json:"repository_uri"`
+	ResultLimit   int32       `json:"result_limit"`
+}
+
+type ListSearchPullRequestsRow struct {
+	Uri                 string             `json:"uri"`
+	Cid                 pgtype.Text        `json:"cid"`
+	AuthorDid           string             `json:"author_did"`
+	Rkey                string             `json:"rkey"`
+	SourceRepositoryUri string             `json:"source_repository_uri"`
+	SourceRepositoryCid string             `json:"source_repository_cid"`
+	SourceBranch        string             `json:"source_branch"`
+	TargetRepositoryUri string             `json:"target_repository_uri"`
+	TargetRepositoryCid string             `json:"target_repository_cid"`
+	TargetBranch        string             `json:"target_branch"`
+	HeadSha             string             `json:"head_sha"`
+	Title               string             `json:"title"`
+	Body                string             `json:"body"`
+	RecordCreatedAt     pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt     pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt           pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt           pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID       int64              `json:"source_event_id"`
+	State               string             `json:"state"`
+	StatusUri           pgtype.Text        `json:"status_uri"`
+	StatusCid           pgtype.Text        `json:"status_cid"`
+	StatusUpdatedAt     pgtype.Timestamptz `json:"status_updated_at"`
+	StatusSourceEventID pgtype.Int8        `json:"status_source_event_id"`
+	MergedCommitSha     pgtype.Text        `json:"merged_commit_sha"`
+	ReviewCount         int64              `json:"review_count"`
+	VisibleReviewCount  int64              `json:"visible_review_count"`
+}
+
+func (q *Queries) ListSearchPullRequests(ctx context.Context, arg ListSearchPullRequestsParams) ([]ListSearchPullRequestsRow, error) {
+	rows, err := q.db.Query(ctx, listSearchPullRequests, arg.ViewerDid, arg.RepositoryUri, arg.ResultLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSearchPullRequestsRow{}
+	for rows.Next() {
+		var i ListSearchPullRequestsRow
+		if err := rows.Scan(
+			&i.Uri,
+			&i.Cid,
+			&i.AuthorDid,
+			&i.Rkey,
+			&i.SourceRepositoryUri,
+			&i.SourceRepositoryCid,
+			&i.SourceBranch,
+			&i.TargetRepositoryUri,
+			&i.TargetRepositoryCid,
+			&i.TargetBranch,
+			&i.HeadSha,
+			&i.Title,
+			&i.Body,
+			&i.RecordCreatedAt,
+			&i.RecordUpdatedAt,
+			&i.IndexedAt,
+			&i.DeletedAt,
+			&i.SourceEventID,
+			&i.State,
+			&i.StatusUri,
+			&i.StatusCid,
+			&i.StatusUpdatedAt,
+			&i.StatusSourceEventID,
+			&i.MergedCommitSha,
+			&i.ReviewCount,
+			&i.VisibleReviewCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSearchStars = `-- name: ListSearchStars :many
+SELECT star.uri, star.cid, star.author_did, star.rkey, star.repository_uri, star.repository_cid, star.record_created_at, star.indexed_at, star.deleted_at, star.source_event_id
+FROM network.stars star JOIN network.repositories repository ON repository.uri = star.repository_uri
+WHERE star.repository_uri = $1::text AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did IN (repository.owner_did, star.author_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri IN (repository.uri, star.uri))
+ORDER BY star.record_created_at DESC, star.uri DESC LIMIT $3
+`
+
+type ListSearchStarsParams struct {
+	RepositoryUri string      `json:"repository_uri"`
+	ViewerDid     pgtype.Text `json:"viewer_did"`
+	ResultLimit   int32       `json:"result_limit"`
+}
+
+func (q *Queries) ListSearchStars(ctx context.Context, arg ListSearchStarsParams) ([]NetworkStar, error) {
+	rows, err := q.db.Query(ctx, listSearchStars, arg.RepositoryUri, arg.ViewerDid, arg.ResultLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []NetworkStar{}
+	for rows.Next() {
+		var i NetworkStar
+		if err := rows.Scan(
+			&i.Uri,
+			&i.Cid,
+			&i.AuthorDid,
+			&i.Rkey,
+			&i.RepositoryUri,
+			&i.RepositoryCid,
+			&i.RecordCreatedAt,
+			&i.IndexedAt,
+			&i.DeletedAt,
+			&i.SourceEventID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const resolveSearchIssue = `-- name: ResolveSearchIssue :one
+SELECT issue.uri, issue.cid, issue.author_did, issue.rkey, issue.repository_uri, issue.repository_cid, issue.title, issue.body, issue.record_created_at, issue.record_updated_at, issue.indexed_at, issue.deleted_at, issue.source_event_id, issue.state, issue.status_uri, issue.status_cid, issue.status_updated_at, issue.status_source_event_id, issue.comment_count,
+       (SELECT count(*) FROM network.issue_comments comment WHERE comment.issue_uri = issue.uri AND comment.deleted_at IS NULL AND comment.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = comment.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = comment.uri)) AS visible_comment_count
+FROM network.issues AS issue
+JOIN network.repositories AS repository ON repository.uri = issue.repository_uri
+LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
+WHERE issue.uri = $2::text
+  AND issue.repository_uri = $3::text
+  AND issue.deleted_at IS NULL
+  AND issue.cid IS NOT NULL
+  AND repository.deleted_at IS NULL
+  AND repository.cid IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids AS block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, issue.author_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records AS hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, issue.uri))
+  AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids AS block WHERE block.account_did = $1 AND block.blocked_did = issue.author_did)
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records AS hidden WHERE hidden.account_did = $1 AND hidden.record_uri = issue.uri)
+`
+
+type ResolveSearchIssueParams struct {
+	ViewerDid     pgtype.Text `json:"viewer_did"`
+	IssueUri      string      `json:"issue_uri"`
+	RepositoryUri string      `json:"repository_uri"`
+}
+
+type ResolveSearchIssueRow struct {
+	Uri                 string             `json:"uri"`
+	Cid                 pgtype.Text        `json:"cid"`
+	AuthorDid           string             `json:"author_did"`
+	Rkey                string             `json:"rkey"`
+	RepositoryUri       string             `json:"repository_uri"`
+	RepositoryCid       string             `json:"repository_cid"`
+	Title               string             `json:"title"`
+	Body                string             `json:"body"`
+	RecordCreatedAt     pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt     pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt           pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt           pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID       int64              `json:"source_event_id"`
+	State               string             `json:"state"`
+	StatusUri           pgtype.Text        `json:"status_uri"`
+	StatusCid           pgtype.Text        `json:"status_cid"`
+	StatusUpdatedAt     pgtype.Timestamptz `json:"status_updated_at"`
+	StatusSourceEventID pgtype.Int8        `json:"status_source_event_id"`
+	CommentCount        int64              `json:"comment_count"`
+	VisibleCommentCount int64              `json:"visible_comment_count"`
+}
+
+func (q *Queries) ResolveSearchIssue(ctx context.Context, arg ResolveSearchIssueParams) (ResolveSearchIssueRow, error) {
+	row := q.db.QueryRow(ctx, resolveSearchIssue, arg.ViewerDid, arg.IssueUri, arg.RepositoryUri)
+	var i ResolveSearchIssueRow
+	err := row.Scan(
+		&i.Uri,
+		&i.Cid,
+		&i.AuthorDid,
+		&i.Rkey,
+		&i.RepositoryUri,
+		&i.RepositoryCid,
+		&i.Title,
+		&i.Body,
+		&i.RecordCreatedAt,
+		&i.RecordUpdatedAt,
+		&i.IndexedAt,
+		&i.DeletedAt,
+		&i.SourceEventID,
+		&i.State,
+		&i.StatusUri,
+		&i.StatusCid,
+		&i.StatusUpdatedAt,
+		&i.StatusSourceEventID,
+		&i.CommentCount,
+		&i.VisibleCommentCount,
+	)
+	return i, err
+}
+
+const resolveSearchProfile = `-- name: ResolveSearchProfile :one
+SELECT profile.did, profile.profile_uri, profile.profile_cid, profile.handle, profile.display_name, profile.bio, profile.avatar_ref, profile.website, profile.location, profile.repository_count, profile.contribution_count, profile.record_created_at, profile.indexed_at, profile.deleted_at, profile.source_event_id, profile.handle_source_event_id,
+       (SELECT count(*) FROM network.repositories repository LEFT JOIN core.repositories local_repository ON local_repository.id = repository.local_repository_id WHERE repository.owner_did = profile.did AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL)) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = repository.owner_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = repository.uri)) AS visible_repository_count,
+       ((SELECT count(*) FROM network.issues issue JOIN network.repositories repository ON repository.uri = issue.repository_uri LEFT JOIN core.repositories local_repository ON local_repository.id = repository.local_repository_id WHERE issue.author_did = profile.did AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL)) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, issue.author_did)) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, issue.uri))) +
+        (SELECT count(*) FROM network.issue_comments comment JOIN network.issues issue ON issue.uri = comment.issue_uri JOIN network.repositories repository ON repository.uri = issue.repository_uri LEFT JOIN core.repositories local_repository ON local_repository.id = repository.local_repository_id WHERE comment.author_did = profile.did AND comment.deleted_at IS NULL AND comment.cid IS NOT NULL AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL)) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, issue.author_did, comment.author_did)) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, issue.uri, comment.uri))) +
+        (SELECT count(*) FROM network.pull_requests pull JOIN network.repositories repository ON repository.uri = pull.target_repository_uri LEFT JOIN core.repositories local_repository ON local_repository.id = repository.local_repository_id WHERE pull.author_did = profile.did AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL)) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, pull.author_did)) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, pull.uri))) +
+        (SELECT count(*) FROM network.pull_request_reviews review JOIN network.pull_requests pull ON pull.uri = review.pull_request_uri AND pull.cid = review.pull_request_cid JOIN network.repositories repository ON repository.uri = pull.target_repository_uri LEFT JOIN core.repositories local_repository ON local_repository.id = repository.local_repository_id WHERE review.author_did = profile.did AND review.deleted_at IS NULL AND review.cid IS NOT NULL AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL)) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, pull.author_did, review.author_did)) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, pull.uri, review.uri)))) AS visible_contribution_count
+FROM network.profiles profile
+LEFT JOIN network.identities identity ON identity.did = profile.did
+WHERE profile.did = $2::text AND profile.deleted_at IS NULL AND (identity.did IS NULL OR identity.is_active)
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = profile.did)
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = profile.profile_uri)
+`
+
+type ResolveSearchProfileParams struct {
+	ViewerDid  pgtype.Text `json:"viewer_did"`
+	ProfileDid string      `json:"profile_did"`
+}
+
+type ResolveSearchProfileRow struct {
+	Did                      string             `json:"did"`
+	ProfileUri               pgtype.Text        `json:"profile_uri"`
+	ProfileCid               pgtype.Text        `json:"profile_cid"`
+	Handle                   pgtype.Text        `json:"handle"`
+	DisplayName              pgtype.Text        `json:"display_name"`
+	Bio                      pgtype.Text        `json:"bio"`
+	AvatarRef                pgtype.Text        `json:"avatar_ref"`
+	Website                  pgtype.Text        `json:"website"`
+	Location                 pgtype.Text        `json:"location"`
+	RepositoryCount          int64              `json:"repository_count"`
+	ContributionCount        int64              `json:"contribution_count"`
+	RecordCreatedAt          pgtype.Timestamptz `json:"record_created_at"`
+	IndexedAt                pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt                pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID            pgtype.Int8        `json:"source_event_id"`
+	HandleSourceEventID      pgtype.Int8        `json:"handle_source_event_id"`
+	VisibleRepositoryCount   int64              `json:"visible_repository_count"`
+	VisibleContributionCount int32              `json:"visible_contribution_count"`
+}
+
+func (q *Queries) ResolveSearchProfile(ctx context.Context, arg ResolveSearchProfileParams) (ResolveSearchProfileRow, error) {
+	row := q.db.QueryRow(ctx, resolveSearchProfile, arg.ViewerDid, arg.ProfileDid)
+	var i ResolveSearchProfileRow
+	err := row.Scan(
+		&i.Did,
+		&i.ProfileUri,
+		&i.ProfileCid,
+		&i.Handle,
+		&i.DisplayName,
+		&i.Bio,
+		&i.AvatarRef,
+		&i.Website,
+		&i.Location,
+		&i.RepositoryCount,
+		&i.ContributionCount,
+		&i.RecordCreatedAt,
+		&i.IndexedAt,
+		&i.DeletedAt,
+		&i.SourceEventID,
+		&i.HandleSourceEventID,
+		&i.VisibleRepositoryCount,
+		&i.VisibleContributionCount,
+	)
+	return i, err
+}
+
+const resolveSearchPullRequest = `-- name: ResolveSearchPullRequest :one
+SELECT pull.uri, pull.cid, pull.author_did, pull.rkey, pull.source_repository_uri, pull.source_repository_cid, pull.source_branch, pull.target_repository_uri, pull.target_repository_cid, pull.target_branch, pull.head_sha, pull.title, pull.body, pull.record_created_at, pull.record_updated_at, pull.indexed_at, pull.deleted_at, pull.source_event_id, pull.state, pull.status_uri, pull.status_cid, pull.status_updated_at, pull.status_source_event_id, pull.merged_commit_sha, pull.review_count,
+       (SELECT count(*) FROM network.pull_request_reviews review WHERE review.pull_request_uri = pull.uri AND review.pull_request_cid = pull.cid AND review.deleted_at IS NULL AND review.cid IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = review.author_did)
+          AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = review.uri)) AS visible_review_count
+FROM network.pull_requests pull JOIN network.repositories repository ON repository.uri = pull.target_repository_uri
+WHERE pull.uri = $2::text AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, pull.author_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, pull.uri))
+`
+
+type ResolveSearchPullRequestParams struct {
+	ViewerDid      pgtype.Text `json:"viewer_did"`
+	PullRequestUri string      `json:"pull_request_uri"`
+}
+
+type ResolveSearchPullRequestRow struct {
+	Uri                 string             `json:"uri"`
+	Cid                 pgtype.Text        `json:"cid"`
+	AuthorDid           string             `json:"author_did"`
+	Rkey                string             `json:"rkey"`
+	SourceRepositoryUri string             `json:"source_repository_uri"`
+	SourceRepositoryCid string             `json:"source_repository_cid"`
+	SourceBranch        string             `json:"source_branch"`
+	TargetRepositoryUri string             `json:"target_repository_uri"`
+	TargetRepositoryCid string             `json:"target_repository_cid"`
+	TargetBranch        string             `json:"target_branch"`
+	HeadSha             string             `json:"head_sha"`
+	Title               string             `json:"title"`
+	Body                string             `json:"body"`
+	RecordCreatedAt     pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt     pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt           pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt           pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID       int64              `json:"source_event_id"`
+	State               string             `json:"state"`
+	StatusUri           pgtype.Text        `json:"status_uri"`
+	StatusCid           pgtype.Text        `json:"status_cid"`
+	StatusUpdatedAt     pgtype.Timestamptz `json:"status_updated_at"`
+	StatusSourceEventID pgtype.Int8        `json:"status_source_event_id"`
+	MergedCommitSha     pgtype.Text        `json:"merged_commit_sha"`
+	ReviewCount         int64              `json:"review_count"`
+	VisibleReviewCount  int64              `json:"visible_review_count"`
+}
+
+func (q *Queries) ResolveSearchPullRequest(ctx context.Context, arg ResolveSearchPullRequestParams) (ResolveSearchPullRequestRow, error) {
+	row := q.db.QueryRow(ctx, resolveSearchPullRequest, arg.ViewerDid, arg.PullRequestUri)
+	var i ResolveSearchPullRequestRow
+	err := row.Scan(
+		&i.Uri,
+		&i.Cid,
+		&i.AuthorDid,
+		&i.Rkey,
+		&i.SourceRepositoryUri,
+		&i.SourceRepositoryCid,
+		&i.SourceBranch,
+		&i.TargetRepositoryUri,
+		&i.TargetRepositoryCid,
+		&i.TargetBranch,
+		&i.HeadSha,
+		&i.Title,
+		&i.Body,
+		&i.RecordCreatedAt,
+		&i.RecordUpdatedAt,
+		&i.IndexedAt,
+		&i.DeletedAt,
+		&i.SourceEventID,
+		&i.State,
+		&i.StatusUri,
+		&i.StatusCid,
+		&i.StatusUpdatedAt,
+		&i.StatusSourceEventID,
+		&i.MergedCommitSha,
+		&i.ReviewCount,
+		&i.VisibleReviewCount,
+	)
+	return i, err
+}
+
+const resolveSearchRepository = `-- name: ResolveSearchRepository :one
+SELECT repository.uri, repository.cid, repository.local_repository_id, repository.owner_did,
+       repository.slug, repository.name, repository.description, repository.default_branch,
+       repository.git_https, repository.git_ssh, repository.web, repository.record_created_at,
+       repository.record_updated_at, repository.indexed_at,
+       coalesce(profile.handle, identity.handle) AS owner_handle,
+       (SELECT count(*) FROM network.stars AS star WHERE star.repository_uri = repository.uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = star.author_did)
+          AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = star.uri)) AS star_count,
+       (SELECT count(*) FROM network.issues AS issue WHERE issue.repository_uri = repository.uri AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = issue.author_did)
+          AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = issue.uri)) AS issue_count,
+       (SELECT count(*) FROM network.issues AS issue WHERE issue.repository_uri = repository.uri AND issue.state = 'open' AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = issue.author_did)
+          AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = issue.uri)) AS open_issue_count,
+       (SELECT count(*) FROM network.issue_comments comment JOIN network.issues issue ON issue.uri = comment.issue_uri WHERE issue.repository_uri = repository.uri AND comment.deleted_at IS NULL AND comment.cid IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (issue.author_did, comment.author_did))
+          AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (issue.uri, comment.uri))) AS comment_count,
+       (SELECT count(*) FROM network.pull_requests pull WHERE pull.target_repository_uri = repository.uri AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = pull.author_did)
+          AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = pull.uri)) AS pull_request_count,
+       (SELECT count(*) FROM network.pull_requests pull WHERE pull.target_repository_uri = repository.uri AND pull.state = 'open' AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = pull.author_did)
+          AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = pull.uri)) AS open_pull_request_count
+FROM network.repositories AS repository
+LEFT JOIN network.profiles AS profile ON profile.did = repository.owner_did AND profile.deleted_at IS NULL
+LEFT JOIN network.identities AS identity ON identity.did = repository.owner_did AND identity.is_active
+LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
+WHERE repository.deleted_at IS NULL
+  AND repository.cid IS NOT NULL
+  AND lower(repository.slug) = lower($2::text)
+  AND (repository.owner_did = $3::text OR lower(coalesce(profile.handle, identity.handle, '')) = lower($3::text))
+  AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids AS block WHERE block.account_did = $1 AND block.blocked_did = repository.owner_did)
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records AS hidden WHERE hidden.account_did = $1 AND hidden.record_uri = repository.uri)
+ORDER BY repository.indexed_at DESC, repository.uri DESC
+LIMIT 1
+`
+
+type ResolveSearchRepositoryParams struct {
+	ViewerDid       pgtype.Text `json:"viewer_did"`
+	RepositorySlug  string      `json:"repository_slug"`
+	RepositoryOwner string      `json:"repository_owner"`
+}
+
+type ResolveSearchRepositoryRow struct {
+	Uri                  string             `json:"uri"`
+	Cid                  pgtype.Text        `json:"cid"`
+	LocalRepositoryID    pgtype.UUID        `json:"local_repository_id"`
+	OwnerDid             string             `json:"owner_did"`
+	Slug                 pgtype.Text        `json:"slug"`
+	Name                 pgtype.Text        `json:"name"`
+	Description          pgtype.Text        `json:"description"`
+	DefaultBranch        pgtype.Text        `json:"default_branch"`
+	GitHttps             pgtype.Text        `json:"git_https"`
+	GitSsh               pgtype.Text        `json:"git_ssh"`
+	Web                  pgtype.Text        `json:"web"`
+	RecordCreatedAt      pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt      pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt            pgtype.Timestamptz `json:"indexed_at"`
+	OwnerHandle          pgtype.Text        `json:"owner_handle"`
+	StarCount            int64              `json:"star_count"`
+	IssueCount           int64              `json:"issue_count"`
+	OpenIssueCount       int64              `json:"open_issue_count"`
+	CommentCount         int64              `json:"comment_count"`
+	PullRequestCount     int64              `json:"pull_request_count"`
+	OpenPullRequestCount int64              `json:"open_pull_request_count"`
+}
+
+func (q *Queries) ResolveSearchRepository(ctx context.Context, arg ResolveSearchRepositoryParams) (ResolveSearchRepositoryRow, error) {
+	row := q.db.QueryRow(ctx, resolveSearchRepository, arg.ViewerDid, arg.RepositorySlug, arg.RepositoryOwner)
+	var i ResolveSearchRepositoryRow
+	err := row.Scan(
+		&i.Uri,
+		&i.Cid,
+		&i.LocalRepositoryID,
+		&i.OwnerDid,
+		&i.Slug,
+		&i.Name,
+		&i.Description,
+		&i.DefaultBranch,
+		&i.GitHttps,
+		&i.GitSsh,
+		&i.Web,
+		&i.RecordCreatedAt,
+		&i.RecordUpdatedAt,
+		&i.IndexedAt,
+		&i.OwnerHandle,
+		&i.StarCount,
+		&i.IssueCount,
+		&i.OpenIssueCount,
+		&i.CommentCount,
+		&i.PullRequestCount,
+		&i.OpenPullRequestCount,
+	)
+	return i, err
+}
+
 const searchProfiles = `-- name: SearchProfiles :many
 WITH candidates AS (
     SELECT profile.did, profile.profile_uri, profile.profile_cid, profile.handle, profile.display_name, profile.bio, profile.avatar_ref, profile.website, profile.location, profile.repository_count, profile.contribution_count, profile.record_created_at, profile.indexed_at, profile.deleted_at, profile.source_event_id, profile.handle_source_event_id,
+           (SELECT count(*) FROM network.repositories repository LEFT JOIN core.repositories local_repository ON local_repository.id = repository.local_repository_id WHERE repository.owner_did = profile.did AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL)) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = repository.owner_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = repository.uri)) AS visible_repository_count,
+           ((SELECT count(*) FROM network.issues issue JOIN network.repositories repository ON repository.uri = issue.repository_uri LEFT JOIN core.repositories local_repository ON local_repository.id = repository.local_repository_id WHERE issue.author_did = profile.did AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL)) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did IN (repository.owner_did, issue.author_did)) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri IN (repository.uri, issue.uri))) +
+            (SELECT count(*) FROM network.issue_comments comment JOIN network.issues issue ON issue.uri = comment.issue_uri JOIN network.repositories repository ON repository.uri = issue.repository_uri LEFT JOIN core.repositories local_repository ON local_repository.id = repository.local_repository_id WHERE comment.author_did = profile.did AND comment.deleted_at IS NULL AND comment.cid IS NOT NULL AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL)) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did IN (repository.owner_did, issue.author_did, comment.author_did)) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri IN (repository.uri, issue.uri, comment.uri))) +
+            (SELECT count(*) FROM network.pull_requests pull JOIN network.repositories repository ON repository.uri = pull.target_repository_uri LEFT JOIN core.repositories local_repository ON local_repository.id = repository.local_repository_id WHERE pull.author_did = profile.did AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL)) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did IN (repository.owner_did, pull.author_did)) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri IN (repository.uri, pull.uri))) +
+            (SELECT count(*) FROM network.pull_request_reviews review JOIN network.pull_requests pull ON pull.uri = review.pull_request_uri AND pull.cid = review.pull_request_cid JOIN network.repositories repository ON repository.uri = pull.target_repository_uri LEFT JOIN core.repositories local_repository ON local_repository.id = repository.local_repository_id WHERE review.author_did = profile.did AND review.deleted_at IS NULL AND review.cid IS NOT NULL AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL)) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did IN (repository.owner_did, pull.author_did, review.author_did)) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri IN (repository.uri, pull.uri, review.uri)))) AS visible_contribution_count,
            GREATEST(
                ts_rank_cd(
                    to_tsvector('simple', coalesce(profile.handle, '') || ' ' || coalesce(profile.display_name, '')),
-                   websearch_to_tsquery('simple', $6::text)
+                   websearch_to_tsquery('simple', $7::text)
                )::double precision,
-               similarity(lower(coalesce(profile.handle, '')), lower($6::text))::double precision,
-               similarity(lower(coalesce(profile.display_name, '')), lower($6::text))::double precision
+               similarity(lower(coalesce(profile.handle, '')), lower($7::text))::double precision,
+               similarity(lower(coalesce(profile.display_name, '')), lower($7::text))::double precision
            )::double precision AS score
     FROM network.profiles AS profile
     LEFT JOIN network.identities AS identity ON identity.did = profile.did
@@ -28,20 +693,20 @@ WITH candidates AS (
       AND (identity.did IS NULL OR identity.is_active)
       AND NOT EXISTS (
           SELECT 1 FROM moderation.blocked_dids AS block
-          WHERE block.account_did = $7 AND block.blocked_did = profile.did
+          WHERE block.account_did = $6 AND block.blocked_did = profile.did
       )
       AND NOT EXISTS (
           SELECT 1 FROM moderation.hidden_records AS hidden
-          WHERE hidden.account_did = $7 AND hidden.record_uri = profile.profile_uri
+          WHERE hidden.account_did = $6 AND hidden.record_uri = profile.profile_uri
       )
       AND (
           to_tsvector('simple', coalesce(profile.handle, '') || ' ' || coalesce(profile.display_name, ''))
-              @@ websearch_to_tsquery('simple', $6::text)
-          OR lower(coalesce(profile.handle, '')) LIKE '%' || lower($6::text) || '%'
-          OR lower(coalesce(profile.display_name, '')) LIKE '%' || lower($6::text) || '%'
+              @@ websearch_to_tsquery('simple', $7::text)
+           OR lower(coalesce(profile.handle, '')) LIKE '%' || lower($8::text) || '%' ESCAPE '\'
+           OR lower(coalesce(profile.display_name, '')) LIKE '%' || lower($8::text) || '%' ESCAPE '\'
       )
 )
-SELECT did, profile_uri, profile_cid, handle, display_name, bio, avatar_ref, website, location, repository_count, contribution_count, record_created_at, indexed_at, deleted_at, source_event_id, handle_source_event_id, score FROM candidates
+SELECT did, profile_uri, profile_cid, handle, display_name, bio, avatar_ref, website, location, repository_count, contribution_count, record_created_at, indexed_at, deleted_at, source_event_id, handle_source_event_id, visible_repository_count, visible_contribution_count, score FROM candidates
 WHERE $1::text IS NULL
    OR CASE WHEN $2::text = 'relevance'
        THEN (score, indexed_at, did) < ($3::double precision, $4::timestamptz, $1::text)
@@ -60,28 +725,31 @@ type SearchProfilesParams struct {
 	CursorScore     pgtype.Float8      `json:"cursor_score"`
 	CursorIndexedAt pgtype.Timestamptz `json:"cursor_indexed_at"`
 	PageSize        int32              `json:"page_size"`
-	SearchQuery     string             `json:"search_query"`
 	ViewerDid       pgtype.Text        `json:"viewer_did"`
+	SearchQuery     string             `json:"search_query"`
+	SearchPattern   string             `json:"search_pattern"`
 }
 
 type SearchProfilesRow struct {
-	Did                 string             `json:"did"`
-	ProfileUri          pgtype.Text        `json:"profile_uri"`
-	ProfileCid          pgtype.Text        `json:"profile_cid"`
-	Handle              pgtype.Text        `json:"handle"`
-	DisplayName         pgtype.Text        `json:"display_name"`
-	Bio                 pgtype.Text        `json:"bio"`
-	AvatarRef           pgtype.Text        `json:"avatar_ref"`
-	Website             pgtype.Text        `json:"website"`
-	Location            pgtype.Text        `json:"location"`
-	RepositoryCount     int64              `json:"repository_count"`
-	ContributionCount   int64              `json:"contribution_count"`
-	RecordCreatedAt     pgtype.Timestamptz `json:"record_created_at"`
-	IndexedAt           pgtype.Timestamptz `json:"indexed_at"`
-	DeletedAt           pgtype.Timestamptz `json:"deleted_at"`
-	SourceEventID       pgtype.Int8        `json:"source_event_id"`
-	HandleSourceEventID pgtype.Int8        `json:"handle_source_event_id"`
-	Score               float64            `json:"score"`
+	Did                      string             `json:"did"`
+	ProfileUri               pgtype.Text        `json:"profile_uri"`
+	ProfileCid               pgtype.Text        `json:"profile_cid"`
+	Handle                   pgtype.Text        `json:"handle"`
+	DisplayName              pgtype.Text        `json:"display_name"`
+	Bio                      pgtype.Text        `json:"bio"`
+	AvatarRef                pgtype.Text        `json:"avatar_ref"`
+	Website                  pgtype.Text        `json:"website"`
+	Location                 pgtype.Text        `json:"location"`
+	RepositoryCount          int64              `json:"repository_count"`
+	ContributionCount        int64              `json:"contribution_count"`
+	RecordCreatedAt          pgtype.Timestamptz `json:"record_created_at"`
+	IndexedAt                pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt                pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID            pgtype.Int8        `json:"source_event_id"`
+	HandleSourceEventID      pgtype.Int8        `json:"handle_source_event_id"`
+	VisibleRepositoryCount   int64              `json:"visible_repository_count"`
+	VisibleContributionCount int32              `json:"visible_contribution_count"`
+	Score                    float64            `json:"score"`
 }
 
 func (q *Queries) SearchProfiles(ctx context.Context, arg SearchProfilesParams) ([]SearchProfilesRow, error) {
@@ -91,8 +759,9 @@ func (q *Queries) SearchProfiles(ctx context.Context, arg SearchProfilesParams) 
 		arg.CursorScore,
 		arg.CursorIndexedAt,
 		arg.PageSize,
-		arg.SearchQuery,
 		arg.ViewerDid,
+		arg.SearchQuery,
+		arg.SearchPattern,
 	)
 	if err != nil {
 		return nil, err
@@ -118,6 +787,8 @@ func (q *Queries) SearchProfiles(ctx context.Context, arg SearchProfilesParams) 
 			&i.DeletedAt,
 			&i.SourceEventID,
 			&i.HandleSourceEventID,
+			&i.VisibleRepositoryCount,
+			&i.VisibleContributionCount,
 			&i.Score,
 		); err != nil {
 			return nil, err
@@ -137,16 +808,20 @@ WITH candidates AS (
            repository.slug, repository.name, repository.description, repository.default_branch,
            repository.git_https, repository.git_ssh, repository.web,
            repository.record_created_at, repository.record_updated_at, repository.indexed_at,
-           repository.star_count, repository.issue_count, repository.open_issue_count,
-           repository.comment_count, repository.pull_request_count, repository.open_pull_request_count,
+           (SELECT count(*) FROM network.stars star WHERE star.repository_uri = repository.uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = star.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = star.uri)) AS star_count,
+           (SELECT count(*) FROM network.issues issue WHERE issue.repository_uri = repository.uri AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = issue.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = issue.uri)) AS issue_count,
+           (SELECT count(*) FROM network.issues issue WHERE issue.repository_uri = repository.uri AND issue.state = 'open' AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = issue.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = issue.uri)) AS open_issue_count,
+           (SELECT count(*) FROM network.issue_comments comment JOIN network.issues issue ON issue.uri = comment.issue_uri WHERE issue.repository_uri = repository.uri AND comment.deleted_at IS NULL AND comment.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did IN (issue.author_did, comment.author_did)) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri IN (issue.uri, comment.uri))) AS comment_count,
+           (SELECT count(*) FROM network.pull_requests pull WHERE pull.target_repository_uri = repository.uri AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = pull.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = pull.uri)) AS pull_request_count,
+           (SELECT count(*) FROM network.pull_requests pull WHERE pull.target_repository_uri = repository.uri AND pull.state = 'open' AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = pull.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = pull.uri)) AS open_pull_request_count,
            GREATEST(
                ts_rank_cd(
                    to_tsvector('simple', coalesce(repository.name, '') || ' ' || coalesce(repository.slug, '') || ' ' || coalesce(repository.description, '')),
-                   websearch_to_tsquery('simple', $6::text)
+                   websearch_to_tsquery('simple', $7::text)
                )::double precision,
-               similarity(lower(coalesce(repository.name, '')), lower($6::text))::double precision,
-               similarity(lower(coalesce(repository.slug, '')), lower($6::text))::double precision,
-               similarity(lower(coalesce(profile.handle, identity.handle, '')), lower($6::text))::double precision
+               similarity(lower(coalesce(repository.name, '')), lower($7::text))::double precision,
+               similarity(lower(coalesce(repository.slug, '')), lower($7::text))::double precision,
+               similarity(lower(coalesce(profile.handle, identity.handle, '')), lower($7::text))::double precision
            )::double precision AS score
     FROM network.repositories AS repository
     LEFT JOIN network.profiles AS profile ON profile.did = repository.owner_did AND profile.deleted_at IS NULL
@@ -157,19 +832,19 @@ WITH candidates AS (
       AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
       AND NOT EXISTS (
           SELECT 1 FROM moderation.blocked_dids AS block
-          WHERE block.account_did = $7 AND block.blocked_did = repository.owner_did
+          WHERE block.account_did = $6 AND block.blocked_did = repository.owner_did
       )
       AND NOT EXISTS (
           SELECT 1 FROM moderation.hidden_records AS hidden
-          WHERE hidden.account_did = $7 AND hidden.record_uri = repository.uri
+          WHERE hidden.account_did = $6 AND hidden.record_uri = repository.uri
       )
       AND (
           to_tsvector('simple', coalesce(repository.name, '') || ' ' || coalesce(repository.slug, '') || ' ' || coalesce(repository.description, ''))
-              @@ websearch_to_tsquery('simple', $6::text)
-          OR lower(coalesce(repository.name, '')) LIKE '%' || lower($6::text) || '%'
-          OR lower(coalesce(repository.slug, '')) LIKE '%' || lower($6::text) || '%'
-          OR lower(coalesce(repository.description, '')) LIKE '%' || lower($6::text) || '%'
-          OR lower(coalesce(profile.handle, identity.handle, '')) LIKE '%' || lower($6::text) || '%'
+              @@ websearch_to_tsquery('simple', $7::text)
+           OR lower(coalesce(repository.name, '')) LIKE '%' || lower($8::text) || '%' ESCAPE '\'
+           OR lower(coalesce(repository.slug, '')) LIKE '%' || lower($8::text) || '%' ESCAPE '\'
+           OR lower(coalesce(repository.description, '')) LIKE '%' || lower($8::text) || '%' ESCAPE '\'
+           OR lower(coalesce(profile.handle, identity.handle, '')) LIKE '%' || lower($8::text) || '%' ESCAPE '\'
       )
 )
 SELECT uri, cid, local_repository_id, owner_did, owner_handle, slug, name, description, default_branch, git_https, git_ssh, web, record_created_at, record_updated_at, indexed_at, star_count, issue_count, open_issue_count, comment_count, pull_request_count, open_pull_request_count, score FROM candidates
@@ -191,8 +866,9 @@ type SearchRepositoriesParams struct {
 	CursorScore     pgtype.Float8      `json:"cursor_score"`
 	CursorIndexedAt pgtype.Timestamptz `json:"cursor_indexed_at"`
 	PageSize        int32              `json:"page_size"`
-	SearchQuery     string             `json:"search_query"`
 	ViewerDid       pgtype.Text        `json:"viewer_did"`
+	SearchQuery     string             `json:"search_query"`
+	SearchPattern   string             `json:"search_pattern"`
 }
 
 type SearchRepositoriesRow struct {
@@ -227,8 +903,9 @@ func (q *Queries) SearchRepositories(ctx context.Context, arg SearchRepositories
 		arg.CursorScore,
 		arg.CursorIndexedAt,
 		arg.PageSize,
-		arg.SearchQuery,
 		arg.ViewerDid,
+		arg.SearchQuery,
+		arg.SearchPattern,
 	)
 	if err != nil {
 		return nil, err

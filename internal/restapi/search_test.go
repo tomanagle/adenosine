@@ -12,13 +12,41 @@ import (
 
 	generated "github.com/adenosine-dev/adenosine/api/generated/go"
 	"github.com/adenosine-dev/adenosine/internal/federation"
+	"github.com/adenosine-dev/adenosine/internal/issue"
 	"github.com/adenosine-dev/adenosine/internal/profile"
+	"github.com/adenosine-dev/adenosine/internal/pullrequest"
 	searchservice "github.com/adenosine-dev/adenosine/internal/search"
+	"github.com/adenosine-dev/adenosine/internal/star"
 )
 
 type restSearch struct {
 	viewerDID string
 	calls     int
+}
+
+type viewerCollaborationSearch struct {
+	restSearch
+	viewerDID string
+}
+
+func (search *viewerCollaborationSearch) ResolveProfile(_ context.Context, did, viewerDID string) (profile.Profile, error) {
+	search.viewerDID = viewerDID
+	return profile.Profile{DID: did, RepositoryCount: 1, ContributionCount: 2, IndexedAt: time.Now()}, nil
+}
+func (search *viewerCollaborationSearch) ListIssues(context.Context, string, string) (issue.Projection, error) {
+	return issue.Projection{}, nil
+}
+func (search *viewerCollaborationSearch) ListStars(context.Context, string, string) (star.Projection, error) {
+	return star.Projection{}, nil
+}
+func (search *viewerCollaborationSearch) ListPullRequests(context.Context, string, string) (pullrequest.Projection, error) {
+	return pullrequest.Projection{}, nil
+}
+func (search *viewerCollaborationSearch) ResolvePullRequest(context.Context, string, string) (pullrequest.ProjectedPullRequest, error) {
+	return pullrequest.ProjectedPullRequest{}, nil
+}
+func (search *viewerCollaborationSearch) ListPullRequestReviews(context.Context, string, string) ([]pullrequest.ProjectedReview, error) {
+	return []pullrequest.ProjectedReview{}, nil
 }
 
 func (search *restSearch) Repositories(_ context.Context, _ string, _ searchservice.Sort, _ int, _ string, viewerDID string) (searchservice.RepositoryPage, error) {
@@ -30,6 +58,29 @@ func (search *restSearch) Repositories(_ context.Context, _ string, _ searchserv
 		Slug: "forge", Name: "Forge", DefaultBranch: "main", GitHTTPS: "https://remote.example/bob/forge.git", Web: "https://remote.example/bob/forge",
 		CreatedAt: indexedAt, UpdatedAt: indexedAt, IndexedAt: indexedAt,
 	}}}, nil
+}
+
+func TestCollaborationReadUsesSessionViewer(t *testing.T) {
+	t.Parallel()
+	testCases := []struct{ name, cookie, wantViewer string }{
+		{name: "anonymous"},
+		{name: "session", cookie: "valid-session", wantViewer: "did:plc:alice"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			search := &viewerCollaborationSearch{}
+			server := testAPIServer(t, Dependencies{Search: search, Sessions: fakeSessions{}})
+			request := httptest.NewRequest(http.MethodGet, "/api/v1/profiles/did:plc:bob", nil)
+			if testCase.cookie != "" {
+				request.AddCookie(&http.Cookie{Name: "adenosine_session", Value: testCase.cookie})
+			}
+			response := httptest.NewRecorder()
+			server.Handler.ServeHTTP(response, request)
+			if response.Code != http.StatusOK || search.viewerDID != testCase.wantViewer || response.Header().Get("Vary") != "Cookie" {
+				t.Fatalf("status/viewer/vary = %d/%q/%q", response.Code, search.viewerDID, response.Header().Get("Vary"))
+			}
+		})
+	}
 }
 
 func (search *restSearch) Profiles(_ context.Context, _ string, sort searchservice.Sort, _ int, _ string, viewerDID string) (searchservice.ProfilePage, error) {

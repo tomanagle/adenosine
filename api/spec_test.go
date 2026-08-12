@@ -121,6 +121,42 @@ func TestOpenAPIResponsesIncludeRequestID(t *testing.T) {
 	}
 }
 
+func TestViewerPersonalizedReadsDeclareOptionalSessionSecurity(t *testing.T) {
+	var document struct {
+		Paths map[string]map[string]struct {
+			Security []map[string][]string `json:"security"`
+		} `json:"paths"`
+	}
+	if err := json.Unmarshal(OpenAPI, &document); err != nil {
+		t.Fatalf("decode OpenAPI: %v", err)
+	}
+	testCases := []struct {
+		name string
+		path string
+	}{
+		{name: "issue comments", path: "/api/v1/issues/comments"},
+		{name: "pull request diff", path: "/api/v1/pull-requests/diff"},
+		{name: "repository", path: "/api/v1/repositories/{owner}/{repo}"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			security := document.Paths[testCase.path]["get"].Security
+			var anonymous, session bool
+			for _, requirement := range security {
+				if len(requirement) == 0 {
+					anonymous = true
+				}
+				if _, found := requirement["sessionCookie"]; found {
+					session = true
+				}
+			}
+			if !anonymous || !session {
+				t.Fatalf("GET %s security = %#v, want anonymous and session alternatives", testCase.path, security)
+			}
+		})
+	}
+}
+
 func hasAnyPrefix(value string, prefixes []string) bool {
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(value, prefix) {

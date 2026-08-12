@@ -378,7 +378,7 @@ func (fixture *mergeFixture) workGit(input []byte, arguments ...string) string {
 
 func (fixture *mergeFixture) git(arguments ...string) string {
 	fixture.t.Helper()
-	command := exec.Command(fixture.binary, append([]string{"--git-dir=" + fixture.bare}, arguments...)...)
+	command := exec.Command(fixture.binary, append([]string{"-c", "commit.gpgSign=false", "-c", "tag.gpgSign=false", "--git-dir=" + fixture.bare}, arguments...)...)
 	output, err := command.CombinedOutput()
 	if err != nil {
 		fixture.t.Fatalf("git %v: %v: %s", arguments, err, output)

@@ -13,6 +13,10 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type eventDB struct {
@@ -112,6 +116,58 @@ func TestGitRefsUpdatedValidationAndStoreErrors(t *testing.T) {
 				t.Fatalf("GitRefsUpdated() error/calls = %v/%d", err, len(db.args))
 			}
 		})
+	}
+}
+
+func TestOutboxTraceContext(t *testing.T) {
+	previousPropagator := otel.GetTextMapPropagator()
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+	defer otel.SetTextMapPropagator(previousPropagator)
+	provider := sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.AlwaysSample()))
+	defer func() { _ = provider.Shutdown(context.Background()) }()
+	state, err := trace.ParseTraceState("vendor=value")
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: trace.TraceID{1}, SpanID: trace.SpanID{2}, TraceFlags: trace.FlagsSampled, TraceState: state, Remote: true,
+	})
+	ctx, span := provider.Tracer("test").Start(trace.ContextWithRemoteSpanContext(context.Background(), parent), "request")
+	defer span.End()
+
+	testCases := []struct {
+		name      string
+		outbox    dbgen.OpsOutboxEvent
+		wantValid bool
+		wantState string
+	}{
+		{name: "valid remote context", outbox: dbgen.OpsOutboxEvent{
+			Traceparent: pgtype.Text{String: "00-00000000000000000000000000000001-0000000000000002-01", Valid: true},
+			Tracestate:  pgtype.Text{String: "vendor=value", Valid: true},
+		}, wantValid: true, wantState: "vendor=value"},
+		{name: "malformed context falls back", outbox: dbgen.OpsOutboxEvent{Traceparent: pgtype.Text{String: "secret", Valid: true}}},
+		{name: "missing context falls back"},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			base := context.Background()
+			extracted := ContextFromOutbox(base, testCase.outbox)
+			got := trace.SpanContextFromContext(extracted)
+			if got.IsValid() != testCase.wantValid || got.TraceState().String() != testCase.wantState {
+				t.Fatalf("span context valid/state = %t/%q", got.IsValid(), got.TraceState().String())
+			}
+		})
+	}
+
+	db := &eventDB{}
+	if err := NewWriter(dbgen.New(db)).GitRefsUpdated(ctx, validRefsUpdated()); err != nil {
+		t.Fatalf("GitRefsUpdated() error = %v", err)
+	}
+	traceparent := db.args[0][7].(pgtype.Text)
+	tracestate := db.args[0][8].(pgtype.Text)
+	if !traceparent.Valid || !strings.HasPrefix(traceparent.String, "00-"+trace.SpanContextFromContext(ctx).TraceID().String()+"-") || tracestate.String != "vendor=value" {
+		t.Fatalf("persisted context = %q / %q", traceparent.String, tracestate.String)
 	}
 }
 

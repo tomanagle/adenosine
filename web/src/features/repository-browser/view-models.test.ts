@@ -13,6 +13,7 @@ const repository = {
     local: true,
     web_url: 'https://forge.example/alice/project',
     git_https_url: 'https://forge.example/alice/project.git',
+    source_browsing: 'local',
   },
   star_count: 0,
   issue_count: 0,
@@ -30,7 +31,12 @@ describe('repository browser view models', () => {
     expect(
       hostingLabel({
         ...repository,
-        hosting: { ...repository.hosting, local: false, web_url: 'https://code.example/r/project' },
+        hosting: {
+          ...repository.hosting,
+          local: false,
+          source_browsing: 'canonical_host',
+          web_url: 'https://code.example/r/project',
+        },
       }),
     ).toBe('Hosted by code.example')
     expect(safeWebUrl('javascript:alert(1)')).toBeUndefined()

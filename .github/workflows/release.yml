@@ -1,0 +1,153 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.24.3"
+  BUN_VERSION: "1.3.13"
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - run: bun install --frozen-lockfile
+      - run: make test
+      - run: make lint
+      - run: make generate && git diff --exit-code
+
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: make e2e
+
+  federation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: make e2e-federation
+
+  production-restore:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: scripts/tests/production_restore_test.sh
+
+  conformance-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: bash -n scripts/conformance.sh && scripts/conformance.sh --help
+      - run: test -s test/deployment/conformance.env.example && test -s docs/deployment-conformance.md
+
+  portable-did-proof:
+    runs-on: ubuntu-24.04
+    environment: portable-did-release-proof
+    env:
+      PROOF_URL: ${{ vars.ADENOSINE_PORTABLE_DID_PROOF_URL }}
+    steps:
+      - name: Require independently produced portable-DID proof artifact
+        run: |
+          test -n "$PROOF_URL"
+          curl --fail --show-error --silent --location "$PROOF_URL" --output proof.json
+          jq -e --arg release "$GITHUB_REF_NAME" '
+            .release == $release and
+            .result == "passed" and
+            .independent_instances == 2 and
+            .portable_did_users == 2 and
+            .ordinary_git == true and
+            .deployment_conformance == true and
+            .production_backup_restore == true and
+            (.evidence_url | type == "string" and startswith("https://"))
+          ' proof.json >/dev/null
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: portable-did-proof
+          path: proof.json
+          if-no-files-found: error
+
+  artifacts:
+    needs: [quality, e2e, federation, production-restore, conformance-contract, portable-did-proof]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0
+      - run: bun install --frozen-lockfile
+      - run: scripts/release.sh --version "${GITHUB_REF_NAME}" --output dist
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-artifacts
+          path: dist/*
+          if-no-files-found: error
+
+  image:
+    needs: [quality, e2e, federation, production-restore, conformance-contract, portable-did-proof]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: dev/Dockerfile
+          target: production
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/tomanagle/adenosine:${{ github.ref_name }}
+            ghcr.io/tomanagle/adenosine:sha-${{ github.sha }}
+          provenance: mode=max
+          sbom: true
+
+  publish:
+    needs: [artifacts, image, portable-did-proof]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-artifacts
+          path: dist
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: portable-did-proof
+          path: dist/proof
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* dist/proof/proof.json --verify-tag --title "$GITHUB_REF_NAME" --notes-file "docs/releases/$GITHUB_REF_NAME.md"

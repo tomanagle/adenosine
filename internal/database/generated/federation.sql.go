@@ -846,9 +846,13 @@ const listNetworkIssueComments = `-- name: ListNetworkIssueComments :many
 WITH target AS (
     SELECT issue.uri
     FROM network.issues AS issue
+    JOIN network.repositories repository ON repository.uri = issue.repository_uri
     WHERE issue.uri = $2
       AND issue.deleted_at IS NULL
       AND issue.cid IS NOT NULL
+      AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids blocked WHERE blocked.account_did = $3 AND blocked.blocked_did IN (repository.owner_did, issue.author_did))
+      AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $3 AND hidden.record_uri IN (repository.uri, issue.uri))
 ), visible AS MATERIALIZED (
     SELECT comment.uri, comment.cid, comment.author_did, comment.rkey, comment.issue_uri, comment.issue_cid, comment.parent_uri, comment.parent_cid, comment.body, comment.record_created_at, comment.record_updated_at, comment.indexed_at, comment.deleted_at, comment.source_event_id
     FROM network.issue_comments AS comment

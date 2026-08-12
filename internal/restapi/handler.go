@@ -105,6 +105,30 @@ type SearchManager interface {
 	Profiles(context.Context, string, searchservice.Sort, int, string, string) (searchservice.ProfilePage, error)
 }
 
+type networkRepositoryResolver interface {
+	ResolveRepository(context.Context, string, string, string) (federation.DiscoveryRepository, error)
+}
+
+type issueDetailResolver interface {
+	ResolveIssue(context.Context, string, string, string) (issue.ProjectedIssue, error)
+}
+
+type collaborationReader interface {
+	ResolveProfile(context.Context, string, string) (profile.Profile, error)
+	ListIssues(context.Context, string, string) (issue.Projection, error)
+	ListStars(context.Context, string, string) (star.Projection, error)
+	ListPullRequests(context.Context, string, string) (pullrequest.Projection, error)
+	ResolvePullRequest(context.Context, string, string) (pullrequest.ProjectedPullRequest, error)
+	ListPullRequestReviews(context.Context, string, string) ([]pullrequest.ProjectedReview, error)
+}
+
+func profileReadError(err error) error {
+	if errors.Is(err, searchservice.ErrNotFound) {
+		return profile.ErrNotFound
+	}
+	return err
+}
+
 type StarManager interface {
 	Get(context.Context, string) (star.Projection, error)
 	Create(context.Context, string, string) (star.Star, error)
@@ -443,6 +467,21 @@ func (handler *apiHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (handler *apiHandler) GetDeveloperProfile(w http.ResponseWriter, r *http.Request, did string) {
+	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+		viewerDID, err := handler.optionalSessionViewer(r)
+		if err != nil {
+			handler.writeError(w, r, err)
+			return
+		}
+		developerProfile, err := reader.ResolveProfile(r.Context(), did, viewerDID)
+		if err != nil {
+			handler.writeError(w, r, profileReadError(err))
+			return
+		}
+		w.Header().Set("Vary", "Cookie")
+		writeJSON(w, http.StatusOK, developerProfileResponse(developerProfile))
+		return
+	}
 	developerProfile, err := handler.deps.Profiles.Get(r.Context(), did)
 	if err != nil {
 		handler.writeError(w, r, err)
@@ -631,11 +670,34 @@ func (handler *apiHandler) CreateRepository(w http.ResponseWriter, r *http.Reque
 
 func (handler *apiHandler) GetRepository(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
 	repo, err := handler.readableRepository(r, owner, slug)
-	if err != nil {
+	if err == nil {
+		writeJSON(w, http.StatusOK, handler.repositoryResponse(repo))
+		return
+	}
+	if !errors.Is(err, repository.ErrNotFound) {
 		handler.writeError(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, handler.repositoryResponse(repo))
+	resolver, ok := handler.deps.Search.(networkRepositoryResolver)
+	if !ok {
+		handler.writeError(w, r, repository.ErrNotFound)
+		return
+	}
+	viewerDID, sessionErr := handler.optionalSessionViewer(r)
+	if sessionErr != nil {
+		handler.writeError(w, r, sessionErr)
+		return
+	}
+	networkRepository, resolveErr := resolver.ResolveRepository(r.Context(), owner, string(slug), viewerDID)
+	if resolveErr != nil {
+		if errors.Is(resolveErr, searchservice.ErrNotFound) {
+			resolveErr = repository.ErrNotFound
+		}
+		handler.writeError(w, r, resolveErr)
+		return
+	}
+	w.Header().Set("Vary", "Cookie")
+	writeJSON(w, http.StatusOK, networkRepositoryResponse(networkRepository))
 }
 
 func (handler *apiHandler) ListNetworkRepositories(w http.ResponseWriter, r *http.Request, params generated.ListNetworkRepositoriesParams) {
@@ -842,7 +904,17 @@ func (handler *apiHandler) sync(w http.ResponseWriter, r *http.Request, shape sy
 }
 
 func (handler *apiHandler) GetStars(w http.ResponseWriter, r *http.Request, params generated.GetStarsParams) {
-	projection, err := handler.deps.Stars.Get(r.Context(), params.RepositoryUri)
+	viewerDID, err := handler.optionalSessionViewer(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var projection star.Projection
+	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+		projection, err = reader.ListStars(r.Context(), params.RepositoryUri, viewerDID)
+	} else {
+		projection, err = handler.deps.Stars.Get(r.Context(), params.RepositoryUri)
+	}
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -851,6 +923,7 @@ func (handler *apiHandler) GetStars(w http.ResponseWriter, r *http.Request, para
 	for index, value := range projection.Stars {
 		data[index] = projectedStarResponse(value)
 	}
+	w.Header().Set("Vary", "Cookie")
 	writeJSON(w, http.StatusOK, generated.StarList{StarCount: projection.StarCount, Data: data})
 }
 
@@ -882,7 +955,17 @@ func (handler *apiHandler) DeleteStar(w http.ResponseWriter, r *http.Request, pa
 }
 
 func (handler *apiHandler) GetIssues(w http.ResponseWriter, r *http.Request, params generated.GetIssuesParams) {
-	projection, err := handler.deps.Issues.Get(r.Context(), params.RepositoryUri)
+	viewerDID, err := handler.optionalSessionViewer(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var projection issue.Projection
+	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+		projection, err = reader.ListIssues(r.Context(), params.RepositoryUri, viewerDID)
+	} else {
+		projection, err = handler.deps.Issues.Get(r.Context(), params.RepositoryUri)
+	}
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -891,7 +974,42 @@ func (handler *apiHandler) GetIssues(w http.ResponseWriter, r *http.Request, par
 	for index, value := range projection.Issues {
 		data[index] = projectedIssueResponse(value)
 	}
+	w.Header().Set("Vary", "Cookie")
 	writeJSON(w, http.StatusOK, issueListJSON{IssueCount: projection.IssueCount, OpenIssueCount: projection.OpenIssueCount, Data: data})
+}
+
+func (handler *apiHandler) GetIssue(w http.ResponseWriter, r *http.Request, params generated.GetIssueParams) {
+	if resolver, ok := handler.deps.Search.(issueDetailResolver); ok {
+		viewerDID, err := handler.optionalSessionViewer(r)
+		if err != nil {
+			handler.writeError(w, r, err)
+			return
+		}
+		value, err := resolver.ResolveIssue(r.Context(), params.RepositoryUri, params.IssueUri, viewerDID)
+		if err == nil {
+			w.Header().Set("Vary", "Cookie")
+			writeJSON(w, http.StatusOK, projectedIssueResponse(value))
+			return
+		}
+		if !errors.Is(err, searchservice.ErrNotFound) {
+			handler.writeError(w, r, err)
+			return
+		}
+		handler.writeError(w, r, issue.ErrNotFound)
+		return
+	}
+	projection, err := handler.deps.Issues.Get(r.Context(), params.RepositoryUri)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	for _, value := range projection.Issues {
+		if value.URI == params.IssueUri {
+			writeJSON(w, http.StatusOK, projectedIssueResponse(value))
+			return
+		}
+	}
+	handler.writeError(w, r, issue.ErrNotFound)
 }
 
 func (handler *apiHandler) CreateIssue(w http.ResponseWriter, r *http.Request, _ generated.CreateIssueParams) {
@@ -935,7 +1053,17 @@ func (handler *apiHandler) PutIssueStatus(w http.ResponseWriter, r *http.Request
 }
 
 func (handler *apiHandler) ListPullRequests(w http.ResponseWriter, r *http.Request, params generated.ListPullRequestsParams) {
-	projection, err := handler.deps.PullRequests.List(r.Context(), params.RepositoryUri)
+	viewerDID, err := handler.optionalSessionViewer(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var projection pullrequest.Projection
+	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+		projection, err = reader.ListPullRequests(r.Context(), params.RepositoryUri, viewerDID)
+	} else {
+		projection, err = handler.deps.PullRequests.List(r.Context(), params.RepositoryUri)
+	}
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -944,15 +1072,27 @@ func (handler *apiHandler) ListPullRequests(w http.ResponseWriter, r *http.Reque
 	for index, value := range projection.PullRequests {
 		data[index] = projectedPullRequestResponse(value)
 	}
+	w.Header().Set("Vary", "Cookie")
 	writeJSON(w, http.StatusOK, generated.PullRequestList{PullRequestCount: projection.PullRequestCount, OpenPullRequestCount: projection.OpenPullRequestCount, Data: data})
 }
 
 func (handler *apiHandler) GetPullRequest(w http.ResponseWriter, r *http.Request, params generated.GetPullRequestParams) {
-	value, err := handler.deps.PullRequests.Get(r.Context(), params.PullRequestUri)
+	viewerDID, err := handler.optionalSessionViewer(r)
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
 	}
+	var value pullrequest.ProjectedPullRequest
+	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+		value, err = reader.ResolvePullRequest(r.Context(), params.PullRequestUri, viewerDID)
+	} else {
+		value, err = handler.deps.PullRequests.Get(r.Context(), params.PullRequestUri)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.Header().Set("Vary", "Cookie")
 	writeJSON(w, http.StatusOK, projectedPullRequestResponse(value))
 }
 
@@ -979,6 +1119,18 @@ func (handler *apiHandler) CreatePullRequest(w http.ResponseWriter, r *http.Requ
 }
 
 func (handler *apiHandler) GetPullRequestDiff(w http.ResponseWriter, r *http.Request, params generated.GetPullRequestDiffParams) {
+	w.Header().Set("Vary", "Cookie")
+	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+		viewerDID, err := handler.optionalSessionViewer(r)
+		if err != nil {
+			handler.writeError(w, r, err)
+			return
+		}
+		if _, err := reader.ResolvePullRequest(r.Context(), params.PullRequestUri, viewerDID); err != nil {
+			handler.writeError(w, r, err)
+			return
+		}
+	}
 	result, err := handler.deps.PullRequests.Refresh(r.Context(), params.PullRequestUri)
 	if err != nil {
 		handler.writeError(w, r, err)
@@ -988,7 +1140,17 @@ func (handler *apiHandler) GetPullRequestDiff(w http.ResponseWriter, r *http.Req
 }
 
 func (handler *apiHandler) ListPullRequestReviews(w http.ResponseWriter, r *http.Request, params generated.ListPullRequestReviewsParams) {
-	values, err := handler.deps.PullRequests.Reviews(r.Context(), params.PullRequestUri)
+	viewerDID, err := handler.optionalSessionViewer(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var values []pullrequest.ProjectedReview
+	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+		values, err = reader.ListPullRequestReviews(r.Context(), params.PullRequestUri, viewerDID)
+	} else {
+		values, err = handler.deps.PullRequests.Reviews(r.Context(), params.PullRequestUri)
+	}
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -997,6 +1159,7 @@ func (handler *apiHandler) ListPullRequestReviews(w http.ResponseWriter, r *http
 	for index, value := range values {
 		data[index] = projectedPullRequestReviewResponse(value)
 	}
+	w.Header().Set("Vary", "Cookie")
 	writeJSON(w, http.StatusOK, generated.PullRequestReviewList{Data: data})
 }
 
@@ -1072,6 +1235,7 @@ func (handler *apiHandler) MergePullRequest(w http.ResponseWriter, r *http.Reque
 }
 
 func (handler *apiHandler) GetIssueComments(w http.ResponseWriter, r *http.Request, params generated.GetIssueCommentsParams) {
+	w.Header().Set("Vary", "Cookie")
 	viewerDID, err := handler.optionalSessionViewer(r)
 	if err != nil {
 		handler.writeError(w, r, err)
@@ -1577,6 +1741,8 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "unsupported_git_object", "The Git object type is unsupported for this operation", err)
 	case errors.Is(err, gitservice.ErrOutputLimit):
 		handler.writeAPIError(w, r, http.StatusRequestEntityTooLarge, "git_output_too_large", "The repository output exceeds the supported limit", err)
+	case errors.Is(err, searchservice.ErrNotFound):
+		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested resource was not found", err)
 	case errors.Is(err, localatproto.ErrInvalidIdentifier):
 		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "invalid_atproto_identifier", "The AT Protocol handle or DID is invalid", err)
 	case errors.Is(err, localatproto.ErrProviderFailure):
@@ -1686,7 +1852,7 @@ func (handler *apiHandler) repositoryResponse(repo repository.Repository) genera
 		Description: pointerUnlessEmpty(repo.Description), Visibility: generated.RepositoryVisibility(repo.Visibility),
 		State: generated.RepositoryState(repo.State), DefaultBranch: repo.DefaultBranch,
 		Owner: generated.RepositoryOwner{Did: repo.OwnerDID}, CreatedAt: repo.CreatedAt, UpdatedAt: repo.UpdatedAt,
-		Hosting: generated.RepositoryHosting{Local: true, WebUrl: webURL, GitHttpsUrl: gitHTTPSURL, GitSshUrl: pointerUnlessEmpty(gitSSHURL)},
+		Hosting: generated.RepositoryHosting{Local: true, WebUrl: webURL, GitHttpsUrl: gitHTTPSURL, GitSshUrl: pointerUnlessEmpty(gitSSHURL), SourceBrowsing: generated.Local},
 	}
 }
 
@@ -1704,9 +1870,16 @@ func networkRepositoryResponse(repo federation.DiscoveryRepository) generated.Re
 		StarCount: repo.StarCount, IssueCount: repo.IssueCount, OpenIssueCount: repo.OpenIssueCount,
 		CommentCount: repo.CommentCount, PullRequestCount: repo.PullRequestCount, OpenPullRequestCount: repo.OpenPullRequestCount,
 		Hosting: generated.RepositoryHosting{Local: repo.LocalRepositoryID != nil, WebUrl: repo.Web,
-			GitHttpsUrl: repo.GitHTTPS, GitSshUrl: pointerUnlessEmpty(repo.GitSSH)},
+			GitHttpsUrl: repo.GitHTTPS, GitSshUrl: pointerUnlessEmpty(repo.GitSSH), SourceBrowsing: sourceBrowsing(repo)},
 		CreatedAt: repo.CreatedAt, UpdatedAt: repo.UpdatedAt,
 	}
+}
+
+func sourceBrowsing(repo federation.DiscoveryRepository) generated.RepositoryHostingSourceBrowsing {
+	if repo.LocalRepositoryID != nil {
+		return generated.Local
+	}
+	return generated.CanonicalHost
 }
 
 func projectedStarResponse(value star.Star) generated.Star {

@@ -21,6 +21,9 @@ type Querier interface {
 	CompleteOutboxEvent(ctx context.Context, arg CompleteOutboxEventParams) error
 	ConsumeOAuthState(ctx context.Context, arg ConsumeOAuthStateParams) ([]byte, error)
 	ConsumePasskeyCeremony(ctx context.Context, arg ConsumePasskeyCeremonyParams) (ConsumePasskeyCeremonyRow, error)
+	CountSearchIssues(ctx context.Context, arg CountSearchIssuesParams) (CountSearchIssuesRow, error)
+	CountSearchPullRequests(ctx context.Context, arg CountSearchPullRequestsParams) (CountSearchPullRequestsRow, error)
+	CountSearchStars(ctx context.Context, arg CountSearchStarsParams) (int64, error)
 	CreateAccessToken(ctx context.Context, arg CreateAccessTokenParams) (AuthAccessToken, error)
 	CreateOAuthState(ctx context.Context, arg CreateOAuthStateParams) error
 	CreateOutboxEvent(ctx context.Context, arg CreateOutboxEventParams) (OpsOutboxEvent, error)
@@ -83,6 +86,10 @@ type Querier interface {
 	ListProjectedPullRequestReviews(ctx context.Context, arg ListProjectedPullRequestReviewsParams) ([]ListProjectedPullRequestReviewsRow, error)
 	ListProjectedPullRequests(ctx context.Context, arg ListProjectedPullRequestsParams) ([]ListProjectedPullRequestsRow, error)
 	ListRepositoriesByOwner(ctx context.Context, arg ListRepositoriesByOwnerParams) ([]CoreRepository, error)
+	ListSearchIssues(ctx context.Context, arg ListSearchIssuesParams) ([]ListSearchIssuesRow, error)
+	ListSearchPullRequestReviews(ctx context.Context, arg ListSearchPullRequestReviewsParams) ([]NetworkPullRequestReview, error)
+	ListSearchPullRequests(ctx context.Context, arg ListSearchPullRequestsParams) ([]ListSearchPullRequestsRow, error)
+	ListSearchStars(ctx context.Context, arg ListSearchStarsParams) ([]NetworkStar, error)
 	LockFederationIssueComments(ctx context.Context, issueUri string) error
 	LockFederationPullRequest(ctx context.Context, pullRequestUri string) error
 	LockFederationRepositoryIssues(ctx context.Context, repositoryUri string) error
@@ -99,6 +106,10 @@ type Querier interface {
 	RecomputeFederationRepositoryCommentCount(ctx context.Context, repositoryUri string) error
 	RecomputeFederationRepositoryCount(ctx context.Context, ownerDid string) error
 	RecomputeFederationStarCount(ctx context.Context, repositoryUri string) error
+	ResolveSearchIssue(ctx context.Context, arg ResolveSearchIssueParams) (ResolveSearchIssueRow, error)
+	ResolveSearchProfile(ctx context.Context, arg ResolveSearchProfileParams) (ResolveSearchProfileRow, error)
+	ResolveSearchPullRequest(ctx context.Context, arg ResolveSearchPullRequestParams) (ResolveSearchPullRequestRow, error)
+	ResolveSearchRepository(ctx context.Context, arg ResolveSearchRepositoryParams) (ResolveSearchRepositoryRow, error)
 	RevokeAccessToken(ctx context.Context, arg RevokeAccessTokenParams) (AuthAccessToken, error)
 	RevokePasskeyCredential(ctx context.Context, arg RevokePasskeyCredentialParams) (AuthPasskeyCredential, error)
 	RevokeSSHKey(ctx context.Context, arg RevokeSSHKeyParams) (AuthSshKey, error)

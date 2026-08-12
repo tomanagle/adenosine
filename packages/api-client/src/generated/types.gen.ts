@@ -146,11 +146,15 @@ export type RepositoryOwner = {
     handle?: string | null;
 };
 
+/**
+ * Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.
+ */
 export type RepositoryHosting = {
     local: boolean;
     web_url: string;
     git_https_url: string;
     git_ssh_url?: string | null;
+    source_browsing: 'local' | 'canonical_host';
 };
 
 export type Repository = {
@@ -1654,6 +1658,38 @@ export type PutIssueStatusResponses = {
 };
 
 export type PutIssueStatusResponse = PutIssueStatusResponses[keyof PutIssueStatusResponses];
+
+export type GetIssueData = {
+    body?: never;
+    path?: never;
+    query: {
+        repository_uri: string;
+        issue_uri: string;
+    };
+    url: '/api/v1/issues/detail';
+};
+
+export type GetIssueErrors = {
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type GetIssueError = GetIssueErrors[keyof GetIssueErrors];
+
+export type GetIssueResponses = {
+    /**
+     * Current projected issue
+     */
+    200: Issue;
+};
+
+export type GetIssueResponse = GetIssueResponses[keyof GetIssueResponses];
 
 export type DeleteIssueCommentData = {
     body?: never;

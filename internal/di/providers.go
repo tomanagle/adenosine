@@ -42,10 +42,7 @@ func Must(ctx context.Context, cfg config.Config) *app.Application {
 }
 
 func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
-	logger, shutdownTelemetry, err := observability.Setup(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("set up observability: %w", err)
-	}
+	logger, shutdownTelemetry := observability.Must(ctx)
 
 	db, err := database.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -153,10 +150,13 @@ type federationProcessor struct {
 func (processor federationProcessor) Process(ctx context.Context, body []byte) error {
 	result, err := processor.processor.Process(ctx, body)
 	if err != nil {
+		attrs := []any{"component", "federation", "operation", "process", "error_class", "processing"}
+		processor.logger.ErrorContext(ctx, "federation event processing failed", append(attrs, observability.CorrelationAttrs(ctx)...)...)
 		return err
 	}
 	if result.Outcome == "rejected" {
-		processor.logger.WarnContext(ctx, "federation event rejected", "component", "indexer", "event_id", result.EventID)
+		attrs := []any{"component", "federation", "operation", "validate", "event_id", result.EventID}
+		processor.logger.WarnContext(ctx, "federation event rejected", append(attrs, observability.CorrelationAttrs(ctx)...)...)
 	}
 	return nil
 }

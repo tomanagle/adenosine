@@ -1,0 +1,46 @@
+{
+  "uid": "adenosine-overview-v1",
+  "title": "Adenosine Overview v1",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "HTTP request rate",
+      "targets": [
+        { "expr": "sum by (http_request_method) (rate(adenosine_http_server_requests_total[5m]))" }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "HTTP p95 seconds",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(adenosine_http_server_duration_seconds_bucket[5m])))"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "PostgreSQL pool",
+      "targets": [{ "expr": "sum by (state) (adenosine_db_client_connections)" }],
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "PostgreSQL wait seconds",
+      "targets": [
+        { "expr": "rate(adenosine_db_client_connection_wait_duration_seconds_total[5m])" }
+      ],
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 }
+    }
+  ]
+}

@@ -2,47 +2,62 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$root"
+# shellcheck source=../deploy/lib.sh
+source "$root/deploy/lib.sh"
 
-command -v docker >/dev/null 2>&1 || { echo "Docker is required." >&2; exit 1; }
-docker info >/dev/null 2>&1 || { echo "Docker is not running." >&2; exit 1; }
-command -v curl >/dev/null 2>&1 || { echo "curl is required." >&2; exit 1; }
-test -f .env.local || { echo ".env.local is missing; run make dev first." >&2; exit 1; }
-
-compose=(docker compose --env-file .env.local -f dev/docker-compose.yml)
-public_url="$(grep '^ADENOSINE_BASE_URL=' .env.local | cut -d= -f2-)"
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  echo "Usage: ADENOSINE_ENV_FILE=deploy/.env scripts/doctor.sh"
+  exit 0
+fi
+[[ $# -eq 0 ]] || die "doctor takes no arguments"
+need_tools docker curl
+load_env
+validate_environment
 failed=0
 
 check() {
   local label="$1"
   shift
-  if "$@" >/dev/null 2>&1; then
-    printf 'ok: %s\n' "$label"
-  else
-    printf 'not healthy: %s\n' "$label" >&2
-    failed=1
-  fi
+  if "$@" >/dev/null 2>&1; then printf 'ok: %s\n' "$label"; else printf 'failed: %s\n' "$label" >&2; failed=1; fi
 }
-
-check_optional() {
+warn() {
   local label="$1"
   shift
-  if "$@" >/dev/null 2>&1; then
-    printf 'ok: %s\n' "$label"
-  else
-    printf 'unavailable (optional): %s\n' "$label" >&2
-  fi
+  if "$@" >/dev/null 2>&1; then printf 'ok: %s\n' "$label"; else printf 'warning: %s\n' "$label" >&2; fi
 }
 
-check "Postgres" "${compose[@]}" exec -T postgres pg_isready -U "$(grep '^POSTGRES_USER=' .env.local | cut -d= -f2-)" -d "$(grep '^POSTGRES_DB=' .env.local | cut -d= -f2-)"
-check "gateway SSR landing ($public_url)" sh -c 'curl -fsS "$1/" | grep -q "Build in public"' _ "$public_url"
-check "API readiness through gateway" curl -fsS "$public_url/health/ready"
-check "web internal SSR" "${compose[@]}" exec -T web sh -c 'wget -qO- http://127.0.0.1:3001/ | grep -q "Build in public"'
-check "Adenosine internal readiness" "${compose[@]}" exec -T adenosine wget -qO- http://localhost:8080/health/ready
-check "Tap" "${compose[@]}" exec -T tap sh -c 'credentials=$(printf "admin:%s" "$TAP_ADMIN_PASSWORD" | base64 | tr -d "\n"); wget -qO- --header="Authorization: Basic $credentials" http://127.0.0.1:2480/health'
-check_optional "Electric realtime; REST/UI remain available" "${compose[@]}" exec -T electric sh -c 'test "$(curl -so /dev/null -w "%{http_code}" http://localhost:3000/v1/health)" = 200'
-
-if [[ $failed -ne 0 ]]; then
-  exit 1
+check "PostgreSQL accepts connections" compose exec -T postgres pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+check "schema migrations table exists" compose exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT 1 FROM public.schema_migrations LIMIT 1"
+if maintenance_active; then
+  printf 'maintenance: public readiness checks are intentionally unavailable\n'
+  app_command=(compose run --rm --no-deps --entrypoint "" app)
+else
+  public_url="${ADENOSINE_DOCTOR_PUBLIC_URL:-$ADENOSINE_BASE_URL}"
+  curl_options=(-fsS --max-time 15)
+  if [[ "${ADENOSINE_DOCTOR_CURL_INSECURE:-}" == "1" ]]; then curl_options+=(-k); fi
+  check "application readiness through HTTPS" curl "${curl_options[@]}" "$public_url/health/ready"
+  check "OpenAPI is served" curl "${curl_options[@]}" "$public_url/openapi.yaml"
+  app_command=(compose exec -T app)
 fi
-echo "Adenosine development environment is healthy."
+check "native Git is available" "${app_command[@]}" git --version
+check "repository volume is writable" "${app_command[@]}" sh -ec 'test -d "$ADENOSINE_REPO_ROOT" && test -w "$ADENOSINE_REPO_ROOT"'
+check "SSH host key exists with private permissions" "${app_command[@]}" sh -ec 'test -s "$ADENOSINE_SSH_HOST_KEY_PATH" && test "$(stat -c %a "$ADENOSINE_SSH_HOST_KEY_PATH")" = 600'
+check "public URL matches configuration" "${app_command[@]}" sh -ec 'test "$ADENOSINE_BASE_URL" = "https://$ADENOSINE_SSH_HOST"'
+check "disk space remains above 10 percent" "${app_command[@]}" sh -ec 'test "$(df -P "$ADENOSINE_REPO_ROOT" | tail -1 | tr -s " " | cut -d " " -f 5 | tr -d "%")" -lt 90'
+warn "OpenTelemetry Collector is reachable" "${app_command[@]}" wget -q --spider http://otel-collector:13133/
+warn "outbound ATProto federation is reachable" "${app_command[@]}" wget -q --spider https://bsky.network/
+
+if [[ -n "${ADENOSINE_TAP_CONSUMER:-}" ]]; then
+  check "Tap is running" compose ps --status running tap
+else
+  printf 'skipped: Tap is not enabled\n'
+fi
+if [[ -n "${ADENOSINE_ELECTRIC_URL:-}" ]]; then
+  check "Electric is reachable" compose exec -T app wget -q --spider http://electric:3000/v1/health
+  check "Electric replication role and publication exist" compose exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT 1 FROM pg_roles r, pg_publication p WHERE r.rolname='electric' AND r.rolreplication AND p.pubname='electric_publication_default'"
+else
+  printf 'skipped: Electric is not enabled; Git, REST, and federation remain available\n'
+fi
+
+[[ $failed -eq 0 ]] || exit 1
+echo "Adenosine production deployment is healthy."

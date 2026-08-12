@@ -384,4 +384,6 @@ type OpsOutboxEvent struct {
 	CompletedAt   pgtype.Timestamptz `json:"completed_at"`
 	Attempts      int32              `json:"attempts"`
 	LastErrorCode pgtype.Text        `json:"last_error_code"`
+	Traceparent   pgtype.Text        `json:"traceparent"`
+	Tracestate    pgtype.Text        `json:"tracestate"`
 }

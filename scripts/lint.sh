@@ -20,7 +20,7 @@ bun run lint
 bun run format:check
 bun run --cwd web typecheck
 
-panic_uses="$(find . -name '*.go' -not -path './.air/*' -exec grep -HnF 'panic(' {} + | grep -Ev '^./internal/(config/config|di/providers|database/migration/migration|gitssh/host_key|atproto/client|repository/endpoints|passkey/service|syncproxy/proxy)\.go:' || true)"
+panic_uses="$(find . -name '*.go' -not -path './.air/*' -exec grep -HnF 'panic(' {} + | grep -Ev '^./internal/(config/config|di/providers|database/migration/migration|gitssh/host_key|atproto/client|repository/endpoints|passkey/service|syncproxy/proxy|observability/observability)\.go:' || true)"
 if [[ -n "$panic_uses" ]]; then
   echo "panic is only allowed in startup Must functions:" >&2
   echo "$panic_uses" >&2

@@ -350,7 +350,7 @@ func (fixture *remoteFixture) refs(prefix string) string {
 
 func runGit(t *testing.T, binary string, args ...string) {
 	t.Helper()
-	command := exec.Command(binary, args...)
+	command := exec.Command(binary, append([]string{"-c", "commit.gpgSign=false", "-c", "tag.gpgSign=false"}, args...)...)
 	if output, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("git %s: %v: %s", strings.Join(args, " "), err, output)
 	}
@@ -358,7 +358,7 @@ func runGit(t *testing.T, binary string, args ...string) {
 
 func gitOutput(t *testing.T, binary string, args ...string) string {
 	t.Helper()
-	command := exec.Command(binary, args...)
+	command := exec.Command(binary, append([]string{"-c", "commit.gpgSign=false", "-c", "tag.gpgSign=false"}, args...)...)
 	output, err := command.Output()
 	if err != nil {
 		t.Fatalf("git %s: %v", strings.Join(args, " "), err)

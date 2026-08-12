@@ -1,0 +1,38 @@
+groups:
+  - name: adenosine-core-v1
+    rules:
+      - alert: AdenosineInstanceDown
+        expr: up{job="adenosine"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: "Adenosine instance is unreachable" }
+      - alert: AdenosinePushFailureRate
+        expr: sum(rate(adenosine_git_commands_total{git_operation="receive-pack",git_result=~"failure|timeout"}[10m])) / clamp_min(sum(rate(adenosine_git_commands_total{git_operation="receive-pack"}[10m])), 0.001) > 0.05
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "More than 5% of receive-pack commands fail" }
+      - alert: AdenosinePushP95Latency
+        expr: histogram_quantile(0.95, sum by (le) (rate(adenosine_git_command_duration_seconds_bucket{git_operation="receive-pack"}[10m]))) > 30
+        for: 15m
+        labels: { severity: warning }
+        annotations: { summary: "Receive-pack p95 exceeds 30 seconds" }
+      - alert: AdenosineFederationProjectionFailures
+        expr: sum(rate(adenosine_federation_errors_total{federation_stage="project"}[10m])) > 0
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "Federation projections are failing" }
+      - alert: AdenosineDatabasePoolSaturated
+        expr: sum(adenosine_db_client_connections{state="used"}) / clamp_min(sum(adenosine_db_client_connections{state="max"}), 1) > 0.9
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "PostgreSQL pool is over 90% utilized" }
+      - alert: AdenosineRepositoryDiskLow
+        expr: node_filesystem_avail_bytes{mountpoint="/var/lib/adenosine"} / node_filesystem_size_bytes{mountpoint="/var/lib/adenosine"} < 0.15
+        for: 15m
+        labels: { severity: critical }
+        annotations: { summary: "Repository filesystem has less than 15% free" }
+      - alert: AdenosineOutboxTelemetryMissing
+        expr: absent(adenosine_outbox_pending)
+        for: 15m
+        labels: { severity: info }
+        annotations: { summary: "Outbox backlog telemetry is unavailable until a dispatcher is deployed" }

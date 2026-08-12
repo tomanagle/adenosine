@@ -22,6 +22,7 @@ const MAX_README = 512 * 1024
 
 export async function loadRepository(queryClient: QueryClient, params: RepositoryRouteParams) {
   const repository = await queryClient.ensureQueryData(repositoryQueryOptions(params))
+  if (repository.hosting.source_browsing !== 'local') return repository
   await Promise.allSettled([
     queryClient.ensureQueryData(branchesQueryOptions(params)),
     queryClient.ensureQueryData(tagsQueryOptions(params)),
@@ -32,6 +33,7 @@ export async function loadRepository(queryClient: QueryClient, params: Repositor
 
 export async function loadOverview(queryClient: QueryClient, params: RepositoryRouteParams) {
   const repository = await loadRepository(queryClient, params)
+  if (repository.hosting.source_browsing !== 'local') return
   const tree = await queryClient
     .ensureQueryData(treeQueryOptions(params, repository.default_branch))
     .catch((error: unknown) => {
@@ -52,6 +54,7 @@ export async function loadTree(
   treePath: string,
 ) {
   const repository = await loadRepository(queryClient, params)
+  if (repository.hosting.source_browsing !== 'local') return
   await queryClient.ensureQueryData(
     treeQueryOptions(params, ref ?? repository.default_branch, treePath),
   )
@@ -64,6 +67,7 @@ export async function loadBlob(
   routePath: string,
 ) {
   const repository = await loadRepository(queryClient, params)
+  if (repository.hosting.source_browsing !== 'local') return
   const file = splitBlobPath(routePath)
   const revision = ref ?? repository.default_branch
   const tree = await queryClient.ensureQueryData(
@@ -83,6 +87,7 @@ export async function loadCommits(
   limit: number,
 ) {
   const repository = await loadRepository(queryClient, params)
+  if (repository.hosting.source_browsing !== 'local') return
   await queryClient.ensureQueryData(
     commitsQueryOptions(params, ref ?? repository.default_branch, limit),
   )
@@ -93,6 +98,8 @@ export async function loadCommit(
   params: RepositoryRouteParams,
   revision: string,
 ) {
+  const repository = await loadRepository(queryClient, params)
+  if (repository.hosting.source_browsing !== 'local') return
   const commit = await queryClient.ensureQueryData(commitQueryOptions(params, revision))
   if (commit.parents[0]) {
     await queryClient
@@ -107,7 +114,8 @@ export async function loadComparison(
   base: string | undefined,
   head: string | undefined,
 ) {
-  await loadRepository(queryClient, params)
+  const repository = await loadRepository(queryClient, params)
+  if (repository.hosting.source_browsing !== 'local') return
   if (base && head) {
     await Promise.allSettled([
       queryClient.ensureQueryData(diffQueryOptions(params, base, head)),

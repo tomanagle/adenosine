@@ -56,6 +56,8 @@ func TestRepositorySearch(t *testing.T) {
 		{name: "defaults and trims query", query: "  forge ", results: nil, wantCalls: 1, wantStoreLimit: 21},
 		{name: "bounded page emits cursor", query: "forge", limit: 1, results: results, wantCalls: 1, wantCount: 1, wantStoreLimit: 2, wantCursor: true},
 		{name: "empty query", query: " ", wantErr: ErrInvalidQuery},
+		{name: "wildcard only query", query: "%_", wantErr: ErrInvalidQuery},
+		{name: "punctuation only query", query: "-*\\", wantErr: ErrInvalidQuery},
 		{name: "invalid sort", query: "forge", sort: "popular", wantErr: ErrInvalidSort},
 		{name: "invalid limit", query: "forge", limit: 51, wantErr: ErrInvalidLimit},
 		{name: "invalid cursor", query: "forge", cursor: "invalid", wantErr: ErrInvalidCursor},
@@ -78,6 +80,27 @@ func TestRepositorySearch(t *testing.T) {
 			}
 			if store.query != "forge" || store.sort != SortRelevance || store.viewerDID != "did:plc:viewer" {
 				t.Fatalf("store input = %q/%q/%q", store.query, store.sort, store.viewerDID)
+			}
+		})
+	}
+}
+
+func TestEscapeLike(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{name: "plain text", value: "forge", want: "forge"},
+		{name: "percent", value: "100%", want: `100\%`},
+		{name: "underscore", value: "foo_bar", want: `foo\_bar`},
+		{name: "escape character", value: `foo\bar`, want: `foo\\bar`},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if got := escapeLike(testCase.value); got != testCase.want {
+				t.Fatalf("escapeLike(%q) = %q, want %q", testCase.value, got, testCase.want)
 			}
 		})
 	}

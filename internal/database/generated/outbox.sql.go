@@ -26,7 +26,7 @@ WHERE event.id IN (
     FOR UPDATE SKIP LOCKED
     LIMIT $4
 )
-RETURNING event.id, event.type, event.aggregate_type, event.aggregate_id, event.payload, event.created_at, event.available_at, event.claimed_at, event.claimed_by, event.completed_at, event.attempts, event.last_error_code
+RETURNING event.id, event.type, event.aggregate_type, event.aggregate_id, event.payload, event.created_at, event.available_at, event.claimed_at, event.claimed_by, event.completed_at, event.attempts, event.last_error_code, event.traceparent, event.tracestate
 `
 
 type ClaimOutboxEventsParams struct {
@@ -63,6 +63,8 @@ func (q *Queries) ClaimOutboxEvents(ctx context.Context, arg ClaimOutboxEventsPa
 			&i.CompletedAt,
 			&i.Attempts,
 			&i.LastErrorCode,
+			&i.Traceparent,
+			&i.Tracestate,
 		); err != nil {
 			return nil, err
 		}
@@ -92,10 +94,10 @@ func (q *Queries) CompleteOutboxEvent(ctx context.Context, arg CompleteOutboxEve
 
 const createOutboxEvent = `-- name: CreateOutboxEvent :one
 INSERT INTO ops.outbox_events (
-    id, type, aggregate_type, aggregate_id, payload, created_at, available_at
+    id, type, aggregate_type, aggregate_id, payload, created_at, available_at, traceparent, tracestate
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, type, aggregate_type, aggregate_id, payload, created_at, available_at, claimed_at, claimed_by, completed_at, attempts, last_error_code
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+RETURNING id, type, aggregate_type, aggregate_id, payload, created_at, available_at, claimed_at, claimed_by, completed_at, attempts, last_error_code, traceparent, tracestate
 `
 
 type CreateOutboxEventParams struct {
@@ -106,6 +108,8 @@ type CreateOutboxEventParams struct {
 	Payload       []byte             `json:"payload"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 	AvailableAt   pgtype.Timestamptz `json:"available_at"`
+	Traceparent   pgtype.Text        `json:"traceparent"`
+	Tracestate    pgtype.Text        `json:"tracestate"`
 }
 
 func (q *Queries) CreateOutboxEvent(ctx context.Context, arg CreateOutboxEventParams) (OpsOutboxEvent, error) {
@@ -117,6 +121,8 @@ func (q *Queries) CreateOutboxEvent(ctx context.Context, arg CreateOutboxEventPa
 		arg.Payload,
 		arg.CreatedAt,
 		arg.AvailableAt,
+		arg.Traceparent,
+		arg.Tracestate,
 	)
 	var i OpsOutboxEvent
 	err := row.Scan(
@@ -132,15 +138,17 @@ func (q *Queries) CreateOutboxEvent(ctx context.Context, arg CreateOutboxEventPa
 		&i.CompletedAt,
 		&i.Attempts,
 		&i.LastErrorCode,
+		&i.Traceparent,
+		&i.Tracestate,
 	)
 	return i, err
 }
 
 const createOutboxEventIfAbsent = `-- name: CreateOutboxEventIfAbsent :exec
 INSERT INTO ops.outbox_events (
-    id, type, aggregate_type, aggregate_id, payload, created_at, available_at
+    id, type, aggregate_type, aggregate_id, payload, created_at, available_at, traceparent, tracestate
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 ON CONFLICT (id) DO NOTHING
 `
 
@@ -152,6 +160,8 @@ type CreateOutboxEventIfAbsentParams struct {
 	Payload       []byte             `json:"payload"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 	AvailableAt   pgtype.Timestamptz `json:"available_at"`
+	Traceparent   pgtype.Text        `json:"traceparent"`
+	Tracestate    pgtype.Text        `json:"tracestate"`
 }
 
 func (q *Queries) CreateOutboxEventIfAbsent(ctx context.Context, arg CreateOutboxEventIfAbsentParams) error {
@@ -163,6 +173,8 @@ func (q *Queries) CreateOutboxEventIfAbsent(ctx context.Context, arg CreateOutbo
 		arg.Payload,
 		arg.CreatedAt,
 		arg.AvailableAt,
+		arg.Traceparent,
+		arg.Tracestate,
 	)
 	return err
 }

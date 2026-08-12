@@ -130,11 +130,15 @@ export const zRepositoryOwner = z.object({
     handle: z.string().nullish()
 });
 
+/**
+ * Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.
+ */
 export const zRepositoryHosting = z.object({
     local: z.boolean(),
     web_url: z.url(),
     git_https_url: z.url(),
-    git_ssh_url: z.string().nullish()
+    git_ssh_url: z.string().nullish(),
+    source_browsing: z.enum(['local', 'canonical_host'])
 });
 
 export const zRepository = z.object({
@@ -1062,6 +1066,16 @@ export const zPutIssueStatusHeaders = z.object({
  * Issue status published; projection update is pending
  */
 export const zPutIssueStatusResponse = zIssueStatusMutation;
+
+export const zGetIssueQuery = z.object({
+    repository_uri: z.string().min(1),
+    issue_uri: z.string().min(1)
+});
+
+/**
+ * Current projected issue
+ */
+export const zGetIssueResponse = zIssue;
 
 export const zDeleteIssueCommentHeaders = z.object({
     Origin: z.url().optional()

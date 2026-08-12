@@ -13,11 +13,17 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OwnerRepoRouteImport } from './routes/$owner.$repo'
+import { Route as ProfilesIdentityRouteImport } from './routes/profiles.$identity'
 import { Route as OwnerRepoIndexRouteImport } from './routes/$owner.$repo.index'
+import { Route as OwnerRepoActivityRouteImport } from './routes/$owner.$repo.activity'
 import { Route as OwnerRepoCommitsRouteImport } from './routes/$owner.$repo.commits'
 import { Route as OwnerRepoCompareRouteImport } from './routes/$owner.$repo.compare'
+import { Route as OwnerRepoIssuesRouteImport } from './routes/$owner.$repo.issues'
+import { Route as OwnerRepoPullsRouteImport } from './routes/$owner.$repo.pulls'
 import { Route as OwnerRepoBlobSplatRouteImport } from './routes/$owner.$repo.blob.$'
 import { Route as OwnerRepoCommitRevisionRouteImport } from './routes/$owner.$repo.commit.$revision'
+import { Route as OwnerRepoIssuesIssueRouteImport } from './routes/$owner.$repo.issues.$issue'
+import { Route as OwnerRepoPullsPullRouteImport } from './routes/$owner.$repo.pulls.$pull'
 import { Route as OwnerRepoTreeSplatRouteImport } from './routes/$owner.$repo.tree.$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -40,9 +46,19 @@ const OwnerRepoRoute = OwnerRepoRouteImport.update({
   path: '/$owner/$repo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfilesIdentityRoute = ProfilesIdentityRouteImport.update({
+  id: '/profiles/$identity',
+  path: '/profiles/$identity',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OwnerRepoIndexRoute = OwnerRepoIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoActivityRoute = OwnerRepoActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => OwnerRepoRoute,
 } as any)
 const OwnerRepoCommitsRoute = OwnerRepoCommitsRouteImport.update({
@@ -55,6 +71,16 @@ const OwnerRepoCompareRoute = OwnerRepoCompareRouteImport.update({
   path: '/compare',
   getParentRoute: () => OwnerRepoRoute,
 } as any)
+const OwnerRepoIssuesRoute = OwnerRepoIssuesRouteImport.update({
+  id: '/issues',
+  path: '/issues',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoPullsRoute = OwnerRepoPullsRouteImport.update({
+  id: '/pulls',
+  path: '/pulls',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
 const OwnerRepoBlobSplatRoute = OwnerRepoBlobSplatRouteImport.update({
   id: '/blob/$',
   path: '/blob/$',
@@ -64,6 +90,16 @@ const OwnerRepoCommitRevisionRoute = OwnerRepoCommitRevisionRouteImport.update({
   id: '/commit/$revision',
   path: '/commit/$revision',
   getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoIssuesIssueRoute = OwnerRepoIssuesIssueRouteImport.update({
+  id: '/$issue',
+  path: '/$issue',
+  getParentRoute: () => OwnerRepoIssuesRoute,
+} as any)
+const OwnerRepoPullsPullRoute = OwnerRepoPullsPullRouteImport.update({
+  id: '/$pull',
+  path: '/$pull',
+  getParentRoute: () => OwnerRepoPullsRoute,
 } as any)
 const OwnerRepoTreeSplatRoute = OwnerRepoTreeSplatRouteImport.update({
   id: '/tree/$',
@@ -76,22 +112,34 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
   '/$owner/$repo': typeof OwnerRepoRouteWithChildren
+  '/profiles/$identity': typeof ProfilesIdentityRoute
+  '/$owner/$repo/activity': typeof OwnerRepoActivityRoute
   '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
   '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
+  '/$owner/$repo/issues': typeof OwnerRepoIssuesRouteWithChildren
+  '/$owner/$repo/pulls': typeof OwnerRepoPullsRouteWithChildren
   '/$owner/$repo/': typeof OwnerRepoIndexRoute
   '/$owner/$repo/blob/$': typeof OwnerRepoBlobSplatRoute
   '/$owner/$repo/commit/$revision': typeof OwnerRepoCommitRevisionRoute
+  '/$owner/$repo/issues/$issue': typeof OwnerRepoIssuesIssueRoute
+  '/$owner/$repo/pulls/$pull': typeof OwnerRepoPullsPullRoute
   '/$owner/$repo/tree/$': typeof OwnerRepoTreeSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/profiles/$identity': typeof ProfilesIdentityRoute
+  '/$owner/$repo/activity': typeof OwnerRepoActivityRoute
   '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
   '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
+  '/$owner/$repo/issues': typeof OwnerRepoIssuesRouteWithChildren
+  '/$owner/$repo/pulls': typeof OwnerRepoPullsRouteWithChildren
   '/$owner/$repo': typeof OwnerRepoIndexRoute
   '/$owner/$repo/blob/$': typeof OwnerRepoBlobSplatRoute
   '/$owner/$repo/commit/$revision': typeof OwnerRepoCommitRevisionRoute
+  '/$owner/$repo/issues/$issue': typeof OwnerRepoIssuesIssueRoute
+  '/$owner/$repo/pulls/$pull': typeof OwnerRepoPullsPullRoute
   '/$owner/$repo/tree/$': typeof OwnerRepoTreeSplatRoute
 }
 export interface FileRoutesById {
@@ -100,11 +148,17 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
   '/$owner/$repo': typeof OwnerRepoRouteWithChildren
+  '/profiles/$identity': typeof ProfilesIdentityRoute
+  '/$owner/$repo/activity': typeof OwnerRepoActivityRoute
   '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
   '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
+  '/$owner/$repo/issues': typeof OwnerRepoIssuesRouteWithChildren
+  '/$owner/$repo/pulls': typeof OwnerRepoPullsRouteWithChildren
   '/$owner/$repo/': typeof OwnerRepoIndexRoute
   '/$owner/$repo/blob/$': typeof OwnerRepoBlobSplatRoute
   '/$owner/$repo/commit/$revision': typeof OwnerRepoCommitRevisionRoute
+  '/$owner/$repo/issues/$issue': typeof OwnerRepoIssuesIssueRoute
+  '/$owner/$repo/pulls/$pull': typeof OwnerRepoPullsPullRoute
   '/$owner/$repo/tree/$': typeof OwnerRepoTreeSplatRoute
 }
 export interface FileRouteTypes {
@@ -114,22 +168,34 @@ export interface FileRouteTypes {
     | '/explore'
     | '/login'
     | '/$owner/$repo'
+    | '/profiles/$identity'
+    | '/$owner/$repo/activity'
     | '/$owner/$repo/commits'
     | '/$owner/$repo/compare'
+    | '/$owner/$repo/issues'
+    | '/$owner/$repo/pulls'
     | '/$owner/$repo/'
     | '/$owner/$repo/blob/$'
     | '/$owner/$repo/commit/$revision'
+    | '/$owner/$repo/issues/$issue'
+    | '/$owner/$repo/pulls/$pull'
     | '/$owner/$repo/tree/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/explore'
     | '/login'
+    | '/profiles/$identity'
+    | '/$owner/$repo/activity'
     | '/$owner/$repo/commits'
     | '/$owner/$repo/compare'
+    | '/$owner/$repo/issues'
+    | '/$owner/$repo/pulls'
     | '/$owner/$repo'
     | '/$owner/$repo/blob/$'
     | '/$owner/$repo/commit/$revision'
+    | '/$owner/$repo/issues/$issue'
+    | '/$owner/$repo/pulls/$pull'
     | '/$owner/$repo/tree/$'
   id:
     | '__root__'
@@ -137,11 +203,17 @@ export interface FileRouteTypes {
     | '/explore'
     | '/login'
     | '/$owner/$repo'
+    | '/profiles/$identity'
+    | '/$owner/$repo/activity'
     | '/$owner/$repo/commits'
     | '/$owner/$repo/compare'
+    | '/$owner/$repo/issues'
+    | '/$owner/$repo/pulls'
     | '/$owner/$repo/'
     | '/$owner/$repo/blob/$'
     | '/$owner/$repo/commit/$revision'
+    | '/$owner/$repo/issues/$issue'
+    | '/$owner/$repo/pulls/$pull'
     | '/$owner/$repo/tree/$'
   fileRoutesById: FileRoutesById
 }
@@ -150,6 +222,7 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   LoginRoute: typeof LoginRoute
   OwnerRepoRoute: typeof OwnerRepoRouteWithChildren
+  ProfilesIdentityRoute: typeof ProfilesIdentityRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -182,11 +255,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerRepoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profiles/$identity': {
+      id: '/profiles/$identity'
+      path: '/profiles/$identity'
+      fullPath: '/profiles/$identity'
+      preLoaderRoute: typeof ProfilesIdentityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$owner/$repo/': {
       id: '/$owner/$repo/'
       path: '/'
       fullPath: '/$owner/$repo/'
       preLoaderRoute: typeof OwnerRepoIndexRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
+    '/$owner/$repo/activity': {
+      id: '/$owner/$repo/activity'
+      path: '/activity'
+      fullPath: '/$owner/$repo/activity'
+      preLoaderRoute: typeof OwnerRepoActivityRouteImport
       parentRoute: typeof OwnerRepoRoute
     }
     '/$owner/$repo/commits': {
@@ -203,6 +290,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerRepoCompareRouteImport
       parentRoute: typeof OwnerRepoRoute
     }
+    '/$owner/$repo/issues': {
+      id: '/$owner/$repo/issues'
+      path: '/issues'
+      fullPath: '/$owner/$repo/issues'
+      preLoaderRoute: typeof OwnerRepoIssuesRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
+    '/$owner/$repo/pulls': {
+      id: '/$owner/$repo/pulls'
+      path: '/pulls'
+      fullPath: '/$owner/$repo/pulls'
+      preLoaderRoute: typeof OwnerRepoPullsRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
     '/$owner/$repo/blob/$': {
       id: '/$owner/$repo/blob/$'
       path: '/blob/$'
@@ -217,6 +318,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerRepoCommitRevisionRouteImport
       parentRoute: typeof OwnerRepoRoute
     }
+    '/$owner/$repo/issues/$issue': {
+      id: '/$owner/$repo/issues/$issue'
+      path: '/$issue'
+      fullPath: '/$owner/$repo/issues/$issue'
+      preLoaderRoute: typeof OwnerRepoIssuesIssueRouteImport
+      parentRoute: typeof OwnerRepoIssuesRoute
+    }
+    '/$owner/$repo/pulls/$pull': {
+      id: '/$owner/$repo/pulls/$pull'
+      path: '/$pull'
+      fullPath: '/$owner/$repo/pulls/$pull'
+      preLoaderRoute: typeof OwnerRepoPullsPullRouteImport
+      parentRoute: typeof OwnerRepoPullsRoute
+    }
     '/$owner/$repo/tree/$': {
       id: '/$owner/$repo/tree/$'
       path: '/tree/$'
@@ -227,9 +342,36 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface OwnerRepoIssuesRouteChildren {
+  OwnerRepoIssuesIssueRoute: typeof OwnerRepoIssuesIssueRoute
+}
+
+const OwnerRepoIssuesRouteChildren: OwnerRepoIssuesRouteChildren = {
+  OwnerRepoIssuesIssueRoute: OwnerRepoIssuesIssueRoute,
+}
+
+const OwnerRepoIssuesRouteWithChildren = OwnerRepoIssuesRoute._addFileChildren(
+  OwnerRepoIssuesRouteChildren,
+)
+
+interface OwnerRepoPullsRouteChildren {
+  OwnerRepoPullsPullRoute: typeof OwnerRepoPullsPullRoute
+}
+
+const OwnerRepoPullsRouteChildren: OwnerRepoPullsRouteChildren = {
+  OwnerRepoPullsPullRoute: OwnerRepoPullsPullRoute,
+}
+
+const OwnerRepoPullsRouteWithChildren = OwnerRepoPullsRoute._addFileChildren(
+  OwnerRepoPullsRouteChildren,
+)
+
 interface OwnerRepoRouteChildren {
+  OwnerRepoActivityRoute: typeof OwnerRepoActivityRoute
   OwnerRepoCommitsRoute: typeof OwnerRepoCommitsRoute
   OwnerRepoCompareRoute: typeof OwnerRepoCompareRoute
+  OwnerRepoIssuesRoute: typeof OwnerRepoIssuesRouteWithChildren
+  OwnerRepoPullsRoute: typeof OwnerRepoPullsRouteWithChildren
   OwnerRepoIndexRoute: typeof OwnerRepoIndexRoute
   OwnerRepoBlobSplatRoute: typeof OwnerRepoBlobSplatRoute
   OwnerRepoCommitRevisionRoute: typeof OwnerRepoCommitRevisionRoute
@@ -237,8 +379,11 @@ interface OwnerRepoRouteChildren {
 }
 
 const OwnerRepoRouteChildren: OwnerRepoRouteChildren = {
+  OwnerRepoActivityRoute: OwnerRepoActivityRoute,
   OwnerRepoCommitsRoute: OwnerRepoCommitsRoute,
   OwnerRepoCompareRoute: OwnerRepoCompareRoute,
+  OwnerRepoIssuesRoute: OwnerRepoIssuesRouteWithChildren,
+  OwnerRepoPullsRoute: OwnerRepoPullsRouteWithChildren,
   OwnerRepoIndexRoute: OwnerRepoIndexRoute,
   OwnerRepoBlobSplatRoute: OwnerRepoBlobSplatRoute,
   OwnerRepoCommitRevisionRoute: OwnerRepoCommitRevisionRoute,
@@ -254,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   LoginRoute: LoginRoute,
   OwnerRepoRoute: OwnerRepoRouteWithChildren,
+  ProfilesIdentityRoute: ProfilesIdentityRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

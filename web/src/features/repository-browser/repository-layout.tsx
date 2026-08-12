@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { Link, Outlet } from '@tanstack/react-router'
 import {
+  Activity,
   Check,
   ChevronDown,
   Clipboard,
   Code2,
+  CircleDot,
   ExternalLink,
   GitBranch,
   GitCompareArrows,
+  GitPullRequest,
   History,
   Lock,
   Star,
@@ -38,8 +41,14 @@ export function RepositoryLayout({
 }) {
   const { data: repository } = useSuspenseQuery(repositoryQueryOptions(params))
   const queryClient = useQueryClient()
-  const branches = useQuery(branchesQueryOptions(params))
-  const tags = useQuery(tagsQueryOptions(params))
+  const branches = useQuery({
+    ...branchesQueryOptions(params),
+    enabled: repository.hosting.source_browsing === 'local',
+  })
+  const tags = useQuery({
+    ...tagsQueryOptions(params),
+    enabled: repository.hosting.source_browsing === 'local',
+  })
   const stars = useQuery({
     ...starsQueryOptions(repository.uri ?? ''),
     enabled: Boolean(repository.uri),
@@ -192,29 +201,24 @@ export function RepositoryLayout({
               params={params}
               to="/$owner/$repo/compare"
             />
-            {['Issues', 'Pulls', 'Activity'].map((label) =>
-              canonicalUrl && !repository.hosting.local ? (
-                <a
-                  className="inline-flex h-10 shrink-0 items-center gap-1 px-3 text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  href={canonicalUrl}
-                  key={label}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  {label} <ExternalLink className="size-3" aria-hidden="true" />
-                  <span className="sr-only"> on the canonical host (opens in a new tab)</span>
-                </a>
-              ) : (
-                <span
-                  aria-disabled="true"
-                  className="inline-flex h-10 shrink-0 items-center px-3 text-sm text-muted-foreground"
-                  key={label}
-                >
-                  {label}
-                  <span className="sr-only"> (unavailable)</span>
-                </span>
-              ),
-            )}
+            <RepositoryNavLink
+              icon={CircleDot}
+              label="Issues"
+              params={params}
+              to="/$owner/$repo/issues"
+            />
+            <RepositoryNavLink
+              icon={GitPullRequest}
+              label="Pulls"
+              params={params}
+              to="/$owner/$repo/pulls"
+            />
+            <RepositoryNavLink
+              icon={Activity}
+              label="Activity"
+              params={params}
+              to="/$owner/$repo/activity"
+            />
           </nav>
         </div>
       </section>
@@ -329,7 +333,13 @@ function RepositoryNavLink({
   icon: typeof GitBranch
   label: string
   params: RepositoryRouteParams
-  to: '/$owner/$repo' | '/$owner/$repo/commits' | '/$owner/$repo/compare'
+  to:
+    | '/$owner/$repo'
+    | '/$owner/$repo/commits'
+    | '/$owner/$repo/compare'
+    | '/$owner/$repo/issues'
+    | '/$owner/$repo/pulls'
+    | '/$owner/$repo/activity'
 }) {
   return (
     <Link

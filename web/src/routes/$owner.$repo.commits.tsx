@@ -1,8 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useSuspenseQuery } from '@tanstack/react-query'
 
+import { RemoteSourceState } from '@/features/repository-browser/code-browser'
 import { CommitHistory } from '@/features/repository-browser/history'
 import { loadCommits } from '@/features/repository-browser/loaders'
 import { RepositoryError, RepositoryPending } from '@/features/repository-browser/states'
+import { repositoryQueryOptions } from '@/features/repository-browser/queries'
 import { commitsSearchSchema } from '@/features/repository-browser/validation'
 
 export const Route = createFileRoute('/$owner/$repo/commits')({
@@ -18,5 +21,9 @@ export const Route = createFileRoute('/$owner/$repo/commits')({
 
 function CommitsRoute() {
   const search = Route.useSearch()
-  return <CommitHistory params={Route.useParams()} ref={search.ref} limit={search.limit} />
+  const params = Route.useParams()
+  const { data: repository } = useSuspenseQuery(repositoryQueryOptions(params))
+  if (repository.hosting.source_browsing !== 'local')
+    return <RemoteSourceState webUrl={repository.hosting.web_url} />
+  return <CommitHistory params={params} ref={search.ref} limit={search.limit} />
 }
