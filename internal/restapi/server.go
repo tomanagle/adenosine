@@ -96,23 +96,30 @@ func requestMiddleware(logger *slog.Logger, count metric.Int64Counter, duration 
 		w.Header().Set("X-Request-ID", requestID)
 		response := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 		requestContext := context.WithValue(r.Context(), requestIDContextKey{}, requestID)
-		next.ServeHTTP(response, r.WithContext(requestContext))
+		request := r.WithContext(requestContext)
+		next.ServeHTTP(response, request)
+
+		route := request.Pattern
+		if route == "" {
+			route = "unmatched"
+		}
 
 		attrs := metric.WithAttributes(
 			attribute.String("http.request.method", r.Method),
 			attribute.Int("http.response.status_code", response.status),
+			attribute.String("http.route", route),
 		)
-		count.Add(r.Context(), 1, attrs)
-		duration.Record(r.Context(), time.Since(started).Seconds(), attrs)
+		count.Add(request.Context(), 1, attrs)
+		duration.Record(request.Context(), time.Since(started).Seconds(), attrs)
 
-		spanContext := trace.SpanContextFromContext(r.Context())
-		logger.InfoContext(r.Context(), "http request",
+		spanContext := trace.SpanContextFromContext(request.Context())
+		logger.InfoContext(request.Context(), "http request",
 			"component", "restapi",
 			"request_id", requestID,
 			"trace_id", spanContext.TraceID().String(),
 			"span_id", spanContext.SpanID().String(),
 			"method", r.Method,
-			"path", r.URL.Path,
+			"route", route,
 			"status", response.status,
 			"duration_ms", time.Since(started).Milliseconds(),
 		)
