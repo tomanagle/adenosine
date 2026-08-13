@@ -102,7 +102,7 @@ func TestStarEndpoints(t *testing.T) {
 			}
 			if testCase.wantStatus == http.StatusOK {
 				var body generated.StarList
-				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.StarCount != 4 || len(body.Data) != 1 || body.Data[0].IndexedAt != indexedAt {
+				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.StarCount != 4 || len(body.Items) != 1 || body.Items[0].IndexedAt != indexedAt {
 					t.Fatalf("GET response = %#v, %v", body, err)
 				}
 			}

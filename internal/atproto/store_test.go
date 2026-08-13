@@ -99,6 +99,19 @@ func (*memoryOAuthDB) Query(context.Context, string, ...any) (pgx.Rows, error) {
 func (db *memoryOAuthDB) QueryRow(_ context.Context, query string, args ...any) pgx.Row {
 	db.mu.Lock()
 	defer db.mu.Unlock()
+	if strings.Contains(query, "FROM auth.oauth_credentials") && strings.Contains(query, "ORDER BY updated_at DESC") {
+		var latest oauthCredentialRow
+		found := false
+		for _, row := range db.credentials {
+			if row.did == args[0].(string) && (!found || row.updatedAt.After(latest.updatedAt)) {
+				latest, found = row, true
+			}
+		}
+		if !found {
+			return oauthStubRow{err: pgx.ErrNoRows}
+		}
+		return oauthStubRow{values: []any{bytes.Clone(latest.hash), bytes.Clone(latest.encrypted)}}
+	}
 	if strings.Contains(query, "FROM auth.oauth_credentials") {
 		row, exists := db.credentials[credentialRowKey(args[0].(string), args[1].([]byte))]
 		if !exists {
@@ -496,6 +509,61 @@ func TestPostgresClientAuthStoreLoadsLatestSessionUsingHashAAD(t *testing.T) {
 			db.credentials[credentialRowKey(did.String(), hash[:])] = row
 			if _, err := store.GetLatestSession(context.Background(), did); !errors.Is(err, ErrSessionInvalid) {
 				t.Fatalf("tampered latest hash error = %v", err)
+			}
+		})
+	}
+}
+
+func TestPostgresClientAuthStoreLoadsLatestSessionForEveryLoaderWiring(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name   string
+		latest func(*memoryOAuthDB) []latestCredentialLoader
+	}{
+		{
+			name:   "loader omitted",
+			latest: func(*memoryOAuthDB) []latestCredentialLoader { return nil },
+		},
+		{
+			// The client forwards an optional loader from its build options, so an
+			// absent override reaches the store as a nil interface.
+			name:   "absent override forwarded as a nil loader",
+			latest: func(*memoryOAuthDB) []latestCredentialLoader { return []latestCredentialLoader{nil} },
+		},
+		{
+			name:   "injected loader",
+			latest: func(db *memoryOAuthDB) []latestCredentialLoader { return []latestCredentialLoader{db} },
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			db := newMemoryOAuthDB()
+			store, err := buildPostgresClientAuthStore(
+				dbgen.New(db),
+				bytes.Repeat([]byte{0x42}, 32),
+				bytes.Repeat([]byte{0x43}, 32),
+				&fixedClock{now: time.Now()},
+				rand.Reader,
+				testCase.latest(db)...,
+			)
+			if err != nil {
+				t.Fatalf("build store: %v", err)
+			}
+			did := syntax.DID(canonicalDID)
+			session := oauth.ClientSessionData{
+				AccountDID: did, SessionID: "browser-secret-session", AccessToken: "access-secret",
+			}
+			if err := store.SaveSession(context.Background(), session); err != nil {
+				t.Fatal(err)
+			}
+
+			loaded, err := store.GetLatestSession(context.Background(), did)
+			if err != nil {
+				t.Fatalf("latest session error = %v", err)
+			}
+			if loaded.SessionID != session.SessionID || loaded.AccessToken != session.AccessToken {
+				t.Fatalf("latest session = %#v", loaded)
 			}
 		})
 	}

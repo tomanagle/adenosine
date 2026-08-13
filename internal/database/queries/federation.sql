@@ -102,11 +102,11 @@ WHERE network.profiles.source_event_id IS NULL OR network.profiles.source_event_
 -- name: UpsertFederationRepository :exec
 INSERT INTO network.repositories (
     uri, cid, owner_did, rkey, slug, name, description, default_branch,
-    git_https, git_ssh, web, local_repository_id, record_created_at,
+    git_https, git_ssh, web, organization_uri, organization_cid, local_repository_id, record_created_at,
     record_updated_at, indexed_at, deleted_at, source_event_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-    (SELECT id FROM core.repositories WHERE at_uri = $1), $12, $13, $14, NULL, $15
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+    (SELECT id FROM core.repositories WHERE at_uri = $1), $14, $15, $16, NULL, $17
 )
 ON CONFLICT (uri) DO UPDATE SET
     cid = EXCLUDED.cid,
@@ -119,6 +119,8 @@ ON CONFLICT (uri) DO UPDATE SET
     git_https = EXCLUDED.git_https,
     git_ssh = EXCLUDED.git_ssh,
     web = EXCLUDED.web,
+    organization_uri = EXCLUDED.organization_uri,
+    organization_cid = EXCLUDED.organization_cid,
     local_repository_id = EXCLUDED.local_repository_id,
     record_created_at = EXCLUDED.record_created_at,
     record_updated_at = EXCLUDED.record_updated_at,
@@ -499,6 +501,7 @@ SELECT
     repository.local_repository_id,
     repository.owner_did,
     identity.handle,
+	organization.slug AS organization_slug,
     repository.slug,
     repository.name,
     repository.description,
@@ -511,6 +514,7 @@ SELECT
     repository.indexed_at
 FROM network.repositories AS repository
 LEFT JOIN network.identities AS identity ON identity.did = repository.owner_did
+LEFT JOIN network.organizations AS organization ON organization.uri = repository.organization_uri AND organization.deleted_at IS NULL
 WHERE repository.deleted_at IS NULL
   AND (
       sqlc.narg(cursor_indexed_at)::timestamptz IS NULL
@@ -564,7 +568,8 @@ SELECT
     issue.cid AS issue_cid,
     repository.uri AS repository_uri,
     repository.cid AS repository_cid,
-    status.record_created_at AS status_created_at
+    status.record_created_at AS status_created_at,
+    local_repository.id AS local_repository_id
 FROM network.issues AS issue
 JOIN network.repositories AS repository
   ON repository.uri = issue.repository_uri
@@ -574,6 +579,9 @@ LEFT JOIN network.issue_statuses AS status
   ON status.uri = issue.status_uri
  AND status.cid = issue.status_cid
  AND status.deleted_at IS NULL
+LEFT JOIN core.repositories AS local_repository
+  ON local_repository.at_uri = repository.uri
+ AND local_repository.deleted_at IS NULL
 WHERE issue.uri = $1
   AND issue.deleted_at IS NULL
   AND issue.cid IS NOT NULL;
@@ -676,6 +684,11 @@ FROM target
 LEFT JOIN LATERAL (
     SELECT visible.*
     FROM visible
+    WHERE sqlc.narg(cursor_uri)::text IS NULL
+       OR (visible.record_created_at, visible.uri) > (
+            (SELECT cursor_comment.record_created_at FROM network.issue_comments AS cursor_comment WHERE cursor_comment.uri = sqlc.narg(cursor_uri)),
+            sqlc.narg(cursor_uri)::text
+       )
     ORDER BY visible.record_created_at, visible.uri
     LIMIT sqlc.arg(page_size)
 ) AS projected ON TRUE
@@ -846,8 +859,15 @@ WHERE uri = sqlc.arg(pull_request_uri) AND deleted_at IS NULL AND cid IS NOT NUL
 
 -- name: GetProjectedPullRequestStatusTarget :one
 SELECT pull_request.uri, pull_request.cid, pull_request.target_repository_uri,
-       pull_request.target_repository_cid, status.record_created_at AS status_created_at
+       pull_request.target_repository_cid, status.record_created_at AS status_created_at,
+       local_repository.id AS local_repository_id
 FROM network.pull_requests AS pull_request
+JOIN network.repositories AS target_repository
+  ON target_repository.uri = pull_request.target_repository_uri
+ AND target_repository.deleted_at IS NULL
+LEFT JOIN core.repositories AS local_repository
+  ON local_repository.at_uri = target_repository.uri
+ AND local_repository.deleted_at IS NULL
 LEFT JOIN network.pull_request_statuses AS status
   ON status.uri = pull_request.status_uri
  AND status.cid = pull_request.status_cid

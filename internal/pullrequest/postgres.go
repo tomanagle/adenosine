@@ -99,8 +99,13 @@ func (store *PostgresStore) GetStatusTarget(ctx context.Context, pullRequestURI 
 	if err != nil {
 		return statusTarget{}, fmt.Errorf("query projected pull request status target: %w", err)
 	}
-	return statusTarget{Subject: StrongRef{URI: row.Uri, CID: row.Cid.String},
-		TargetRepository: StrongRef{URI: row.TargetRepositoryUri, CID: row.TargetRepositoryCid}, StatusCreatedAt: row.StatusCreatedAt.Time}, nil
+	value := statusTarget{Subject: StrongRef{URI: row.Uri, CID: row.Cid.String},
+		TargetRepository: StrongRef{URI: row.TargetRepositoryUri, CID: row.TargetRepositoryCid}, StatusCreatedAt: row.StatusCreatedAt.Time}
+	if row.LocalRepositoryID.Valid {
+		id := repository.ID(row.LocalRepositoryID.Bytes)
+		value.RepositoryID = &id
+	}
+	return value, nil
 }
 
 func projectedPullRequest(uri, cid, authorDID, sourceURI, sourceCID, sourceBranch, targetURI, targetCID, targetBranch,

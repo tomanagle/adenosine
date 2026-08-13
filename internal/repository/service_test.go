@@ -26,6 +26,13 @@ func (store *fakeStore) GetByOwnerSlug(context.Context, string, string) (Reposit
 	return store.created, nil
 }
 
+func (store *fakeStore) ListByOrganization(context.Context, uuid.UUID) ([]Repository, error) {
+	return nil, nil
+}
+func (store *fakeStore) PageByOrganization(context.Context, uuid.UUID, string, *uuid.UUID, int32) ([]Repository, error) {
+	return nil, nil
+}
+
 func (store *fakeStore) UpdateState(_ context.Context, id ID, state State, updatedAt time.Time) (Repository, error) {
 	store.states = append(store.states, state)
 	store.created.ID, store.created.State, store.created.UpdatedAt = id, state, updatedAt

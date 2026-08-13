@@ -21,6 +21,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/issue"
 	"github.com/adenosine-dev/adenosine/internal/moderation"
 	"github.com/adenosine-dev/adenosine/internal/observability"
+	"github.com/adenosine-dev/adenosine/internal/organization"
 	"github.com/adenosine-dev/adenosine/internal/passkey"
 	"github.com/adenosine-dev/adenosine/internal/profile"
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
@@ -76,11 +77,19 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	discovery := federation.NewDiscoveryService(federation.NewPostgresDiscoveryStore(db.Queries()))
 	searchService := search.NewService(search.NewPostgresStore(db.Queries()))
 	stars := star.NewService(star.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{})
-	issues := issue.NewService(issue.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{})
+	issues := issue.NewService(issue.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{}, authStore)
 	comments := comment.NewService(comment.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{})
 	eventWriter := event.NewWriter(db.Queries())
 	pullRequests := pullrequest.NewApplicationService(pullrequest.NewPostgresStore(db.Queries()), git, oauthClient, atproto.SystemClock{}, authStore, eventWriter)
 	moderationService := moderation.NewService(moderation.NewPostgresStore(db.Queries()), atproto.SystemClock{})
+	organizations := organization.NewService(
+		organization.NewPostgresStore(db, db.Queries()),
+		organization.SystemClock{},
+		organization.UUIDv7Generator{},
+		oauthClient,
+	)
+	organizationTeams := organization.NewTeamService(organization.NewPostgresStore(db, db.Queries()), organization.SystemClock{}, organization.UUIDv7Generator{})
+	organizationCollaborators := organization.NewCollaboratorService(organization.NewPostgresStore(db, db.Queries()), organization.SystemClock{})
 	syncProxy := syncproxy.Must(cfg.ElectricURL, cfg.ElectricSecret)
 	var federationDependencies *restapi.FederationDependencies
 	if cfg.TapConsumer != "" {
@@ -113,6 +122,9 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		Tokens:        auth.NewTokenService(authStore, clock, auth.UUIDv7Generator{}, auth.RandomSecretGenerator{}),
 		SSHKeys:       auth.NewSSHKeyService(authStore, clock, auth.UUIDv7Generator{}),
 		Profiles:      profiles,
+		Organizations: organizations,
+		Teams:         organizationTeams,
+		Collaborators: organizationCollaborators,
 		Federation:    federationDependencies,
 		Repositories:  repositories,
 		Endpoints:     repositoryEndpoints,

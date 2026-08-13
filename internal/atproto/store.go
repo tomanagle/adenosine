@@ -76,8 +76,10 @@ func buildPostgresClientAuthStore(queries *dbgen.Queries, stateKey, credentialKe
 	if err != nil {
 		return nil, fmt.Errorf("construct OAuth credential cipher: %w", err)
 	}
+	// Callers forward an optional loader from build options, so an absent
+	// override arrives as a nil interface and must not replace the real loader.
 	var loader latestCredentialLoader = generatedLatestCredentialLoader{queries: queries}
-	if len(latest) > 0 {
+	if len(latest) > 0 && latest[0] != nil {
 		loader = latest[0]
 	}
 	return &PostgresClientAuthStore{queries: queries, latest: loader, stateAEAD: stateAEAD, credentialAEAD: credentialAEAD, clock: clock, random: random}, nil

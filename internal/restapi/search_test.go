@@ -105,13 +105,13 @@ func TestSearchEndpoints(t *testing.T) {
 	}{
 		{name: "anonymous repositories", path: "/api/v1/search/repositories?q=forge", wantStatus: http.StatusOK, wantCalls: 1, decode: func(t *testing.T, body []byte) {
 			var page generated.RepositorySearchPage
-			if err := json.Unmarshal(body, &page); err != nil || len(page.Data) != 1 || page.Data[0].Uri == nil || page.Data[0].Hosting.Local {
+			if err := json.Unmarshal(body, &page); err != nil || len(page.Items) != 1 || page.Items[0].Uri == nil || page.Items[0].Hosting.Local {
 				t.Fatalf("repository page = %#v, %v", page, err)
 			}
 		}},
 		{name: "personalized profiles", path: "/api/v1/search/profiles?q=bob&type=ignored", cookie: "valid-session", wantStatus: http.StatusOK, wantCalls: 1, wantViewer: "did:plc:alice", decode: func(t *testing.T, body []byte) {
 			var page generated.ProfileSearchPage
-			if err := json.Unmarshal(body, &page); err != nil || len(page.Data) != 1 || page.Data[0].Did != "did:plc:bob" {
+			if err := json.Unmarshal(body, &page); err != nil || len(page.Items) != 1 || page.Items[0].Did != "did:plc:bob" {
 				t.Fatalf("profile page = %#v, %v", page, err)
 			}
 		}},

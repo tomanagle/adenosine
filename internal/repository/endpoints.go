@@ -37,7 +37,11 @@ func buildEndpoints(baseURL, sshHost string, sshPort uint16) (*Endpoints, error)
 
 // For returns web, HTTPS Git, and SSH Git URLs using immutable owner identity.
 func (endpoints *Endpoints) For(repository Repository) (string, string, string) {
-	path := "/" + repository.OwnerDID + "/" + repository.Slug
+	owner := repository.OwnerDID
+	if repository.OrganizationSlug != "" {
+		owner = repository.OrganizationSlug
+	}
+	path := "/" + owner + "/" + repository.Slug
 	web := endpoints.baseURL + path
 	authority := endpoints.sshHost
 	if endpoints.sshPort != 22 {

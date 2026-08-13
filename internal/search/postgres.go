@@ -30,7 +30,7 @@ func (store *PostgresStore) ResolveRepository(ctx context.Context, owner, slug, 
 	if err != nil {
 		return federation.DiscoveryRepository{}, fmt.Errorf("resolve repository: %w", err)
 	}
-	return federation.DiscoveryRepository{URI: row.Uri, CID: row.Cid.String, LocalRepositoryID: optionalUUID(row.LocalRepositoryID), OwnerDID: row.OwnerDid, OwnerHandle: row.OwnerHandle.String, Slug: row.Slug.String, Name: row.Name.String, Description: row.Description.String, DefaultBranch: row.DefaultBranch.String, GitHTTPS: row.GitHttps.String, GitSSH: row.GitSsh.String, Web: row.Web.String, CreatedAt: row.RecordCreatedAt.Time, UpdatedAt: row.RecordUpdatedAt.Time, IndexedAt: row.IndexedAt.Time, StarCount: row.StarCount, IssueCount: row.IssueCount, OpenIssueCount: row.OpenIssueCount, CommentCount: row.CommentCount, PullRequestCount: row.PullRequestCount, OpenPullRequestCount: row.OpenPullRequestCount}, nil
+	return federation.DiscoveryRepository{URI: row.Uri, CID: row.Cid.String, LocalRepositoryID: optionalUUID(row.LocalRepositoryID), OwnerDID: row.OwnerDid, OwnerHandle: row.OwnerHandle.String, OrganizationSlug: row.OrganizationSlug.String, Slug: row.Slug.String, Name: row.Name.String, Description: row.Description.String, DefaultBranch: row.DefaultBranch.String, GitHTTPS: row.GitHttps.String, GitSSH: row.GitSsh.String, Web: row.Web.String, CreatedAt: row.RecordCreatedAt.Time, UpdatedAt: row.RecordUpdatedAt.Time, IndexedAt: row.IndexedAt.Time, StarCount: row.StarCount, IssueCount: row.IssueCount, OpenIssueCount: row.OpenIssueCount, CommentCount: row.CommentCount, PullRequestCount: row.PullRequestCount, OpenPullRequestCount: row.OpenPullRequestCount}, nil
 }
 
 func (store *PostgresStore) ResolveIssue(ctx context.Context, repositoryURI, issueURI, viewerDID string) (issue.ProjectedIssue, error) {
@@ -55,12 +55,14 @@ func (store *PostgresStore) ResolveProfile(ctx context.Context, did, viewerDID s
 	return profile.Profile{DID: row.Did, URI: row.ProfileUri.String, CID: row.ProfileCid.String, Handle: row.Handle.String, DisplayName: row.DisplayName.String, Bio: row.Bio.String, AvatarRef: row.AvatarRef.String, Website: row.Website.String, Location: row.Location.String, RepositoryCount: row.VisibleRepositoryCount, ContributionCount: int64(row.VisibleContributionCount), RecordCreatedAt: row.RecordCreatedAt.Time, IndexedAt: row.IndexedAt.Time}, nil
 }
 
-func (store *PostgresStore) ListIssues(ctx context.Context, repositoryURI, viewerDID string, limit int) (issue.Projection, error) {
+func (store *PostgresStore) ListIssues(ctx context.Context, repositoryURI, viewerDID string, limit int, cursor *Cursor) (issue.Projection, error) {
 	counts, err := store.queries.CountSearchIssues(ctx, dbgen.CountSearchIssuesParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID)})
 	if err != nil {
 		return issue.Projection{}, fmt.Errorf("count issues: %w", err)
 	}
-	rows, err := store.queries.ListSearchIssues(ctx, dbgen.ListSearchIssuesParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit)})
+	params := dbgen.ListSearchIssuesParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit)}
+	applyCollectionCursor(&params.CursorUri, &params.CursorCreatedAt, cursor)
+	rows, err := store.queries.ListSearchIssues(ctx, params)
 	if err != nil {
 		return issue.Projection{}, fmt.Errorf("list issues: %w", err)
 	}
@@ -71,12 +73,14 @@ func (store *PostgresStore) ListIssues(ctx context.Context, repositoryURI, viewe
 	return result, nil
 }
 
-func (store *PostgresStore) ListStars(ctx context.Context, repositoryURI, viewerDID string, limit int) (star.Projection, error) {
+func (store *PostgresStore) ListStars(ctx context.Context, repositoryURI, viewerDID string, limit int, cursor *Cursor) (star.Projection, error) {
 	count, err := store.queries.CountSearchStars(ctx, dbgen.CountSearchStarsParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID)})
 	if err != nil {
 		return star.Projection{}, fmt.Errorf("count stars: %w", err)
 	}
-	rows, err := store.queries.ListSearchStars(ctx, dbgen.ListSearchStarsParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit)})
+	params := dbgen.ListSearchStarsParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit)}
+	applyCollectionCursor(&params.CursorUri, &params.CursorCreatedAt, cursor)
+	rows, err := store.queries.ListSearchStars(ctx, params)
 	if err != nil {
 		return star.Projection{}, fmt.Errorf("list stars: %w", err)
 	}
@@ -87,12 +91,14 @@ func (store *PostgresStore) ListStars(ctx context.Context, repositoryURI, viewer
 	return result, nil
 }
 
-func (store *PostgresStore) ListPullRequests(ctx context.Context, repositoryURI, viewerDID string, limit int) (pullrequest.Projection, error) {
+func (store *PostgresStore) ListPullRequests(ctx context.Context, repositoryURI, viewerDID string, limit int, cursor *Cursor) (pullrequest.Projection, error) {
 	counts, err := store.queries.CountSearchPullRequests(ctx, dbgen.CountSearchPullRequestsParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID)})
 	if err != nil {
 		return pullrequest.Projection{}, fmt.Errorf("count pull requests: %w", err)
 	}
-	rows, err := store.queries.ListSearchPullRequests(ctx, dbgen.ListSearchPullRequestsParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit)})
+	params := dbgen.ListSearchPullRequestsParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit)}
+	applyCollectionCursor(&params.CursorUri, &params.CursorCreatedAt, cursor)
+	rows, err := store.queries.ListSearchPullRequests(ctx, params)
 	if err != nil {
 		return pullrequest.Projection{}, fmt.Errorf("list pull requests: %w", err)
 	}
@@ -114,8 +120,10 @@ func (store *PostgresStore) ResolvePullRequest(ctx context.Context, uri, viewerD
 	return projectedPull(row.Uri, row.Cid.String, row.AuthorDid, row.SourceRepositoryUri, row.SourceRepositoryCid, row.SourceBranch, row.TargetRepositoryUri, row.TargetRepositoryCid, row.TargetBranch, row.HeadSha, row.Title, row.Body, row.State, row.StatusUri.String, row.StatusCid.String, row.MergedCommitSha.String, row.VisibleReviewCount, row.RecordCreatedAt.Time, row.RecordUpdatedAt.Time, row.IndexedAt.Time), nil
 }
 
-func (store *PostgresStore) ListPullRequestReviews(ctx context.Context, uri, viewerDID string, limit int) ([]pullrequest.ProjectedReview, error) {
-	rows, err := store.queries.ListSearchPullRequestReviews(ctx, dbgen.ListSearchPullRequestReviewsParams{PullRequestUri: uri, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit)})
+func (store *PostgresStore) ListPullRequestReviews(ctx context.Context, uri, viewerDID string, limit int, cursor *Cursor) ([]pullrequest.ProjectedReview, error) {
+	params := dbgen.ListSearchPullRequestReviewsParams{PullRequestUri: uri, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit)}
+	applyCollectionCursor(&params.CursorUri, &params.CursorCreatedAt, cursor)
+	rows, err := store.queries.ListSearchPullRequestReviews(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("list pull request reviews: %w", err)
 	}
@@ -124,6 +132,14 @@ func (store *PostgresStore) ListPullRequestReviews(ctx context.Context, uri, vie
 		result[index] = pullrequest.ProjectedReview{Review: pullrequest.Review{URI: row.Uri, CID: row.Cid.String, AuthorDID: row.AuthorDid, ReviewRecord: pullrequest.ReviewRecord{Subject: pullrequest.StrongRef{URI: row.PullRequestUri, CID: row.PullRequestCid}, Verdict: pullrequest.Verdict(row.Verdict), Body: row.Body, CreatedAt: row.RecordCreatedAt.Time, UpdatedAt: row.RecordUpdatedAt.Time}}, IndexedAt: row.IndexedAt.Time}
 	}
 	return result, nil
+}
+
+func applyCollectionCursor(uri *pgtype.Text, createdAt *pgtype.Timestamptz, cursor *Cursor) {
+	if cursor == nil {
+		return
+	}
+	*uri = optionalText(cursor.Identity)
+	*createdAt = pgtype.Timestamptz{Time: cursor.IndexedAt, Valid: true}
 }
 
 func projectedIssue(uri, cid, author, repositoryURI, repositoryCID, title, body, state, statusURI, statusCID string, comments int64, created, updated, indexed time.Time) issue.ProjectedIssue {
@@ -160,7 +176,7 @@ func (store *PostgresStore) SearchRepositories(ctx context.Context, query string
 			localID = &value
 		}
 		results[index] = RepositoryResult{Score: row.Score, Repository: federation.DiscoveryRepository{
-			URI: row.Uri, CID: row.Cid.String, LocalRepositoryID: localID, OwnerDID: row.OwnerDid, OwnerHandle: row.OwnerHandle.String,
+			URI: row.Uri, CID: row.Cid.String, LocalRepositoryID: localID, OwnerDID: row.OwnerDid, OwnerHandle: row.OwnerHandle.String, OrganizationSlug: row.OrganizationSlug.String,
 			Slug: row.Slug.String, Name: row.Name.String, Description: row.Description.String, DefaultBranch: row.DefaultBranch.String,
 			GitHTTPS: row.GitHttps.String, GitSSH: row.GitSsh.String, Web: row.Web.String, CreatedAt: row.RecordCreatedAt.Time,
 			UpdatedAt: row.RecordUpdatedAt.Time, IndexedAt: row.IndexedAt.Time, StarCount: row.StarCount, IssueCount: row.IssueCount,

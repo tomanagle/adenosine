@@ -11,6 +11,195 @@ export const zCurrentIdentity = z.object({
     handle: z.string().nullish()
 });
 
+export const zOrganizationSlug = z.string().max(100).regex(/^[a-z0-9][a-z0-9-]*$/);
+
+export const zOrganization = z.object({
+    id: z.uuid(),
+    uri: z.string().nullish(),
+    cid: z.string().nullish(),
+    slug: zOrganizationSlug,
+    name: z.string(),
+    description: z.string().nullish(),
+    website: z.url().nullish(),
+    location: z.string().nullish(),
+    creator_did: z.string(),
+    base_permission: z.enum([
+        'none',
+        'read',
+        'write'
+    ]),
+    members_can_create_repositories: z.boolean(),
+    state: z.enum([
+        'creating',
+        'active',
+        'failed',
+        'deleting',
+        'deleted'
+    ]),
+    viewer_role: z.enum(['owner', 'member']).optional(),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true })
+});
+
+export const zCreateOrganizationRequest = z.object({
+    slug: zOrganizationSlug,
+    name: z.string().min(1).max(255),
+    description: z.string().max(2000).optional(),
+    website: z.url().max(2048).optional(),
+    location: z.string().max(255).optional(),
+    base_permission: z.enum([
+        'none',
+        'read',
+        'write'
+    ]).optional().default('read'),
+    members_can_create_repositories: z.boolean().optional().default(true)
+});
+
+export const zUpdateOrganizationRequest = z.object({
+    name: z.string().min(1).max(255),
+    description: z.string().max(2000).optional(),
+    website: z.url().max(2048).optional(),
+    location: z.string().max(255).optional(),
+    base_permission: z.enum([
+        'none',
+        'read',
+        'write'
+    ]),
+    members_can_create_repositories: z.boolean()
+});
+
+export const zOrganizationMember = z.object({
+    did: z.string(),
+    handle: z.string().nullish(),
+    role: z.enum(['owner', 'member']),
+    visibility: z.enum(['private', 'public']),
+    joined_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true })
+});
+
+export const zInviteOrganizationMemberRequest = z.object({
+    did: z.string().min(1),
+    role: z.enum(['owner', 'member']).optional().default('member')
+});
+
+export const zUpdateOrganizationMemberRequest = z.object({
+    role: z.enum(['owner', 'member']).optional(),
+    visibility: z.enum(['private', 'public']).optional()
+});
+
+export const zOrganizationInvitation = z.object({
+    id: z.uuid(),
+    organization_id: z.uuid(),
+    organization_slug: z.string().nullish(),
+    organization_name: z.string().nullish(),
+    invitee_did: z.string(),
+    role: z.enum(['owner', 'member']),
+    invited_by_did: z.string(),
+    created_at: z.iso.datetime({ offset: true }),
+    expires_at: z.iso.datetime({ offset: true })
+});
+
+export const zOrganizationAuditEvent = z.object({
+    id: z.uuid(),
+    actor_did: z.string(),
+    action: z.string(),
+    target_type: z.string(),
+    target_id: z.string(),
+    request_id: z.string().nullish(),
+    metadata: z.record(z.string(), z.unknown()),
+    created_at: z.iso.datetime({ offset: true })
+});
+
+export const zOrganizationTeam = z.object({
+    id: z.uuid(),
+    organization_id: z.uuid(),
+    parent_team_id: z.uuid().nullish(),
+    slug: z.string(),
+    name: z.string(),
+    description: z.string().nullish(),
+    visibility: z.enum(['visible', 'secret']),
+    viewer_role: z.enum(['member', 'maintainer']).optional(),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true })
+});
+
+export const zCreateOrganizationTeamRequest = z.object({
+    slug: z.string().max(100).regex(/^[a-z0-9][a-z0-9-]*$/),
+    name: z.string().min(1).max(255),
+    description: z.string().max(2000).optional(),
+    visibility: z.enum(['visible', 'secret']).optional().default('visible'),
+    parent_team_id: z.uuid().nullish()
+});
+
+export const zUpdateOrganizationTeamRequest = z.object({
+    name: z.string().min(1).max(255),
+    description: z.string().max(2000).optional(),
+    visibility: z.enum(['visible', 'secret']),
+    parent_team_id: z.uuid().nullable()
+});
+
+export const zOrganizationTeamMember = z.object({
+    did: z.string(),
+    handle: z.string().nullish(),
+    role: z.enum(['member', 'maintainer']),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true })
+});
+
+export const zPutOrganizationTeamMemberRequest = z.object({
+    role: z.enum(['member', 'maintainer']).optional().default('member')
+});
+
+export const zOrganizationTeamRepository = z.object({
+    repository_id: z.uuid(),
+    repository_slug: z.string(),
+    role: z.enum([
+        'read',
+        'triage',
+        'write',
+        'maintain',
+        'admin'
+    ]),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true })
+});
+
+export const zPutOrganizationTeamRepositoryRequest = z.object({
+    role: z.enum([
+        'read',
+        'triage',
+        'write',
+        'maintain',
+        'admin'
+    ])
+});
+
+export const zOrganizationRepositoryCollaborator = z.object({
+    repository_id: z.uuid(),
+    repository_slug: z.string().nullish(),
+    did: z.string(),
+    handle: z.string().nullish(),
+    role: z.enum([
+        'read',
+        'triage',
+        'write',
+        'maintain',
+        'admin'
+    ]),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true })
+});
+
+export const zPutOrganizationRepositoryCollaboratorRequest = z.object({
+    role: z.enum([
+        'read',
+        'triage',
+        'write',
+        'maintain',
+        'admin'
+    ])
+});
+
 export const zStartAtProtoLoginRequest = z.object({
     identifier: z.string().min(1).max(2048)
 });
@@ -49,10 +238,6 @@ export const zPasskey = z.object({
     name: z.string(),
     created_at: z.iso.datetime({ offset: true }),
     last_used_at: z.iso.datetime({ offset: true }).nullish()
-});
-
-export const zPasskeyList = z.object({
-    data: z.array(zPasskey)
 });
 
 export const zDeveloperProfile = z.object({
@@ -122,12 +307,15 @@ export const zCreateRepositoryRequest = z.object({
     display_name: z.string().max(255).optional(),
     description: z.string().max(2000).optional(),
     visibility: z.enum(['public', 'private']).optional().default('public'),
-    default_branch: z.string().min(1).max(255).optional().default('main')
+    default_branch: z.string().min(1).max(255).optional().default('main'),
+    organization: zOrganizationSlug.optional()
 });
 
 export const zRepositoryOwner = z.object({
     did: z.string(),
-    handle: z.string().nullish()
+    handle: z.string().nullish(),
+    kind: z.enum(['account', 'organization']).optional(),
+    organization_slug: zOrganizationSlug.optional()
 });
 
 /**
@@ -159,6 +347,7 @@ export const zRepository = z.object({
     default_branch: z.string(),
     owner: zRepositoryOwner,
     hosting: zRepositoryHosting,
+    viewer_can_admin: z.boolean().optional(),
     star_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     issue_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     open_issue_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
@@ -374,11 +563,6 @@ export const zStarEnvelope = z.object({
     created_at: z.iso.datetime({ offset: true })
 });
 
-export const zStarList = z.object({
-    star_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
-    data: z.array(zStar).max(100)
-});
-
 export const zStarMutation = z.object({
     star: zStarEnvelope,
     projected: z.literal(false)
@@ -424,12 +608,6 @@ export const zIssueStatusEnvelope = z.object({
     state: z.enum(['open', 'closed']),
     created_at: z.iso.datetime({ offset: true }),
     updated_at: z.iso.datetime({ offset: true })
-});
-
-export const zIssueList = z.object({
-    issue_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
-    open_issue_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
-    data: z.array(zIssue).max(100)
 });
 
 export const zCreateIssueRequest = z.object({
@@ -497,12 +675,6 @@ export const zPullRequestEnvelope = z.object({
     updated_at: z.iso.datetime({ offset: true })
 });
 
-export const zPullRequestList = z.object({
-    pull_request_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
-    open_pull_request_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
-    data: z.array(zPullRequest).max(100)
-});
-
 export const zCreatePullRequestRequest = z.object({
     source_repository_uri: z.string().min(1),
     target_repository_uri: z.string().min(1),
@@ -549,10 +721,6 @@ export const zPullRequestReviewEnvelope = z.object({
     body: z.string(),
     created_at: z.iso.datetime({ offset: true }),
     updated_at: z.iso.datetime({ offset: true })
-});
-
-export const zPullRequestReviewList = z.object({
-    data: z.array(zPullRequestReview).max(100)
 });
 
 export const zCreatePullRequestReviewRequest = z.object({
@@ -639,11 +807,6 @@ export const zCommentEnvelope = z.object({
     updated_at: z.iso.datetime({ offset: true })
 });
 
-export const zCommentList = z.object({
-    comment_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
-    data: z.array(zComment).max(100)
-});
-
 export const zCreateCommentRequest = z.object({
     issue_uri: z.string().min(1),
     parent_uri: z.string().nullish(),
@@ -674,20 +837,12 @@ export const zBranch = z.object({
     default: z.boolean()
 });
 
-export const zBranchList = z.object({
-    data: z.array(zBranch)
-});
-
 export const zTag = z.object({
     name: z.string(),
     sha: z.string(),
     object_type: z.string(),
     target_sha: z.string(),
     target_type: z.string()
-});
-
-export const zTagList = z.object({
-    data: z.array(zTag)
 });
 
 export const zTreeEntry = z.object({
@@ -727,10 +882,6 @@ export const zCommitSummary = z.object({
 export const zCommit = zCommitSummary.and(z.object({
     message: z.string()
 }));
-
-export const zCommitList = z.object({
-    data: z.array(zCommitSummary)
-});
 
 export const zDiffFile = z.object({
     status: z.string(),
@@ -772,30 +923,128 @@ export const zPage = z.object({
     next_cursor: z.string().nullable()
 });
 
+export const zOrganizationList = z.object({
+    items: z.array(zOrganization),
+    page: zPage
+});
+
+export const zOrganizationMemberList = z.object({
+    items: z.array(zOrganizationMember),
+    page: zPage
+});
+
+export const zOrganizationInvitationList = z.object({
+    items: z.array(zOrganizationInvitation),
+    page: zPage
+});
+
+export const zOrganizationAuditEventList = z.object({
+    items: z.array(zOrganizationAuditEvent),
+    page: zPage
+});
+
+export const zOrganizationTeamList = z.object({
+    items: z.array(zOrganizationTeam),
+    page: zPage
+});
+
+export const zOrganizationTeamMemberList = z.object({
+    items: z.array(zOrganizationTeamMember),
+    page: zPage
+});
+
+export const zOrganizationTeamRepositoryList = z.object({
+    items: z.array(zOrganizationTeamRepository),
+    page: zPage
+});
+
+export const zOrganizationRepositoryCollaboratorList = z.object({
+    items: z.array(zOrganizationRepositoryCollaborator),
+    page: zPage
+});
+
+export const zPasskeyList = z.object({
+    items: z.array(zPasskey),
+    page: zPage
+});
+
 export const zAccessTokenList = z.object({
-    data: z.array(zAccessToken),
+    items: z.array(zAccessToken),
     page: zPage
 });
 
 export const zSshKeyList = z.object({
-    data: z.array(zSshKey),
+    items: z.array(zSshKey),
+    page: zPage
+});
+
+export const zRepositoryList = z.object({
+    items: z.array(zRepository),
     page: zPage
 });
 
 export const zNetworkRepositoryList = z.object({
-    data: z.array(zRepository),
+    items: z.array(zRepository),
     page: zPage
 });
 
 export const zRepositorySearchPage = z.object({
-    data: z.array(zRepository),
+    items: z.array(zRepository),
     page: zPage
 });
 
 export const zProfileSearchPage = z.object({
-    data: z.array(zDeveloperProfile),
+    items: z.array(zDeveloperProfile),
     page: zPage
 });
+
+export const zStarList = z.object({
+    star_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    items: z.array(zStar).max(100),
+    page: zPage
+});
+
+export const zIssueList = z.object({
+    issue_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    open_issue_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    items: z.array(zIssue).max(100),
+    page: zPage
+});
+
+export const zPullRequestList = z.object({
+    pull_request_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    open_pull_request_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    items: z.array(zPullRequest).max(100),
+    page: zPage
+});
+
+export const zPullRequestReviewList = z.object({
+    items: z.array(zPullRequestReview).max(100),
+    page: zPage
+});
+
+export const zCommentList = z.object({
+    comment_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    items: z.array(zComment).max(100),
+    page: zPage
+});
+
+export const zBranchList = z.object({
+    items: z.array(zBranch),
+    page: zPage
+});
+
+export const zTagList = z.object({
+    items: z.array(zTag),
+    page: zPage
+});
+
+export const zCommitList = z.object({
+    items: z.array(zCommitSummary),
+    page: zPage
+});
+
+export const zOrganizationSlug2 = zOrganizationSlug;
 
 export const zRepositoryUri = z.string().min(1);
 
@@ -961,6 +1210,11 @@ export const zVerifyPasskeyLoginHeaders = z.object({
  */
 export const zVerifyPasskeyLoginResponse = z.void();
 
+export const zListPasskeysQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
 /**
  * Active passkey metadata
  */
@@ -995,6 +1249,325 @@ export const zUpdateDeveloperProfileBody = zUpdateDeveloperProfileRequest;
  */
 export const zUpdateDeveloperProfileResponse = zDeveloperProfile;
 
+export const zListOrganizationsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Organization memberships
+ */
+export const zListOrganizationsResponse = zOrganizationList;
+
+export const zCreateOrganizationBody = zCreateOrganizationRequest;
+
+/**
+ * Organization created and published
+ */
+export const zCreateOrganizationResponse = zOrganization;
+
+export const zListOrganizationInvitationsForCurrentUserQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Pending invitations
+ */
+export const zListOrganizationInvitationsForCurrentUserResponse = zOrganizationInvitationList;
+
+export const zAcceptOrganizationInvitationPath = z.object({
+    invitation: z.uuid()
+});
+
+/**
+ * Membership activated
+ */
+export const zAcceptOrganizationInvitationResponse = zOrganizationMember;
+
+export const zGetOrganizationPath = z.object({
+    organization: zOrganizationSlug
+});
+
+/**
+ * Organization profile
+ */
+export const zGetOrganizationResponse = zOrganization;
+
+export const zUpdateOrganizationBody = zUpdateOrganizationRequest;
+
+export const zUpdateOrganizationPath = z.object({
+    organization: zOrganizationSlug
+});
+
+/**
+ * Organization updated and republished
+ */
+export const zUpdateOrganizationResponse = zOrganization;
+
+export const zListOrganizationInvitationsPath = z.object({
+    organization: zOrganizationSlug
+});
+
+export const zListOrganizationInvitationsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Active organization invitations
+ */
+export const zListOrganizationInvitationsResponse = zOrganizationInvitationList;
+
+export const zRevokeOrganizationInvitationPath = z.object({
+    organization: zOrganizationSlug,
+    invitation: z.uuid()
+});
+
+/**
+ * Invitation revoked
+ */
+export const zRevokeOrganizationInvitationResponse = z.void();
+
+export const zListOrganizationAuditEventsPath = z.object({
+    organization: zOrganizationSlug
+});
+
+export const zListOrganizationAuditEventsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Newest-first organization audit events
+ */
+export const zListOrganizationAuditEventsResponse = zOrganizationAuditEventList;
+
+export const zListOrganizationMembersPath = z.object({
+    organization: zOrganizationSlug
+});
+
+export const zListOrganizationMembersQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Organization members
+ */
+export const zListOrganizationMembersResponse = zOrganizationMemberList;
+
+export const zInviteOrganizationMemberBody = zInviteOrganizationMemberRequest;
+
+export const zInviteOrganizationMemberPath = z.object({
+    organization: zOrganizationSlug
+});
+
+/**
+ * Invitation published
+ */
+export const zInviteOrganizationMemberResponse = zOrganizationInvitation;
+
+export const zRemoveOrganizationMemberPath = z.object({
+    organization: zOrganizationSlug,
+    member: z.string()
+});
+
+/**
+ * Membership removed
+ */
+export const zRemoveOrganizationMemberResponse = z.void();
+
+export const zUpdateOrganizationMemberBody = zUpdateOrganizationMemberRequest;
+
+export const zUpdateOrganizationMemberPath = z.object({
+    organization: zOrganizationSlug,
+    member: z.string()
+});
+
+/**
+ * Membership updated
+ */
+export const zUpdateOrganizationMemberResponse = zOrganizationMember;
+
+export const zListOrganizationTeamsPath = z.object({
+    organization: zOrganizationSlug
+});
+
+export const zListOrganizationTeamsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Visible organization teams
+ */
+export const zListOrganizationTeamsResponse = zOrganizationTeamList;
+
+export const zCreateOrganizationTeamBody = zCreateOrganizationTeamRequest;
+
+export const zCreateOrganizationTeamPath = z.object({
+    organization: zOrganizationSlug
+});
+
+/**
+ * Team created
+ */
+export const zCreateOrganizationTeamResponse = zOrganizationTeam;
+
+export const zDeleteOrganizationTeamPath = z.object({
+    organization: zOrganizationSlug,
+    team: z.uuid()
+});
+
+/**
+ * Team hierarchy deleted
+ */
+export const zDeleteOrganizationTeamResponse = z.void();
+
+export const zUpdateOrganizationTeamBody = zUpdateOrganizationTeamRequest;
+
+export const zUpdateOrganizationTeamPath = z.object({
+    organization: zOrganizationSlug,
+    team: z.uuid()
+});
+
+/**
+ * Team settings updated
+ */
+export const zUpdateOrganizationTeamResponse = zOrganizationTeam;
+
+export const zListOrganizationTeamMembersPath = z.object({
+    organization: zOrganizationSlug,
+    team: z.uuid()
+});
+
+export const zListOrganizationTeamMembersQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Team members
+ */
+export const zListOrganizationTeamMembersResponse = zOrganizationTeamMemberList;
+
+export const zRemoveOrganizationTeamMemberPath = z.object({
+    organization: zOrganizationSlug,
+    team: z.uuid(),
+    member: z.string()
+});
+
+/**
+ * Team membership removed
+ */
+export const zRemoveOrganizationTeamMemberResponse = z.void();
+
+export const zPutOrganizationTeamMemberBody = zPutOrganizationTeamMemberRequest;
+
+export const zPutOrganizationTeamMemberPath = z.object({
+    organization: zOrganizationSlug,
+    team: z.uuid(),
+    member: z.string()
+});
+
+/**
+ * Team membership saved
+ */
+export const zPutOrganizationTeamMemberResponse = zOrganizationTeamMember;
+
+export const zListOrganizationRepositoriesPath = z.object({
+    organization: zOrganizationSlug
+});
+
+export const zListOrganizationRepositoriesQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Organization repositories
+ */
+export const zListOrganizationRepositoriesResponse = zRepositoryList;
+
+export const zListOrganizationRepositoryCollaboratorsPath = z.object({
+    organization: zOrganizationSlug,
+    repository: z.uuid()
+});
+
+export const zListOrganizationRepositoryCollaboratorsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Repository collaborators
+ */
+export const zListOrganizationRepositoryCollaboratorsResponse = zOrganizationRepositoryCollaboratorList;
+
+export const zRemoveOrganizationRepositoryCollaboratorPath = z.object({
+    organization: zOrganizationSlug,
+    repository: z.uuid(),
+    collaborator: z.string()
+});
+
+/**
+ * Collaborator assignment removed
+ */
+export const zRemoveOrganizationRepositoryCollaboratorResponse = z.void();
+
+export const zPutOrganizationRepositoryCollaboratorBody = zPutOrganizationRepositoryCollaboratorRequest;
+
+export const zPutOrganizationRepositoryCollaboratorPath = z.object({
+    organization: zOrganizationSlug,
+    repository: z.uuid(),
+    collaborator: z.string()
+});
+
+/**
+ * Collaborator assignment saved
+ */
+export const zPutOrganizationRepositoryCollaboratorResponse = zOrganizationRepositoryCollaborator;
+
+export const zListOrganizationTeamRepositoriesPath = z.object({
+    organization: zOrganizationSlug,
+    team: z.uuid()
+});
+
+export const zListOrganizationTeamRepositoriesQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Team repository assignments
+ */
+export const zListOrganizationTeamRepositoriesResponse = zOrganizationTeamRepositoryList;
+
+export const zRemoveOrganizationTeamRepositoryPath = z.object({
+    organization: zOrganizationSlug,
+    team: z.uuid(),
+    repository: z.uuid()
+});
+
+/**
+ * Team repository role removed
+ */
+export const zRemoveOrganizationTeamRepositoryResponse = z.void();
+
+export const zPutOrganizationTeamRepositoryBody = zPutOrganizationTeamRepositoryRequest;
+
+export const zPutOrganizationTeamRepositoryPath = z.object({
+    organization: zOrganizationSlug,
+    team: z.uuid(),
+    repository: z.uuid()
+});
+
+/**
+ * Team repository role saved
+ */
+export const zPutOrganizationTeamRepositoryResponse = zOrganizationTeamRepository;
+
 export const zCreateRepositoryBody = zCreateRepositoryRequest;
 
 export const zCreateRepositoryHeaders = z.object({
@@ -1015,7 +1588,9 @@ export const zDeleteStarQuery = z.object({
 });
 
 export const zGetStarsQuery = z.object({
-    repository_uri: z.string().min(1)
+    repository_uri: z.string().min(1),
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
 });
 
 /**
@@ -1037,7 +1612,9 @@ export const zPutStarQuery = z.object({
 export const zPutStarResponse = zStarMutation;
 
 export const zGetIssuesQuery = z.object({
-    repository_uri: z.string().min(1)
+    repository_uri: z.string().min(1),
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
 });
 
 /**
@@ -1086,7 +1663,9 @@ export const zDeleteIssueCommentQuery = z.object({
 });
 
 export const zGetIssueCommentsQuery = z.object({
-    issue_uri: z.string().min(1)
+    issue_uri: z.string().min(1),
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
 });
 
 /**
@@ -1106,7 +1685,9 @@ export const zCreateIssueCommentHeaders = z.object({
 export const zCreateIssueCommentResponse = zCommentMutation;
 
 export const zListPullRequestsQuery = z.object({
-    repository_uri: z.string().min(1)
+    repository_uri: z.string().min(1),
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
 });
 
 /**
@@ -1144,7 +1725,9 @@ export const zGetPullRequestDiffQuery = z.object({
 export const zGetPullRequestDiffResponse = zPullRequestDiff;
 
 export const zListPullRequestReviewsQuery = z.object({
-    pull_request_uri: z.string().min(1)
+    pull_request_uri: z.string().min(1),
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
 });
 
 /**
@@ -1240,7 +1823,7 @@ export const zPutHiddenRecordResponse = z.void();
 
 export const zListNetworkRepositoriesQuery = z.object({
     limit: z.int().gte(1).lte(100).optional().default(30),
-    cursor: z.string().max(4096).optional()
+    cursor: z.string().optional()
 });
 
 /**
@@ -1560,6 +2143,11 @@ export const zListRepositoryBranchesPath = z.object({
     repo: zRepositorySlug
 });
 
+export const zListRepositoryBranchesQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
 /**
  * Repository branches
  */
@@ -1568,6 +2156,11 @@ export const zListRepositoryBranchesResponse = zBranchList;
 export const zListRepositoryTagsPath = z.object({
     owner: z.string().min(1),
     repo: zRepositorySlug
+});
+
+export const zListRepositoryTagsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
 });
 
 /**
@@ -1608,7 +2201,8 @@ export const zListRepositoryCommitsPath = z.object({
 
 export const zListRepositoryCommitsQuery = z.object({
     ref: z.string().min(1).max(1024).optional(),
-    limit: z.int().gte(1).lte(100).optional().default(30)
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
 });
 
 /**
@@ -1657,6 +2251,11 @@ export const zGetRepositoryMergeBaseQuery = z.object({
  */
 export const zGetRepositoryMergeBaseResponse = zMergeBase;
 
+export const zListAccessTokensQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
 /**
  * Active personal access tokens
  */
@@ -1677,6 +2276,11 @@ export const zRevokeAccessTokenPath = z.object({
  * Personal access token revoked
  */
 export const zRevokeAccessTokenResponse = z.void();
+
+export const zListSshKeysQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
 
 /**
  * Active SSH public keys

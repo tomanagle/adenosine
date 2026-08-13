@@ -58,14 +58,14 @@ export function CommitHistory({
           />
         </label>
       </div>
-      {commits.data.length === 0 ? (
+      {commits.items.length === 0 ? (
         <EmptyState
           title="No commits"
           description="This revision does not contain commit history."
         />
       ) : (
         <ol className="divide-y">
-          {commits.data.map((commit) => (
+          {commits.items.map((commit) => (
             <li className="p-4" key={commit.sha}>
               <div className="flex gap-3">
                 <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-muted">
@@ -99,7 +99,7 @@ export function CommitHistory({
           ))}
         </ol>
       )}
-      {commits.data.length === limit && limit < 100 ? (
+      {commits.items.length === limit && limit < 100 ? (
         <div className="border-t p-3 text-center">
           <Button
             onClick={() =>

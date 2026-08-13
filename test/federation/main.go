@@ -77,7 +77,7 @@ type repository struct {
 }
 
 type page struct {
-	Data []repository `json:"data"`
+	Data []repository `json:"items"`
 	Page struct {
 		NextCursor *string `json:"next_cursor"`
 	} `json:"page"`
@@ -92,13 +92,13 @@ type starPage struct {
 		RepositoryURI string    `json:"repository_uri"`
 		RepositoryCID string    `json:"repository_cid"`
 		CreatedAt     time.Time `json:"created_at"`
-	} `json:"data"`
+	} `json:"items"`
 }
 
 type issuePage struct {
 	IssueCount     int64       `json:"issue_count"`
 	OpenIssueCount int64       `json:"open_issue_count"`
-	Data           []issueView `json:"data"`
+	Data           []issueView `json:"items"`
 }
 
 type issueView struct {
@@ -133,7 +133,7 @@ type commentView struct {
 
 type commentPage struct {
 	CommentCount int64         `json:"comment_count"`
-	Data         []commentView `json:"data"`
+	Data         []commentView `json:"items"`
 }
 
 type authoritativeComment struct {

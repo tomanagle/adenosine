@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adenosine-dev/adenosine/internal/repository"
+
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/google/uuid"
 )
@@ -119,6 +121,7 @@ type StatusInput struct {
 type statusTarget struct {
 	Subject         StrongRef
 	Repository      StrongRef
+	RepositoryID    *repository.ID
 	StatusCreatedAt time.Time
 }
 
@@ -136,16 +139,21 @@ type Publisher interface {
 
 type clock interface{ Now() time.Time }
 
+type repositoryTriager interface {
+	CanTriageRepository(context.Context, string, repository.ID) (bool, error)
+}
+
 // Service coordinates projected issue reads and asynchronous authoritative writes.
 type Service struct {
 	store     projectionStore
 	publisher Publisher
 	clock     clock
+	triager   repositoryTriager
 }
 
 // NewService constructs the issue application service.
-func NewService(store projectionStore, publisher Publisher, clock clock) *Service {
-	return &Service{store: store, publisher: publisher, clock: clock}
+func NewService(store projectionStore, publisher Publisher, clock clock, triager repositoryTriager) *Service {
+	return &Service{store: store, publisher: publisher, clock: clock, triager: triager}
 }
 
 // Get returns at most 100 current active projected issues for a repository.
@@ -198,7 +206,16 @@ func (service *Service) PutStatus(ctx context.Context, authorDID string, input S
 		return Status{}, err
 	}
 	if authorDID != ownerDID {
-		return Status{}, &AuthorizationError{Err: errors.New("status author is not repository owner")}
+		if target.RepositoryID == nil || service.triager == nil {
+			return Status{}, &AuthorizationError{Err: errors.New("status actor lacks repository triage permission")}
+		}
+		allowed, authorizeErr := service.triager.CanTriageRepository(ctx, authorDID, *target.RepositoryID)
+		if authorizeErr != nil {
+			return Status{}, fmt.Errorf("authorize issue status: %w", authorizeErr)
+		}
+		if !allowed {
+			return Status{}, &AuthorizationError{Err: errors.New("status actor lacks repository triage permission")}
+		}
 	}
 	now := service.clock.Now().UTC()
 	createdAt := target.StatusCreatedAt
@@ -209,7 +226,7 @@ func (service *Service) PutStatus(ctx context.Context, authorDID string, input S
 	if err := record.Validate(); err != nil {
 		return Status{}, err
 	}
-	return service.publisher.PutIssueStatus(ctx, authorDID, record)
+	return service.publisher.PutIssueStatus(ctx, ownerDID, record)
 }
 
 func projectionError(operation string, err error) error {

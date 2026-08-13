@@ -8,6 +8,7 @@ import (
 	"net/netip"
 	"net/url"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -107,9 +108,15 @@ func TestBuildConfiguresLocalhostAndPublicMetadata(t *testing.T) {
 		callback string
 	}{
 		{
-			name:     "loopback",
-			baseURL:  "http://127.0.0.1:3000",
-			clientID: "http://localhost?redirect_uri=http%3A%2F%2F127.0.0.1%3A3000%2Foauth%2Fatproto%2Fcallback&scope=atproto",
+			name:    "loopback",
+			baseURL: "http://127.0.0.1:3000",
+			// A loopback client advertises its scopes inside the client ID.
+			clientID: "http://localhost?redirect_uri=http%3A%2F%2F127.0.0.1%3A3000%2Foauth%2Fatproto%2Fcallback" +
+				"&scope=atproto+repo%3Adev.adenosine.repo+repo%3Adev.adenosine.profile+repo%3Adev.adenosine.organization" +
+				"+repo%3Adev.adenosine.organizationGrant+repo%3Adev.adenosine.organizationMembership" +
+				"+repo%3Adev.adenosine.organizationRevocation+repo%3Adev.adenosine.issue" +
+				"+repo%3Adev.adenosine.issueComment+repo%3Adev.adenosine.issueStatus+repo%3Adev.adenosine.pullRequest" +
+				"+repo%3Adev.adenosine.pullRequestReview+repo%3Adev.adenosine.pullRequestStatus+repo%3Adev.adenosine.star",
 			callback: "http://127.0.0.1:3000/oauth/atproto/callback",
 		},
 		{
@@ -129,8 +136,11 @@ func TestBuildConfiguresLocalhostAndPublicMetadata(t *testing.T) {
 			if metadata.ClientID != testCase.clientID || len(metadata.RedirectURIs) != 1 || metadata.RedirectURIs[0] != testCase.callback {
 				t.Fatalf("metadata = %#v", metadata)
 			}
-			if metadata.Scope != "atproto" || strings.Contains(metadata.Scope, "transition") || !metadata.DPoPBoundAccessTokens {
+			if metadata.Scope != strings.Join(oauthScopes(), " ") || !metadata.DPoPBoundAccessTokens {
 				t.Fatalf("metadata scope/config = %#v", metadata)
+			}
+			if strings.Contains(metadata.Scope, "transition") {
+				t.Fatalf("metadata requests a transitional scope = %q", metadata.Scope)
 			}
 		})
 	}
@@ -430,6 +440,51 @@ func TestPublicHTTPClientRejectsUnsafeRedirects(t *testing.T) {
 			request := &http.Request{URL: requestURL}
 			if err := client.CheckRedirect(request, nil); !errors.Is(err, errorsUnsafeRedirect) {
 				t.Fatalf("redirect %q error = %v", testCase.rawURL, err)
+			}
+		})
+	}
+}
+
+// A PDS authorizes record writes per collection, so login must request a
+// granular scope for every collection this server publishes. Adding a
+// published record type without its scope breaks publication at runtime.
+func TestOAuthScopesRequestGranularCollectionWrites(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name string
+		want []string
+	}{
+		{
+			name: "base scope and every published collection",
+			want: []string{
+				"atproto",
+				"repo:dev.adenosine.repo",
+				"repo:dev.adenosine.profile",
+				"repo:dev.adenosine.organization",
+				"repo:dev.adenosine.organizationGrant",
+				"repo:dev.adenosine.organizationMembership",
+				"repo:dev.adenosine.organizationRevocation",
+				"repo:dev.adenosine.issue",
+				"repo:dev.adenosine.issueComment",
+				"repo:dev.adenosine.issueStatus",
+				"repo:dev.adenosine.pullRequest",
+				"repo:dev.adenosine.pullRequestReview",
+				"repo:dev.adenosine.pullRequestStatus",
+				"repo:dev.adenosine.star",
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			got := oauthScopes()
+			if !slices.Equal(got, testCase.want) {
+				t.Fatalf("requested scopes = %q, want %q", got, testCase.want)
+			}
+			for _, scope := range got {
+				if strings.Contains(scope, "transition") {
+					t.Fatalf("transitional scope requested = %q", scope)
+				}
 			}
 		})
 	}

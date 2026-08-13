@@ -73,6 +73,45 @@ func (e CreateAccessTokenRequestScopes) Valid() bool {
 	}
 }
 
+// Defines values for CreateOrganizationRequestBasePermission.
+const (
+	CreateOrganizationRequestBasePermissionNone  CreateOrganizationRequestBasePermission = "none"
+	CreateOrganizationRequestBasePermissionRead  CreateOrganizationRequestBasePermission = "read"
+	CreateOrganizationRequestBasePermissionWrite CreateOrganizationRequestBasePermission = "write"
+)
+
+// Valid indicates whether the value is a known member of the CreateOrganizationRequestBasePermission enum.
+func (e CreateOrganizationRequestBasePermission) Valid() bool {
+	switch e {
+	case CreateOrganizationRequestBasePermissionNone:
+		return true
+	case CreateOrganizationRequestBasePermissionRead:
+		return true
+	case CreateOrganizationRequestBasePermissionWrite:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateOrganizationTeamRequestVisibility.
+const (
+	CreateOrganizationTeamRequestVisibilitySecret  CreateOrganizationTeamRequestVisibility = "secret"
+	CreateOrganizationTeamRequestVisibilityVisible CreateOrganizationTeamRequestVisibility = "visible"
+)
+
+// Valid indicates whether the value is a known member of the CreateOrganizationTeamRequestVisibility enum.
+func (e CreateOrganizationTeamRequestVisibility) Valid() bool {
+	switch e {
+	case CreateOrganizationTeamRequestVisibilitySecret:
+		return true
+	case CreateOrganizationTeamRequestVisibilityVisible:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CreatePullRequestReviewRequestVerdict.
 const (
 	CreatePullRequestReviewRequestVerdictApprove        CreatePullRequestReviewRequestVerdict = "approve"
@@ -142,6 +181,24 @@ func (e HealthStatus) Valid() bool {
 	case Ok:
 		return true
 	case Unavailable:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InviteOrganizationMemberRequestRole.
+const (
+	InviteOrganizationMemberRequestRoleMember InviteOrganizationMemberRequestRole = "member"
+	InviteOrganizationMemberRequestRoleOwner  InviteOrganizationMemberRequestRole = "owner"
+)
+
+// Valid indicates whether the value is a known member of the InviteOrganizationMemberRequestRole enum.
+func (e InviteOrganizationMemberRequestRole) Valid() bool {
+	switch e {
+	case InviteOrganizationMemberRequestRoleMember:
+		return true
+	case InviteOrganizationMemberRequestRoleOwner:
 		return true
 	default:
 		return false
@@ -226,6 +283,234 @@ func (e MergePullRequestRequestStrategy) Valid() bool {
 	case MergePullRequestRequestStrategyMergeCommit:
 		return true
 	case MergePullRequestRequestStrategySquash:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationBasePermission.
+const (
+	OrganizationBasePermissionNone  OrganizationBasePermission = "none"
+	OrganizationBasePermissionRead  OrganizationBasePermission = "read"
+	OrganizationBasePermissionWrite OrganizationBasePermission = "write"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationBasePermission enum.
+func (e OrganizationBasePermission) Valid() bool {
+	switch e {
+	case OrganizationBasePermissionNone:
+		return true
+	case OrganizationBasePermissionRead:
+		return true
+	case OrganizationBasePermissionWrite:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationState.
+const (
+	OrganizationStateActive   OrganizationState = "active"
+	OrganizationStateCreating OrganizationState = "creating"
+	OrganizationStateDeleted  OrganizationState = "deleted"
+	OrganizationStateDeleting OrganizationState = "deleting"
+	OrganizationStateFailed   OrganizationState = "failed"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationState enum.
+func (e OrganizationState) Valid() bool {
+	switch e {
+	case OrganizationStateActive:
+		return true
+	case OrganizationStateCreating:
+		return true
+	case OrganizationStateDeleted:
+		return true
+	case OrganizationStateDeleting:
+		return true
+	case OrganizationStateFailed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationViewerRole.
+const (
+	OrganizationViewerRoleMember OrganizationViewerRole = "member"
+	OrganizationViewerRoleOwner  OrganizationViewerRole = "owner"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationViewerRole enum.
+func (e OrganizationViewerRole) Valid() bool {
+	switch e {
+	case OrganizationViewerRoleMember:
+		return true
+	case OrganizationViewerRoleOwner:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationInvitationRole.
+const (
+	OrganizationInvitationRoleMember OrganizationInvitationRole = "member"
+	OrganizationInvitationRoleOwner  OrganizationInvitationRole = "owner"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationInvitationRole enum.
+func (e OrganizationInvitationRole) Valid() bool {
+	switch e {
+	case OrganizationInvitationRoleMember:
+		return true
+	case OrganizationInvitationRoleOwner:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationMemberRole.
+const (
+	OrganizationMemberRoleMember OrganizationMemberRole = "member"
+	OrganizationMemberRoleOwner  OrganizationMemberRole = "owner"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationMemberRole enum.
+func (e OrganizationMemberRole) Valid() bool {
+	switch e {
+	case OrganizationMemberRoleMember:
+		return true
+	case OrganizationMemberRoleOwner:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationMemberVisibility.
+const (
+	OrganizationMemberVisibilityPrivate OrganizationMemberVisibility = "private"
+	OrganizationMemberVisibilityPublic  OrganizationMemberVisibility = "public"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationMemberVisibility enum.
+func (e OrganizationMemberVisibility) Valid() bool {
+	switch e {
+	case OrganizationMemberVisibilityPrivate:
+		return true
+	case OrganizationMemberVisibilityPublic:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationRepositoryCollaboratorRole.
+const (
+	OrganizationRepositoryCollaboratorRoleAdmin    OrganizationRepositoryCollaboratorRole = "admin"
+	OrganizationRepositoryCollaboratorRoleMaintain OrganizationRepositoryCollaboratorRole = "maintain"
+	OrganizationRepositoryCollaboratorRoleRead     OrganizationRepositoryCollaboratorRole = "read"
+	OrganizationRepositoryCollaboratorRoleTriage   OrganizationRepositoryCollaboratorRole = "triage"
+	OrganizationRepositoryCollaboratorRoleWrite    OrganizationRepositoryCollaboratorRole = "write"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationRepositoryCollaboratorRole enum.
+func (e OrganizationRepositoryCollaboratorRole) Valid() bool {
+	switch e {
+	case OrganizationRepositoryCollaboratorRoleAdmin:
+		return true
+	case OrganizationRepositoryCollaboratorRoleMaintain:
+		return true
+	case OrganizationRepositoryCollaboratorRoleRead:
+		return true
+	case OrganizationRepositoryCollaboratorRoleTriage:
+		return true
+	case OrganizationRepositoryCollaboratorRoleWrite:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationTeamViewerRole.
+const (
+	OrganizationTeamViewerRoleMaintainer OrganizationTeamViewerRole = "maintainer"
+	OrganizationTeamViewerRoleMember     OrganizationTeamViewerRole = "member"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationTeamViewerRole enum.
+func (e OrganizationTeamViewerRole) Valid() bool {
+	switch e {
+	case OrganizationTeamViewerRoleMaintainer:
+		return true
+	case OrganizationTeamViewerRoleMember:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationTeamVisibility.
+const (
+	OrganizationTeamVisibilitySecret  OrganizationTeamVisibility = "secret"
+	OrganizationTeamVisibilityVisible OrganizationTeamVisibility = "visible"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationTeamVisibility enum.
+func (e OrganizationTeamVisibility) Valid() bool {
+	switch e {
+	case OrganizationTeamVisibilitySecret:
+		return true
+	case OrganizationTeamVisibilityVisible:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationTeamMemberRole.
+const (
+	OrganizationTeamMemberRoleMaintainer OrganizationTeamMemberRole = "maintainer"
+	OrganizationTeamMemberRoleMember     OrganizationTeamMemberRole = "member"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationTeamMemberRole enum.
+func (e OrganizationTeamMemberRole) Valid() bool {
+	switch e {
+	case OrganizationTeamMemberRoleMaintainer:
+		return true
+	case OrganizationTeamMemberRoleMember:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for OrganizationTeamRepositoryRole.
+const (
+	OrganizationTeamRepositoryRoleAdmin    OrganizationTeamRepositoryRole = "admin"
+	OrganizationTeamRepositoryRoleMaintain OrganizationTeamRepositoryRole = "maintain"
+	OrganizationTeamRepositoryRoleRead     OrganizationTeamRepositoryRole = "read"
+	OrganizationTeamRepositoryRoleTriage   OrganizationTeamRepositoryRole = "triage"
+	OrganizationTeamRepositoryRoleWrite    OrganizationTeamRepositoryRole = "write"
+)
+
+// Valid indicates whether the value is a known member of the OrganizationTeamRepositoryRole enum.
+func (e OrganizationTeamRepositoryRole) Valid() bool {
+	switch e {
+	case OrganizationTeamRepositoryRoleAdmin:
+		return true
+	case OrganizationTeamRepositoryRoleMaintain:
+		return true
+	case OrganizationTeamRepositoryRoleRead:
+		return true
+	case OrganizationTeamRepositoryRoleTriage:
+		return true
+	case OrganizationTeamRepositoryRoleWrite:
 		return true
 	default:
 		return false
@@ -397,6 +682,78 @@ func (e PutIssueStatusRequestState) Valid() bool {
 	}
 }
 
+// Defines values for PutOrganizationRepositoryCollaboratorRequestRole.
+const (
+	PutOrganizationRepositoryCollaboratorRequestRoleAdmin    PutOrganizationRepositoryCollaboratorRequestRole = "admin"
+	PutOrganizationRepositoryCollaboratorRequestRoleMaintain PutOrganizationRepositoryCollaboratorRequestRole = "maintain"
+	PutOrganizationRepositoryCollaboratorRequestRoleRead     PutOrganizationRepositoryCollaboratorRequestRole = "read"
+	PutOrganizationRepositoryCollaboratorRequestRoleTriage   PutOrganizationRepositoryCollaboratorRequestRole = "triage"
+	PutOrganizationRepositoryCollaboratorRequestRoleWrite    PutOrganizationRepositoryCollaboratorRequestRole = "write"
+)
+
+// Valid indicates whether the value is a known member of the PutOrganizationRepositoryCollaboratorRequestRole enum.
+func (e PutOrganizationRepositoryCollaboratorRequestRole) Valid() bool {
+	switch e {
+	case PutOrganizationRepositoryCollaboratorRequestRoleAdmin:
+		return true
+	case PutOrganizationRepositoryCollaboratorRequestRoleMaintain:
+		return true
+	case PutOrganizationRepositoryCollaboratorRequestRoleRead:
+		return true
+	case PutOrganizationRepositoryCollaboratorRequestRoleTriage:
+		return true
+	case PutOrganizationRepositoryCollaboratorRequestRoleWrite:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PutOrganizationTeamMemberRequestRole.
+const (
+	PutOrganizationTeamMemberRequestRoleMaintainer PutOrganizationTeamMemberRequestRole = "maintainer"
+	PutOrganizationTeamMemberRequestRoleMember     PutOrganizationTeamMemberRequestRole = "member"
+)
+
+// Valid indicates whether the value is a known member of the PutOrganizationTeamMemberRequestRole enum.
+func (e PutOrganizationTeamMemberRequestRole) Valid() bool {
+	switch e {
+	case PutOrganizationTeamMemberRequestRoleMaintainer:
+		return true
+	case PutOrganizationTeamMemberRequestRoleMember:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PutOrganizationTeamRepositoryRequestRole.
+const (
+	PutOrganizationTeamRepositoryRequestRoleAdmin    PutOrganizationTeamRepositoryRequestRole = "admin"
+	PutOrganizationTeamRepositoryRequestRoleMaintain PutOrganizationTeamRepositoryRequestRole = "maintain"
+	PutOrganizationTeamRepositoryRequestRoleRead     PutOrganizationTeamRepositoryRequestRole = "read"
+	PutOrganizationTeamRepositoryRequestRoleTriage   PutOrganizationTeamRepositoryRequestRole = "triage"
+	PutOrganizationTeamRepositoryRequestRoleWrite    PutOrganizationTeamRepositoryRequestRole = "write"
+)
+
+// Valid indicates whether the value is a known member of the PutOrganizationTeamRepositoryRequestRole enum.
+func (e PutOrganizationTeamRepositoryRequestRole) Valid() bool {
+	switch e {
+	case PutOrganizationTeamRepositoryRequestRoleAdmin:
+		return true
+	case PutOrganizationTeamRepositoryRequestRoleMaintain:
+		return true
+	case PutOrganizationTeamRepositoryRequestRoleRead:
+		return true
+	case PutOrganizationTeamRepositoryRequestRoleTriage:
+		return true
+	case PutOrganizationTeamRepositoryRequestRoleWrite:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PutPullRequestStatusRequestState.
 const (
 	PutPullRequestStatusRequestStateClosed PutPullRequestStatusRequestState = "closed"
@@ -417,25 +774,25 @@ func (e PutPullRequestStatusRequestState) Valid() bool {
 
 // Defines values for RepositoryState.
 const (
-	Active   RepositoryState = "active"
-	Creating RepositoryState = "creating"
-	Deleted  RepositoryState = "deleted"
-	Deleting RepositoryState = "deleting"
-	Failed   RepositoryState = "failed"
+	RepositoryStateActive   RepositoryState = "active"
+	RepositoryStateCreating RepositoryState = "creating"
+	RepositoryStateDeleted  RepositoryState = "deleted"
+	RepositoryStateDeleting RepositoryState = "deleting"
+	RepositoryStateFailed   RepositoryState = "failed"
 )
 
 // Valid indicates whether the value is a known member of the RepositoryState enum.
 func (e RepositoryState) Valid() bool {
 	switch e {
-	case Active:
+	case RepositoryStateActive:
 		return true
-	case Creating:
+	case RepositoryStateCreating:
 		return true
-	case Deleted:
+	case RepositoryStateDeleted:
 		return true
-	case Deleting:
+	case RepositoryStateDeleting:
 		return true
-	case Failed:
+	case RepositoryStateFailed:
 		return true
 	default:
 		return false
@@ -472,6 +829,24 @@ func (e RepositoryHostingSourceBrowsing) Valid() bool {
 	case CanonicalHost:
 		return true
 	case Local:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RepositoryOwnerKind.
+const (
+	RepositoryOwnerKindAccount      RepositoryOwnerKind = "account"
+	RepositoryOwnerKindOrganization RepositoryOwnerKind = "organization"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryOwnerKind enum.
+func (e RepositoryOwnerKind) Valid() bool {
+	switch e {
+	case RepositoryOwnerKindAccount:
+		return true
+	case RepositoryOwnerKindOrganization:
 		return true
 	default:
 		return false
@@ -568,6 +943,81 @@ func (e TreeEntryType) Valid() bool {
 	case TreeEntryTypeCommit:
 		return true
 	case TreeEntryTypeTree:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdateOrganizationMemberRequestRole.
+const (
+	UpdateOrganizationMemberRequestRoleMember UpdateOrganizationMemberRequestRole = "member"
+	UpdateOrganizationMemberRequestRoleOwner  UpdateOrganizationMemberRequestRole = "owner"
+)
+
+// Valid indicates whether the value is a known member of the UpdateOrganizationMemberRequestRole enum.
+func (e UpdateOrganizationMemberRequestRole) Valid() bool {
+	switch e {
+	case UpdateOrganizationMemberRequestRoleMember:
+		return true
+	case UpdateOrganizationMemberRequestRoleOwner:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdateOrganizationMemberRequestVisibility.
+const (
+	UpdateOrganizationMemberRequestVisibilityPrivate UpdateOrganizationMemberRequestVisibility = "private"
+	UpdateOrganizationMemberRequestVisibilityPublic  UpdateOrganizationMemberRequestVisibility = "public"
+)
+
+// Valid indicates whether the value is a known member of the UpdateOrganizationMemberRequestVisibility enum.
+func (e UpdateOrganizationMemberRequestVisibility) Valid() bool {
+	switch e {
+	case UpdateOrganizationMemberRequestVisibilityPrivate:
+		return true
+	case UpdateOrganizationMemberRequestVisibilityPublic:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdateOrganizationRequestBasePermission.
+const (
+	None  UpdateOrganizationRequestBasePermission = "none"
+	Read  UpdateOrganizationRequestBasePermission = "read"
+	Write UpdateOrganizationRequestBasePermission = "write"
+)
+
+// Valid indicates whether the value is a known member of the UpdateOrganizationRequestBasePermission enum.
+func (e UpdateOrganizationRequestBasePermission) Valid() bool {
+	switch e {
+	case None:
+		return true
+	case Read:
+		return true
+	case Write:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdateOrganizationTeamRequestVisibility.
+const (
+	Secret  UpdateOrganizationTeamRequestVisibility = "secret"
+	Visible UpdateOrganizationTeamRequestVisibility = "visible"
+)
+
+// Valid indicates whether the value is a known member of the UpdateOrganizationTeamRequestVisibility enum.
+func (e UpdateOrganizationTeamRequestVisibility) Valid() bool {
+	switch e {
+	case Secret:
+		return true
+	case Visible:
 		return true
 	default:
 		return false
@@ -1185,8 +1635,8 @@ type AccessTokenScopes string
 
 // AccessTokenList defines model for AccessTokenList.
 type AccessTokenList struct {
-	Data []AccessToken `json:"data"`
-	Page Page          `json:"page"`
+	Items []AccessToken `json:"items"`
+	Page  Page          `json:"page"`
 }
 
 // BeginPasskeyRegistrationRequest defines model for BeginPasskeyRegistrationRequest.
@@ -1203,7 +1653,8 @@ type Branch struct {
 
 // BranchList defines model for BranchList.
 type BranchList struct {
-	Data []Branch `json:"data"`
+	Items []Branch `json:"items"`
+	Page  Page     `json:"page"`
 }
 
 // Comment defines model for Comment.
@@ -1238,7 +1689,8 @@ type CommentEnvelope struct {
 // CommentList defines model for CommentList.
 type CommentList struct {
 	CommentCount int64     `json:"comment_count"`
-	Data         []Comment `json:"data"`
+	Items        []Comment `json:"items"`
+	Page         Page      `json:"page"`
 }
 
 // CommentMutation defines model for CommentMutation.
@@ -1269,7 +1721,8 @@ type CommitIdentity struct {
 
 // CommitList defines model for CommitList.
 type CommitList struct {
-	Data []CommitSummary `json:"data"`
+	Items []CommitSummary `json:"items"`
+	Page  Page            `json:"page"`
 }
 
 // CommitSummary defines model for CommitSummary.
@@ -1306,6 +1759,34 @@ type CreateIssueRequest struct {
 	Title         string `json:"title"`
 }
 
+// CreateOrganizationRequest defines model for CreateOrganizationRequest.
+type CreateOrganizationRequest struct {
+	BasePermission               *CreateOrganizationRequestBasePermission `json:"base_permission,omitempty"`
+	Description                  *string                                  `json:"description,omitempty"`
+	Location                     *string                                  `json:"location,omitempty"`
+	MembersCanCreateRepositories *bool                                    `json:"members_can_create_repositories,omitempty"`
+	Name                         string                                   `json:"name"`
+	Slug                         OrganizationSlug                         `json:"slug"`
+	Website                      *string                                  `json:"website,omitempty"`
+}
+
+// CreateOrganizationRequestBasePermission defines model for CreateOrganizationRequest.BasePermission.
+type CreateOrganizationRequestBasePermission string
+
+// CreateOrganizationTeamRequest defines model for CreateOrganizationTeamRequest.
+type CreateOrganizationTeamRequest struct {
+	Description *string `json:"description,omitempty"`
+	Name        string  `json:"name"`
+
+	// ParentTeamId Optional parent whose repository access the child inherits.
+	ParentTeamId *openapi_types.UUID                      `json:"parent_team_id,omitempty"`
+	Slug         string                                   `json:"slug"`
+	Visibility   *CreateOrganizationTeamRequestVisibility `json:"visibility,omitempty"`
+}
+
+// CreateOrganizationTeamRequestVisibility defines model for CreateOrganizationTeamRequest.Visibility.
+type CreateOrganizationTeamRequestVisibility string
+
 // CreatePullRequestRequest defines model for CreatePullRequestRequest.
 type CreatePullRequestRequest struct {
 	Body                string `json:"body"`
@@ -1332,6 +1813,7 @@ type CreateRepositoryRequest struct {
 	DefaultBranch *string                            `json:"default_branch,omitempty"`
 	Description   *string                            `json:"description,omitempty"`
 	DisplayName   *string                            `json:"display_name,omitempty"`
+	Organization  *OrganizationSlug                  `json:"organization,omitempty"`
 	Slug          RepositorySlug                     `json:"slug"`
 	Visibility    *CreateRepositoryRequestVisibility `json:"visibility,omitempty"`
 }
@@ -1445,6 +1927,15 @@ type Health struct {
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
 
+// InviteOrganizationMemberRequest defines model for InviteOrganizationMemberRequest.
+type InviteOrganizationMemberRequest struct {
+	Did  string                               `json:"did"`
+	Role *InviteOrganizationMemberRequestRole `json:"role,omitempty"`
+}
+
+// InviteOrganizationMemberRequestRole defines model for InviteOrganizationMemberRequest.Role.
+type InviteOrganizationMemberRequestRole string
+
 // Issue defines model for Issue.
 type Issue struct {
 	AuthorDid     string     `json:"author_did"`
@@ -1481,9 +1972,10 @@ type IssueEnvelope struct {
 
 // IssueList defines model for IssueList.
 type IssueList struct {
-	Data           []Issue `json:"data"`
 	IssueCount     int64   `json:"issue_count"`
+	Items          []Issue `json:"items"`
 	OpenIssueCount int64   `json:"open_issue_count"`
+	Page           Page    `json:"page"`
 }
 
 // IssueMutation defines model for IssueMutation.
@@ -1543,8 +2035,8 @@ type Moderation struct {
 
 // NetworkRepositoryList defines model for NetworkRepositoryList.
 type NetworkRepositoryList struct {
-	Data []Repository `json:"data"`
-	Page Page         `json:"page"`
+	Items []Repository `json:"items"`
+	Page  Page         `json:"page"`
 }
 
 // OAuthClientMetadata defines model for OAuthClientMetadata.
@@ -1557,6 +2049,187 @@ type OAuthClientMetadata struct {
 	ResponseTypes           []string `json:"response_types"`
 	Scope                   string   `json:"scope"`
 	TokenEndpointAuthMethod string   `json:"token_endpoint_auth_method"`
+}
+
+// Organization defines model for Organization.
+type Organization struct {
+	BasePermission               OrganizationBasePermission `json:"base_permission"`
+	Cid                          *string                    `json:"cid,omitempty"`
+	CreatedAt                    time.Time                  `json:"created_at"`
+	CreatorDid                   string                     `json:"creator_did"`
+	Description                  *string                    `json:"description,omitempty"`
+	Id                           openapi_types.UUID         `json:"id"`
+	Location                     *string                    `json:"location,omitempty"`
+	MembersCanCreateRepositories bool                       `json:"members_can_create_repositories"`
+	Name                         string                     `json:"name"`
+	Slug                         OrganizationSlug           `json:"slug"`
+	State                        OrganizationState          `json:"state"`
+	UpdatedAt                    time.Time                  `json:"updated_at"`
+	Uri                          *string                    `json:"uri,omitempty"`
+	ViewerRole                   *OrganizationViewerRole    `json:"viewer_role,omitempty"`
+	Website                      *string                    `json:"website,omitempty"`
+}
+
+// OrganizationBasePermission defines model for Organization.BasePermission.
+type OrganizationBasePermission string
+
+// OrganizationState defines model for Organization.State.
+type OrganizationState string
+
+// OrganizationViewerRole defines model for Organization.ViewerRole.
+type OrganizationViewerRole string
+
+// OrganizationAuditEvent defines model for OrganizationAuditEvent.
+type OrganizationAuditEvent struct {
+	Action     string                 `json:"action"`
+	ActorDid   string                 `json:"actor_did"`
+	CreatedAt  time.Time              `json:"created_at"`
+	Id         openapi_types.UUID     `json:"id"`
+	Metadata   map[string]interface{} `json:"metadata"`
+	RequestId  *string                `json:"request_id,omitempty"`
+	TargetId   string                 `json:"target_id"`
+	TargetType string                 `json:"target_type"`
+}
+
+// OrganizationAuditEventList defines model for OrganizationAuditEventList.
+type OrganizationAuditEventList struct {
+	Items []OrganizationAuditEvent `json:"items"`
+	Page  Page                     `json:"page"`
+}
+
+// OrganizationInvitation defines model for OrganizationInvitation.
+type OrganizationInvitation struct {
+	CreatedAt        time.Time                  `json:"created_at"`
+	ExpiresAt        time.Time                  `json:"expires_at"`
+	Id               openapi_types.UUID         `json:"id"`
+	InvitedByDid     string                     `json:"invited_by_did"`
+	InviteeDid       string                     `json:"invitee_did"`
+	OrganizationId   openapi_types.UUID         `json:"organization_id"`
+	OrganizationName *string                    `json:"organization_name,omitempty"`
+	OrganizationSlug *string                    `json:"organization_slug,omitempty"`
+	Role             OrganizationInvitationRole `json:"role"`
+}
+
+// OrganizationInvitationRole defines model for OrganizationInvitation.Role.
+type OrganizationInvitationRole string
+
+// OrganizationInvitationList defines model for OrganizationInvitationList.
+type OrganizationInvitationList struct {
+	Items []OrganizationInvitation `json:"items"`
+	Page  Page                     `json:"page"`
+}
+
+// OrganizationList defines model for OrganizationList.
+type OrganizationList struct {
+	Items []Organization `json:"items"`
+	Page  Page           `json:"page"`
+}
+
+// OrganizationMember defines model for OrganizationMember.
+type OrganizationMember struct {
+	Did        string                       `json:"did"`
+	Handle     *string                      `json:"handle,omitempty"`
+	JoinedAt   time.Time                    `json:"joined_at"`
+	Role       OrganizationMemberRole       `json:"role"`
+	UpdatedAt  time.Time                    `json:"updated_at"`
+	Visibility OrganizationMemberVisibility `json:"visibility"`
+}
+
+// OrganizationMemberRole defines model for OrganizationMember.Role.
+type OrganizationMemberRole string
+
+// OrganizationMemberVisibility defines model for OrganizationMember.Visibility.
+type OrganizationMemberVisibility string
+
+// OrganizationMemberList defines model for OrganizationMemberList.
+type OrganizationMemberList struct {
+	Items []OrganizationMember `json:"items"`
+	Page  Page                 `json:"page"`
+}
+
+// OrganizationRepositoryCollaborator defines model for OrganizationRepositoryCollaborator.
+type OrganizationRepositoryCollaborator struct {
+	CreatedAt      time.Time                              `json:"created_at"`
+	Did            string                                 `json:"did"`
+	Handle         *string                                `json:"handle,omitempty"`
+	RepositoryId   openapi_types.UUID                     `json:"repository_id"`
+	RepositorySlug *string                                `json:"repository_slug,omitempty"`
+	Role           OrganizationRepositoryCollaboratorRole `json:"role"`
+	UpdatedAt      time.Time                              `json:"updated_at"`
+}
+
+// OrganizationRepositoryCollaboratorRole defines model for OrganizationRepositoryCollaborator.Role.
+type OrganizationRepositoryCollaboratorRole string
+
+// OrganizationRepositoryCollaboratorList defines model for OrganizationRepositoryCollaboratorList.
+type OrganizationRepositoryCollaboratorList struct {
+	Items []OrganizationRepositoryCollaborator `json:"items"`
+	Page  Page                                 `json:"page"`
+}
+
+// OrganizationSlug defines model for OrganizationSlug.
+type OrganizationSlug = string
+
+// OrganizationTeam defines model for OrganizationTeam.
+type OrganizationTeam struct {
+	CreatedAt      time.Time                   `json:"created_at"`
+	Description    *string                     `json:"description,omitempty"`
+	Id             openapi_types.UUID          `json:"id"`
+	Name           string                      `json:"name"`
+	OrganizationId openapi_types.UUID          `json:"organization_id"`
+	ParentTeamId   *openapi_types.UUID         `json:"parent_team_id,omitempty"`
+	Slug           string                      `json:"slug"`
+	UpdatedAt      time.Time                   `json:"updated_at"`
+	ViewerRole     *OrganizationTeamViewerRole `json:"viewer_role,omitempty"`
+	Visibility     OrganizationTeamVisibility  `json:"visibility"`
+}
+
+// OrganizationTeamViewerRole defines model for OrganizationTeam.ViewerRole.
+type OrganizationTeamViewerRole string
+
+// OrganizationTeamVisibility defines model for OrganizationTeam.Visibility.
+type OrganizationTeamVisibility string
+
+// OrganizationTeamList defines model for OrganizationTeamList.
+type OrganizationTeamList struct {
+	Items []OrganizationTeam `json:"items"`
+	Page  Page               `json:"page"`
+}
+
+// OrganizationTeamMember defines model for OrganizationTeamMember.
+type OrganizationTeamMember struct {
+	CreatedAt time.Time                  `json:"created_at"`
+	Did       string                     `json:"did"`
+	Handle    *string                    `json:"handle,omitempty"`
+	Role      OrganizationTeamMemberRole `json:"role"`
+	UpdatedAt time.Time                  `json:"updated_at"`
+}
+
+// OrganizationTeamMemberRole defines model for OrganizationTeamMember.Role.
+type OrganizationTeamMemberRole string
+
+// OrganizationTeamMemberList defines model for OrganizationTeamMemberList.
+type OrganizationTeamMemberList struct {
+	Items []OrganizationTeamMember `json:"items"`
+	Page  Page                     `json:"page"`
+}
+
+// OrganizationTeamRepository defines model for OrganizationTeamRepository.
+type OrganizationTeamRepository struct {
+	CreatedAt      time.Time                      `json:"created_at"`
+	RepositoryId   openapi_types.UUID             `json:"repository_id"`
+	RepositorySlug string                         `json:"repository_slug"`
+	Role           OrganizationTeamRepositoryRole `json:"role"`
+	UpdatedAt      time.Time                      `json:"updated_at"`
+}
+
+// OrganizationTeamRepositoryRole defines model for OrganizationTeamRepository.Role.
+type OrganizationTeamRepositoryRole string
+
+// OrganizationTeamRepositoryList defines model for OrganizationTeamRepositoryList.
+type OrganizationTeamRepositoryList struct {
+	Items []OrganizationTeamRepository `json:"items"`
+	Page  Page                         `json:"page"`
 }
 
 // Page defines model for Page.
@@ -1580,13 +2253,14 @@ type PasskeyCeremonyOptions struct {
 
 // PasskeyList defines model for PasskeyList.
 type PasskeyList struct {
-	Data []Passkey `json:"data"`
+	Items []Passkey `json:"items"`
+	Page  Page      `json:"page"`
 }
 
 // ProfileSearchPage defines model for ProfileSearchPage.
 type ProfileSearchPage struct {
-	Data []DeveloperProfile `json:"data"`
-	Page Page               `json:"page"`
+	Items []DeveloperProfile `json:"items"`
+	Page  Page               `json:"page"`
 }
 
 // PullRequest defines model for PullRequest.
@@ -1643,8 +2317,9 @@ type PullRequestEnvelope struct {
 
 // PullRequestList defines model for PullRequestList.
 type PullRequestList struct {
-	Data                 []PullRequest `json:"data"`
+	Items                []PullRequest `json:"items"`
 	OpenPullRequestCount int64         `json:"open_pull_request_count"`
+	Page                 Page          `json:"page"`
 	PullRequestCount     int64         `json:"pull_request_count"`
 }
 
@@ -1705,7 +2380,8 @@ type PullRequestReviewEnvelopeVerdict string
 
 // PullRequestReviewList defines model for PullRequestReviewList.
 type PullRequestReviewList struct {
-	Data []PullRequestReview `json:"data"`
+	Items []PullRequestReview `json:"items"`
+	Page  Page                `json:"page"`
 }
 
 // PullRequestReviewMutation defines model for PullRequestReviewMutation.
@@ -1763,6 +2439,30 @@ type PutIssueStatusRequest struct {
 // PutIssueStatusRequestState defines model for PutIssueStatusRequest.State.
 type PutIssueStatusRequestState string
 
+// PutOrganizationRepositoryCollaboratorRequest defines model for PutOrganizationRepositoryCollaboratorRequest.
+type PutOrganizationRepositoryCollaboratorRequest struct {
+	Role PutOrganizationRepositoryCollaboratorRequestRole `json:"role"`
+}
+
+// PutOrganizationRepositoryCollaboratorRequestRole defines model for PutOrganizationRepositoryCollaboratorRequest.Role.
+type PutOrganizationRepositoryCollaboratorRequestRole string
+
+// PutOrganizationTeamMemberRequest defines model for PutOrganizationTeamMemberRequest.
+type PutOrganizationTeamMemberRequest struct {
+	Role *PutOrganizationTeamMemberRequestRole `json:"role,omitempty"`
+}
+
+// PutOrganizationTeamMemberRequestRole defines model for PutOrganizationTeamMemberRequest.Role.
+type PutOrganizationTeamMemberRequestRole string
+
+// PutOrganizationTeamRepositoryRequest defines model for PutOrganizationTeamRepositoryRequest.
+type PutOrganizationTeamRepositoryRequest struct {
+	Role PutOrganizationTeamRepositoryRequestRole `json:"role"`
+}
+
+// PutOrganizationTeamRepositoryRequestRole defines model for PutOrganizationTeamRepositoryRequest.Role.
+type PutOrganizationTeamRepositoryRequestRole string
+
 // PutPullRequestStatusRequest defines model for PutPullRequestStatusRequest.
 type PutPullRequestStatusRequest struct {
 	PullRequestUri string                           `json:"pull_request_uri"`
@@ -1782,19 +2482,22 @@ type Repository struct {
 	DisplayName   *string   `json:"display_name,omitempty"`
 
 	// Hosting Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.
-	Hosting              RepositoryHosting    `json:"hosting"`
-	Id                   *openapi_types.UUID  `json:"id,omitempty"`
-	IssueCount           int64                `json:"issue_count"`
-	OpenIssueCount       int64                `json:"open_issue_count"`
-	OpenPullRequestCount int64                `json:"open_pull_request_count"`
-	Owner                RepositoryOwner      `json:"owner"`
-	PullRequestCount     int64                `json:"pull_request_count"`
-	Slug                 RepositorySlug       `json:"slug"`
-	StarCount            int64                `json:"star_count"`
-	State                RepositoryState      `json:"state"`
-	UpdatedAt            time.Time            `json:"updated_at"`
-	Uri                  *string              `json:"uri,omitempty"`
-	Visibility           RepositoryVisibility `json:"visibility"`
+	Hosting              RepositoryHosting   `json:"hosting"`
+	Id                   *openapi_types.UUID `json:"id,omitempty"`
+	IssueCount           int64               `json:"issue_count"`
+	OpenIssueCount       int64               `json:"open_issue_count"`
+	OpenPullRequestCount int64               `json:"open_pull_request_count"`
+	Owner                RepositoryOwner     `json:"owner"`
+	PullRequestCount     int64               `json:"pull_request_count"`
+	Slug                 RepositorySlug      `json:"slug"`
+	StarCount            int64               `json:"star_count"`
+	State                RepositoryState     `json:"state"`
+	UpdatedAt            time.Time           `json:"updated_at"`
+	Uri                  *string             `json:"uri,omitempty"`
+
+	// ViewerCanAdmin Whether the current viewer has the repository admin role and may manage direct collaborators.
+	ViewerCanAdmin *bool                `json:"viewer_can_admin,omitempty"`
+	Visibility     RepositoryVisibility `json:"visibility"`
 }
 
 // RepositoryState defines model for Repository.State.
@@ -1815,16 +2518,27 @@ type RepositoryHosting struct {
 // RepositoryHostingSourceBrowsing defines model for RepositoryHosting.SourceBrowsing.
 type RepositoryHostingSourceBrowsing string
 
+// RepositoryList defines model for RepositoryList.
+type RepositoryList struct {
+	Items []Repository `json:"items"`
+	Page  Page         `json:"page"`
+}
+
 // RepositoryOwner defines model for RepositoryOwner.
 type RepositoryOwner struct {
-	Did    string  `json:"did"`
-	Handle *string `json:"handle,omitempty"`
+	Did              string               `json:"did"`
+	Handle           *string              `json:"handle,omitempty"`
+	Kind             *RepositoryOwnerKind `json:"kind,omitempty"`
+	OrganizationSlug *OrganizationSlug    `json:"organization_slug,omitempty"`
 }
+
+// RepositoryOwnerKind defines model for RepositoryOwner.Kind.
+type RepositoryOwnerKind string
 
 // RepositorySearchPage defines model for RepositorySearchPage.
 type RepositorySearchPage struct {
-	Data []Repository `json:"data"`
-	Page Page         `json:"page"`
+	Items []Repository `json:"items"`
+	Page  Page         `json:"page"`
 }
 
 // RepositorySlug defines model for RepositorySlug.
@@ -1843,8 +2557,8 @@ type SSHKey struct {
 
 // SSHKeyList defines model for SSHKeyList.
 type SSHKeyList struct {
-	Data []SSHKey `json:"data"`
-	Page Page     `json:"page"`
+	Items []SSHKey `json:"items"`
+	Page  Page     `json:"page"`
 }
 
 // Star defines model for Star.
@@ -1870,7 +2584,8 @@ type StarEnvelope struct {
 
 // StarList defines model for StarList.
 type StarList struct {
-	Data      []Star `json:"data"`
+	Items     []Star `json:"items"`
+	Page      Page   `json:"page"`
 	StarCount int64  `json:"star_count"`
 }
 
@@ -2046,7 +2761,8 @@ type Tag struct {
 
 // TagList defines model for TagList.
 type TagList struct {
-	Data []Tag `json:"data"`
+	Items []Tag `json:"items"`
+	Page  Page  `json:"page"`
 }
 
 // Tree defines model for Tree.
@@ -2078,6 +2794,44 @@ type UpdateDeveloperProfileRequest struct {
 	Website     *string `json:"website,omitempty"`
 }
 
+// UpdateOrganizationMemberRequest defines model for UpdateOrganizationMemberRequest.
+type UpdateOrganizationMemberRequest struct {
+	Role       *UpdateOrganizationMemberRequestRole       `json:"role,omitempty"`
+	Visibility *UpdateOrganizationMemberRequestVisibility `json:"visibility,omitempty"`
+}
+
+// UpdateOrganizationMemberRequestRole defines model for UpdateOrganizationMemberRequest.Role.
+type UpdateOrganizationMemberRequestRole string
+
+// UpdateOrganizationMemberRequestVisibility defines model for UpdateOrganizationMemberRequest.Visibility.
+type UpdateOrganizationMemberRequestVisibility string
+
+// UpdateOrganizationRequest defines model for UpdateOrganizationRequest.
+type UpdateOrganizationRequest struct {
+	BasePermission               UpdateOrganizationRequestBasePermission `json:"base_permission"`
+	Description                  *string                                 `json:"description,omitempty"`
+	Location                     *string                                 `json:"location,omitempty"`
+	MembersCanCreateRepositories bool                                    `json:"members_can_create_repositories"`
+	Name                         string                                  `json:"name"`
+	Website                      *string                                 `json:"website,omitempty"`
+}
+
+// UpdateOrganizationRequestBasePermission defines model for UpdateOrganizationRequest.BasePermission.
+type UpdateOrganizationRequestBasePermission string
+
+// UpdateOrganizationTeamRequest defines model for UpdateOrganizationTeamRequest.
+type UpdateOrganizationTeamRequest struct {
+	Description *string `json:"description,omitempty"`
+	Name        string  `json:"name"`
+
+	// ParentTeamId Parent team, or null to make the team top-level.
+	ParentTeamId *openapi_types.UUID                     `json:"parent_team_id"`
+	Visibility   UpdateOrganizationTeamRequestVisibility `json:"visibility"`
+}
+
+// UpdateOrganizationTeamRequestVisibility defines model for UpdateOrganizationTeamRequest.Visibility.
+type UpdateOrganizationTeamRequestVisibility string
+
 // VerifyPasskeyCeremonyRequest defines model for VerifyPasskeyCeremonyRequest.
 type VerifyPasskeyCeremonyRequest struct {
 	CeremonyToken string                 `json:"ceremony_token"`
@@ -2089,6 +2843,9 @@ type BlockedDID = string
 
 // CommentURI defines model for CommentURI.
 type CommentURI = string
+
+// Cursor defines model for Cursor.
+type Cursor = string
 
 // ElectricCacheBuster defines model for ElectricCacheBuster.
 type ElectricCacheBuster = string
@@ -2125,6 +2882,9 @@ type IdempotencyKey = string
 
 // IssueURI defines model for IssueURI.
 type IssueURI = string
+
+// Limit defines model for Limit.
+type Limit = int
 
 // MutationOrigin defines model for MutationOrigin.
 type MutationOrigin = string
@@ -2188,6 +2948,8 @@ type sessionCookieContextKey string
 // GetIssuesParams defines parameters for GetIssues.
 type GetIssuesParams struct {
 	RepositoryUri RepositoryURI `form:"repository_uri" json:"repository_uri"`
+	Limit         *Limit        `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor        *Cursor       `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // CreateIssueParams defines parameters for CreateIssue.
@@ -2213,6 +2975,8 @@ type DeleteIssueCommentParams struct {
 // GetIssueCommentsParams defines parameters for GetIssueComments.
 type GetIssueCommentsParams struct {
 	IssueUri IssueURI `form:"issue_uri" json:"issue_uri"`
+	Limit    *Limit   `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor   *Cursor  `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // CreateIssueCommentParams defines parameters for CreateIssueComment.
@@ -2257,8 +3021,74 @@ type PutHiddenRecordParams struct {
 
 // ListNetworkRepositoriesParams defines parameters for ListNetworkRepositories.
 type ListNetworkRepositoriesParams struct {
-	Limit  *int    `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListOrganizationInvitationsForCurrentUserParams defines parameters for ListOrganizationInvitationsForCurrentUser.
+type ListOrganizationInvitationsForCurrentUserParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListOrganizationsParams defines parameters for ListOrganizations.
+type ListOrganizationsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListOrganizationAuditEventsParams defines parameters for ListOrganizationAuditEvents.
+type ListOrganizationAuditEventsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListOrganizationInvitationsParams defines parameters for ListOrganizationInvitations.
+type ListOrganizationInvitationsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListOrganizationMembersParams defines parameters for ListOrganizationMembers.
+type ListOrganizationMembersParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListOrganizationRepositoriesParams defines parameters for ListOrganizationRepositories.
+type ListOrganizationRepositoriesParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListOrganizationRepositoryCollaboratorsParams defines parameters for ListOrganizationRepositoryCollaborators.
+type ListOrganizationRepositoryCollaboratorsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListOrganizationTeamsParams defines parameters for ListOrganizationTeams.
+type ListOrganizationTeamsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListOrganizationTeamMembersParams defines parameters for ListOrganizationTeamMembers.
+type ListOrganizationTeamMembersParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListOrganizationTeamRepositoriesParams defines parameters for ListOrganizationTeamRepositories.
+type ListOrganizationTeamRepositoriesParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListPasskeysParams defines parameters for ListPasskeys.
+type ListPasskeysParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // BeginPasskeyLoginParams defines parameters for BeginPasskeyLogin.
@@ -2294,6 +3124,8 @@ type DeletePasskeyParams struct {
 // ListPullRequestsParams defines parameters for ListPullRequests.
 type ListPullRequestsParams struct {
 	RepositoryUri RepositoryURI `form:"repository_uri" json:"repository_uri"`
+	Limit         *Limit        `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor        *Cursor       `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // CreatePullRequestParams defines parameters for CreatePullRequest.
@@ -2321,6 +3153,8 @@ type MergePullRequestParams struct {
 // ListPullRequestReviewsParams defines parameters for ListPullRequestReviews.
 type ListPullRequestReviewsParams struct {
 	PullRequestUri PullRequestURI `form:"pull_request_uri" json:"pull_request_uri"`
+	Limit          *Limit         `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor         *Cursor        `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // CreatePullRequestReviewParams defines parameters for CreatePullRequestReview.
@@ -2340,10 +3174,17 @@ type CreateRepositoryParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// ListRepositoryBranchesParams defines parameters for ListRepositoryBranches.
+type ListRepositoryBranchesParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // ListRepositoryCommitsParams defines parameters for ListRepositoryCommits.
 type ListRepositoryCommitsParams struct {
-	Ref   *string `form:"ref,omitempty" json:"ref,omitempty"`
-	Limit *int    `form:"limit,omitempty" json:"limit,omitempty"`
+	Ref    *string `form:"ref,omitempty" json:"ref,omitempty"`
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // GetRepositoryDiffParams defines parameters for GetRepositoryDiff.
@@ -2356,6 +3197,12 @@ type GetRepositoryDiffParams struct {
 type GetRepositoryMergeBaseParams struct {
 	A string `form:"a" json:"a"`
 	B string `form:"b" json:"b"`
+}
+
+// ListRepositoryTagsParams defines parameters for ListRepositoryTags.
+type ListRepositoryTagsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // GetRepositoryTreeParams defines parameters for GetRepositoryTree.
@@ -2392,6 +3239,12 @@ type SearchRepositoriesParams struct {
 // SearchRepositoriesParamsSort defines parameters for SearchRepositories.
 type SearchRepositoriesParamsSort string
 
+// ListSSHKeysParams defines parameters for ListSSHKeys.
+type ListSSHKeysParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // DeleteStarParams defines parameters for DeleteStar.
 type DeleteStarParams struct {
 	RepositoryUri RepositoryURI `form:"repository_uri" json:"repository_uri"`
@@ -2403,6 +3256,8 @@ type DeleteStarParams struct {
 // GetStarsParams defines parameters for GetStars.
 type GetStarsParams struct {
 	RepositoryUri RepositoryURI `form:"repository_uri" json:"repository_uri"`
+	Limit         *Limit        `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor        *Cursor       `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // PutStarParams defines parameters for PutStar.
@@ -2840,6 +3695,12 @@ type PostSyncStarsParamsLog string
 // PostSyncStars200JSONResponseBody0 defines parameters for PostSyncStars.
 type PostSyncStars200JSONResponseBody0 = []ElectricShapeMessage
 
+// ListAccessTokensParams defines parameters for ListAccessTokens.
+type ListAccessTokensParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // CompleteATProtoLoginParams defines parameters for CompleteATProtoLogin.
 type CompleteATProtoLoginParams struct {
 	State            *string `form:"state,omitempty" json:"state,omitempty"`
@@ -2867,6 +3728,33 @@ type PutBlockedDIDJSONRequestBody = PutBlockedDIDRequest
 
 // PutHiddenRecordJSONRequestBody defines body for PutHiddenRecord for application/json ContentType.
 type PutHiddenRecordJSONRequestBody = PutHiddenRecordRequest
+
+// CreateOrganizationJSONRequestBody defines body for CreateOrganization for application/json ContentType.
+type CreateOrganizationJSONRequestBody = CreateOrganizationRequest
+
+// UpdateOrganizationJSONRequestBody defines body for UpdateOrganization for application/json ContentType.
+type UpdateOrganizationJSONRequestBody = UpdateOrganizationRequest
+
+// InviteOrganizationMemberJSONRequestBody defines body for InviteOrganizationMember for application/json ContentType.
+type InviteOrganizationMemberJSONRequestBody = InviteOrganizationMemberRequest
+
+// UpdateOrganizationMemberJSONRequestBody defines body for UpdateOrganizationMember for application/json ContentType.
+type UpdateOrganizationMemberJSONRequestBody = UpdateOrganizationMemberRequest
+
+// PutOrganizationRepositoryCollaboratorJSONRequestBody defines body for PutOrganizationRepositoryCollaborator for application/json ContentType.
+type PutOrganizationRepositoryCollaboratorJSONRequestBody = PutOrganizationRepositoryCollaboratorRequest
+
+// CreateOrganizationTeamJSONRequestBody defines body for CreateOrganizationTeam for application/json ContentType.
+type CreateOrganizationTeamJSONRequestBody = CreateOrganizationTeamRequest
+
+// UpdateOrganizationTeamJSONRequestBody defines body for UpdateOrganizationTeam for application/json ContentType.
+type UpdateOrganizationTeamJSONRequestBody = UpdateOrganizationTeamRequest
+
+// PutOrganizationTeamMemberJSONRequestBody defines body for PutOrganizationTeamMember for application/json ContentType.
+type PutOrganizationTeamMemberJSONRequestBody = PutOrganizationTeamMemberRequest
+
+// PutOrganizationTeamRepositoryJSONRequestBody defines body for PutOrganizationTeamRepository for application/json ContentType.
+type PutOrganizationTeamRepositoryJSONRequestBody = PutOrganizationTeamRepositoryRequest
 
 // VerifyPasskeyLoginJSONRequestBody defines body for VerifyPasskeyLogin for application/json ContentType.
 type VerifyPasskeyLoginJSONRequestBody = VerifyPasskeyCeremonyRequest
@@ -3034,9 +3922,90 @@ type ServerInterface interface {
 	// Discover public repositories indexed from the network
 	// (GET /api/v1/network/repositories)
 	ListNetworkRepositories(w http.ResponseWriter, r *http.Request, params ListNetworkRepositoriesParams)
+	// List active organization invitations for the authenticated user
+	// (GET /api/v1/organization-invitations)
+	ListOrganizationInvitationsForCurrentUser(w http.ResponseWriter, r *http.Request, params ListOrganizationInvitationsForCurrentUserParams)
+	// Accept an organization invitation
+	// (POST /api/v1/organization-invitations/{invitation}/accept)
+	AcceptOrganizationInvitation(w http.ResponseWriter, r *http.Request, invitation openapi_types.UUID)
+	// List organizations for the authenticated user
+	// (GET /api/v1/organizations)
+	ListOrganizations(w http.ResponseWriter, r *http.Request, params ListOrganizationsParams)
+	// Create an organization with the authenticated user as its first owner
+	// (POST /api/v1/organizations)
+	CreateOrganization(w http.ResponseWriter, r *http.Request)
+	// Get an organization profile
+	// (GET /api/v1/organizations/{organization})
+	GetOrganization(w http.ResponseWriter, r *http.Request, organization OrganizationSlug)
+	// Update organization profile and repository policy
+	// (PATCH /api/v1/organizations/{organization})
+	UpdateOrganization(w http.ResponseWriter, r *http.Request, organization OrganizationSlug)
+	// List organization security events for owners
+	// (GET /api/v1/organizations/{organization}/audit-log)
+	ListOrganizationAuditEvents(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, params ListOrganizationAuditEventsParams)
+	// List active invitations for organization owners
+	// (GET /api/v1/organizations/{organization}/invitations)
+	ListOrganizationInvitations(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, params ListOrganizationInvitationsParams)
+	// Revoke a pending organization invitation
+	// (DELETE /api/v1/organizations/{organization}/invitations/{invitation})
+	RevokeOrganizationInvitation(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, invitation openapi_types.UUID)
+	// List organization members visible to the requester
+	// (GET /api/v1/organizations/{organization}/members)
+	ListOrganizationMembers(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, params ListOrganizationMembersParams)
+	// Invite a user to an organization
+	// (POST /api/v1/organizations/{organization}/members)
+	InviteOrganizationMember(w http.ResponseWriter, r *http.Request, organization OrganizationSlug)
+	// Remove a member or leave the organization
+	// (DELETE /api/v1/organizations/{organization}/members/{member})
+	RemoveOrganizationMember(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, member string)
+	// Change a member role or the authenticated member's visibility
+	// (PATCH /api/v1/organizations/{organization}/members/{member})
+	UpdateOrganizationMember(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, member string)
+	// List repositories owned by an organization
+	// (GET /api/v1/organizations/{organization}/repositories)
+	ListOrganizationRepositories(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, params ListOrganizationRepositoriesParams)
+	// List direct and outside collaborators for an organization repository
+	// (GET /api/v1/organizations/{organization}/repositories/{repository}/collaborators)
+	ListOrganizationRepositoryCollaborators(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, repository openapi_types.UUID, params ListOrganizationRepositoryCollaboratorsParams)
+	// Remove a direct repository collaborator
+	// (DELETE /api/v1/organizations/{organization}/repositories/{repository}/collaborators/{collaborator})
+	RemoveOrganizationRepositoryCollaborator(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, repository openapi_types.UUID, collaborator string)
+	// Add or update a direct repository collaborator
+	// (PUT /api/v1/organizations/{organization}/repositories/{repository}/collaborators/{collaborator})
+	PutOrganizationRepositoryCollaborator(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, repository openapi_types.UUID, collaborator string)
+	// List teams visible to an organization member
+	// (GET /api/v1/organizations/{organization}/teams)
+	ListOrganizationTeams(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, params ListOrganizationTeamsParams)
+	// Create an organization team
+	// (POST /api/v1/organizations/{organization}/teams)
+	CreateOrganizationTeam(w http.ResponseWriter, r *http.Request, organization OrganizationSlug)
+	// Delete a team and its child-team hierarchy
+	// (DELETE /api/v1/organizations/{organization}/teams/{team})
+	DeleteOrganizationTeam(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, team openapi_types.UUID)
+	// Update team settings or hierarchy
+	// (PATCH /api/v1/organizations/{organization}/teams/{team})
+	UpdateOrganizationTeam(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, team openapi_types.UUID)
+	// List team members
+	// (GET /api/v1/organizations/{organization}/teams/{team}/members)
+	ListOrganizationTeamMembers(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, team openapi_types.UUID, params ListOrganizationTeamMembersParams)
+	// Remove a member from a team
+	// (DELETE /api/v1/organizations/{organization}/teams/{team}/members/{member})
+	RemoveOrganizationTeamMember(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, team openapi_types.UUID, member string)
+	// Add or update a team member
+	// (PUT /api/v1/organizations/{organization}/teams/{team}/members/{member})
+	PutOrganizationTeamMember(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, team openapi_types.UUID, member string)
+	// List repository roles assigned to a team
+	// (GET /api/v1/organizations/{organization}/teams/{team}/repositories)
+	ListOrganizationTeamRepositories(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, team openapi_types.UUID, params ListOrganizationTeamRepositoriesParams)
+	// Remove a team repository role
+	// (DELETE /api/v1/organizations/{organization}/teams/{team}/repositories/{repository})
+	RemoveOrganizationTeamRepository(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, team openapi_types.UUID, repository openapi_types.UUID)
+	// Assign a team role on an organization repository
+	// (PUT /api/v1/organizations/{organization}/teams/{team}/repositories/{repository})
+	PutOrganizationTeamRepository(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, team openapi_types.UUID, repository openapi_types.UUID)
 	// List passkey metadata for the current browser session
 	// (GET /api/v1/passkeys)
-	ListPasskeys(w http.ResponseWriter, r *http.Request)
+	ListPasskeys(w http.ResponseWriter, r *http.Request, params ListPasskeysParams)
 	// Begin anonymous discoverable passkey login
 	// (POST /api/v1/passkeys/login/options)
 	BeginPasskeyLogin(w http.ResponseWriter, r *http.Request, params BeginPasskeyLoginParams)
@@ -3093,7 +4062,7 @@ type ServerInterface interface {
 	GetRepositoryBlob(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha string)
 	// List repository branches
 	// (GET /api/v1/repositories/{owner}/{repo}/branches)
-	ListRepositoryBranches(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug)
+	ListRepositoryBranches(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryBranchesParams)
 	// List repository commit history
 	// (GET /api/v1/repositories/{owner}/{repo}/commits)
 	ListRepositoryCommits(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryCommitsParams)
@@ -3108,7 +4077,7 @@ type ServerInterface interface {
 	GetRepositoryMergeBase(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryMergeBaseParams)
 	// List repository tags
 	// (GET /api/v1/repositories/{owner}/{repo}/tags)
-	ListRepositoryTags(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug)
+	ListRepositoryTags(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryTagsParams)
 	// List one repository tree directory
 	// (GET /api/v1/repositories/{owner}/{repo}/tree)
 	GetRepositoryTree(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryTreeParams)
@@ -3120,7 +4089,7 @@ type ServerInterface interface {
 	SearchRepositories(w http.ResponseWriter, r *http.Request, params SearchRepositoriesParams)
 	// List active SSH public keys
 	// (GET /api/v1/ssh-keys)
-	ListSSHKeys(w http.ResponseWriter, r *http.Request)
+	ListSSHKeys(w http.ResponseWriter, r *http.Request, params ListSSHKeysParams)
 	// Register an SSH public key
 	// (POST /api/v1/ssh-keys)
 	CreateSSHKey(w http.ResponseWriter, r *http.Request)
@@ -3180,7 +4149,7 @@ type ServerInterface interface {
 	PostSyncStars(w http.ResponseWriter, r *http.Request, params PostSyncStarsParams)
 	// List active personal access tokens
 	// (GET /api/v1/tokens)
-	ListAccessTokens(w http.ResponseWriter, r *http.Request)
+	ListAccessTokens(w http.ResponseWriter, r *http.Request, params ListAccessTokensParams)
 	// Create a personal access token
 	// (POST /api/v1/tokens)
 	CreateAccessToken(w http.ResponseWriter, r *http.Request)
@@ -3268,6 +4237,32 @@ func (siw *ServerInterfaceWrapper) GetIssues(w http.ResponseWriter, r *http.Requ
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "repository_uri"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository_uri", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
 		}
 		return
 	}
@@ -3463,6 +4458,32 @@ func (siw *ServerInterfaceWrapper) GetIssueComments(w http.ResponseWriter, r *ht
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "issue_uri"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "issue_uri", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
 		}
 		return
 	}
@@ -3879,8 +4900,72 @@ func (siw *ServerInterfaceWrapper) ListNetworkRepositories(w http.ResponseWriter
 	handler.ServeHTTP(w, r)
 }
 
-// ListPasskeys operation middleware
-func (siw *ServerInterfaceWrapper) ListPasskeys(w http.ResponseWriter, r *http.Request) {
+// ListOrganizationInvitationsForCurrentUser operation middleware
+func (siw *ServerInterfaceWrapper) ListOrganizationInvitationsForCurrentUser(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrganizationInvitationsForCurrentUserParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrganizationInvitationsForCurrentUser(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AcceptOrganizationInvitation operation middleware
+func (siw *ServerInterfaceWrapper) AcceptOrganizationInvitation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "invitation" -------------
+	var invitation openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "invitation", r.PathValue("invitation"), &invitation, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "invitation", Err: err})
+		return
+	}
 
 	ctx := r.Context()
 
@@ -3889,7 +4974,1267 @@ func (siw *ServerInterfaceWrapper) ListPasskeys(w http.ResponseWriter, r *http.R
 	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListPasskeys(w, r)
+		siw.Handler.AcceptOrganizationInvitation(w, r, invitation)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrganizations operation middleware
+func (siw *ServerInterfaceWrapper) ListOrganizations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrganizationsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrganizations(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateOrganization operation middleware
+func (siw *ServerInterfaceWrapper) CreateOrganization(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateOrganization(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetOrganization operation middleware
+func (siw *ServerInterfaceWrapper) GetOrganization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetOrganization(w, r, organization)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateOrganization operation middleware
+func (siw *ServerInterfaceWrapper) UpdateOrganization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateOrganization(w, r, organization)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrganizationAuditEvents operation middleware
+func (siw *ServerInterfaceWrapper) ListOrganizationAuditEvents(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrganizationAuditEventsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrganizationAuditEvents(w, r, organization, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrganizationInvitations operation middleware
+func (siw *ServerInterfaceWrapper) ListOrganizationInvitations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrganizationInvitationsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrganizationInvitations(w, r, organization, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeOrganizationInvitation operation middleware
+func (siw *ServerInterfaceWrapper) RevokeOrganizationInvitation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "invitation" -------------
+	var invitation openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "invitation", r.PathValue("invitation"), &invitation, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "invitation", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeOrganizationInvitation(w, r, organization, invitation)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrganizationMembers operation middleware
+func (siw *ServerInterfaceWrapper) ListOrganizationMembers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrganizationMembersParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrganizationMembers(w, r, organization, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// InviteOrganizationMember operation middleware
+func (siw *ServerInterfaceWrapper) InviteOrganizationMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.InviteOrganizationMember(w, r, organization)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveOrganizationMember operation middleware
+func (siw *ServerInterfaceWrapper) RemoveOrganizationMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "member" -------------
+	var member string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "member", r.PathValue("member"), &member, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "member", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveOrganizationMember(w, r, organization, member)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateOrganizationMember operation middleware
+func (siw *ServerInterfaceWrapper) UpdateOrganizationMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "member" -------------
+	var member string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "member", r.PathValue("member"), &member, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "member", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateOrganizationMember(w, r, organization, member)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrganizationRepositories operation middleware
+func (siw *ServerInterfaceWrapper) ListOrganizationRepositories(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrganizationRepositoriesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrganizationRepositories(w, r, organization, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrganizationRepositoryCollaborators operation middleware
+func (siw *ServerInterfaceWrapper) ListOrganizationRepositoryCollaborators(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", r.PathValue("repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrganizationRepositoryCollaboratorsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrganizationRepositoryCollaborators(w, r, organization, repository, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveOrganizationRepositoryCollaborator operation middleware
+func (siw *ServerInterfaceWrapper) RemoveOrganizationRepositoryCollaborator(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", r.PathValue("repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "collaborator" -------------
+	var collaborator string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "collaborator", r.PathValue("collaborator"), &collaborator, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "collaborator", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveOrganizationRepositoryCollaborator(w, r, organization, repository, collaborator)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutOrganizationRepositoryCollaborator operation middleware
+func (siw *ServerInterfaceWrapper) PutOrganizationRepositoryCollaborator(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", r.PathValue("repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "collaborator" -------------
+	var collaborator string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "collaborator", r.PathValue("collaborator"), &collaborator, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "collaborator", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutOrganizationRepositoryCollaborator(w, r, organization, repository, collaborator)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrganizationTeams operation middleware
+func (siw *ServerInterfaceWrapper) ListOrganizationTeams(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrganizationTeamsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrganizationTeams(w, r, organization, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateOrganizationTeam operation middleware
+func (siw *ServerInterfaceWrapper) CreateOrganizationTeam(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateOrganizationTeam(w, r, organization)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteOrganizationTeam operation middleware
+func (siw *ServerInterfaceWrapper) DeleteOrganizationTeam(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "team" -------------
+	var team openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "team", r.PathValue("team"), &team, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "team", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteOrganizationTeam(w, r, organization, team)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateOrganizationTeam operation middleware
+func (siw *ServerInterfaceWrapper) UpdateOrganizationTeam(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "team" -------------
+	var team openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "team", r.PathValue("team"), &team, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "team", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateOrganizationTeam(w, r, organization, team)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrganizationTeamMembers operation middleware
+func (siw *ServerInterfaceWrapper) ListOrganizationTeamMembers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "team" -------------
+	var team openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "team", r.PathValue("team"), &team, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "team", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrganizationTeamMembersParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrganizationTeamMembers(w, r, organization, team, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveOrganizationTeamMember operation middleware
+func (siw *ServerInterfaceWrapper) RemoveOrganizationTeamMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "team" -------------
+	var team openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "team", r.PathValue("team"), &team, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "team", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "member" -------------
+	var member string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "member", r.PathValue("member"), &member, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "member", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveOrganizationTeamMember(w, r, organization, team, member)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutOrganizationTeamMember operation middleware
+func (siw *ServerInterfaceWrapper) PutOrganizationTeamMember(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "team" -------------
+	var team openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "team", r.PathValue("team"), &team, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "team", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "member" -------------
+	var member string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "member", r.PathValue("member"), &member, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "member", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutOrganizationTeamMember(w, r, organization, team, member)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListOrganizationTeamRepositories operation middleware
+func (siw *ServerInterfaceWrapper) ListOrganizationTeamRepositories(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "team" -------------
+	var team openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "team", r.PathValue("team"), &team, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "team", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListOrganizationTeamRepositoriesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListOrganizationTeamRepositories(w, r, organization, team, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveOrganizationTeamRepository operation middleware
+func (siw *ServerInterfaceWrapper) RemoveOrganizationTeamRepository(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "team" -------------
+	var team openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "team", r.PathValue("team"), &team, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "team", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", r.PathValue("repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveOrganizationTeamRepository(w, r, organization, team, repository)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutOrganizationTeamRepository operation middleware
+func (siw *ServerInterfaceWrapper) PutOrganizationTeamRepository(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "organization" -------------
+	var organization OrganizationSlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "organization", r.PathValue("organization"), &organization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organization", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "team" -------------
+	var team openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "team", r.PathValue("team"), &team, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "team", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repository" -------------
+	var repository openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repository", r.PathValue("repository"), &repository, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutOrganizationTeamRepository(w, r, organization, team, repository)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListPasskeys operation middleware
+func (siw *ServerInterfaceWrapper) ListPasskeys(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListPasskeysParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListPasskeys(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4211,6 +6556,32 @@ func (siw *ServerInterfaceWrapper) ListPullRequests(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListPullRequests(w, r, params)
 	}))
@@ -4418,6 +6789,32 @@ func (siw *ServerInterfaceWrapper) ListPullRequestReviews(w http.ResponseWriter,
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pull_request_uri"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pull_request_uri", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
 		}
 		return
 	}
@@ -4703,8 +7100,37 @@ func (siw *ServerInterfaceWrapper) ListRepositoryBranches(w http.ResponseWriter,
 
 	r = r.WithContext(ctx)
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryBranchesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListRepositoryBranches(w, r, owner, repo)
+		siw.Handler.ListRepositoryBranches(w, r, owner, repo, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4771,6 +7197,19 @@ func (siw *ServerInterfaceWrapper) ListRepositoryCommits(w http.ResponseWriter, 
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
 		}
 		return
 	}
@@ -5014,8 +7453,37 @@ func (siw *ServerInterfaceWrapper) ListRepositoryTags(w http.ResponseWriter, r *
 
 	r = r.WithContext(ctx)
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryTagsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListRepositoryTags(w, r, owner, repo)
+		siw.Handler.ListRepositoryTags(w, r, owner, repo, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5256,14 +7724,46 @@ func (siw *ServerInterfaceWrapper) SearchRepositories(w http.ResponseWriter, r *
 // ListSSHKeys operation middleware
 func (siw *ServerInterfaceWrapper) ListSSHKeys(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
 
 	r = r.WithContext(ctx)
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListSSHKeysParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListSSHKeys(w, r)
+		siw.Handler.ListSSHKeys(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -5409,6 +7909,32 @@ func (siw *ServerInterfaceWrapper) GetStars(w http.ResponseWriter, r *http.Reque
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "repository_uri"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository_uri", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
 		}
 		return
 	}
@@ -7132,14 +9658,46 @@ func (siw *ServerInterfaceWrapper) PostSyncStars(w http.ResponseWriter, r *http.
 // ListAccessTokens operation middleware
 func (siw *ServerInterfaceWrapper) ListAccessTokens(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
 
 	r = r.WithContext(ctx)
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAccessTokensParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListAccessTokens(w, r)
+		siw.Handler.ListAccessTokens(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -7477,6 +10035,33 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/moderation/hidden-records", wrapper.DeleteHiddenRecord)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/moderation/hidden-records", wrapper.PutHiddenRecord)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/network/repositories", wrapper.ListNetworkRepositories)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organization-invitations", wrapper.ListOrganizationInvitationsForCurrentUser)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/organization-invitations/{invitation}/accept", wrapper.AcceptOrganizationInvitation)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations", wrapper.ListOrganizations)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/organizations", wrapper.CreateOrganization)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations/{organization}", wrapper.GetOrganization)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/organizations/{organization}", wrapper.UpdateOrganization)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations/{organization}/audit-log", wrapper.ListOrganizationAuditEvents)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations/{organization}/invitations", wrapper.ListOrganizationInvitations)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/organizations/{organization}/invitations/{invitation}", wrapper.RevokeOrganizationInvitation)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations/{organization}/members", wrapper.ListOrganizationMembers)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/organizations/{organization}/members", wrapper.InviteOrganizationMember)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/organizations/{organization}/members/{member}", wrapper.RemoveOrganizationMember)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/organizations/{organization}/members/{member}", wrapper.UpdateOrganizationMember)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations/{organization}/repositories", wrapper.ListOrganizationRepositories)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations/{organization}/repositories/{repository}/collaborators", wrapper.ListOrganizationRepositoryCollaborators)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/organizations/{organization}/repositories/{repository}/collaborators/{collaborator}", wrapper.RemoveOrganizationRepositoryCollaborator)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/organizations/{organization}/repositories/{repository}/collaborators/{collaborator}", wrapper.PutOrganizationRepositoryCollaborator)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams", wrapper.ListOrganizationTeams)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams", wrapper.CreateOrganizationTeam)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams/{team}", wrapper.DeleteOrganizationTeam)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams/{team}", wrapper.UpdateOrganizationTeam)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams/{team}/members", wrapper.ListOrganizationTeamMembers)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams/{team}/members/{member}", wrapper.RemoveOrganizationTeamMember)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams/{team}/members/{member}", wrapper.PutOrganizationTeamMember)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams/{team}/repositories", wrapper.ListOrganizationTeamRepositories)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams/{team}/repositories/{repository}", wrapper.RemoveOrganizationTeamRepository)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams/{team}/repositories/{repository}", wrapper.PutOrganizationTeamRepository)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/passkeys", wrapper.ListPasskeys)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/passkeys/login/options", wrapper.BeginPasskeyLogin)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/passkeys/login/verify", wrapper.VerifyPasskeyLogin)

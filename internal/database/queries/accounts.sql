@@ -10,6 +10,11 @@ RETURNING *;
 -- name: GetAccount :one
 SELECT * FROM core.accounts WHERE did = $1;
 
+-- name: EnsureAccount :exec
+INSERT INTO core.accounts (did, first_seen_at, last_seen_at, created_at)
+VALUES (sqlc.arg(did), sqlc.arg(seen_at), sqlc.arg(seen_at), sqlc.arg(seen_at))
+ON CONFLICT (did) DO NOTHING;
+
 -- name: TouchAccountLogin :one
 UPDATE core.accounts
 SET last_seen_at = $2,

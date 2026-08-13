@@ -66,6 +66,9 @@ func (client *Client) Publish(ctx context.Context, publication repository.Public
 	if publication.Description != "" {
 		input.Record["description"] = publication.Description
 	}
+	if publication.Organization != nil {
+		input.Record["organization"] = map[string]any{"uri": publication.Organization.URI, "cid": publication.Organization.CID}
+	}
 	var output putRecordOutput
 	operationErr := client.apiFactory(host, session).Post(ctx, putRecordNSID, input, &output)
 	persistenceErr := client.sessionStore.SaveSession(ctx, *session.Data)

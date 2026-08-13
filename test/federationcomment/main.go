@@ -121,7 +121,7 @@ type commentPage struct {
 		ParentURI *string `json:"parent_uri"`
 		ParentCID *string `json:"parent_cid"`
 		Body      string  `json:"body"`
-	} `json:"data"`
+	} `json:"items"`
 }
 
 type rowSnapshot struct {
@@ -298,7 +298,7 @@ func deleteRoot(ctx context.Context) error {
 }
 
 func projectedIssue(ctx context.Context, db *database.DB) (issue.StrongRef, error) {
-	service := issue.NewService(issue.NewPostgresStore(db.Queries()), unavailableIssuePublisher{}, auth.SystemClock{})
+	service := issue.NewService(issue.NewPostgresStore(db.Queries()), unavailableIssuePublisher{}, auth.SystemClock{}, nil)
 	projection, err := service.Get(ctx, repositoryURI)
 	if err != nil {
 		return issue.StrongRef{}, fmt.Errorf("read B PostgreSQL issue projection: %w", err)

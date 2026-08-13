@@ -1,7 +1,7 @@
 -- name: SearchRepositories :many
 WITH candidates AS (
     SELECT repository.uri, repository.cid, repository.local_repository_id,
-           repository.owner_did, coalesce(profile.handle, identity.handle) AS owner_handle,
+           repository.owner_did, coalesce(profile.handle, identity.handle) AS owner_handle, organization.slug AS organization_slug,
            repository.slug, repository.name, repository.description, repository.default_branch,
            repository.git_https, repository.git_ssh, repository.web,
            repository.record_created_at, repository.record_updated_at, repository.indexed_at,
@@ -23,6 +23,7 @@ WITH candidates AS (
     FROM network.repositories AS repository
     LEFT JOIN network.profiles AS profile ON profile.did = repository.owner_did AND profile.deleted_at IS NULL
     LEFT JOIN network.identities AS identity ON identity.did = repository.owner_did AND identity.is_active
+    LEFT JOIN network.organizations AS organization ON organization.uri = repository.organization_uri AND organization.deleted_at IS NULL
     LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
     WHERE repository.deleted_at IS NULL
       AND repository.cid IS NOT NULL
@@ -61,7 +62,7 @@ SELECT repository.uri, repository.cid, repository.local_repository_id, repositor
        repository.slug, repository.name, repository.description, repository.default_branch,
        repository.git_https, repository.git_ssh, repository.web, repository.record_created_at,
        repository.record_updated_at, repository.indexed_at,
-       coalesce(profile.handle, identity.handle) AS owner_handle,
+       coalesce(profile.handle, identity.handle) AS owner_handle, organization.slug AS organization_slug,
        (SELECT count(*) FROM network.stars AS star WHERE star.repository_uri = repository.uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = star.author_did)
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = star.uri)) AS star_count,
@@ -83,11 +84,12 @@ SELECT repository.uri, repository.cid, repository.local_repository_id, repositor
 FROM network.repositories AS repository
 LEFT JOIN network.profiles AS profile ON profile.did = repository.owner_did AND profile.deleted_at IS NULL
 LEFT JOIN network.identities AS identity ON identity.did = repository.owner_did AND identity.is_active
+LEFT JOIN network.organizations AS organization ON organization.uri = repository.organization_uri AND organization.deleted_at IS NULL
 LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
 WHERE repository.deleted_at IS NULL
   AND repository.cid IS NOT NULL
   AND lower(repository.slug) = lower(sqlc.arg(repository_slug)::text)
-  AND (repository.owner_did = sqlc.arg(repository_owner)::text OR lower(coalesce(profile.handle, identity.handle, '')) = lower(sqlc.arg(repository_owner)::text))
+  AND (repository.owner_did = sqlc.arg(repository_owner)::text OR lower(coalesce(profile.handle, identity.handle, '')) = lower(sqlc.arg(repository_owner)::text) OR lower(coalesce(organization.slug, '')) = lower(sqlc.arg(repository_owner)::text))
   AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids AS block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = repository.owner_did)
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records AS hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = repository.uri)
@@ -134,6 +136,7 @@ FROM network.issues issue JOIN network.repositories repository ON repository.uri
 WHERE issue.repository_uri = sqlc.arg(repository_uri)::text AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did IN (repository.owner_did, issue.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri IN (repository.uri, issue.uri))
+  AND (sqlc.narg(cursor_uri)::text IS NULL OR (issue.record_created_at, issue.uri) < (sqlc.narg(cursor_created_at)::timestamptz, sqlc.narg(cursor_uri)::text))
 ORDER BY issue.record_created_at DESC, issue.uri DESC LIMIT sqlc.arg(result_limit);
 
 -- name: CountSearchIssues :one
@@ -149,6 +152,7 @@ FROM network.stars star JOIN network.repositories repository ON repository.uri =
 WHERE star.repository_uri = sqlc.arg(repository_uri)::text AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did IN (repository.owner_did, star.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri IN (repository.uri, star.uri))
+  AND (sqlc.narg(cursor_uri)::text IS NULL OR (star.record_created_at, star.uri) < (sqlc.narg(cursor_created_at)::timestamptz, sqlc.narg(cursor_uri)::text))
 ORDER BY star.record_created_at DESC, star.uri DESC LIMIT sqlc.arg(result_limit);
 
 -- name: CountSearchStars :one
@@ -166,6 +170,7 @@ FROM network.pull_requests pull JOIN network.repositories repository ON reposito
 WHERE pull.target_repository_uri = sqlc.arg(repository_uri)::text AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did IN (repository.owner_did, pull.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri IN (repository.uri, pull.uri))
+  AND (sqlc.narg(cursor_uri)::text IS NULL OR (pull.record_created_at, pull.uri) < (sqlc.narg(cursor_created_at)::timestamptz, sqlc.narg(cursor_uri)::text))
 ORDER BY pull.record_created_at DESC, pull.uri DESC LIMIT sqlc.arg(result_limit);
 
 -- name: CountSearchPullRequests :one
@@ -192,6 +197,7 @@ JOIN network.repositories repository ON repository.uri = pull.target_repository_
 WHERE pull.uri = sqlc.arg(pull_request_uri)::text AND review.deleted_at IS NULL AND review.cid IS NOT NULL AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did IN (repository.owner_did, pull.author_did, review.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri IN (repository.uri, pull.uri, review.uri))
+  AND (sqlc.narg(cursor_uri)::text IS NULL OR (review.record_created_at, review.uri) > (sqlc.narg(cursor_created_at)::timestamptz, sqlc.narg(cursor_uri)::text))
 ORDER BY review.record_created_at, review.uri LIMIT sqlc.arg(result_limit);
 
 -- name: SearchProfiles :many

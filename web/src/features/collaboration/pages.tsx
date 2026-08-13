@@ -63,7 +63,7 @@ export function IssuesPage({ params, identityDid }: PageProps) {
           ...issuesQueryOptions(repository.uri!),
           staleTime: 0,
         })
-        return projection.data.some(
+        return projection.items.some(
           (value) => value.uri === reference.uri && value.cid === reference.cid,
         )
       },
@@ -112,9 +112,9 @@ export function IssuesPage({ params, identityDid }: PageProps) {
           </div>
         </form>
       ) : null}
-      {data.data.length ? (
+      {data.items.length ? (
         <ul className="divide-y rounded-lg border bg-card">
-          {data.data.map((issue) => (
+          {data.items.map((issue) => (
             <li className="p-4" key={issue.uri}>
               <Link
                 className="font-medium hover:underline"
@@ -171,7 +171,7 @@ export function IssuePage({ params, issueUri, identityDid }: PageProps & { issue
           ...commentsQueryOptions(issueUri),
           staleTime: 0,
         })
-        return projection.data.some(
+        return projection.items.some(
           (value) => value.uri === reference.uri && value.cid === reference.cid,
         )
       },
@@ -225,7 +225,7 @@ export function IssuePage({ params, issueUri, identityDid }: PageProps & { issue
         <h3 className="font-serif text-2xl" id="comments-title">
           Comments
         </h3>
-        {comments.data.map((value) => (
+        {comments.items.map((value) => (
           <article
             className={
               boundedCommentDepth(value)
@@ -309,7 +309,7 @@ export function PullRequestsPage({ params, identityDid }: PageProps) {
           ...pullRequestsQueryOptions(repository.uri!),
           staleTime: 0,
         })
-        return projection.data.some(
+        return projection.items.some(
           (value) => value.uri === reference.uri && value.cid === reference.cid,
         )
       },
@@ -361,9 +361,9 @@ export function PullRequestsPage({ params, identityDid }: PageProps) {
           <PublicationNotice state={publication.state} />
         </details>
       ) : null}
-      {data.data.length ? (
+      {data.items.length ? (
         <ul className="divide-y rounded-lg border bg-card">
-          {data.data.map((pull) => (
+          {data.items.map((pull) => (
             <li className="p-4" key={pull.uri}>
               <Link
                 className="font-medium hover:underline"
@@ -422,7 +422,7 @@ export function PullRequestPage({
           ...reviewsQueryOptions(pullRequestUri),
           staleTime: 0,
         })
-        return projection.data.some(
+        return projection.items.some(
           (value) => value.uri === reference.uri && value.cid === reference.cid,
         )
       },
@@ -507,7 +507,7 @@ export function PullRequestPage({
       )}
       <section className="space-y-3">
         <h3 className="font-serif text-2xl">Reviews</h3>
-        {reviews.data.map((value) => (
+        {reviews.items.map((value) => (
           <article className="rounded-lg border bg-card" key={value.uri}>
             <header className="border-b px-5 py-3 text-xs">
               <Badge variant="outline">{value.verdict.replaceAll('_', ' ')}</Badge>{' '}
@@ -572,21 +572,21 @@ export function ActivityPage({ params }: PageProps) {
   const { data: pulls } = useSuspenseQuery(pullRequestsQueryOptions(repository.uri ?? ''))
   const { data: stars } = useSuspenseQuery(activityStarsQueryOptions(repository.uri ?? ''))
   const items = [
-    ...issues.data.map((value) => ({
+    ...issues.items.map((value) => ({
       key: value.uri,
       at: value.updated_at,
       icon: CircleDot,
       text: `Issue: ${value.title}`,
       did: value.author_did,
     })),
-    ...pulls.data.map((value) => ({
+    ...pulls.items.map((value) => ({
       key: value.uri,
       at: value.updated_at,
       icon: GitMerge,
       text: `Pull request: ${value.title}`,
       did: value.author_did,
     })),
-    ...stars.data.map((value) => ({
+    ...stars.items.map((value) => ({
       key: value.uri,
       at: value.created_at,
       icon: Star,

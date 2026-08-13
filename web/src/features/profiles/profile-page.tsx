@@ -10,7 +10,7 @@ export function ProfilePage({ did }: { did: string }) {
   const { data: profile } = useSuspenseQuery(profileQueryOptions(did))
   const website = safeWebsite(profile.website)
   return (
-    <main className="min-h-screen bg-muted/20 px-5 py-10 sm:px-8">
+    <main className="bg-muted/20 px-5 py-10 sm:px-8">
       <article className="mx-auto max-w-3xl overflow-hidden rounded-xl border bg-card">
         <div className="border-b p-6 sm:p-9">
           <Link

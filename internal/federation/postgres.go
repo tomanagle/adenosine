@@ -129,6 +129,18 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 			}
 			return nil
 		}
+		if record.Collection == OrganizationCollection {
+			return queries.TombstoneFederationOrganizationProjection(ctx, dbgen.TombstoneFederationOrganizationProjectionParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID})
+		}
+		if record.Collection == OrganizationGrantCollection {
+			return queries.TombstoneFederationOrganizationGrant(ctx, dbgen.TombstoneFederationOrganizationGrantParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID})
+		}
+		if record.Collection == OrganizationMembershipCollection {
+			return queries.TombstoneFederationOrganizationMembership(ctx, dbgen.TombstoneFederationOrganizationMembershipParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID})
+		}
+		if record.Collection == OrganizationRevocationCollection {
+			return queries.TombstoneFederationOrganizationRevocation(ctx, dbgen.TombstoneFederationOrganizationRevocationParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID})
+		}
 		if record.Collection == StarCollection {
 			repositoryURI, err := queries.TombstoneFederationStar(ctx, dbgen.TombstoneFederationStarParams{
 				Uri: record.URI, IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
@@ -275,6 +287,38 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 		}
 		if err := queries.RecomputeFederationRepositoryCount(ctx, record.DID); err != nil {
 			return fmt.Errorf("recompute repository count: %w", err)
+		}
+		return nil
+	}
+	if record.Organization != nil {
+		value := record.Organization
+		if err := queries.UpsertFederationOrganization(ctx, dbgen.UpsertFederationOrganizationParams{Uri: record.URI, Cid: pgText(record.CID), CreatorDid: record.DID, Rkey: record.RKey, Slug: pgText(value.Slug), Name: pgText(value.Name), Description: pgText(value.Description), Website: pgText(value.Website), Location: pgText(value.Location), RecordCreatedAt: pgTime(value.CreatedAt), RecordUpdatedAt: pgTime(value.UpdatedAt), IndexedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+			return fmt.Errorf("upsert organization: %w", err)
+		}
+		return nil
+	}
+	if record.OrganizationGrant != nil {
+		value := record.OrganizationGrant
+		var expiresAt pgtype.Timestamptz
+		if value.ExpiresAt != nil {
+			expiresAt = pgTime(*value.ExpiresAt)
+		}
+		if err := queries.UpsertFederationOrganizationGrant(ctx, dbgen.UpsertFederationOrganizationGrantParams{Uri: record.URI, Cid: pgText(record.CID), AuthorDid: record.DID, Rkey: record.RKey, OrganizationUri: value.Organization.URI, OrganizationCid: value.Organization.CID, SubjectDid: pgText(value.Subject), Role: pgText(value.Role), AuthorityUri: pgText(value.Authority.URI), AuthorityCid: pgText(value.Authority.CID), RecordCreatedAt: pgTime(value.CreatedAt), ExpiresAt: expiresAt, IndexedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+			return fmt.Errorf("upsert organization grant: %w", err)
+		}
+		return nil
+	}
+	if record.OrganizationMembership != nil {
+		value := record.OrganizationMembership
+		if err := queries.UpsertFederationOrganizationMembership(ctx, dbgen.UpsertFederationOrganizationMembershipParams{Uri: record.URI, Cid: pgText(record.CID), AuthorDid: record.DID, Rkey: record.RKey, OrganizationUri: value.Organization.URI, OrganizationCid: value.Organization.CID, GrantUri: value.Grant.URI, GrantCid: value.Grant.CID, Visibility: pgText(value.Visibility), RecordCreatedAt: pgTime(value.CreatedAt), RecordUpdatedAt: pgTime(value.UpdatedAt), IndexedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+			return fmt.Errorf("upsert organization membership: %w", err)
+		}
+		return nil
+	}
+	if record.OrganizationRevocation != nil {
+		value := record.OrganizationRevocation
+		if err := queries.UpsertFederationOrganizationRevocation(ctx, dbgen.UpsertFederationOrganizationRevocationParams{Uri: record.URI, Cid: pgText(record.CID), AuthorDid: record.DID, Rkey: record.RKey, OrganizationUri: value.Organization.URI, OrganizationCid: value.Organization.CID, GrantUri: value.Grant.URI, GrantCid: value.Grant.CID, SubjectDid: pgText(value.Subject), AuthorityUri: pgText(value.Authority.URI), AuthorityCid: pgText(value.Authority.CID), RecordCreatedAt: pgTime(value.CreatedAt), IndexedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+			return fmt.Errorf("upsert organization revocation: %w", err)
 		}
 		return nil
 	}
@@ -455,10 +499,15 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 	if value == nil {
 		return fmt.Errorf("project repository: missing decoded value")
 	}
+	organizationURI, organizationCID := "", ""
+	if value.Organization != nil {
+		organizationURI, organizationCID = value.Organization.URI, value.Organization.CID
+	}
 	if err := queries.UpsertFederationRepository(ctx, dbgen.UpsertFederationRepositoryParams{
 		Uri: record.URI, Cid: pgText(record.CID), OwnerDid: record.DID, Rkey: record.RKey,
 		Slug: pgText(value.Slug), Name: pgText(value.Name), Description: pgText(value.Description),
 		DefaultBranch: pgText(value.DefaultBranch), GitHttps: pgText(value.GitHTTPS), GitSsh: pgText(value.GitSSH), Web: pgText(value.Web),
+		OrganizationUri: pgText(organizationURI), OrganizationCid: pgText(organizationCID),
 		RecordCreatedAt: pgTime(value.CreatedAt), RecordUpdatedAt: pgTime(value.UpdatedAt),
 		IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
 	}); err != nil {
@@ -772,6 +821,18 @@ func recordTime(record *RecordEvent) time.Time {
 	}
 	if record.PullRequestReview != nil {
 		return record.PullRequestReview.CreatedAt
+	}
+	if record.Organization != nil {
+		return record.Organization.CreatedAt
+	}
+	if record.OrganizationGrant != nil {
+		return record.OrganizationGrant.CreatedAt
+	}
+	if record.OrganizationMembership != nil {
+		return record.OrganizationMembership.CreatedAt
+	}
+	if record.OrganizationRevocation != nil {
+		return record.OrganizationRevocation.CreatedAt
 	}
 	return time.Time{}
 }

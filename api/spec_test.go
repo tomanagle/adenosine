@@ -157,6 +157,91 @@ func TestViewerPersonalizedReadsDeclareOptionalSessionSecurity(t *testing.T) {
 	}
 }
 
+func TestCollectionAPIContract(t *testing.T) {
+	var document struct {
+		Paths map[string]map[string]struct {
+			Parameters []struct {
+				Reference string `json:"$ref"`
+			} `json:"parameters"`
+		} `json:"paths"`
+		Components struct {
+			Schemas map[string]struct {
+				Type       string                     `json:"type"`
+				Properties map[string]json.RawMessage `json:"properties"`
+			} `json:"schemas"`
+		} `json:"components"`
+	}
+	if err := json.Unmarshal(OpenAPI, &document); err != nil {
+		t.Fatalf("decode OpenAPI: %v", err)
+	}
+
+	testCases := []struct {
+		name      string
+		path      string
+		limitRef  string
+		cursorRef string
+	}{
+		{name: "passkeys", path: "/api/v1/passkeys"},
+		{name: "organizations", path: "/api/v1/organizations"},
+		{name: "organization invitations", path: "/api/v1/organization-invitations"},
+		{name: "owner organization invitations", path: "/api/v1/organizations/{organization}/invitations"},
+		{name: "organization members", path: "/api/v1/organizations/{organization}/members"},
+		{name: "organization teams", path: "/api/v1/organizations/{organization}/teams"},
+		{name: "organization team members", path: "/api/v1/organizations/{organization}/teams/{team}/members"},
+		{name: "organization repositories", path: "/api/v1/organizations/{organization}/repositories"},
+		{name: "organization team repositories", path: "/api/v1/organizations/{organization}/teams/{team}/repositories"},
+		{name: "stars", path: "/api/v1/stars"},
+		{name: "issues", path: "/api/v1/issues"},
+		{name: "comments", path: "/api/v1/issues/comments"},
+		{name: "pull requests", path: "/api/v1/pull-requests"},
+		{name: "pull request reviews", path: "/api/v1/pull-requests/reviews"},
+		{name: "network repositories", path: "/api/v1/network/repositories"},
+		{name: "repository search", path: "/api/v1/search/repositories", limitRef: "#/components/parameters/SearchLimit", cursorRef: "#/components/parameters/SearchCursor"},
+		{name: "profile search", path: "/api/v1/search/profiles", limitRef: "#/components/parameters/SearchLimit", cursorRef: "#/components/parameters/SearchCursor"},
+		{name: "branches", path: "/api/v1/repositories/{owner}/{repo}/branches"},
+		{name: "tags", path: "/api/v1/repositories/{owner}/{repo}/tags"},
+		{name: "commits", path: "/api/v1/repositories/{owner}/{repo}/commits"},
+		{name: "access tokens", path: "/api/v1/tokens"},
+		{name: "SSH keys", path: "/api/v1/ssh-keys"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			parameters := document.Paths[testCase.path]["get"].Parameters
+			found := map[string]bool{}
+			for _, parameter := range parameters {
+				found[parameter.Reference] = true
+			}
+			limitRef := testCase.limitRef
+			if limitRef == "" {
+				limitRef = "#/components/parameters/Limit"
+			}
+			cursorRef := testCase.cursorRef
+			if cursorRef == "" {
+				cursorRef = "#/components/parameters/Cursor"
+			}
+			for _, reference := range []string{limitRef, cursorRef} {
+				if !found[reference] {
+					t.Errorf("GET %s is missing %s", testCase.path, reference)
+				}
+			}
+		})
+	}
+
+	for name, schema := range document.Components.Schemas {
+		if schema.Type == "array" && name != "ElectricSubsetResponse" {
+			t.Errorf("schema %s is a top-level array", name)
+		}
+		if _, collection := schema.Properties["items"]; collection {
+			if _, paginated := schema.Properties["page"]; !paginated {
+				t.Errorf("collection schema %s has items without page", name)
+			}
+		}
+		if _, legacy := schema.Properties["data"]; legacy && name != "ElectricSubsetResponse" {
+			t.Errorf("schema %s uses legacy top-level data field", name)
+		}
+	}
+}
+
 func hasAnyPrefix(value string, prefixes []string) bool {
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(value, prefix) {

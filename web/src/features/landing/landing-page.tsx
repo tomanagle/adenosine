@@ -15,7 +15,7 @@ const principles = [
   {
     icon: Network,
     title: 'Portable identity',
-    copy: 'Your developer identity is not trapped inside one forge or one domain.',
+    copy: 'Your developer identity is not trapped inside one server or one domain.',
   },
   {
     icon: ShieldCheck,
@@ -27,31 +27,9 @@ const principles = [
 export function LandingPage() {
   return (
     <main>
-      <header className="border-b bg-card/70">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
-          <Link
-            to="/"
-            className="font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Adenosine
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/explore"
-              search={{ q: '', type: 'repositories', sort: 'relevance' }}
-              className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
-            >
-              Explore
-            </Link>
-            <Link to="/login" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </header>
       <section className="mx-auto grid max-w-6xl gap-12 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
         <div>
-          <Badge variant="secondary">A public, federated Git forge</Badge>
+          <Badge variant="secondary">A public, federated Git platform</Badge>
           <h1 className="mt-6 max-w-3xl text-balance font-serif text-5xl leading-[1.02] tracking-tight sm:text-6xl">
             Build in public without giving up your home server.
           </h1>
@@ -61,7 +39,7 @@ export function LandingPage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/login" className={cn(buttonVariants({ size: 'lg' }))}>
-              Sign in to your forge <ArrowRight className="size-4" />
+              Sign in to Adenosine <ArrowRight className="size-4" />
             </Link>
             <a href="/docs/api" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}>
               Read the API

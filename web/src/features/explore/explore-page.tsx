@@ -13,19 +13,7 @@ import type { ExploreSearch } from './explore-search'
 
 export function ExplorePage({ search }: { search: ExploreSearch }) {
   return (
-    <main className="min-h-screen bg-muted/30">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
-          <Link
-            to="/"
-            className="font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Adenosine
-          </Link>
-          <Badge variant="outline">Local AppView</Badge>
-        </div>
-      </header>
-
+    <main className="bg-muted/30">
       <section className="border-b bg-background">
         <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-14">
           <div className="grid gap-8 lg:grid-cols-[0.7fr_1.3fr] lg:items-end">
@@ -33,9 +21,12 @@ export function ExplorePage({ search }: { search: ExploreSearch }) {
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
                 Network desk
               </p>
-              <h1 className="mt-3 font-serif text-4xl tracking-tight sm:text-5xl">
-                Explore the indexed forge.
-              </h1>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">
+                  Explore the network.
+                </h1>
+                <Badge variant="outline">Local index</Badge>
+              </div>
             </div>
             <div>
               <p className="max-w-2xl text-pretty leading-7 text-muted-foreground">
@@ -172,14 +163,14 @@ function SearchInvitation() {
 
 function RepositoryResults({ search }: { search: ExploreSearch }) {
   const { data } = useSuspenseQuery(repositorySearchQueryOptions(search))
-  if (data.data.length === 0) return <EmptyResults kind="repositories" />
+  if (data.items.length === 0) return <EmptyResults kind="repositories" />
   return (
     <div>
       <p className="mb-3 text-xs uppercase tracking-[0.16em] text-muted-foreground">
         Repository matches
       </p>
       <ul className="divide-y border-y bg-background">
-        {data.data.map((repository) => (
+        {data.items.map((repository) => (
           <li key={repository.uri ?? repository.id} className="group py-5 sm:px-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
@@ -231,14 +222,14 @@ function RepositoryResults({ search }: { search: ExploreSearch }) {
 
 function ProfileResults({ search }: { search: ExploreSearch }) {
   const { data } = useSuspenseQuery(profileSearchQueryOptions(search))
-  if (data.data.length === 0) return <EmptyResults kind="profiles" />
+  if (data.items.length === 0) return <EmptyResults kind="profiles" />
   return (
     <div>
       <p className="mb-3 text-xs uppercase tracking-[0.16em] text-muted-foreground">
         Profile matches
       </p>
       <ul className="grid gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-2">
-        {data.data.map((profile) => (
+        {data.items.map((profile) => (
           <li key={profile.did} className="bg-background p-5">
             <div className="flex items-start gap-4">
               <span className="grid size-10 shrink-0 place-items-center rounded-full border bg-muted">

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	dbgen "github.com/adenosine-dev/adenosine/internal/database/generated"
+	"github.com/adenosine-dev/adenosine/internal/repository"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -62,8 +63,13 @@ func (store *PostgresStore) GetStatusTarget(ctx context.Context, issueURI string
 	if err != nil {
 		return statusTarget{}, fmt.Errorf("query issue status target: %w", err)
 	}
-	return statusTarget{
+	value := statusTarget{
 		Subject: StrongRef{URI: row.IssueUri, CID: row.IssueCid.String}, Repository: StrongRef{URI: row.RepositoryUri, CID: row.RepositoryCid.String},
 		StatusCreatedAt: row.StatusCreatedAt.Time,
-	}, nil
+	}
+	if row.LocalRepositoryID.Valid {
+		id := repository.ID(row.LocalRepositoryID.Bytes)
+		value.RepositoryID = &id
+	}
+	return value, nil
 }

@@ -51,19 +51,28 @@ const (
 
 // Repository is authoritative local repository metadata.
 type Repository struct {
-	ID            ID
-	OwnerDID      string
-	Slug          string
-	DisplayName   string
-	Description   string
-	Visibility    Visibility
-	State         State
-	DefaultBranch string
-	StorageKey    string
-	ATURI         string
-	ATCID         string
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID               ID
+	OwnerDID         string
+	OrganizationID   *uuid.UUID
+	OrganizationSlug string
+	Slug             string
+	DisplayName      string
+	Description      string
+	Visibility       Visibility
+	State            State
+	DefaultBranch    string
+	StorageKey       string
+	ATURI            string
+	ATCID            string
+	ViewerCanAdmin   bool
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
+// Page is a bounded keyset page of repositories.
+type Page struct {
+	Items      []Repository
+	NextCursor *uuid.UUID
 }
 
 // ATIdentity is the canonical identity returned for a published repository record.
@@ -76,6 +85,7 @@ type ATIdentity struct {
 type Publication struct {
 	ID            ID
 	OwnerDID      string
+	Organization  *ATIdentity
 	Slug          string
 	Name          string
 	Description   string
@@ -89,18 +99,27 @@ type Publication struct {
 
 // CreateInput is validated repository creation data.
 type CreateInput struct {
-	OwnerDID      string
-	Slug          string
-	DisplayName   string
-	Description   string
-	Visibility    Visibility
-	DefaultBranch string
+	OwnerDID         string
+	OrganizationID   *uuid.UUID
+	OrganizationSlug string
+	OrganizationAT   *ATIdentity
+	Slug             string
+	DisplayName      string
+	Description      string
+	Visibility       Visibility
+	DefaultBranch    string
 }
 
 // Validate checks repository input at the domain boundary.
 func (input CreateInput) Validate() error {
 	if strings.TrimSpace(input.OwnerDID) == "" {
 		return fmt.Errorf("owner DID must not be empty")
+	}
+	if (input.OrganizationID == nil) != (input.OrganizationSlug == "") {
+		return fmt.Errorf("organization ID and slug must be provided together")
+	}
+	if input.OrganizationID != nil && (input.OrganizationAT == nil || input.OrganizationAT.URI == "" || input.OrganizationAT.CID == "") {
+		return fmt.Errorf("organization AT identity must be provided for an organization repository")
 	}
 	if len(input.Slug) > 100 || !slugPattern.MatchString(input.Slug) {
 		return fmt.Errorf("slug must match %s and contain at most 100 characters", slugPattern)

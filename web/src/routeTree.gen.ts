@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as OrganizationsRouteImport } from './routes/organizations'
 import { Route as OwnerRepoRouteImport } from './routes/$owner.$repo'
+import { Route as OrganizationsOrganizationRouteImport } from './routes/organizations.$organization'
 import { Route as ProfilesIdentityRouteImport } from './routes/profiles.$identity'
 import { Route as OwnerRepoIndexRouteImport } from './routes/$owner.$repo.index'
 import { Route as OwnerRepoActivityRouteImport } from './routes/$owner.$repo.activity'
@@ -41,11 +43,22 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrganizationsRoute = OrganizationsRouteImport.update({
+  id: '/organizations',
+  path: '/organizations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OwnerRepoRoute = OwnerRepoRouteImport.update({
   id: '/$owner/$repo',
   path: '/$owner/$repo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrganizationsOrganizationRoute =
+  OrganizationsOrganizationRouteImport.update({
+    id: '/$organization',
+    path: '/$organization',
+    getParentRoute: () => OrganizationsRoute,
+  } as any)
 const ProfilesIdentityRoute = ProfilesIdentityRouteImport.update({
   id: '/profiles/$identity',
   path: '/profiles/$identity',
@@ -111,7 +124,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/organizations': typeof OrganizationsRouteWithChildren
   '/$owner/$repo': typeof OwnerRepoRouteWithChildren
+  '/organizations/$organization': typeof OrganizationsOrganizationRoute
   '/profiles/$identity': typeof ProfilesIdentityRoute
   '/$owner/$repo/activity': typeof OwnerRepoActivityRoute
   '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
@@ -129,6 +144,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/organizations': typeof OrganizationsRouteWithChildren
+  '/organizations/$organization': typeof OrganizationsOrganizationRoute
   '/profiles/$identity': typeof ProfilesIdentityRoute
   '/$owner/$repo/activity': typeof OwnerRepoActivityRoute
   '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
@@ -147,7 +164,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/organizations': typeof OrganizationsRouteWithChildren
   '/$owner/$repo': typeof OwnerRepoRouteWithChildren
+  '/organizations/$organization': typeof OrganizationsOrganizationRoute
   '/profiles/$identity': typeof ProfilesIdentityRoute
   '/$owner/$repo/activity': typeof OwnerRepoActivityRoute
   '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
@@ -167,7 +186,9 @@ export interface FileRouteTypes {
     | '/'
     | '/explore'
     | '/login'
+    | '/organizations'
     | '/$owner/$repo'
+    | '/organizations/$organization'
     | '/profiles/$identity'
     | '/$owner/$repo/activity'
     | '/$owner/$repo/commits'
@@ -185,6 +206,8 @@ export interface FileRouteTypes {
     | '/'
     | '/explore'
     | '/login'
+    | '/organizations'
+    | '/organizations/$organization'
     | '/profiles/$identity'
     | '/$owner/$repo/activity'
     | '/$owner/$repo/commits'
@@ -202,7 +225,9 @@ export interface FileRouteTypes {
     | '/'
     | '/explore'
     | '/login'
+    | '/organizations'
     | '/$owner/$repo'
+    | '/organizations/$organization'
     | '/profiles/$identity'
     | '/$owner/$repo/activity'
     | '/$owner/$repo/commits'
@@ -221,6 +246,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExploreRoute: typeof ExploreRoute
   LoginRoute: typeof LoginRoute
+  OrganizationsRoute: typeof OrganizationsRouteWithChildren
   OwnerRepoRoute: typeof OwnerRepoRouteWithChildren
   ProfilesIdentityRoute: typeof ProfilesIdentityRoute
 }
@@ -248,12 +274,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/organizations': {
+      id: '/organizations'
+      path: '/organizations'
+      fullPath: '/organizations'
+      preLoaderRoute: typeof OrganizationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$owner/$repo': {
       id: '/$owner/$repo'
       path: '/$owner/$repo'
       fullPath: '/$owner/$repo'
       preLoaderRoute: typeof OwnerRepoRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/organizations/$organization': {
+      id: '/organizations/$organization'
+      path: '/$organization'
+      fullPath: '/organizations/$organization'
+      preLoaderRoute: typeof OrganizationsOrganizationRouteImport
+      parentRoute: typeof OrganizationsRoute
     }
     '/profiles/$identity': {
       id: '/profiles/$identity'
@@ -342,6 +382,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface OrganizationsRouteChildren {
+  OrganizationsOrganizationRoute: typeof OrganizationsOrganizationRoute
+}
+
+const OrganizationsRouteChildren: OrganizationsRouteChildren = {
+  OrganizationsOrganizationRoute: OrganizationsOrganizationRoute,
+}
+
+const OrganizationsRouteWithChildren = OrganizationsRoute._addFileChildren(
+  OrganizationsRouteChildren,
+)
+
 interface OwnerRepoIssuesRouteChildren {
   OwnerRepoIssuesIssueRoute: typeof OwnerRepoIssuesIssueRoute
 }
@@ -398,6 +450,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExploreRoute: ExploreRoute,
   LoginRoute: LoginRoute,
+  OrganizationsRoute: OrganizationsRouteWithChildren,
   OwnerRepoRoute: OwnerRepoRouteWithChildren,
   ProfilesIdentityRoute: ProfilesIdentityRoute,
 }

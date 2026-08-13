@@ -5,6 +5,9 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/adenosine-dev/adenosine/internal/repository"
+	"github.com/google/uuid"
 )
 
 type applicationStore struct {
@@ -72,6 +75,20 @@ type applicationClock struct{ now time.Time }
 
 func (clock applicationClock) Now() time.Time { return clock.now }
 
+type applicationAuthorizer struct {
+	allowed bool
+	calls   int
+}
+
+func (*applicationAuthorizer) CanWriteRepository(context.Context, string, repository.ID) (bool, error) {
+	return false, nil
+}
+
+func (authorizer *applicationAuthorizer) CanTriageRepository(context.Context, string, repository.ID) (bool, error) {
+	authorizer.calls++
+	return authorizer.allowed, nil
+}
+
 func TestApplicationServiceUsesCurrentTargetsAndBoundsReads(t *testing.T) {
 	t.Parallel()
 	now := time.Date(2026, 8, 10, 12, 0, 0, 0, time.UTC)
@@ -124,26 +141,39 @@ func TestApplicationStatusRequiresOwnerPreservesCreatedAtAndRejectsMerged(t *tes
 	t.Parallel()
 	createdAt := time.Date(2026, 8, 9, 12, 0, 0, 0, time.UTC)
 	now := createdAt.Add(time.Hour)
-	store := &applicationStore{status: statusTarget{Subject: StrongRef{URI: testPullRequestURI, CID: testCID}, TargetRepository: StrongRef{URI: testTargetRepositoryURI, CID: testCID}, StatusCreatedAt: createdAt}}
+	repositoryID := repository.ID(uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af2"))
 	testCases := []struct {
 		name, author string
 		state        State
+		local        bool
+		allowed      bool
 		want         error
 		wantCalls    bool
+		wantTriage   int
 	}{
 		{name: "owner closes", author: "did:plc:target", state: StateClosed, wantCalls: true},
-		{name: "non-owner rejected", author: "did:plc:other", state: StateClosed, want: ErrAuthorization},
+		{name: "triager closes through target authority", author: "did:plc:other", state: StateClosed, local: true, allowed: true, wantCalls: true, wantTriage: 1},
+		{name: "non-owner without triage rejected", author: "did:plc:other", state: StateClosed, local: true, want: ErrAuthorization, wantTriage: 1},
 		{name: "merged belongs to merge endpoint", author: "did:plc:target", state: StateMerged, want: ErrValidation},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			target := statusTarget{Subject: StrongRef{URI: testPullRequestURI, CID: testCID}, TargetRepository: StrongRef{URI: testTargetRepositoryURI, CID: testCID}, StatusCreatedAt: createdAt}
+			if testCase.local {
+				target.RepositoryID = &repositoryID
+			}
+			store := &applicationStore{status: target}
 			publisher := &applicationPublisher{}
-			_, err := NewApplicationService(store, nil, publisher, applicationClock{now: now}, nil, nil).PutStatus(context.Background(), testCase.author, StatusInput{PullRequestURI: testPullRequestURI, State: testCase.state})
+			authorizer := &applicationAuthorizer{allowed: testCase.allowed}
+			_, err := NewApplicationService(store, nil, publisher, applicationClock{now: now}, authorizer, nil).PutStatus(context.Background(), testCase.author, StatusInput{PullRequestURI: testPullRequestURI, State: testCase.state})
 			if !errors.Is(err, testCase.want) {
 				t.Fatalf("PutStatus() error = %v, want %v", err, testCase.want)
 			}
-			if testCase.wantCalls && (publisher.statusRecord.CreatedAt != createdAt || publisher.statusRecord.UpdatedAt != now || publisher.statusRecord.MergeCommitSHA != "") {
-				t.Fatalf("status record = %#v", publisher.statusRecord)
+			if testCase.wantCalls && (publisher.author != "did:plc:target" || publisher.statusRecord.CreatedAt != createdAt || publisher.statusRecord.UpdatedAt != now || publisher.statusRecord.MergeCommitSHA != "") {
+				t.Fatalf("status author/record = %q/%#v", publisher.author, publisher.statusRecord)
+			}
+			if authorizer.calls != testCase.wantTriage {
+				t.Fatalf("triage calls = %d, want %d", authorizer.calls, testCase.wantTriage)
 			}
 		})
 	}

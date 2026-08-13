@@ -11,6 +11,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const ensureAccount = `-- name: EnsureAccount :exec
+INSERT INTO core.accounts (did, first_seen_at, last_seen_at, created_at)
+VALUES ($1, $2, $2, $2)
+ON CONFLICT (did) DO NOTHING
+`
+
+type EnsureAccountParams struct {
+	Did    string             `json:"did"`
+	SeenAt pgtype.Timestamptz `json:"seen_at"`
+}
+
+func (q *Queries) EnsureAccount(ctx context.Context, arg EnsureAccountParams) error {
+	_, err := q.db.Exec(ctx, ensureAccount, arg.Did, arg.SeenAt)
+	return err
+}
+
 const getAccount = `-- name: GetAccount :one
 SELECT did, handle_cache, first_seen_at, last_seen_at, last_login_at, created_at FROM core.accounts WHERE did = $1
 `
