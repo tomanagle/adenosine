@@ -55,17 +55,17 @@ func TestNetworkRepositoryDiscoveryEndpoint(t *testing.T) {
 			name: "anonymous remote and local repositories", path: "/api/v1/network/repositories?limit=2",
 			repositories: []federation.DiscoveryRepository{remote, local}, wantStatus: http.StatusOK, wantCount: 2, wantStoreCall: 1,
 			assert: func(t *testing.T, body generated.NetworkRepositoryList) {
-				if body.Data[0].Id != nil || body.Data[0].Hosting.Local || body.Data[0].Hosting.SourceBrowsing != generated.CanonicalHost || body.Data[0].Uri == nil || *body.Data[0].Uri != remote.URI || body.Data[0].Cid == nil || *body.Data[0].Cid != remote.CID {
-					t.Fatalf("remote repository identity/hosting = %#v", body.Data[0])
+				if body.Items[0].Id != nil || body.Items[0].Hosting.Local || body.Items[0].Hosting.SourceBrowsing != generated.CanonicalHost || body.Items[0].Uri == nil || *body.Items[0].Uri != remote.URI || body.Items[0].Cid == nil || *body.Items[0].Cid != remote.CID {
+					t.Fatalf("remote repository identity/hosting = %#v", body.Items[0])
 				}
-				if body.Data[0].Owner.Handle == nil || *body.Data[0].Owner.Handle != "alice.test" || body.Data[0].Visibility != generated.RepositoryVisibilityPublic || body.Data[0].State != generated.Active {
-					t.Fatalf("remote repository projection = %#v", body.Data[0])
+				if body.Items[0].Owner.Handle == nil || *body.Items[0].Owner.Handle != "alice.test" || body.Items[0].Visibility != generated.RepositoryVisibilityPublic || body.Items[0].State != generated.RepositoryStateActive {
+					t.Fatalf("remote repository projection = %#v", body.Items[0])
 				}
-				if body.Data[0].StarCount != 12 || body.Data[0].IssueCount != 9 || body.Data[0].OpenIssueCount != 5 {
-					t.Fatalf("remote repository counts = %d/%d/%d", body.Data[0].StarCount, body.Data[0].IssueCount, body.Data[0].OpenIssueCount)
+				if body.Items[0].StarCount != 12 || body.Items[0].IssueCount != 9 || body.Items[0].OpenIssueCount != 5 {
+					t.Fatalf("remote repository counts = %d/%d/%d", body.Items[0].StarCount, body.Items[0].IssueCount, body.Items[0].OpenIssueCount)
 				}
-				if body.Data[1].Id == nil || uuid.UUID(*body.Data[1].Id) != localID || !body.Data[1].Hosting.Local || body.Data[1].Hosting.SourceBrowsing != generated.Local {
-					t.Fatalf("local repository identity/hosting = %#v", body.Data[1])
+				if body.Items[1].Id == nil || uuid.UUID(*body.Items[1].Id) != localID || !body.Items[1].Hosting.Local || body.Items[1].Hosting.SourceBrowsing != generated.Local {
+					t.Fatalf("local repository identity/hosting = %#v", body.Items[1])
 				}
 			},
 		},
@@ -97,13 +97,13 @@ func TestNetworkRepositoryDiscoveryEndpoint(t *testing.T) {
 			if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
 				t.Fatalf("decode response: %v", err)
 			}
-			if body.Data == nil || len(body.Data) != testCase.wantCount || body.Page.NextCursor != nil {
+			if body.Items == nil || len(body.Items) != testCase.wantCount || body.Page.NextCursor != nil {
 				t.Fatalf("page = %#v, want data length %d and null cursor", body, testCase.wantCount)
 			}
 			if !strings.Contains(response.Body.String(), `"next_cursor":null`) {
 				t.Fatalf("response does not contain a stable null next_cursor: %s", response.Body.String())
 			}
-			if len(body.Data) > 0 && !strings.Contains(response.Body.String(), `"comment_count":`) {
+			if len(body.Items) > 0 && !strings.Contains(response.Body.String(), `"comment_count":`) {
 				t.Fatalf("response does not contain repository comment_count: %s", response.Body.String())
 			}
 			if testCase.assert != nil {

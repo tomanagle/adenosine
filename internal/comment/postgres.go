@@ -18,8 +18,13 @@ type PostgresStore struct{ queries *dbgen.Queries }
 func NewPostgresStore(queries *dbgen.Queries) *PostgresStore { return &PostgresStore{queries: queries} }
 
 func (store *PostgresStore) GetProjection(ctx context.Context, issueURI, viewerDID string, limit int) (Projection, error) {
+	return store.GetProjectionAfter(ctx, issueURI, viewerDID, limit, "")
+}
+
+func (store *PostgresStore) GetProjectionAfter(ctx context.Context, issueURI, viewerDID string, limit int, afterURI string) (Projection, error) {
 	rows, err := store.queries.ListNetworkIssueComments(ctx, dbgen.ListNetworkIssueCommentsParams{
 		IssueUri: issueURI, AccountDid: pgtype.Text{String: viewerDID, Valid: viewerDID != ""}, PageSize: int32(limit),
+		CursorUri: pgtype.Text{String: afterURI, Valid: afterURI != ""},
 	})
 	if err != nil {
 		return Projection{}, fmt.Errorf("query network issue comment projection: %w", err)

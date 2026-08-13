@@ -24,6 +24,7 @@ import (
 	localidentity "github.com/adenosine-dev/adenosine/internal/identity"
 	"github.com/adenosine-dev/adenosine/internal/issue"
 	"github.com/adenosine-dev/adenosine/internal/moderation"
+	"github.com/adenosine-dev/adenosine/internal/organization"
 	"github.com/adenosine-dev/adenosine/internal/passkey"
 	"github.com/adenosine-dev/adenosine/internal/profile"
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
@@ -90,6 +91,11 @@ type SSHKeyManager interface {
 type RepositoryManager interface {
 	Create(context.Context, repository.CreateInput) (repository.Repository, error)
 	GetByOwnerSlug(context.Context, string, string) (repository.Repository, error)
+	ListByOrganization(context.Context, uuid.UUID) ([]repository.Repository, error)
+}
+
+type OrganizationRepositoryPageManager interface {
+	PageByOrganization(context.Context, uuid.UUID, string, *uuid.UUID, int) (repository.Page, error)
 }
 
 type RepositoryEndpointBuilder interface {
@@ -120,6 +126,13 @@ type collaborationReader interface {
 	ListPullRequests(context.Context, string, string) (pullrequest.Projection, error)
 	ResolvePullRequest(context.Context, string, string) (pullrequest.ProjectedPullRequest, error)
 	ListPullRequestReviews(context.Context, string, string) ([]pullrequest.ProjectedReview, error)
+}
+
+type collaborationPager interface {
+	PageIssues(context.Context, string, string, int, string) (searchservice.IssuePage, error)
+	PageStars(context.Context, string, string, int, string) (searchservice.StarPage, error)
+	PagePullRequests(context.Context, string, string, int, string) (searchservice.PullRequestPage, error)
+	PagePullRequestReviews(context.Context, string, string, int, string) (searchservice.PullRequestReviewPage, error)
 }
 
 func profileReadError(err error) error {
@@ -158,6 +171,10 @@ type CommentManager interface {
 	Delete(context.Context, string, string) error
 }
 
+type CommentPageManager interface {
+	GetPage(context.Context, string, string, int, string) (comment.Projection, error)
+}
+
 type ModerationManager interface {
 	Block(context.Context, string, string) error
 	Unblock(context.Context, string, string) error
@@ -170,6 +187,56 @@ type ModerationManager interface {
 type ProfileManager interface {
 	Get(context.Context, string) (profile.Profile, error)
 	Update(context.Context, string, profile.UpdateInput) (profile.Profile, error)
+}
+
+type OrganizationManager interface {
+	Create(context.Context, organization.CreateInput) (organization.Organization, error)
+	Update(context.Context, organization.UpdateInput) (organization.Organization, error)
+	GetBySlug(context.Context, string) (organization.Organization, error)
+	ListForAccount(context.Context, string) ([]organization.Organization, error)
+	ListMembers(context.Context, organization.ID) ([]organization.Member, error)
+	GetMember(context.Context, organization.ID, string) (organization.Member, error)
+	Invite(context.Context, organization.InviteInput) (organization.Invitation, error)
+	Accept(context.Context, uuid.UUID, string) (organization.Member, error)
+	ListPendingInvitations(context.Context, string) ([]organization.Invitation, error)
+	ListInvitations(context.Context, organization.ID, string) ([]organization.Invitation, error)
+	RevokeInvitation(context.Context, organization.ID, uuid.UUID, string) error
+	SetVisibility(context.Context, organization.ID, string, organization.MembershipVisibility) (organization.Member, error)
+	ChangeRole(context.Context, organization.ID, string, string, organization.Role) (organization.Member, error)
+	Remove(context.Context, organization.ID, string, string) error
+	AuditEvents(context.Context, organization.ID, string, int, *uuid.UUID) (organization.AuditPage, error)
+}
+
+type OrganizationPageManager interface {
+	PageForAccount(context.Context, string, *uuid.UUID, int) (organization.Page[organization.Organization], error)
+	PageMembers(context.Context, organization.ID, bool, string, int) (organization.Page[organization.Member], error)
+	PageInvitations(context.Context, organization.ID, string, *uuid.UUID, int) (organization.Page[organization.Invitation], error)
+	PagePendingInvitations(context.Context, string, *uuid.UUID, int) (organization.Page[organization.Invitation], error)
+}
+
+type OrganizationTeamManager interface {
+	Create(context.Context, organization.CreateTeamInput) (organization.Team, error)
+	Update(context.Context, organization.UpdateTeamInput) (organization.Team, error)
+	Delete(context.Context, organization.ID, uuid.UUID, string) error
+	List(context.Context, organization.ID, string) ([]organization.Team, error)
+	Members(context.Context, organization.ID, uuid.UUID, string) ([]organization.TeamMember, error)
+	PutMember(context.Context, organization.ID, uuid.UUID, string, string, organization.TeamRole) (organization.TeamMember, error)
+	RemoveMember(context.Context, organization.ID, uuid.UUID, string, string) error
+	Repositories(context.Context, organization.ID, uuid.UUID, string) ([]organization.TeamRepository, error)
+	PutRepository(context.Context, organization.ID, uuid.UUID, string, uuid.UUID, organization.RepositoryRole) (organization.TeamRepository, error)
+	RemoveRepository(context.Context, organization.ID, uuid.UUID, string, uuid.UUID) error
+}
+
+type OrganizationTeamPageManager interface {
+	PageList(context.Context, organization.ID, string, *uuid.UUID, int) (organization.Page[organization.Team], error)
+	PageMembers(context.Context, organization.ID, uuid.UUID, string, string, int) (organization.Page[organization.TeamMember], error)
+	PageRepositories(context.Context, organization.ID, uuid.UUID, string, *uuid.UUID, int) (organization.Page[organization.TeamRepository], error)
+}
+
+type OrganizationCollaboratorManager interface {
+	List(context.Context, organization.ID, uuid.UUID, string, string, int) (organization.CollaboratorPage, error)
+	Put(context.Context, organization.ID, uuid.UUID, string, string, organization.RepositoryRole) (organization.RepositoryCollaborator, error)
+	Remove(context.Context, organization.ID, uuid.UUID, string, string) error
 }
 
 type RepositoryAuthorizer interface {
@@ -215,6 +282,9 @@ type Dependencies struct {
 	Tokens        TokenManager
 	SSHKeys       SSHKeyManager
 	Profiles      ProfileManager
+	Organizations OrganizationManager
+	Teams         OrganizationTeamManager
+	Collaborators OrganizationCollaboratorManager
 	Repositories  RepositoryManager
 	Endpoints     RepositoryEndpointBuilder
 	Discovery     NetworkRepositoryDiscovery
@@ -402,7 +472,7 @@ func (handler *apiHandler) VerifyPasskeyLogin(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (handler *apiHandler) ListPasskeys(w http.ResponseWriter, r *http.Request) {
+func (handler *apiHandler) ListPasskeys(w http.ResponseWriter, r *http.Request, params generated.ListPasskeysParams) {
 	identity, err := handler.requireSession(r, false)
 	if err != nil {
 		handler.writeError(w, r, err)
@@ -417,7 +487,13 @@ func (handler *apiHandler) ListPasskeys(w http.ResponseWriter, r *http.Request) 
 	for index, credential := range credentials {
 		data[index] = passkeyResponse(credential)
 	}
-	writeJSON(w, http.StatusOK, generated.PasskeyList{Data: data})
+	limit, cursor := paginationInputs(params.Limit, params.Cursor)
+	items, next, err := paginate(data, limit, cursor, "passkeys:"+identity.accountDID, func(value generated.Passkey) string { return value.Id.String() })
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.PasskeyList{Items: items, Page: generated.Page{NextCursor: next}})
 }
 
 func (handler *apiHandler) DeletePasskey(w http.ResponseWriter, r *http.Request, id openapi_types.UUID, _ generated.DeletePasskeyParams) {
@@ -512,7 +588,7 @@ func (handler *apiHandler) UpdateDeveloperProfile(w http.ResponseWriter, r *http
 	writeJSON(w, http.StatusOK, developerProfileResponse(developerProfile))
 }
 
-func (handler *apiHandler) ListAccessTokens(w http.ResponseWriter, r *http.Request) {
+func (handler *apiHandler) ListAccessTokens(w http.ResponseWriter, r *http.Request, params generated.ListAccessTokensParams) {
 	identity, err := handler.requireSession(r, false)
 	if err != nil {
 		handler.writeError(w, r, err)
@@ -527,7 +603,13 @@ func (handler *apiHandler) ListAccessTokens(w http.ResponseWriter, r *http.Reque
 	for index, token := range tokens {
 		data[index] = accessTokenResponse(token)
 	}
-	writeJSON(w, http.StatusOK, generated.AccessTokenList{Data: data, Page: generated.Page{}})
+	limit, cursor := paginationInputs(params.Limit, params.Cursor)
+	items, next, err := paginate(data, limit, cursor, "tokens:"+identity.accountDID, func(value generated.AccessToken) string { return value.Id.String() })
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.AccessTokenList{Items: items, Page: generated.Page{NextCursor: next}})
 }
 
 func (handler *apiHandler) CreateAccessToken(w http.ResponseWriter, r *http.Request) {
@@ -576,7 +658,7 @@ func (handler *apiHandler) RevokeAccessToken(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (handler *apiHandler) ListSSHKeys(w http.ResponseWriter, r *http.Request) {
+func (handler *apiHandler) ListSSHKeys(w http.ResponseWriter, r *http.Request, params generated.ListSSHKeysParams) {
 	identity, err := handler.requireSession(r, false)
 	if err != nil {
 		handler.writeError(w, r, err)
@@ -591,7 +673,13 @@ func (handler *apiHandler) ListSSHKeys(w http.ResponseWriter, r *http.Request) {
 	for index, key := range keys {
 		data[index] = sshKeyResponse(key)
 	}
-	writeJSON(w, http.StatusOK, generated.SSHKeyList{Data: data, Page: generated.Page{}})
+	limit, cursor := paginationInputs(params.Limit, params.Cursor)
+	items, next, err := paginate(data, limit, cursor, "ssh-keys:"+identity.accountDID, func(value generated.SSHKey) string { return value.Id.String() })
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.SSHKeyList{Items: items, Page: generated.Page{NextCursor: next}})
 }
 
 func (handler *apiHandler) CreateSSHKey(w http.ResponseWriter, r *http.Request) {
@@ -629,6 +717,928 @@ func (handler *apiHandler) RevokeSSHKey(w http.ResponseWriter, r *http.Request, 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (handler *apiHandler) ListOrganizations(w http.ResponseWriter, r *http.Request, params generated.ListOrganizationsParams) {
+	identity, err := handler.requireSession(r, false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "organizations:" + identity.accountDID
+	var organizations []organization.Organization
+	var next *string
+	if pager, ok := handler.deps.Organizations.(OrganizationPageManager); ok {
+		after, cursorErr := decodeUUIDCollectionCursor(encoded, scope)
+		if cursorErr != nil {
+			handler.writeMalformed(w, r, cursorErr)
+			return
+		}
+		page, pageErr := pager.PageForAccount(r.Context(), identity.accountDID, after, limit)
+		if pageErr != nil {
+			handler.writeError(w, r, pageErr)
+			return
+		}
+		organizations = page.Items
+		next, err = encodeCollectionCursor(scope, page.NextCursor)
+	} else {
+		organizations, err = handler.deps.Organizations.ListForAccount(r.Context(), identity.accountDID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	data := make([]generated.Organization, 0, len(organizations))
+	for _, value := range organizations {
+		member, memberErr := handler.deps.Organizations.GetMember(r.Context(), value.ID, identity.accountDID)
+		if memberErr != nil {
+			handler.writeError(w, r, memberErr)
+			return
+		}
+		data = append(data, organizationResponse(value, &member.Role))
+	}
+	items := data
+	if _, ok := handler.deps.Organizations.(OrganizationPageManager); !ok {
+		requestedLimit, cursor := paginationInputs(params.Limit, params.Cursor)
+		items, next, err = paginate(data, requestedLimit, cursor, scope, func(value generated.Organization) string { return value.Id.String() })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, generated.OrganizationList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) CreateOrganization(w http.ResponseWriter, r *http.Request) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.CreateOrganizationRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	basePermission := organization.BasePermissionRead
+	if request.BasePermission != nil {
+		basePermission = organization.BasePermission(*request.BasePermission)
+	}
+	membersCanCreate := true
+	if request.MembersCanCreateRepositories != nil {
+		membersCanCreate = *request.MembersCanCreateRepositories
+	}
+	value, err := handler.deps.Organizations.Create(r.Context(), organization.CreateInput{
+		Slug: string(request.Slug), Name: request.Name, Description: optionalString(request.Description),
+		Website: optionalString(request.Website), Location: optionalString(request.Location), CreatorDID: identity.accountDID,
+		BasePermission: basePermission, MembersCanCreateRepo: membersCanCreate,
+	})
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	role := organization.RoleOwner
+	w.Header().Set("Location", "/api/v1/organizations/"+value.Slug)
+	writeJSON(w, http.StatusCreated, organizationResponse(value, &role))
+}
+
+func (handler *apiHandler) GetOrganization(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug) {
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil || value.State != organization.StateActive {
+		handler.writeError(w, r, organization.ErrNotFound)
+		return
+	}
+	viewerDID, err := handler.optionalSessionViewer(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var viewerRole *organization.Role
+	if viewerDID != "" {
+		member, memberErr := handler.deps.Organizations.GetMember(r.Context(), value.ID, viewerDID)
+		if memberErr == nil {
+			viewerRole = &member.Role
+		} else if !errors.Is(memberErr, organization.ErrNotFound) {
+			handler.writeError(w, r, memberErr)
+			return
+		}
+	}
+	w.Header().Set("Vary", "Cookie")
+	writeJSON(w, http.StatusOK, organizationResponse(value, viewerRole))
+}
+
+func (handler *apiHandler) UpdateOrganization(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	current, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.UpdateOrganizationRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.Update(r.Context(), organization.UpdateInput{
+		OrganizationID: current.ID, ActorDID: identity.accountDID, Name: request.Name,
+		Description: optionalString(request.Description), Website: optionalString(request.Website), Location: optionalString(request.Location),
+		BasePermission: organization.BasePermission(request.BasePermission), MembersCanCreateRepo: request.MembersCanCreateRepositories,
+	})
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	role := organization.RoleOwner
+	writeJSON(w, http.StatusOK, organizationResponse(value, &role))
+}
+
+func (handler *apiHandler) ListOrganizationInvitations(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, params generated.ListOrganizationInvitationsParams) {
+	identity, err := handler.requireSession(r, false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "organization-owner-invitations:" + value.ID.String()
+	var invitations []organization.Invitation
+	var next *string
+	if pager, ok := handler.deps.Organizations.(OrganizationPageManager); ok {
+		after, cursorErr := decodeUUIDCollectionCursor(encoded, scope)
+		if cursorErr != nil {
+			handler.writeMalformed(w, r, cursorErr)
+			return
+		}
+		page, pageErr := pager.PageInvitations(r.Context(), value.ID, identity.accountDID, after, limit)
+		if pageErr != nil {
+			handler.writeError(w, r, pageErr)
+			return
+		}
+		invitations = page.Items
+		next, err = encodeCollectionCursor(scope, page.NextCursor)
+	} else {
+		invitations, err = handler.deps.Organizations.ListInvitations(r.Context(), value.ID, identity.accountDID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.OrganizationInvitation, len(invitations))
+	for index, invitation := range invitations {
+		items[index] = organizationInvitationResponse(invitation)
+	}
+	pageItems := items
+	if _, ok := handler.deps.Organizations.(OrganizationPageManager); !ok {
+		requestedLimit, cursor := paginationInputs(params.Limit, params.Cursor)
+		pageItems, next, err = paginate(items, requestedLimit, cursor, scope, func(value generated.OrganizationInvitation) string { return value.Id.String() })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, generated.OrganizationInvitationList{Items: pageItems, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) RevokeOrganizationInvitation(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, invitationID openapi_types.UUID) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err == nil {
+		err = handler.deps.Organizations.RevokeInvitation(r.Context(), value.ID, uuid.UUID(invitationID), identity.accountDID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (handler *apiHandler) ListOrganizationAuditEvents(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, params generated.ListOrganizationAuditEventsParams) {
+	identity, err := handler.requireSession(r, false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "organization-audit:" + value.ID.String()
+	var after *uuid.UUID
+	if encoded != "" {
+		cursor, cursorErr := decodePageCursor(encoded, scope)
+		if cursorErr != nil {
+			handler.writeMalformed(w, r, cursorErr)
+			return
+		}
+		id, parseErr := uuid.Parse(cursor.Key)
+		if parseErr != nil {
+			handler.writeMalformed(w, r, errInvalidCursor)
+			return
+		}
+		after = &id
+	}
+	page, err := handler.deps.Organizations.AuditEvents(r.Context(), value.ID, identity.accountDID, limit, after)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.OrganizationAuditEvent, len(page.Items))
+	for index, event := range page.Items {
+		items[index] = organizationAuditEventResponse(event)
+	}
+	var next *string
+	if page.NextCursor != nil {
+		encodedNext, encodeErr := encodePageCursor(pageCursor{Version: cursorVersion, Scope: scope, Key: page.NextCursor.String()})
+		if encodeErr != nil {
+			handler.writeError(w, r, encodeErr)
+			return
+		}
+		next = &encodedNext
+	}
+	writeJSON(w, http.StatusOK, generated.OrganizationAuditEventList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) ListOrganizationMembers(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, params generated.ListOrganizationMembersParams) {
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil || value.State != organization.StateActive {
+		handler.writeError(w, r, organization.ErrNotFound)
+		return
+	}
+	viewerDID, err := handler.optionalSessionViewer(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	showPrivate := false
+	if viewerDID != "" {
+		_, memberErr := handler.deps.Organizations.GetMember(r.Context(), value.ID, viewerDID)
+		showPrivate = memberErr == nil
+		if memberErr != nil && !errors.Is(memberErr, organization.ErrNotFound) {
+			handler.writeError(w, r, memberErr)
+			return
+		}
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "organization-members:" + string(slug) + ":" + viewerDID
+	var members []organization.Member
+	var next *string
+	if pager, ok := handler.deps.Organizations.(OrganizationPageManager); ok {
+		after, cursorErr := decodeCollectionCursor(encoded, scope)
+		if cursorErr != nil {
+			handler.writeMalformed(w, r, cursorErr)
+			return
+		}
+		page, pageErr := pager.PageMembers(r.Context(), value.ID, showPrivate, after, limit)
+		if pageErr != nil {
+			handler.writeError(w, r, pageErr)
+			return
+		}
+		members = page.Items
+		next, err = encodeCollectionCursor(scope, page.NextCursor)
+	} else {
+		members, err = handler.deps.Organizations.ListMembers(r.Context(), value.ID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	data := make([]generated.OrganizationMember, 0, len(members))
+	for _, member := range members {
+		if showPrivate || member.Visibility == organization.VisibilityPublic {
+			data = append(data, organizationMemberResponse(member))
+		}
+	}
+	items := data
+	if _, ok := handler.deps.Organizations.(OrganizationPageManager); !ok {
+		requestedLimit, cursor := paginationInputs(params.Limit, params.Cursor)
+		items, next, err = paginate(data, requestedLimit, cursor, scope, func(value generated.OrganizationMember) string { return value.Did })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
+	w.Header().Set("Vary", "Cookie")
+	writeJSON(w, http.StatusOK, generated.OrganizationMemberList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) InviteOrganizationMember(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.InviteOrganizationMemberRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	role := organization.RoleMember
+	if request.Role != nil {
+		role = organization.Role(*request.Role)
+	}
+	invitation, err := handler.deps.Organizations.Invite(r.Context(), organization.InviteInput{
+		OrganizationID: value.ID, ActorDID: identity.accountDID, InviteeDID: request.Did, Role: role,
+	})
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, organizationInvitationResponse(invitation))
+}
+
+func (handler *apiHandler) ListOrganizationInvitationsForCurrentUser(w http.ResponseWriter, r *http.Request, params generated.ListOrganizationInvitationsForCurrentUserParams) {
+	identity, err := handler.requireSession(r, false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "organization-invitations:" + identity.accountDID
+	var invitations []organization.Invitation
+	var next *string
+	if pager, ok := handler.deps.Organizations.(OrganizationPageManager); ok {
+		after, cursorErr := decodeUUIDCollectionCursor(encoded, scope)
+		if cursorErr != nil {
+			handler.writeMalformed(w, r, cursorErr)
+			return
+		}
+		page, pageErr := pager.PagePendingInvitations(r.Context(), identity.accountDID, after, limit)
+		if pageErr != nil {
+			handler.writeError(w, r, pageErr)
+			return
+		}
+		invitations = page.Items
+		next, err = encodeCollectionCursor(scope, page.NextCursor)
+	} else {
+		invitations, err = handler.deps.Organizations.ListPendingInvitations(r.Context(), identity.accountDID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	data := make([]generated.OrganizationInvitation, len(invitations))
+	for index, invitation := range invitations {
+		data[index] = organizationInvitationResponse(invitation)
+	}
+	items := data
+	if _, ok := handler.deps.Organizations.(OrganizationPageManager); !ok {
+		requestedLimit, cursor := paginationInputs(params.Limit, params.Cursor)
+		items, next, err = paginate(data, requestedLimit, cursor, scope, func(value generated.OrganizationInvitation) string { return value.Id.String() })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, generated.OrganizationInvitationList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) AcceptOrganizationInvitation(w http.ResponseWriter, r *http.Request, invitationID openapi_types.UUID) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	member, err := handler.deps.Organizations.Accept(r.Context(), uuid.UUID(invitationID), identity.accountDID)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, organizationMemberResponse(member))
+}
+
+func (handler *apiHandler) UpdateOrganizationMember(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, memberDID string) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.UpdateOrganizationMemberRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	if (request.Role == nil) == (request.Visibility == nil) {
+		handler.writeError(w, r, organization.ErrValidation)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var member organization.Member
+	if request.Role != nil {
+		member, err = handler.deps.Organizations.ChangeRole(r.Context(), value.ID, identity.accountDID, memberDID, organization.Role(*request.Role))
+	} else if identity.accountDID != memberDID {
+		err = organization.ErrForbidden
+	} else {
+		member, err = handler.deps.Organizations.SetVisibility(r.Context(), value.ID, identity.accountDID, organization.MembershipVisibility(*request.Visibility))
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, organizationMemberResponse(member))
+}
+
+func (handler *apiHandler) RemoveOrganizationMember(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, memberDID string) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err == nil {
+		err = handler.deps.Organizations.Remove(r.Context(), value.ID, identity.accountDID, memberDID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (handler *apiHandler) ListOrganizationTeams(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, params generated.ListOrganizationTeamsParams) {
+	identity, err := handler.requireSession(r, false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "organization-teams:" + string(slug) + ":" + identity.accountDID
+	var teams []organization.Team
+	var next *string
+	if pager, ok := handler.deps.Teams.(OrganizationTeamPageManager); ok {
+		after, cursorErr := decodeUUIDCollectionCursor(encoded, scope)
+		if cursorErr != nil {
+			handler.writeMalformed(w, r, cursorErr)
+			return
+		}
+		page, pageErr := pager.PageList(r.Context(), value.ID, identity.accountDID, after, limit)
+		if pageErr != nil {
+			handler.writeError(w, r, pageErr)
+			return
+		}
+		teams = page.Items
+		next, err = encodeCollectionCursor(scope, page.NextCursor)
+	} else {
+		teams, err = handler.deps.Teams.List(r.Context(), value.ID, identity.accountDID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	data := make([]generated.OrganizationTeam, len(teams))
+	for index, team := range teams {
+		data[index] = organizationTeamResponse(team)
+	}
+	items := data
+	if _, ok := handler.deps.Teams.(OrganizationTeamPageManager); !ok {
+		requestedLimit, cursor := paginationInputs(params.Limit, params.Cursor)
+		items, next, err = paginate(data, requestedLimit, cursor, scope, func(value generated.OrganizationTeam) string { return value.Id.String() })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, generated.OrganizationTeamList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) CreateOrganizationTeam(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.CreateOrganizationTeamRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	visibility := organization.TeamVisibilityVisible
+	if request.Visibility != nil {
+		visibility = organization.TeamVisibility(*request.Visibility)
+	}
+	var parentTeamID *uuid.UUID
+	if request.ParentTeamId != nil {
+		id := uuid.UUID(*request.ParentTeamId)
+		parentTeamID = &id
+	}
+	team, err := handler.deps.Teams.Create(r.Context(), organization.CreateTeamInput{OrganizationID: value.ID, ActorDID: identity.accountDID, ParentTeamID: parentTeamID, Slug: request.Slug, Name: request.Name, Description: optionalString(request.Description), Visibility: visibility})
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, organizationTeamResponse(team))
+}
+
+func (handler *apiHandler) UpdateOrganizationTeam(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, teamID openapi_types.UUID) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.UpdateOrganizationTeamRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	var parentTeamID *uuid.UUID
+	if request.ParentTeamId != nil {
+		id := uuid.UUID(*request.ParentTeamId)
+		parentTeamID = &id
+	}
+	team, err := handler.deps.Teams.Update(r.Context(), organization.UpdateTeamInput{
+		OrganizationID: value.ID, TeamID: uuid.UUID(teamID), ActorDID: identity.accountDID,
+		ParentTeamID: parentTeamID, Name: request.Name, Description: optionalString(request.Description), Visibility: organization.TeamVisibility(request.Visibility),
+	})
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, organizationTeamResponse(team))
+}
+
+func (handler *apiHandler) DeleteOrganizationTeam(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, teamID openapi_types.UUID) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err == nil {
+		err = handler.deps.Teams.Delete(r.Context(), value.ID, uuid.UUID(teamID), identity.accountDID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (handler *apiHandler) ListOrganizationTeamMembers(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, teamID openapi_types.UUID, params generated.ListOrganizationTeamMembersParams) {
+	identity, err := handler.requireSession(r, false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "organization-team-members:" + teamID.String() + ":" + identity.accountDID
+	var members []organization.TeamMember
+	var next *string
+	if pager, ok := handler.deps.Teams.(OrganizationTeamPageManager); ok {
+		after, cursorErr := decodeCollectionCursor(encoded, scope)
+		if cursorErr != nil {
+			handler.writeMalformed(w, r, cursorErr)
+			return
+		}
+		page, pageErr := pager.PageMembers(r.Context(), value.ID, uuid.UUID(teamID), identity.accountDID, after, limit)
+		if pageErr != nil {
+			handler.writeError(w, r, pageErr)
+			return
+		}
+		members = page.Items
+		next, err = encodeCollectionCursor(scope, page.NextCursor)
+	} else {
+		members, err = handler.deps.Teams.Members(r.Context(), value.ID, uuid.UUID(teamID), identity.accountDID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	data := make([]generated.OrganizationTeamMember, len(members))
+	for index, member := range members {
+		data[index] = organizationTeamMemberResponse(member)
+	}
+	items := data
+	if _, ok := handler.deps.Teams.(OrganizationTeamPageManager); !ok {
+		requestedLimit, cursor := paginationInputs(params.Limit, params.Cursor)
+		items, next, err = paginate(data, requestedLimit, cursor, scope, func(value generated.OrganizationTeamMember) string { return value.Did })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, generated.OrganizationTeamMemberList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) PutOrganizationTeamMember(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, teamID openapi_types.UUID, memberDID string) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.PutOrganizationTeamMemberRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	role := organization.TeamRoleMember
+	if request.Role != nil {
+		role = organization.TeamRole(*request.Role)
+	}
+	member, err := handler.deps.Teams.PutMember(r.Context(), value.ID, uuid.UUID(teamID), identity.accountDID, memberDID, role)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, organizationTeamMemberResponse(member))
+}
+
+func (handler *apiHandler) RemoveOrganizationTeamMember(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, teamID openapi_types.UUID, memberDID string) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err == nil {
+		err = handler.deps.Teams.RemoveMember(r.Context(), value.ID, uuid.UUID(teamID), identity.accountDID, memberDID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (handler *apiHandler) ListOrganizationRepositories(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, params generated.ListOrganizationRepositoriesParams) {
+	identity, err := handler.requireSession(r, false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	if _, err = handler.deps.Organizations.GetMember(r.Context(), value.ID, identity.accountDID); err != nil {
+		handler.writeError(w, r, organization.ErrForbidden)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "organization-repositories:" + string(slug)
+	var repositories []repository.Repository
+	var next *string
+	if pager, ok := handler.deps.Repositories.(OrganizationRepositoryPageManager); ok {
+		after, cursorErr := decodeUUIDCollectionCursor(encoded, scope)
+		if cursorErr != nil {
+			handler.writeMalformed(w, r, cursorErr)
+			return
+		}
+		page, pageErr := pager.PageByOrganization(r.Context(), uuid.UUID(value.ID), identity.accountDID, after, limit)
+		if pageErr != nil {
+			handler.writeError(w, r, pageErr)
+			return
+		}
+		repositories = page.Items
+		if page.NextCursor != nil {
+			next, err = encodeCollectionCursor(scope, page.NextCursor.String())
+		}
+	} else {
+		repositories, err = handler.deps.Repositories.ListByOrganization(r.Context(), uuid.UUID(value.ID))
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.Repository, len(repositories))
+	for index, repo := range repositories {
+		repo.OrganizationSlug = value.Slug
+		items[index] = handler.repositoryResponse(repo)
+	}
+	pageItems := items
+	if _, ok := handler.deps.Repositories.(OrganizationRepositoryPageManager); !ok {
+		requestedLimit, cursor := paginationInputs(params.Limit, params.Cursor)
+		pageItems, next, err = paginate(items, requestedLimit, cursor, scope, func(value generated.Repository) string { return string(value.Slug) })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, generated.RepositoryList{Items: pageItems, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) ListOrganizationRepositoryCollaborators(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, repositoryID openapi_types.UUID, params generated.ListOrganizationRepositoryCollaboratorsParams) {
+	identity, err := handler.requireSession(r, false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "organization-repository-collaborators:" + value.ID.String() + ":" + repositoryID.String()
+	after := ""
+	if encoded != "" {
+		cursor, cursorErr := decodePageCursor(encoded, scope)
+		if cursorErr != nil {
+			handler.writeMalformed(w, r, cursorErr)
+			return
+		}
+		after = cursor.Key
+	}
+	page, err := handler.deps.Collaborators.List(r.Context(), value.ID, uuid.UUID(repositoryID), identity.accountDID, after, limit)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.OrganizationRepositoryCollaborator, len(page.Items))
+	for index, collaborator := range page.Items {
+		items[index] = organizationRepositoryCollaboratorResponse(collaborator)
+	}
+	var next *string
+	if page.NextCursor != nil {
+		encodedNext, encodeErr := encodePageCursor(pageCursor{Version: cursorVersion, Scope: scope, Key: *page.NextCursor})
+		if encodeErr != nil {
+			handler.writeError(w, r, encodeErr)
+			return
+		}
+		next = &encodedNext
+	}
+	writeJSON(w, http.StatusOK, generated.OrganizationRepositoryCollaboratorList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) PutOrganizationRepositoryCollaborator(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, repositoryID openapi_types.UUID, collaboratorDID string) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.PutOrganizationRepositoryCollaboratorRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	collaborator, err := handler.deps.Collaborators.Put(r.Context(), value.ID, uuid.UUID(repositoryID), identity.accountDID, collaboratorDID, organization.RepositoryRole(request.Role))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, organizationRepositoryCollaboratorResponse(collaborator))
+}
+
+func (handler *apiHandler) RemoveOrganizationRepositoryCollaborator(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, repositoryID openapi_types.UUID, collaboratorDID string) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err == nil {
+		err = handler.deps.Collaborators.Remove(r.Context(), value.ID, uuid.UUID(repositoryID), identity.accountDID, collaboratorDID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (handler *apiHandler) ListOrganizationTeamRepositories(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, teamID openapi_types.UUID, params generated.ListOrganizationTeamRepositoriesParams) {
+	identity, err := handler.requireSession(r, false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "organization-team-repositories:" + teamID.String() + ":" + identity.accountDID
+	var repositories []organization.TeamRepository
+	var next *string
+	if pager, ok := handler.deps.Teams.(OrganizationTeamPageManager); ok {
+		after, cursorErr := decodeUUIDCollectionCursor(encoded, scope)
+		if cursorErr != nil {
+			handler.writeMalformed(w, r, cursorErr)
+			return
+		}
+		page, pageErr := pager.PageRepositories(r.Context(), value.ID, uuid.UUID(teamID), identity.accountDID, after, limit)
+		if pageErr != nil {
+			handler.writeError(w, r, pageErr)
+			return
+		}
+		repositories = page.Items
+		next, err = encodeCollectionCursor(scope, page.NextCursor)
+	} else {
+		repositories, err = handler.deps.Teams.Repositories(r.Context(), value.ID, uuid.UUID(teamID), identity.accountDID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.OrganizationTeamRepository, len(repositories))
+	for index, repository := range repositories {
+		items[index] = organizationTeamRepositoryResponse(repository)
+	}
+	pageItems := items
+	if _, ok := handler.deps.Teams.(OrganizationTeamPageManager); !ok {
+		requestedLimit, cursor := paginationInputs(params.Limit, params.Cursor)
+		pageItems, next, err = paginate(items, requestedLimit, cursor, scope, func(value generated.OrganizationTeamRepository) string { return value.RepositoryId.String() })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, generated.OrganizationTeamRepositoryList{Items: pageItems, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) PutOrganizationTeamRepository(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, teamID, repositoryID openapi_types.UUID) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.PutOrganizationTeamRepositoryRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	assignment, err := handler.deps.Teams.PutRepository(r.Context(), value.ID, uuid.UUID(teamID), identity.accountDID, uuid.UUID(repositoryID), organization.RepositoryRole(request.Role))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, organizationTeamRepositoryResponse(assignment))
+}
+
+func (handler *apiHandler) RemoveOrganizationTeamRepository(w http.ResponseWriter, r *http.Request, slug generated.OrganizationSlug, teamID, repositoryID openapi_types.UUID) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(slug))
+	if err == nil {
+		err = handler.deps.Teams.RemoveRepository(r.Context(), value.ID, uuid.UUID(teamID), identity.accountDID, uuid.UUID(repositoryID))
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (handler *apiHandler) CreateRepository(w http.ResponseWriter, r *http.Request, _ generated.CreateRepositoryParams) {
 	identity, err := handler.authenticate(r)
 	if err != nil {
@@ -656,15 +1666,34 @@ func (handler *apiHandler) CreateRepository(w http.ResponseWriter, r *http.Reque
 	if request.DefaultBranch != nil {
 		defaultBranch = *request.DefaultBranch
 	}
+	var organizationID *uuid.UUID
+	var organizationSlug string
+	var organizationAT *repository.ATIdentity
+	if request.Organization != nil {
+		value, organizationErr := handler.deps.Organizations.GetBySlug(r.Context(), string(*request.Organization))
+		if organizationErr != nil {
+			handler.writeError(w, r, organizationErr)
+			return
+		}
+		member, memberErr := handler.deps.Organizations.GetMember(r.Context(), value.ID, identity.accountDID)
+		if memberErr != nil || (member.Role != organization.RoleOwner && !value.MembersCanCreateRepo) {
+			handler.writeError(w, r, organization.ErrForbidden)
+			return
+		}
+		id := uuid.UUID(value.ID)
+		organizationID, organizationSlug = &id, value.Slug
+		organizationAT = &repository.ATIdentity{URI: value.ATURI, CID: value.ATCID}
+	}
 	repo, err := handler.deps.Repositories.Create(r.Context(), repository.CreateInput{
 		OwnerDID: identity.accountDID, Slug: request.Slug, DisplayName: optionalString(request.DisplayName),
+		OrganizationID: organizationID, OrganizationSlug: organizationSlug, OrganizationAT: organizationAT,
 		Description: optionalString(request.Description), Visibility: visibility, DefaultBranch: defaultBranch,
 	})
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
 	}
-	w.Header().Set("Location", "/api/v1/repositories/"+repo.OwnerDID+"/"+repo.Slug)
+	w.Header().Set("Location", "/api/v1/repositories/"+repositoryRouteOwner(repo)+"/"+repo.Slug)
 	writeJSON(w, http.StatusCreated, handler.repositoryResponse(repo))
 }
 
@@ -722,7 +1751,7 @@ func (handler *apiHandler) ListNetworkRepositories(w http.ResponseWriter, r *htt
 	for index, repo := range page.Repositories {
 		data[index] = networkRepositoryResponse(repo)
 	}
-	writeJSON(w, http.StatusOK, generated.NetworkRepositoryList{Data: data, Page: generated.Page{NextCursor: page.NextCursor}})
+	writeJSON(w, http.StatusOK, generated.NetworkRepositoryList{Items: data, Page: generated.Page{NextCursor: page.NextCursor}})
 }
 
 func (handler *apiHandler) SearchRepositories(w http.ResponseWriter, r *http.Request, params generated.SearchRepositoriesParams) {
@@ -746,7 +1775,7 @@ func (handler *apiHandler) SearchRepositories(w http.ResponseWriter, r *http.Req
 		data[index] = networkRepositoryResponse(repository)
 	}
 	w.Header().Set("Vary", "Cookie")
-	writeJSON(w, http.StatusOK, generated.RepositorySearchPage{Data: data, Page: generated.Page{NextCursor: page.NextCursor}})
+	writeJSON(w, http.StatusOK, generated.RepositorySearchPage{Items: data, Page: generated.Page{NextCursor: page.NextCursor}})
 }
 
 func (handler *apiHandler) SearchProfiles(w http.ResponseWriter, r *http.Request, params generated.SearchProfilesParams) {
@@ -770,7 +1799,7 @@ func (handler *apiHandler) SearchProfiles(w http.ResponseWriter, r *http.Request
 		data[index] = developerProfileResponse(developerProfile)
 	}
 	w.Header().Set("Vary", "Cookie")
-	writeJSON(w, http.StatusOK, generated.ProfileSearchPage{Data: data, Page: generated.Page{NextCursor: page.NextCursor}})
+	writeJSON(w, http.StatusOK, generated.ProfileSearchPage{Items: data, Page: generated.Page{NextCursor: page.NextCursor}})
 }
 
 func searchParameters[S ~string](r *http.Request, limit *generated.SearchLimit, cursor *generated.SearchCursor, sort *S) (int, string, string) {
@@ -910,7 +1939,16 @@ func (handler *apiHandler) GetStars(w http.ResponseWriter, r *http.Request, para
 		return
 	}
 	var projection star.Projection
-	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+	var next *string
+	if pager, ok := handler.deps.Search.(collaborationPager); ok {
+		limit, cursor := collectionParameters(params.Limit, params.Cursor)
+		page, pageErr := pager.PageStars(r.Context(), params.RepositoryUri, viewerDID, limit, cursor)
+		if pageErr != nil {
+			handler.writeMalformed(w, r, pageErr)
+			return
+		}
+		projection, next = page.Projection, page.NextCursor
+	} else if reader, ok := handler.deps.Search.(collaborationReader); ok {
 		projection, err = reader.ListStars(r.Context(), params.RepositoryUri, viewerDID)
 	} else {
 		projection, err = handler.deps.Stars.Get(r.Context(), params.RepositoryUri)
@@ -923,8 +1961,17 @@ func (handler *apiHandler) GetStars(w http.ResponseWriter, r *http.Request, para
 	for index, value := range projection.Stars {
 		data[index] = projectedStarResponse(value)
 	}
+	items := data
+	if _, paged := handler.deps.Search.(collaborationPager); !paged {
+		limit, cursor := paginationInputs(params.Limit, params.Cursor)
+		items, next, err = paginate(data, limit, cursor, "stars:"+params.RepositoryUri+":"+viewerDID, func(value generated.Star) string { return value.Uri })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
 	w.Header().Set("Vary", "Cookie")
-	writeJSON(w, http.StatusOK, generated.StarList{StarCount: projection.StarCount, Data: data})
+	writeJSON(w, http.StatusOK, generated.StarList{StarCount: projection.StarCount, Items: items, Page: generated.Page{NextCursor: next}})
 }
 
 func (handler *apiHandler) PutStar(w http.ResponseWriter, r *http.Request, params generated.PutStarParams) {
@@ -961,7 +2008,16 @@ func (handler *apiHandler) GetIssues(w http.ResponseWriter, r *http.Request, par
 		return
 	}
 	var projection issue.Projection
-	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+	var next *string
+	if pager, ok := handler.deps.Search.(collaborationPager); ok {
+		limit, cursor := collectionParameters(params.Limit, params.Cursor)
+		page, pageErr := pager.PageIssues(r.Context(), params.RepositoryUri, viewerDID, limit, cursor)
+		if pageErr != nil {
+			handler.writeMalformed(w, r, pageErr)
+			return
+		}
+		projection, next = page.Projection, page.NextCursor
+	} else if reader, ok := handler.deps.Search.(collaborationReader); ok {
 		projection, err = reader.ListIssues(r.Context(), params.RepositoryUri, viewerDID)
 	} else {
 		projection, err = handler.deps.Issues.Get(r.Context(), params.RepositoryUri)
@@ -974,8 +2030,17 @@ func (handler *apiHandler) GetIssues(w http.ResponseWriter, r *http.Request, par
 	for index, value := range projection.Issues {
 		data[index] = projectedIssueResponse(value)
 	}
+	items := data
+	if _, paged := handler.deps.Search.(collaborationPager); !paged {
+		limit, cursor := paginationInputs(params.Limit, params.Cursor)
+		items, next, err = paginate(data, limit, cursor, "issues:"+params.RepositoryUri+":"+viewerDID, func(value projectedIssueJSON) string { return value.URI })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
 	w.Header().Set("Vary", "Cookie")
-	writeJSON(w, http.StatusOK, issueListJSON{IssueCount: projection.IssueCount, OpenIssueCount: projection.OpenIssueCount, Data: data})
+	writeJSON(w, http.StatusOK, issueListJSON{IssueCount: projection.IssueCount, OpenIssueCount: projection.OpenIssueCount, Items: items, Page: generated.Page{NextCursor: next}})
 }
 
 func (handler *apiHandler) GetIssue(w http.ResponseWriter, r *http.Request, params generated.GetIssueParams) {
@@ -1059,7 +2124,16 @@ func (handler *apiHandler) ListPullRequests(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	var projection pullrequest.Projection
-	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+	var next *string
+	if pager, ok := handler.deps.Search.(collaborationPager); ok {
+		limit, cursor := collectionParameters(params.Limit, params.Cursor)
+		page, pageErr := pager.PagePullRequests(r.Context(), params.RepositoryUri, viewerDID, limit, cursor)
+		if pageErr != nil {
+			handler.writeMalformed(w, r, pageErr)
+			return
+		}
+		projection, next = page.Projection, page.NextCursor
+	} else if reader, ok := handler.deps.Search.(collaborationReader); ok {
 		projection, err = reader.ListPullRequests(r.Context(), params.RepositoryUri, viewerDID)
 	} else {
 		projection, err = handler.deps.PullRequests.List(r.Context(), params.RepositoryUri)
@@ -1072,8 +2146,17 @@ func (handler *apiHandler) ListPullRequests(w http.ResponseWriter, r *http.Reque
 	for index, value := range projection.PullRequests {
 		data[index] = projectedPullRequestResponse(value)
 	}
+	items := data
+	if _, paged := handler.deps.Search.(collaborationPager); !paged {
+		limit, cursor := paginationInputs(params.Limit, params.Cursor)
+		items, next, err = paginate(data, limit, cursor, "pull-requests:"+params.RepositoryUri+":"+viewerDID, func(value generated.PullRequest) string { return value.Uri })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
 	w.Header().Set("Vary", "Cookie")
-	writeJSON(w, http.StatusOK, generated.PullRequestList{PullRequestCount: projection.PullRequestCount, OpenPullRequestCount: projection.OpenPullRequestCount, Data: data})
+	writeJSON(w, http.StatusOK, generated.PullRequestList{PullRequestCount: projection.PullRequestCount, OpenPullRequestCount: projection.OpenPullRequestCount, Items: items, Page: generated.Page{NextCursor: next}})
 }
 
 func (handler *apiHandler) GetPullRequest(w http.ResponseWriter, r *http.Request, params generated.GetPullRequestParams) {
@@ -1146,7 +2229,16 @@ func (handler *apiHandler) ListPullRequestReviews(w http.ResponseWriter, r *http
 		return
 	}
 	var values []pullrequest.ProjectedReview
-	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+	var next *string
+	if pager, ok := handler.deps.Search.(collaborationPager); ok {
+		limit, cursor := collectionParameters(params.Limit, params.Cursor)
+		page, pageErr := pager.PagePullRequestReviews(r.Context(), params.PullRequestUri, viewerDID, limit, cursor)
+		if pageErr != nil {
+			handler.writeMalformed(w, r, pageErr)
+			return
+		}
+		values, next = page.Reviews, page.NextCursor
+	} else if reader, ok := handler.deps.Search.(collaborationReader); ok {
 		values, err = reader.ListPullRequestReviews(r.Context(), params.PullRequestUri, viewerDID)
 	} else {
 		values, err = handler.deps.PullRequests.Reviews(r.Context(), params.PullRequestUri)
@@ -1159,8 +2251,17 @@ func (handler *apiHandler) ListPullRequestReviews(w http.ResponseWriter, r *http
 	for index, value := range values {
 		data[index] = projectedPullRequestReviewResponse(value)
 	}
+	items := data
+	if _, paged := handler.deps.Search.(collaborationPager); !paged {
+		limit, cursor := paginationInputs(params.Limit, params.Cursor)
+		items, next, err = paginate(data, limit, cursor, "pull-request-reviews:"+params.PullRequestUri+":"+viewerDID, func(value generated.PullRequestReview) string { return value.Uri })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
 	w.Header().Set("Vary", "Cookie")
-	writeJSON(w, http.StatusOK, generated.PullRequestReviewList{Data: data})
+	writeJSON(w, http.StatusOK, generated.PullRequestReviewList{Items: items, Page: generated.Page{NextCursor: next}})
 }
 
 func (handler *apiHandler) CreatePullRequestReview(w http.ResponseWriter, r *http.Request, _ generated.CreatePullRequestReviewParams) {
@@ -1241,16 +2342,52 @@ func (handler *apiHandler) GetIssueComments(w http.ResponseWriter, r *http.Reque
 		handler.writeError(w, r, err)
 		return
 	}
-	projection, err := handler.deps.Comments.Get(r.Context(), params.IssueUri, viewerDID)
+	limit, encodedCursor := collectionParameters(params.Limit, params.Cursor)
+	scope := "issue-comments:" + params.IssueUri + ":" + viewerDID
+	afterURI := ""
+	if encodedCursor != "" {
+		cursor, cursorErr := decodePageCursor(encodedCursor, scope)
+		if cursorErr != nil {
+			handler.writeMalformed(w, r, cursorErr)
+			return
+		}
+		afterURI = cursor.Key
+	}
+	var projection comment.Projection
+	if pager, ok := handler.deps.Comments.(CommentPageManager); ok {
+		projection, err = pager.GetPage(r.Context(), params.IssueUri, viewerDID, limit+1, afterURI)
+	} else {
+		projection, err = handler.deps.Comments.Get(r.Context(), params.IssueUri, viewerDID)
+	}
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
 	}
-	data := make([]generated.Comment, len(projection.Comments))
-	for index, value := range projection.Comments {
+	values := projection.Comments
+	var next *string
+	if _, paged := handler.deps.Comments.(CommentPageManager); paged && len(values) > limit {
+		values = values[:limit]
+		encoded, cursorErr := encodePageCursor(pageCursor{Version: cursorVersion, Scope: scope, Key: values[len(values)-1].URI})
+		if cursorErr != nil {
+			handler.writeError(w, r, cursorErr)
+			return
+		}
+		next = &encoded
+	}
+	data := make([]generated.Comment, len(values))
+	for index, value := range values {
 		data[index] = projectedCommentResponse(value)
 	}
-	writeJSON(w, http.StatusOK, generated.CommentList{CommentCount: projection.CommentCount, Data: data})
+	items := data
+	if _, paged := handler.deps.Comments.(CommentPageManager); !paged {
+		requestedLimit, cursor := paginationInputs(params.Limit, params.Cursor)
+		items, next, err = paginate(data, requestedLimit, cursor, scope, func(value generated.Comment) string { return value.Uri })
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, generated.CommentList{CommentCount: projection.CommentCount, Items: items, Page: generated.Page{NextCursor: next}})
 }
 
 func (handler *apiHandler) CreateIssueComment(w http.ResponseWriter, r *http.Request, _ generated.CreateIssueCommentParams) {
@@ -1376,7 +2513,7 @@ func (handler *apiHandler) DeleteHiddenRecord(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (handler *apiHandler) ListRepositoryBranches(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
+func (handler *apiHandler) ListRepositoryBranches(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, params generated.ListRepositoryBranchesParams) {
 	repo, err := handler.readableRepository(r, owner, slug)
 	if err != nil {
 		handler.writeError(w, r, err)
@@ -1391,10 +2528,16 @@ func (handler *apiHandler) ListRepositoryBranches(w http.ResponseWriter, r *http
 	for index, branch := range branches {
 		data[index] = generated.Branch{Name: branch.Name, Sha: branch.SHA, Default: branch.Default}
 	}
-	writeJSON(w, http.StatusOK, generated.BranchList{Data: data})
+	limit, cursor := paginationInputs(params.Limit, params.Cursor)
+	items, next, err := paginate(data, limit, cursor, "repository-branches:"+repo.ID.String(), func(value generated.Branch) string { return value.Name })
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.BranchList{Items: items, Page: generated.Page{NextCursor: next}})
 }
 
-func (handler *apiHandler) ListRepositoryTags(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
+func (handler *apiHandler) ListRepositoryTags(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, params generated.ListRepositoryTagsParams) {
 	repo, err := handler.readableRepository(r, owner, slug)
 	if err != nil {
 		handler.writeError(w, r, err)
@@ -1409,7 +2552,13 @@ func (handler *apiHandler) ListRepositoryTags(w http.ResponseWriter, r *http.Req
 	for index, tag := range tags {
 		data[index] = generated.Tag{Name: tag.Name, Sha: tag.SHA, ObjectType: tag.ObjectType, TargetSha: tag.PeeledSHA, TargetType: tag.PeeledType}
 	}
-	writeJSON(w, http.StatusOK, generated.TagList{Data: data})
+	limit, cursor := paginationInputs(params.Limit, params.Cursor)
+	items, next, err := paginate(data, limit, cursor, "repository-tags:"+repo.ID.String(), func(value generated.Tag) string { return value.Name })
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.TagList{Items: items, Page: generated.Page{NextCursor: next}})
 }
 
 func (handler *apiHandler) GetRepositoryTree(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, params generated.GetRepositoryTreeParams) {
@@ -1480,6 +2629,15 @@ func (handler *apiHandler) ListRepositoryCommits(w http.ResponseWriter, r *http.
 	if params.Ref != nil {
 		ref = *params.Ref
 	}
+	scope := "repository-commits:" + repo.ID.String() + ":" + ref
+	if params.Cursor != nil && *params.Cursor != "" {
+		cursor, err := decodePageCursor(string(*params.Cursor), scope)
+		if err != nil {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+		ref = cursor.Key + "^"
+	}
 	limit := 30
 	if params.Limit != nil {
 		limit = *params.Limit
@@ -1493,7 +2651,16 @@ func (handler *apiHandler) ListRepositoryCommits(w http.ResponseWriter, r *http.
 	for index, commit := range commits {
 		data[index] = commitSummaryResponse(commit)
 	}
-	writeJSON(w, http.StatusOK, generated.CommitList{Data: data})
+	var next *string
+	if len(commits) == limit && len(commits[len(commits)-1].Parents) > 0 {
+		encoded, err := encodePageCursor(pageCursor{Version: cursorVersion, Scope: scope, Key: commits[len(commits)-1].SHA})
+		if err != nil {
+			handler.writeError(w, r, err)
+			return
+		}
+		next = &encoded
+	}
+	writeJSON(w, http.StatusOK, generated.CommitList{Items: data, Page: generated.Page{NextCursor: next}})
 }
 
 func (handler *apiHandler) GetRepositoryCommit(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, revision string) {
@@ -1693,6 +2860,20 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusConflict, "conflict", "The request conflicts with existing state", err)
 	case errors.Is(err, auth.ErrValidation), errors.Is(err, repository.ErrValidation):
 		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The request is invalid", err)
+	case errors.Is(err, organization.ErrNotFound):
+		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested organization resource was not found", err)
+	case errors.Is(err, organization.ErrAlreadyExists):
+		handler.writeAPIError(w, r, http.StatusConflict, "organization_conflict", "The organization or membership already exists", err)
+	case errors.Is(err, organization.ErrForbidden):
+		handler.writeAPIError(w, r, http.StatusForbidden, "permission_denied", "You do not have permission to manage this organization", err)
+	case errors.Is(err, organization.ErrLastOwner):
+		handler.writeAPIError(w, r, http.StatusConflict, "last_organization_owner", "An organization must retain at least one owner", err)
+	case errors.Is(err, organization.ErrCreatorOwner):
+		handler.writeAPIError(w, r, http.StatusConflict, "organization_creator_owner", "The organization creator must remain an owner while they control its AT Protocol root", err)
+	case errors.Is(err, organization.ErrInvitation):
+		handler.writeAPIError(w, r, http.StatusConflict, "invitation_unavailable", "The invitation is expired, revoked, or belongs to another account", err)
+	case errors.Is(err, organization.ErrValidation):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The organization request is invalid", err)
 	case errors.Is(err, profile.ErrProvider):
 		handler.writeAPIError(w, r, http.StatusBadGateway, "profile_provider_unavailable", "The profile provider is unavailable", err)
 	case errors.Is(err, profile.ErrAuthorization):
@@ -1798,6 +2979,72 @@ func sshKeyResponse(key auth.SSHKey) generated.SSHKey {
 		PublicKey: key.PublicKey, Fingerprint: key.Fingerprint, CreatedAt: key.CreatedAt, LastUsedAt: key.LastUsedAt}
 }
 
+func organizationResponse(value organization.Organization, viewerRole *organization.Role) generated.Organization {
+	var role *generated.OrganizationViewerRole
+	if viewerRole != nil {
+		converted := generated.OrganizationViewerRole(*viewerRole)
+		role = &converted
+	}
+	return generated.Organization{
+		Id: openapi_types.UUID(value.ID), Slug: value.Slug, Name: value.Name,
+		Description: pointerUnlessEmpty(value.Description), Website: pointerUnlessEmpty(value.Website), Location: pointerUnlessEmpty(value.Location),
+		CreatorDid: value.CreatorDID, BasePermission: generated.OrganizationBasePermission(value.BasePermission),
+		MembersCanCreateRepositories: value.MembersCanCreateRepo, State: generated.OrganizationState(value.State),
+		Uri: pointerUnlessEmpty(value.ATURI), Cid: pointerUnlessEmpty(value.ATCID), ViewerRole: role,
+		CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt,
+	}
+}
+
+func organizationMemberResponse(value organization.Member) generated.OrganizationMember {
+	return generated.OrganizationMember{
+		Did: value.AccountDID, Handle: pointerUnlessEmpty(value.Handle), Role: generated.OrganizationMemberRole(value.Role),
+		Visibility: generated.OrganizationMemberVisibility(value.Visibility), JoinedAt: value.JoinedAt, UpdatedAt: value.UpdatedAt,
+	}
+}
+
+func organizationInvitationResponse(value organization.Invitation) generated.OrganizationInvitation {
+	return generated.OrganizationInvitation{
+		Id: openapi_types.UUID(value.ID), OrganizationId: openapi_types.UUID(value.OrganizationID),
+		OrganizationSlug: pointerUnlessEmpty(value.OrganizationSlug), OrganizationName: pointerUnlessEmpty(value.OrganizationName),
+		InviteeDid: value.InviteeDID, InvitedByDid: value.InvitedByDID, Role: generated.OrganizationInvitationRole(value.Role),
+		CreatedAt: value.CreatedAt, ExpiresAt: value.ExpiresAt,
+	}
+}
+
+func organizationTeamResponse(value organization.Team) generated.OrganizationTeam {
+	var viewerRole *generated.OrganizationTeamViewerRole
+	if value.ViewerRole != "" {
+		role := generated.OrganizationTeamViewerRole(value.ViewerRole)
+		viewerRole = &role
+	}
+	var parentTeamID *openapi_types.UUID
+	if value.ParentTeamID != nil {
+		id := openapi_types.UUID(*value.ParentTeamID)
+		parentTeamID = &id
+	}
+	return generated.OrganizationTeam{Id: openapi_types.UUID(value.ID), OrganizationId: openapi_types.UUID(value.OrganizationID), ParentTeamId: parentTeamID, Slug: value.Slug, Name: value.Name, Description: pointerUnlessEmpty(value.Description), Visibility: generated.OrganizationTeamVisibility(value.Visibility), ViewerRole: viewerRole, CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
+}
+
+func organizationAuditEventResponse(value organization.AuditEvent) generated.OrganizationAuditEvent {
+	metadata := map[string]interface{}{}
+	if len(value.Metadata) > 0 {
+		_ = json.Unmarshal(value.Metadata, &metadata)
+	}
+	return generated.OrganizationAuditEvent{Id: openapi_types.UUID(value.ID), ActorDid: value.ActorDID, Action: value.Action, TargetType: value.TargetType, TargetId: value.TargetID, RequestId: pointerUnlessEmpty(value.RequestID), Metadata: metadata, CreatedAt: value.CreatedAt}
+}
+
+func organizationTeamMemberResponse(value organization.TeamMember) generated.OrganizationTeamMember {
+	return generated.OrganizationTeamMember{Did: value.AccountDID, Handle: pointerUnlessEmpty(value.Handle), Role: generated.OrganizationTeamMemberRole(value.Role), CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
+}
+
+func organizationTeamRepositoryResponse(value organization.TeamRepository) generated.OrganizationTeamRepository {
+	return generated.OrganizationTeamRepository{RepositoryId: openapi_types.UUID(value.RepositoryID), RepositorySlug: value.RepositorySlug, Role: generated.OrganizationTeamRepositoryRole(value.Role), CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
+}
+
+func organizationRepositoryCollaboratorResponse(value organization.RepositoryCollaborator) generated.OrganizationRepositoryCollaborator {
+	return generated.OrganizationRepositoryCollaborator{RepositoryId: openapi_types.UUID(value.RepositoryID), RepositorySlug: pointerUnlessEmpty(value.RepositorySlug), Did: value.AccountDID, Handle: pointerUnlessEmpty(value.Handle), Role: generated.OrganizationRepositoryCollaboratorRole(value.Role), CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
+}
+
 func passkeyResponse(credential passkey.CredentialSummary) generated.Passkey {
 	return generated.Passkey{Id: openapi_types.UUID(credential.ID), Name: credential.Name, CreatedAt: credential.CreatedAt, LastUsedAt: credential.LastUsedAt}
 }
@@ -1847,11 +3094,13 @@ func (handler *apiHandler) repositoryResponse(repo repository.Repository) genera
 		webURL, gitHTTPSURL, gitSSHURL = handler.deps.Endpoints.For(repo)
 	}
 	id := openapi_types.UUID(repo.ID)
+	viewerCanAdmin := repo.ViewerCanAdmin
 	return generated.Repository{
 		Id: &id, Uri: pointerUnlessEmpty(repo.ATURI), Cid: pointerUnlessEmpty(repo.ATCID), Slug: repo.Slug, DisplayName: pointerUnlessEmpty(repo.DisplayName),
 		Description: pointerUnlessEmpty(repo.Description), Visibility: generated.RepositoryVisibility(repo.Visibility),
 		State: generated.RepositoryState(repo.State), DefaultBranch: repo.DefaultBranch,
-		Owner: generated.RepositoryOwner{Did: repo.OwnerDID}, CreatedAt: repo.CreatedAt, UpdatedAt: repo.UpdatedAt,
+		ViewerCanAdmin: &viewerCanAdmin,
+		Owner:          repositoryOwnerResponse(repo), CreatedAt: repo.CreatedAt, UpdatedAt: repo.UpdatedAt,
 		Hosting: generated.RepositoryHosting{Local: true, WebUrl: webURL, GitHttpsUrl: gitHTTPSURL, GitSshUrl: pointerUnlessEmpty(gitSSHURL), SourceBrowsing: generated.Local},
 	}
 }
@@ -1862,17 +3111,44 @@ func networkRepositoryResponse(repo federation.DiscoveryRepository) generated.Re
 		value := openapi_types.UUID(*repo.LocalRepositoryID)
 		id = &value
 	}
+	owner := generated.RepositoryOwner{Did: repo.OwnerDID, Handle: pointerUnlessEmpty(repo.OwnerHandle), Kind: repositoryOwnerKind(generated.RepositoryOwnerKindAccount)}
+	if repo.OrganizationSlug != "" {
+		slug := generated.OrganizationSlug(repo.OrganizationSlug)
+		owner.Kind = repositoryOwnerKind(generated.RepositoryOwnerKindOrganization)
+		owner.OrganizationSlug = &slug
+	}
 	return generated.Repository{
 		Id: id, Uri: &repo.URI, Cid: pointerUnlessEmpty(repo.CID), Slug: repo.Slug, DisplayName: pointerUnlessEmpty(repo.Name),
 		Description: pointerUnlessEmpty(repo.Description), Visibility: generated.RepositoryVisibilityPublic,
-		State: generated.Active, DefaultBranch: repo.DefaultBranch,
-		Owner:     generated.RepositoryOwner{Did: repo.OwnerDID, Handle: pointerUnlessEmpty(repo.OwnerHandle)},
+		State: generated.RepositoryStateActive, DefaultBranch: repo.DefaultBranch,
+		Owner:     owner,
 		StarCount: repo.StarCount, IssueCount: repo.IssueCount, OpenIssueCount: repo.OpenIssueCount,
 		CommentCount: repo.CommentCount, PullRequestCount: repo.PullRequestCount, OpenPullRequestCount: repo.OpenPullRequestCount,
 		Hosting: generated.RepositoryHosting{Local: repo.LocalRepositoryID != nil, WebUrl: repo.Web,
 			GitHttpsUrl: repo.GitHTTPS, GitSshUrl: pointerUnlessEmpty(repo.GitSSH), SourceBrowsing: sourceBrowsing(repo)},
 		CreatedAt: repo.CreatedAt, UpdatedAt: repo.UpdatedAt,
 	}
+}
+
+func repositoryOwnerResponse(repo repository.Repository) generated.RepositoryOwner {
+	owner := generated.RepositoryOwner{Did: repo.OwnerDID, Kind: repositoryOwnerKind(generated.RepositoryOwnerKindAccount)}
+	if repo.OrganizationSlug != "" {
+		slug := generated.OrganizationSlug(repo.OrganizationSlug)
+		owner.Kind = repositoryOwnerKind(generated.RepositoryOwnerKindOrganization)
+		owner.OrganizationSlug = &slug
+	}
+	return owner
+}
+
+func repositoryOwnerKind(value generated.RepositoryOwnerKind) *generated.RepositoryOwnerKind {
+	return &value
+}
+
+func repositoryRouteOwner(repo repository.Repository) string {
+	if repo.OrganizationSlug != "" {
+		return repo.OrganizationSlug
+	}
+	return repo.OwnerDID
 }
 
 func sourceBrowsing(repo federation.DiscoveryRepository) generated.RepositoryHostingSourceBrowsing {
@@ -1900,7 +3176,8 @@ func starEnvelopeResponse(value star.Star) generated.StarEnvelope {
 type issueListJSON struct {
 	IssueCount     int64                `json:"issue_count"`
 	OpenIssueCount int64                `json:"open_issue_count"`
-	Data           []projectedIssueJSON `json:"data"`
+	Items          []projectedIssueJSON `json:"items"`
+	Page           generated.Page       `json:"page"`
 }
 
 type projectedIssueJSON struct {

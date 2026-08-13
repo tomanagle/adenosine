@@ -119,7 +119,8 @@ func federationAttributes(result, collection, duplicate string) []attribute.KeyV
 func boundedCollection(collection string) string {
 	switch collection {
 	case ProfileCollection, RepositoryCollection, StarCollection, IssueCollection, IssueStatusCollection,
-		PullRequestCollection, PullRequestStatusCollection, PullRequestReviewCollection:
+		PullRequestCollection, PullRequestStatusCollection, PullRequestReviewCollection,
+		OrganizationCollection, OrganizationGrantCollection, OrganizationMembershipCollection, OrganizationRevocationCollection:
 		return collection
 	default:
 		return "other"

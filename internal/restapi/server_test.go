@@ -182,6 +182,10 @@ func (fakeRepositories) GetByOwnerSlug(context.Context, string, string) (reposit
 	return repository.Repository{}, repository.ErrNotFound
 }
 
+func (fakeRepositories) ListByOrganization(context.Context, uuid.UUID) ([]repository.Repository, error) {
+	return nil, nil
+}
+
 type fixedRepositoryManager struct{ repository repository.Repository }
 
 func (manager fixedRepositoryManager) Create(context.Context, repository.CreateInput) (repository.Repository, error) {
@@ -193,6 +197,10 @@ func (manager fixedRepositoryManager) GetByOwnerSlug(_ context.Context, owner, s
 		return repository.Repository{}, repository.ErrNotFound
 	}
 	return manager.repository, nil
+}
+
+func (manager fixedRepositoryManager) ListByOrganization(context.Context, uuid.UUID) ([]repository.Repository, error) {
+	return nil, nil
 }
 
 type fakeAuthorization struct{}
@@ -635,7 +643,7 @@ func TestRepositoryReadEndpoints(t *testing.T) {
 				t.Fatalf("status = %d: %s", response.Code, response.Body.String())
 			}
 			var body generated.BranchList
-			if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || len(body.Data) != 1 || !body.Data[0].Default {
+			if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || len(body.Items) != 1 || !body.Items[0].Default {
 				t.Fatalf("branches = %#v, error = %v", body, err)
 			}
 		}},
@@ -673,7 +681,7 @@ func TestRepositoryReadEndpoints(t *testing.T) {
 				t.Fatalf("history status = %d: %s", response.Code, response.Body.String())
 			}
 			var history generated.CommitList
-			if err := json.Unmarshal(response.Body.Bytes(), &history); err != nil || len(history.Data) != 1 || history.Data[0].Summary != "Update README" {
+			if err := json.Unmarshal(response.Body.Bytes(), &history); err != nil || len(history.Items) != 1 || history.Items[0].Summary != "Update README" {
 				t.Fatalf("history = %#v, error = %v", history, err)
 			}
 			response = performAPIRequest(server, http.MethodGet, "/api/v1/repositories/alice/project/commits/main", "", false, false, "")

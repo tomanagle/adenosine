@@ -24,6 +24,10 @@
             "maxLength": 2000,
             "maxGraphemes": 2000
           },
+          "organization": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef"
+          },
           "defaultBranch": {
             "type": "string",
             "maxLength": 255,

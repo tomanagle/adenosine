@@ -114,21 +114,97 @@ type CoreAccount struct {
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
+type CoreOrganization struct {
+	ID                           pgtype.UUID        `json:"id"`
+	Slug                         string             `json:"slug"`
+	Name                         string             `json:"name"`
+	Description                  pgtype.Text        `json:"description"`
+	Website                      pgtype.Text        `json:"website"`
+	Location                     pgtype.Text        `json:"location"`
+	CreatorDid                   string             `json:"creator_did"`
+	BasePermission               string             `json:"base_permission"`
+	MembersCanCreateRepositories bool               `json:"members_can_create_repositories"`
+	State                        string             `json:"state"`
+	AtUri                        pgtype.Text        `json:"at_uri"`
+	AtCid                        pgtype.Text        `json:"at_cid"`
+	CreatedAt                    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                    pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt                    pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type CoreOrganizationInvitation struct {
+	ID             pgtype.UUID        `json:"id"`
+	OrganizationID pgtype.UUID        `json:"organization_id"`
+	InviteeDid     string             `json:"invitee_did"`
+	Role           string             `json:"role"`
+	InvitedByDid   string             `json:"invited_by_did"`
+	GrantUri       pgtype.Text        `json:"grant_uri"`
+	GrantCid       pgtype.Text        `json:"grant_cid"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt      pgtype.Timestamptz `json:"expires_at"`
+	AcceptedAt     pgtype.Timestamptz `json:"accepted_at"`
+	RevokedAt      pgtype.Timestamptz `json:"revoked_at"`
+}
+
+type CoreOrganizationMember struct {
+	OrganizationID pgtype.UUID        `json:"organization_id"`
+	AccountDid     string             `json:"account_did"`
+	Role           string             `json:"role"`
+	Visibility     string             `json:"visibility"`
+	InvitedByDid   string             `json:"invited_by_did"`
+	GrantUri       pgtype.Text        `json:"grant_uri"`
+	GrantCid       pgtype.Text        `json:"grant_cid"`
+	MembershipUri  pgtype.Text        `json:"membership_uri"`
+	MembershipCid  pgtype.Text        `json:"membership_cid"`
+	JoinedAt       pgtype.Timestamptz `json:"joined_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type CoreOrganizationTeam struct {
+	ID             pgtype.UUID        `json:"id"`
+	OrganizationID pgtype.UUID        `json:"organization_id"`
+	ParentTeamID   pgtype.UUID        `json:"parent_team_id"`
+	Slug           string             `json:"slug"`
+	Name           string             `json:"name"`
+	Description    pgtype.Text        `json:"description"`
+	Visibility     string             `json:"visibility"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type CoreOrganizationTeamMember struct {
+	TeamID     pgtype.UUID        `json:"team_id"`
+	AccountDid string             `json:"account_did"`
+	Role       string             `json:"role"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+}
+
+type CoreOrganizationTeamRepository struct {
+	TeamID       pgtype.UUID        `json:"team_id"`
+	RepositoryID pgtype.UUID        `json:"repository_id"`
+	Role         string             `json:"role"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
 type CoreRepository struct {
-	ID            pgtype.UUID        `json:"id"`
-	OwnerDid      string             `json:"owner_did"`
-	Slug          string             `json:"slug"`
-	DisplayName   pgtype.Text        `json:"display_name"`
-	Description   pgtype.Text        `json:"description"`
-	Visibility    string             `json:"visibility"`
-	State         string             `json:"state"`
-	DefaultBranch string             `json:"default_branch"`
-	StorageKey    string             `json:"storage_key"`
-	AtUri         pgtype.Text        `json:"at_uri"`
-	AtCid         pgtype.Text        `json:"at_cid"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
+	ID             pgtype.UUID        `json:"id"`
+	OwnerDid       string             `json:"owner_did"`
+	Slug           string             `json:"slug"`
+	DisplayName    pgtype.Text        `json:"display_name"`
+	Description    pgtype.Text        `json:"description"`
+	Visibility     string             `json:"visibility"`
+	State          string             `json:"state"`
+	DefaultBranch  string             `json:"default_branch"`
+	StorageKey     string             `json:"storage_key"`
+	AtUri          pgtype.Text        `json:"at_uri"`
+	AtCid          pgtype.Text        `json:"at_cid"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
+	OrganizationID pgtype.UUID        `json:"organization_id"`
 }
 
 type CoreRepositoryAlias struct {
@@ -222,6 +298,76 @@ type NetworkIssueStatus struct {
 	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
 	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
 	SourceEventID   int64              `json:"source_event_id"`
+}
+
+type NetworkOrganization struct {
+	Uri             string             `json:"uri"`
+	Cid             pgtype.Text        `json:"cid"`
+	CreatorDid      string             `json:"creator_did"`
+	Rkey            string             `json:"rkey"`
+	Slug            pgtype.Text        `json:"slug"`
+	Name            pgtype.Text        `json:"name"`
+	Description     pgtype.Text        `json:"description"`
+	Website         pgtype.Text        `json:"website"`
+	Location        pgtype.Text        `json:"location"`
+	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID   int64              `json:"source_event_id"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type NetworkOrganizationGrant struct {
+	Uri             string             `json:"uri"`
+	Cid             pgtype.Text        `json:"cid"`
+	AuthorDid       string             `json:"author_did"`
+	Rkey            string             `json:"rkey"`
+	OrganizationUri string             `json:"organization_uri"`
+	OrganizationCid string             `json:"organization_cid"`
+	SubjectDid      pgtype.Text        `json:"subject_did"`
+	Role            pgtype.Text        `json:"role"`
+	AuthorityUri    pgtype.Text        `json:"authority_uri"`
+	AuthorityCid    pgtype.Text        `json:"authority_cid"`
+	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	ExpiresAt       pgtype.Timestamptz `json:"expires_at"`
+	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID   int64              `json:"source_event_id"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type NetworkOrganizationMembership struct {
+	Uri             string             `json:"uri"`
+	Cid             pgtype.Text        `json:"cid"`
+	AuthorDid       string             `json:"author_did"`
+	Rkey            string             `json:"rkey"`
+	OrganizationUri string             `json:"organization_uri"`
+	OrganizationCid string             `json:"organization_cid"`
+	GrantUri        string             `json:"grant_uri"`
+	GrantCid        string             `json:"grant_cid"`
+	Visibility      pgtype.Text        `json:"visibility"`
+	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID   int64              `json:"source_event_id"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type NetworkOrganizationRevocation struct {
+	Uri             string             `json:"uri"`
+	Cid             pgtype.Text        `json:"cid"`
+	AuthorDid       string             `json:"author_did"`
+	Rkey            string             `json:"rkey"`
+	OrganizationUri string             `json:"organization_uri"`
+	OrganizationCid string             `json:"organization_cid"`
+	GrantUri        string             `json:"grant_uri"`
+	GrantCid        string             `json:"grant_cid"`
+	SubjectDid      pgtype.Text        `json:"subject_did"`
+	AuthorityUri    pgtype.Text        `json:"authority_uri"`
+	AuthorityCid    pgtype.Text        `json:"authority_cid"`
+	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID   int64              `json:"source_event_id"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
 }
 
 type NetworkProfile struct {
@@ -342,6 +488,8 @@ type NetworkRepository struct {
 	CommentCount         int64              `json:"comment_count"`
 	PullRequestCount     int64              `json:"pull_request_count"`
 	OpenPullRequestCount int64              `json:"open_pull_request_count"`
+	OrganizationUri      pgtype.Text        `json:"organization_uri"`
+	OrganizationCid      pgtype.Text        `json:"organization_cid"`
 }
 
 type NetworkStar struct {
@@ -369,6 +517,18 @@ type OpsFederationReceipt struct {
 	Outcome    string             `json:"outcome"`
 	Rejection  pgtype.Text        `json:"rejection"`
 	ReceivedAt pgtype.Timestamptz `json:"received_at"`
+}
+
+type OpsOrganizationAuditEvent struct {
+	ID             pgtype.UUID        `json:"id"`
+	OrganizationID pgtype.UUID        `json:"organization_id"`
+	ActorDid       string             `json:"actor_did"`
+	Action         string             `json:"action"`
+	TargetType     string             `json:"target_type"`
+	TargetID       string             `json:"target_id"`
+	RequestID      pgtype.Text        `json:"request_id"`
+	Metadata       []byte             `json:"metadata"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
 type OpsOutboxEvent struct {

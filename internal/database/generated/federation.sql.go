@@ -307,7 +307,8 @@ SELECT
     issue.cid AS issue_cid,
     repository.uri AS repository_uri,
     repository.cid AS repository_cid,
-    status.record_created_at AS status_created_at
+    status.record_created_at AS status_created_at,
+    local_repository.id AS local_repository_id
 FROM network.issues AS issue
 JOIN network.repositories AS repository
   ON repository.uri = issue.repository_uri
@@ -317,17 +318,21 @@ LEFT JOIN network.issue_statuses AS status
   ON status.uri = issue.status_uri
  AND status.cid = issue.status_cid
  AND status.deleted_at IS NULL
+LEFT JOIN core.repositories AS local_repository
+  ON local_repository.at_uri = repository.uri
+ AND local_repository.deleted_at IS NULL
 WHERE issue.uri = $1
   AND issue.deleted_at IS NULL
   AND issue.cid IS NOT NULL
 `
 
 type GetNetworkIssueStatusWriteTargetRow struct {
-	IssueUri        string             `json:"issue_uri"`
-	IssueCid        pgtype.Text        `json:"issue_cid"`
-	RepositoryUri   string             `json:"repository_uri"`
-	RepositoryCid   pgtype.Text        `json:"repository_cid"`
-	StatusCreatedAt pgtype.Timestamptz `json:"status_created_at"`
+	IssueUri          string             `json:"issue_uri"`
+	IssueCid          pgtype.Text        `json:"issue_cid"`
+	RepositoryUri     string             `json:"repository_uri"`
+	RepositoryCid     pgtype.Text        `json:"repository_cid"`
+	StatusCreatedAt   pgtype.Timestamptz `json:"status_created_at"`
+	LocalRepositoryID pgtype.UUID        `json:"local_repository_id"`
 }
 
 func (q *Queries) GetNetworkIssueStatusWriteTarget(ctx context.Context, uri string) (GetNetworkIssueStatusWriteTargetRow, error) {
@@ -339,6 +344,7 @@ func (q *Queries) GetNetworkIssueStatusWriteTarget(ctx context.Context, uri stri
 		&i.RepositoryUri,
 		&i.RepositoryCid,
 		&i.StatusCreatedAt,
+		&i.LocalRepositoryID,
 	)
 	return i, err
 }
@@ -716,8 +722,15 @@ func (q *Queries) GetProjectedPullRequestReviewTarget(ctx context.Context, pullR
 
 const getProjectedPullRequestStatusTarget = `-- name: GetProjectedPullRequestStatusTarget :one
 SELECT pull_request.uri, pull_request.cid, pull_request.target_repository_uri,
-       pull_request.target_repository_cid, status.record_created_at AS status_created_at
+       pull_request.target_repository_cid, status.record_created_at AS status_created_at,
+       local_repository.id AS local_repository_id
 FROM network.pull_requests AS pull_request
+JOIN network.repositories AS target_repository
+  ON target_repository.uri = pull_request.target_repository_uri
+ AND target_repository.deleted_at IS NULL
+LEFT JOIN core.repositories AS local_repository
+  ON local_repository.at_uri = target_repository.uri
+ AND local_repository.deleted_at IS NULL
 LEFT JOIN network.pull_request_statuses AS status
   ON status.uri = pull_request.status_uri
  AND status.cid = pull_request.status_cid
@@ -734,6 +747,7 @@ type GetProjectedPullRequestStatusTargetRow struct {
 	TargetRepositoryUri string             `json:"target_repository_uri"`
 	TargetRepositoryCid string             `json:"target_repository_cid"`
 	StatusCreatedAt     pgtype.Timestamptz `json:"status_created_at"`
+	LocalRepositoryID   pgtype.UUID        `json:"local_repository_id"`
 }
 
 func (q *Queries) GetProjectedPullRequestStatusTarget(ctx context.Context, pullRequestUri string) (GetProjectedPullRequestStatusTargetRow, error) {
@@ -745,6 +759,7 @@ func (q *Queries) GetProjectedPullRequestStatusTarget(ctx context.Context, pullR
 		&i.TargetRepositoryUri,
 		&i.TargetRepositoryCid,
 		&i.StatusCreatedAt,
+		&i.LocalRepositoryID,
 	)
 	return i, err
 }
@@ -847,12 +862,12 @@ WITH target AS (
     SELECT issue.uri
     FROM network.issues AS issue
     JOIN network.repositories repository ON repository.uri = issue.repository_uri
-    WHERE issue.uri = $2
+    WHERE issue.uri = $3
       AND issue.deleted_at IS NULL
       AND issue.cid IS NOT NULL
       AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids blocked WHERE blocked.account_did = $3 AND blocked.blocked_did IN (repository.owner_did, issue.author_did))
-      AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $3 AND hidden.record_uri IN (repository.uri, issue.uri))
+      AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids blocked WHERE blocked.account_did = $4 AND blocked.blocked_did IN (repository.owner_did, issue.author_did))
+      AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $4 AND hidden.record_uri IN (repository.uri, issue.uri))
 ), visible AS MATERIALIZED (
     SELECT comment.uri, comment.cid, comment.author_did, comment.rkey, comment.issue_uri, comment.issue_cid, comment.parent_uri, comment.parent_cid, comment.body, comment.record_created_at, comment.record_updated_at, comment.indexed_at, comment.deleted_at, comment.source_event_id
     FROM network.issue_comments AS comment
@@ -873,16 +888,16 @@ WITH target AS (
       )
   )
       AND (
-          $3::text IS NULL
+          $4::text IS NULL
           OR (
               NOT EXISTS (
                   SELECT 1 FROM moderation.blocked_dids AS blocked
-                  WHERE blocked.account_did = $3
+                  WHERE blocked.account_did = $4
                     AND blocked.blocked_did = comment.author_did
               )
               AND NOT EXISTS (
                   SELECT 1 FROM moderation.hidden_records AS hidden
-                  WHERE hidden.account_did = $3
+                  WHERE hidden.account_did = $4
                     AND hidden.record_uri = comment.uri
               )
           )
@@ -905,13 +920,19 @@ FROM target
 LEFT JOIN LATERAL (
     SELECT visible.uri, visible.cid, visible.author_did, visible.rkey, visible.issue_uri, visible.issue_cid, visible.parent_uri, visible.parent_cid, visible.body, visible.record_created_at, visible.record_updated_at, visible.indexed_at, visible.deleted_at, visible.source_event_id
     FROM visible
+    WHERE $1::text IS NULL
+       OR (visible.record_created_at, visible.uri) > (
+            (SELECT cursor_comment.record_created_at FROM network.issue_comments AS cursor_comment WHERE cursor_comment.uri = $1),
+            $1::text
+       )
     ORDER BY visible.record_created_at, visible.uri
-    LIMIT $1
+    LIMIT $2
 ) AS projected ON TRUE
 ORDER BY projected.record_created_at, projected.uri
 `
 
 type ListNetworkIssueCommentsParams struct {
+	CursorUri  pgtype.Text `json:"cursor_uri"`
 	PageSize   int32       `json:"page_size"`
 	IssueUri   string      `json:"issue_uri"`
 	AccountDid pgtype.Text `json:"account_did"`
@@ -933,7 +954,12 @@ type ListNetworkIssueCommentsRow struct {
 }
 
 func (q *Queries) ListNetworkIssueComments(ctx context.Context, arg ListNetworkIssueCommentsParams) ([]ListNetworkIssueCommentsRow, error) {
-	rows, err := q.db.Query(ctx, listNetworkIssueComments, arg.PageSize, arg.IssueUri, arg.AccountDid)
+	rows, err := q.db.Query(ctx, listNetworkIssueComments,
+		arg.CursorUri,
+		arg.PageSize,
+		arg.IssueUri,
+		arg.AccountDid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -978,6 +1004,7 @@ SELECT
     repository.local_repository_id,
     repository.owner_did,
     identity.handle,
+	organization.slug AS organization_slug,
     repository.slug,
     repository.name,
     repository.description,
@@ -990,6 +1017,7 @@ SELECT
     repository.indexed_at
 FROM network.repositories AS repository
 LEFT JOIN network.identities AS identity ON identity.did = repository.owner_did
+LEFT JOIN network.organizations AS organization ON organization.uri = repository.organization_uri AND organization.deleted_at IS NULL
 WHERE repository.deleted_at IS NULL
   AND (
       $1::timestamptz IS NULL
@@ -1021,6 +1049,7 @@ type ListNetworkRepositoriesRow struct {
 	LocalRepositoryID    pgtype.UUID        `json:"local_repository_id"`
 	OwnerDid             string             `json:"owner_did"`
 	Handle               pgtype.Text        `json:"handle"`
+	OrganizationSlug     pgtype.Text        `json:"organization_slug"`
 	Slug                 pgtype.Text        `json:"slug"`
 	Name                 pgtype.Text        `json:"name"`
 	Description          pgtype.Text        `json:"description"`
@@ -1054,6 +1083,7 @@ func (q *Queries) ListNetworkRepositories(ctx context.Context, arg ListNetworkRe
 			&i.LocalRepositoryID,
 			&i.OwnerDid,
 			&i.Handle,
+			&i.OrganizationSlug,
 			&i.Slug,
 			&i.Name,
 			&i.Description,
@@ -2401,11 +2431,11 @@ func (q *Queries) UpsertFederationRecord(ctx context.Context, arg UpsertFederati
 const upsertFederationRepository = `-- name: UpsertFederationRepository :exec
 INSERT INTO network.repositories (
     uri, cid, owner_did, rkey, slug, name, description, default_branch,
-    git_https, git_ssh, web, local_repository_id, record_created_at,
+    git_https, git_ssh, web, organization_uri, organization_cid, local_repository_id, record_created_at,
     record_updated_at, indexed_at, deleted_at, source_event_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-    (SELECT id FROM core.repositories WHERE at_uri = $1), $12, $13, $14, NULL, $15
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+    (SELECT id FROM core.repositories WHERE at_uri = $1), $14, $15, $16, NULL, $17
 )
 ON CONFLICT (uri) DO UPDATE SET
     cid = EXCLUDED.cid,
@@ -2418,6 +2448,8 @@ ON CONFLICT (uri) DO UPDATE SET
     git_https = EXCLUDED.git_https,
     git_ssh = EXCLUDED.git_ssh,
     web = EXCLUDED.web,
+    organization_uri = EXCLUDED.organization_uri,
+    organization_cid = EXCLUDED.organization_cid,
     local_repository_id = EXCLUDED.local_repository_id,
     record_created_at = EXCLUDED.record_created_at,
     record_updated_at = EXCLUDED.record_updated_at,
@@ -2439,6 +2471,8 @@ type UpsertFederationRepositoryParams struct {
 	GitHttps        pgtype.Text        `json:"git_https"`
 	GitSsh          pgtype.Text        `json:"git_ssh"`
 	Web             pgtype.Text        `json:"web"`
+	OrganizationUri pgtype.Text        `json:"organization_uri"`
+	OrganizationCid pgtype.Text        `json:"organization_cid"`
 	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
 	RecordUpdatedAt pgtype.Timestamptz `json:"record_updated_at"`
 	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
@@ -2458,6 +2492,8 @@ func (q *Queries) UpsertFederationRepository(ctx context.Context, arg UpsertFede
 		arg.GitHttps,
 		arg.GitSsh,
 		arg.Web,
+		arg.OrganizationUri,
+		arg.OrganizationCid,
 		arg.RecordCreatedAt,
 		arg.RecordUpdatedAt,
 		arg.IndexedAt,

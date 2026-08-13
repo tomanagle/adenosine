@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { beginPasskeyLogin, beginPasskeyRegistration, completeAtProtoLogin, createAccessToken, createIssue, createIssueComment, createPullRequest, createPullRequestReview, createRepository, createSshKey, deleteBlockedDid, deleteHiddenRecord, deleteIssueComment, deletePasskey, deleteStar, getCurrentIdentity, getDeveloperProfile, getIssue, getIssueComments, getIssues, getLiveness, getModeration, getOAuthClientMetadata, getPullRequest, getPullRequestDiff, getReadiness, getRepository, getRepositoryBlob, getRepositoryCommit, getRepositoryDiff, getRepositoryMergeBase, getRepositoryTree, getStars, getSyncIssueComments, getSyncIssues, getSyncProfiles, getSyncPullRequestReviews, getSyncPullRequests, getSyncRepositories, getSyncStars, listAccessTokens, listNetworkRepositories, listPasskeys, listPullRequestReviews, listPullRequests, listRepositoryBranches, listRepositoryCommits, listRepositoryTags, listSshKeys, logout, mergePullRequest, type Options, postSyncIssueComments, postSyncIssues, postSyncProfiles, postSyncPullRequestReviews, postSyncPullRequests, postSyncRepositories, postSyncStars, putBlockedDid, putHiddenRecord, putIssueStatus, putPullRequestStatus, putStar, revokeAccessToken, revokeSshKey, searchProfiles, searchRepositories, startAtProtoLogin, updateDeveloperProfile, verifyPasskeyLogin, verifyPasskeyRegistration } from '../sdk.gen';
-import type { BeginPasskeyLoginData, BeginPasskeyLoginError, BeginPasskeyLoginResponse, BeginPasskeyRegistrationData, BeginPasskeyRegistrationError, BeginPasskeyRegistrationResponse, CompleteAtProtoLoginData, CompleteAtProtoLoginError, CreateAccessTokenData, CreateAccessTokenError, CreateAccessTokenResponse, CreateIssueCommentData, CreateIssueCommentError, CreateIssueCommentResponse, CreateIssueData, CreateIssueError, CreateIssueResponse, CreatePullRequestData, CreatePullRequestError, CreatePullRequestResponse, CreatePullRequestReviewData, CreatePullRequestReviewError, CreatePullRequestReviewResponse, CreateRepositoryData, CreateRepositoryError, CreateRepositoryResponse, CreateSshKeyData, CreateSshKeyError, CreateSshKeyResponse, DeleteBlockedDidData, DeleteBlockedDidError, DeleteBlockedDidResponse, DeleteHiddenRecordData, DeleteHiddenRecordError, DeleteHiddenRecordResponse, DeleteIssueCommentData, DeleteIssueCommentError, DeletePasskeyData, DeletePasskeyError, DeletePasskeyResponse, DeleteStarData, DeleteStarError, GetCurrentIdentityData, GetCurrentIdentityError, GetCurrentIdentityResponse, GetDeveloperProfileData, GetDeveloperProfileError, GetDeveloperProfileResponse, GetIssueCommentsData, GetIssueCommentsError, GetIssueCommentsResponse, GetIssueData, GetIssueError, GetIssueResponse, GetIssuesData, GetIssuesError, GetIssuesResponse, GetLivenessData, GetLivenessResponse, GetModerationData, GetModerationError, GetModerationResponse, GetOAuthClientMetadataData, GetOAuthClientMetadataResponse, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffError, GetPullRequestDiffResponse, GetPullRequestError, GetPullRequestResponse, GetReadinessData, GetReadinessError, GetReadinessResponse, GetRepositoryBlobData, GetRepositoryBlobError, GetRepositoryBlobResponse, GetRepositoryCommitData, GetRepositoryCommitError, GetRepositoryCommitResponse, GetRepositoryData, GetRepositoryDiffData, GetRepositoryDiffError, GetRepositoryDiffResponse, GetRepositoryError, GetRepositoryMergeBaseData, GetRepositoryMergeBaseError, GetRepositoryMergeBaseResponse, GetRepositoryResponse, GetRepositoryTreeData, GetRepositoryTreeError, GetRepositoryTreeResponse, GetStarsData, GetStarsError, GetStarsResponse, GetSyncIssueCommentsData, GetSyncIssueCommentsError, GetSyncIssueCommentsResponse, GetSyncIssuesData, GetSyncIssuesError, GetSyncIssuesResponse, GetSyncProfilesData, GetSyncProfilesError, GetSyncProfilesResponse, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsError, GetSyncPullRequestReviewsResponse, GetSyncPullRequestsData, GetSyncPullRequestsError, GetSyncPullRequestsResponse, GetSyncRepositoriesData, GetSyncRepositoriesError, GetSyncRepositoriesResponse, GetSyncStarsData, GetSyncStarsError, GetSyncStarsResponse, ListAccessTokensData, ListAccessTokensError, ListAccessTokensResponse, ListNetworkRepositoriesData, ListNetworkRepositoriesError, ListNetworkRepositoriesResponse, ListPasskeysData, ListPasskeysError, ListPasskeysResponse, ListPullRequestReviewsData, ListPullRequestReviewsError, ListPullRequestReviewsResponse, ListPullRequestsData, ListPullRequestsError, ListPullRequestsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRepositoryCommitsData, ListRepositoryCommitsError, ListRepositoryCommitsResponse, ListRepositoryTagsData, ListRepositoryTagsError, ListRepositoryTagsResponse, ListSshKeysData, ListSshKeysError, ListSshKeysResponse, LogoutData, LogoutError, LogoutResponse, MergePullRequestData, MergePullRequestError, MergePullRequestResponse, PostSyncIssueCommentsData, PostSyncIssueCommentsError, PostSyncIssueCommentsResponse, PostSyncIssuesData, PostSyncIssuesError, PostSyncIssuesResponse, PostSyncProfilesData, PostSyncProfilesError, PostSyncProfilesResponse, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsError, PostSyncPullRequestReviewsResponse, PostSyncPullRequestsData, PostSyncPullRequestsError, PostSyncPullRequestsResponse, PostSyncRepositoriesData, PostSyncRepositoriesError, PostSyncRepositoriesResponse, PostSyncStarsData, PostSyncStarsError, PostSyncStarsResponse, PutBlockedDidData, PutBlockedDidError, PutBlockedDidResponse, PutHiddenRecordData, PutHiddenRecordError, PutHiddenRecordResponse, PutIssueStatusData, PutIssueStatusError, PutIssueStatusResponse, PutPullRequestStatusData, PutPullRequestStatusError, PutPullRequestStatusResponse, PutStarData, PutStarError, PutStarResponse, RevokeAccessTokenData, RevokeAccessTokenError, RevokeAccessTokenResponse, RevokeSshKeyData, RevokeSshKeyError, RevokeSshKeyResponse, SearchProfilesData, SearchProfilesError, SearchProfilesResponse, SearchRepositoriesData, SearchRepositoriesError, SearchRepositoriesResponse, StartAtProtoLoginData, StartAtProtoLoginError, StartAtProtoLoginResponse2, UpdateDeveloperProfileData, UpdateDeveloperProfileError, UpdateDeveloperProfileResponse, VerifyPasskeyLoginData, VerifyPasskeyLoginError, VerifyPasskeyLoginResponse, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationError, VerifyPasskeyRegistrationResponse } from '../types.gen';
+import { acceptOrganizationInvitation, beginPasskeyLogin, beginPasskeyRegistration, completeAtProtoLogin, createAccessToken, createIssue, createIssueComment, createOrganization, createOrganizationTeam, createPullRequest, createPullRequestReview, createRepository, createSshKey, deleteBlockedDid, deleteHiddenRecord, deleteIssueComment, deleteOrganizationTeam, deletePasskey, deleteStar, getCurrentIdentity, getDeveloperProfile, getIssue, getIssueComments, getIssues, getLiveness, getModeration, getOAuthClientMetadata, getOrganization, getPullRequest, getPullRequestDiff, getReadiness, getRepository, getRepositoryBlob, getRepositoryCommit, getRepositoryDiff, getRepositoryMergeBase, getRepositoryTree, getStars, getSyncIssueComments, getSyncIssues, getSyncProfiles, getSyncPullRequestReviews, getSyncPullRequests, getSyncRepositories, getSyncStars, inviteOrganizationMember, listAccessTokens, listNetworkRepositories, listOrganizationAuditEvents, listOrganizationInvitations, listOrganizationInvitationsForCurrentUser, listOrganizationMembers, listOrganizationRepositories, listOrganizationRepositoryCollaborators, listOrganizations, listOrganizationTeamMembers, listOrganizationTeamRepositories, listOrganizationTeams, listPasskeys, listPullRequestReviews, listPullRequests, listRepositoryBranches, listRepositoryCommits, listRepositoryTags, listSshKeys, logout, mergePullRequest, type Options, postSyncIssueComments, postSyncIssues, postSyncProfiles, postSyncPullRequestReviews, postSyncPullRequests, postSyncRepositories, postSyncStars, putBlockedDid, putHiddenRecord, putIssueStatus, putOrganizationRepositoryCollaborator, putOrganizationTeamMember, putOrganizationTeamRepository, putPullRequestStatus, putStar, removeOrganizationMember, removeOrganizationRepositoryCollaborator, removeOrganizationTeamMember, removeOrganizationTeamRepository, revokeAccessToken, revokeOrganizationInvitation, revokeSshKey, searchProfiles, searchRepositories, startAtProtoLogin, updateDeveloperProfile, updateOrganization, updateOrganizationMember, updateOrganizationTeam, verifyPasskeyLogin, verifyPasskeyRegistration } from '../sdk.gen';
+import type { AcceptOrganizationInvitationData, AcceptOrganizationInvitationError, AcceptOrganizationInvitationResponse, BeginPasskeyLoginData, BeginPasskeyLoginError, BeginPasskeyLoginResponse, BeginPasskeyRegistrationData, BeginPasskeyRegistrationError, BeginPasskeyRegistrationResponse, CompleteAtProtoLoginData, CompleteAtProtoLoginError, CreateAccessTokenData, CreateAccessTokenError, CreateAccessTokenResponse, CreateIssueCommentData, CreateIssueCommentError, CreateIssueCommentResponse, CreateIssueData, CreateIssueError, CreateIssueResponse, CreateOrganizationData, CreateOrganizationError, CreateOrganizationResponse, CreateOrganizationTeamData, CreateOrganizationTeamError, CreateOrganizationTeamResponse, CreatePullRequestData, CreatePullRequestError, CreatePullRequestResponse, CreatePullRequestReviewData, CreatePullRequestReviewError, CreatePullRequestReviewResponse, CreateRepositoryData, CreateRepositoryError, CreateRepositoryResponse, CreateSshKeyData, CreateSshKeyError, CreateSshKeyResponse, DeleteBlockedDidData, DeleteBlockedDidError, DeleteBlockedDidResponse, DeleteHiddenRecordData, DeleteHiddenRecordError, DeleteHiddenRecordResponse, DeleteIssueCommentData, DeleteIssueCommentError, DeleteOrganizationTeamData, DeleteOrganizationTeamError, DeleteOrganizationTeamResponse, DeletePasskeyData, DeletePasskeyError, DeletePasskeyResponse, DeleteStarData, DeleteStarError, GetCurrentIdentityData, GetCurrentIdentityError, GetCurrentIdentityResponse, GetDeveloperProfileData, GetDeveloperProfileError, GetDeveloperProfileResponse, GetIssueCommentsData, GetIssueCommentsError, GetIssueCommentsResponse, GetIssueData, GetIssueError, GetIssueResponse, GetIssuesData, GetIssuesError, GetIssuesResponse, GetLivenessData, GetLivenessResponse, GetModerationData, GetModerationError, GetModerationResponse, GetOAuthClientMetadataData, GetOAuthClientMetadataResponse, GetOrganizationData, GetOrganizationError, GetOrganizationResponse, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffError, GetPullRequestDiffResponse, GetPullRequestError, GetPullRequestResponse, GetReadinessData, GetReadinessError, GetReadinessResponse, GetRepositoryBlobData, GetRepositoryBlobError, GetRepositoryBlobResponse, GetRepositoryCommitData, GetRepositoryCommitError, GetRepositoryCommitResponse, GetRepositoryData, GetRepositoryDiffData, GetRepositoryDiffError, GetRepositoryDiffResponse, GetRepositoryError, GetRepositoryMergeBaseData, GetRepositoryMergeBaseError, GetRepositoryMergeBaseResponse, GetRepositoryResponse, GetRepositoryTreeData, GetRepositoryTreeError, GetRepositoryTreeResponse, GetStarsData, GetStarsError, GetStarsResponse, GetSyncIssueCommentsData, GetSyncIssueCommentsError, GetSyncIssueCommentsResponse, GetSyncIssuesData, GetSyncIssuesError, GetSyncIssuesResponse, GetSyncProfilesData, GetSyncProfilesError, GetSyncProfilesResponse, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsError, GetSyncPullRequestReviewsResponse, GetSyncPullRequestsData, GetSyncPullRequestsError, GetSyncPullRequestsResponse, GetSyncRepositoriesData, GetSyncRepositoriesError, GetSyncRepositoriesResponse, GetSyncStarsData, GetSyncStarsError, GetSyncStarsResponse, InviteOrganizationMemberData, InviteOrganizationMemberError, InviteOrganizationMemberResponse, ListAccessTokensData, ListAccessTokensError, ListAccessTokensResponse, ListNetworkRepositoriesData, ListNetworkRepositoriesError, ListNetworkRepositoriesResponse, ListOrganizationAuditEventsData, ListOrganizationAuditEventsError, ListOrganizationAuditEventsResponse, ListOrganizationInvitationsData, ListOrganizationInvitationsError, ListOrganizationInvitationsForCurrentUserData, ListOrganizationInvitationsForCurrentUserError, ListOrganizationInvitationsForCurrentUserResponse, ListOrganizationInvitationsResponse, ListOrganizationMembersData, ListOrganizationMembersError, ListOrganizationMembersResponse, ListOrganizationRepositoriesData, ListOrganizationRepositoriesError, ListOrganizationRepositoriesResponse, ListOrganizationRepositoryCollaboratorsData, ListOrganizationRepositoryCollaboratorsError, ListOrganizationRepositoryCollaboratorsResponse, ListOrganizationsData, ListOrganizationsError, ListOrganizationsResponse, ListOrganizationTeamMembersData, ListOrganizationTeamMembersError, ListOrganizationTeamMembersResponse, ListOrganizationTeamRepositoriesData, ListOrganizationTeamRepositoriesError, ListOrganizationTeamRepositoriesResponse, ListOrganizationTeamsData, ListOrganizationTeamsError, ListOrganizationTeamsResponse, ListPasskeysData, ListPasskeysError, ListPasskeysResponse, ListPullRequestReviewsData, ListPullRequestReviewsError, ListPullRequestReviewsResponse, ListPullRequestsData, ListPullRequestsError, ListPullRequestsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRepositoryCommitsData, ListRepositoryCommitsError, ListRepositoryCommitsResponse, ListRepositoryTagsData, ListRepositoryTagsError, ListRepositoryTagsResponse, ListSshKeysData, ListSshKeysError, ListSshKeysResponse, LogoutData, LogoutError, LogoutResponse, MergePullRequestData, MergePullRequestError, MergePullRequestResponse, PostSyncIssueCommentsData, PostSyncIssueCommentsError, PostSyncIssueCommentsResponse, PostSyncIssuesData, PostSyncIssuesError, PostSyncIssuesResponse, PostSyncProfilesData, PostSyncProfilesError, PostSyncProfilesResponse, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsError, PostSyncPullRequestReviewsResponse, PostSyncPullRequestsData, PostSyncPullRequestsError, PostSyncPullRequestsResponse, PostSyncRepositoriesData, PostSyncRepositoriesError, PostSyncRepositoriesResponse, PostSyncStarsData, PostSyncStarsError, PostSyncStarsResponse, PutBlockedDidData, PutBlockedDidError, PutBlockedDidResponse, PutHiddenRecordData, PutHiddenRecordError, PutHiddenRecordResponse, PutIssueStatusData, PutIssueStatusError, PutIssueStatusResponse, PutOrganizationRepositoryCollaboratorData, PutOrganizationRepositoryCollaboratorError, PutOrganizationRepositoryCollaboratorResponse, PutOrganizationTeamMemberData, PutOrganizationTeamMemberError, PutOrganizationTeamMemberResponse, PutOrganizationTeamRepositoryData, PutOrganizationTeamRepositoryError, PutOrganizationTeamRepositoryResponse, PutPullRequestStatusData, PutPullRequestStatusError, PutPullRequestStatusResponse, PutStarData, PutStarError, PutStarResponse, RemoveOrganizationMemberData, RemoveOrganizationMemberError, RemoveOrganizationMemberResponse, RemoveOrganizationRepositoryCollaboratorData, RemoveOrganizationRepositoryCollaboratorError, RemoveOrganizationRepositoryCollaboratorResponse, RemoveOrganizationTeamMemberData, RemoveOrganizationTeamMemberError, RemoveOrganizationTeamMemberResponse, RemoveOrganizationTeamRepositoryData, RemoveOrganizationTeamRepositoryError, RemoveOrganizationTeamRepositoryResponse, RevokeAccessTokenData, RevokeAccessTokenError, RevokeAccessTokenResponse, RevokeOrganizationInvitationData, RevokeOrganizationInvitationError, RevokeOrganizationInvitationResponse, RevokeSshKeyData, RevokeSshKeyError, RevokeSshKeyResponse, SearchProfilesData, SearchProfilesError, SearchProfilesResponse, SearchRepositoriesData, SearchRepositoriesError, SearchRepositoriesResponse, StartAtProtoLoginData, StartAtProtoLoginError, StartAtProtoLoginResponse2, UpdateDeveloperProfileData, UpdateDeveloperProfileError, UpdateDeveloperProfileResponse, UpdateOrganizationData, UpdateOrganizationError, UpdateOrganizationMemberData, UpdateOrganizationMemberError, UpdateOrganizationMemberResponse, UpdateOrganizationResponse, UpdateOrganizationTeamData, UpdateOrganizationTeamError, UpdateOrganizationTeamResponse, VerifyPasskeyLoginData, VerifyPasskeyLoginError, VerifyPasskeyLoginResponse, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationError, VerifyPasskeyRegistrationResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -249,6 +249,65 @@ export const listPasskeysOptions = (options?: Options<ListPasskeysData>) => quer
     queryKey: listPasskeysQueryKey(options)
 });
 
+const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
+    const params = { ...queryKey[0] };
+    if (page.body) {
+        params.body = {
+            ...queryKey[0].body as any,
+            ...page.body as any
+        };
+    }
+    if (page.headers) {
+        params.headers = {
+            ...queryKey[0].headers,
+            ...page.headers
+        };
+    }
+    if (page.path) {
+        params.path = {
+            ...queryKey[0].path as any,
+            ...page.path as any
+        };
+    }
+    if (page.query) {
+        params.query = {
+            ...queryKey[0].query as any,
+            ...page.query as any
+        };
+    }
+    return params as unknown as typeof page;
+};
+
+export const listPasskeysInfiniteQueryKey = (options?: Options<ListPasskeysData>): QueryKey<Options<ListPasskeysData>> => createQueryKey('listPasskeys', options, true);
+
+/**
+ * List passkey metadata for the current browser session
+ */
+export const listPasskeysInfiniteOptions = (options?: Options<ListPasskeysData>) => {
+    const opts = infiniteQueryOptions<ListPasskeysResponse, ListPasskeysError, InfiniteData<ListPasskeysResponse>, QueryKey<Options<ListPasskeysData>>, string | Pick<QueryKey<Options<ListPasskeysData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListPasskeysData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listPasskeys({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listPasskeysInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
 /**
  * Revoke a passkey owned by the current browser session
  */
@@ -291,6 +350,776 @@ export const updateDeveloperProfileMutation = (options?: Partial<Options<UpdateD
     const mutationOptions: UseMutationOptions<UpdateDeveloperProfileResponse, UpdateDeveloperProfileError, Options<UpdateDeveloperProfileData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await updateDeveloperProfile({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listOrganizationsQueryKey = (options?: Options<ListOrganizationsData>) => createQueryKey('listOrganizations', options, false, ['Organizations']);
+
+/**
+ * List organizations for the authenticated user
+ */
+export const listOrganizationsOptions = (options?: Options<ListOrganizationsData>) => queryOptions<ListOrganizationsResponse, ListOrganizationsError, ListOrganizationsResponse, ReturnType<typeof listOrganizationsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listOrganizations({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listOrganizationsQueryKey(options)
+});
+
+export const listOrganizationsInfiniteQueryKey = (options?: Options<ListOrganizationsData>): QueryKey<Options<ListOrganizationsData>> => createQueryKey('listOrganizations', options, true);
+
+/**
+ * List organizations for the authenticated user
+ */
+export const listOrganizationsInfiniteOptions = (options?: Options<ListOrganizationsData>) => {
+    const opts = infiniteQueryOptions<ListOrganizationsResponse, ListOrganizationsError, InfiniteData<ListOrganizationsResponse>, QueryKey<Options<ListOrganizationsData>>, string | Pick<QueryKey<Options<ListOrganizationsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListOrganizationsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listOrganizations({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listOrganizationsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Create an organization with the authenticated user as its first owner
+ */
+export const createOrganizationMutation = (options?: Partial<Options<CreateOrganizationData>>): UseMutationOptions<CreateOrganizationResponse, CreateOrganizationError, Options<CreateOrganizationData>> => {
+    const mutationOptions: UseMutationOptions<CreateOrganizationResponse, CreateOrganizationError, Options<CreateOrganizationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createOrganization({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listOrganizationInvitationsForCurrentUserQueryKey = (options?: Options<ListOrganizationInvitationsForCurrentUserData>) => createQueryKey('listOrganizationInvitationsForCurrentUser', options, false, ['Organizations']);
+
+/**
+ * List active organization invitations for the authenticated user
+ */
+export const listOrganizationInvitationsForCurrentUserOptions = (options?: Options<ListOrganizationInvitationsForCurrentUserData>) => queryOptions<ListOrganizationInvitationsForCurrentUserResponse, ListOrganizationInvitationsForCurrentUserError, ListOrganizationInvitationsForCurrentUserResponse, ReturnType<typeof listOrganizationInvitationsForCurrentUserQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listOrganizationInvitationsForCurrentUser({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listOrganizationInvitationsForCurrentUserQueryKey(options)
+});
+
+export const listOrganizationInvitationsForCurrentUserInfiniteQueryKey = (options?: Options<ListOrganizationInvitationsForCurrentUserData>): QueryKey<Options<ListOrganizationInvitationsForCurrentUserData>> => createQueryKey('listOrganizationInvitationsForCurrentUser', options, true);
+
+/**
+ * List active organization invitations for the authenticated user
+ */
+export const listOrganizationInvitationsForCurrentUserInfiniteOptions = (options?: Options<ListOrganizationInvitationsForCurrentUserData>) => {
+    const opts = infiniteQueryOptions<ListOrganizationInvitationsForCurrentUserResponse, ListOrganizationInvitationsForCurrentUserError, InfiniteData<ListOrganizationInvitationsForCurrentUserResponse>, QueryKey<Options<ListOrganizationInvitationsForCurrentUserData>>, string | Pick<QueryKey<Options<ListOrganizationInvitationsForCurrentUserData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListOrganizationInvitationsForCurrentUserData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listOrganizationInvitationsForCurrentUser({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listOrganizationInvitationsForCurrentUserInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Accept an organization invitation
+ */
+export const acceptOrganizationInvitationMutation = (options?: Partial<Options<AcceptOrganizationInvitationData>>): UseMutationOptions<AcceptOrganizationInvitationResponse, AcceptOrganizationInvitationError, Options<AcceptOrganizationInvitationData>> => {
+    const mutationOptions: UseMutationOptions<AcceptOrganizationInvitationResponse, AcceptOrganizationInvitationError, Options<AcceptOrganizationInvitationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await acceptOrganizationInvitation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getOrganizationQueryKey = (options: Options<GetOrganizationData>) => createQueryKey('getOrganization', options, false, ['Organizations']);
+
+/**
+ * Get an organization profile
+ */
+export const getOrganizationOptions = (options: Options<GetOrganizationData>) => queryOptions<GetOrganizationResponse, GetOrganizationError, GetOrganizationResponse, ReturnType<typeof getOrganizationQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getOrganization({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getOrganizationQueryKey(options)
+});
+
+/**
+ * Update organization profile and repository policy
+ */
+export const updateOrganizationMutation = (options?: Partial<Options<UpdateOrganizationData>>): UseMutationOptions<UpdateOrganizationResponse, UpdateOrganizationError, Options<UpdateOrganizationData>> => {
+    const mutationOptions: UseMutationOptions<UpdateOrganizationResponse, UpdateOrganizationError, Options<UpdateOrganizationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateOrganization({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listOrganizationInvitationsQueryKey = (options: Options<ListOrganizationInvitationsData>) => createQueryKey('listOrganizationInvitations', options, false, ['Organizations']);
+
+/**
+ * List active invitations for organization owners
+ */
+export const listOrganizationInvitationsOptions = (options: Options<ListOrganizationInvitationsData>) => queryOptions<ListOrganizationInvitationsResponse, ListOrganizationInvitationsError, ListOrganizationInvitationsResponse, ReturnType<typeof listOrganizationInvitationsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listOrganizationInvitations({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listOrganizationInvitationsQueryKey(options)
+});
+
+export const listOrganizationInvitationsInfiniteQueryKey = (options: Options<ListOrganizationInvitationsData>): QueryKey<Options<ListOrganizationInvitationsData>> => createQueryKey('listOrganizationInvitations', options, true);
+
+/**
+ * List active invitations for organization owners
+ */
+export const listOrganizationInvitationsInfiniteOptions = (options: Options<ListOrganizationInvitationsData>) => {
+    const opts = infiniteQueryOptions<ListOrganizationInvitationsResponse, ListOrganizationInvitationsError, InfiniteData<ListOrganizationInvitationsResponse>, QueryKey<Options<ListOrganizationInvitationsData>>, string | Pick<QueryKey<Options<ListOrganizationInvitationsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListOrganizationInvitationsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listOrganizationInvitations({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listOrganizationInvitationsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Revoke a pending organization invitation
+ */
+export const revokeOrganizationInvitationMutation = (options?: Partial<Options<RevokeOrganizationInvitationData>>): UseMutationOptions<RevokeOrganizationInvitationResponse, RevokeOrganizationInvitationError, Options<RevokeOrganizationInvitationData>> => {
+    const mutationOptions: UseMutationOptions<RevokeOrganizationInvitationResponse, RevokeOrganizationInvitationError, Options<RevokeOrganizationInvitationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await revokeOrganizationInvitation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listOrganizationAuditEventsQueryKey = (options: Options<ListOrganizationAuditEventsData>) => createQueryKey('listOrganizationAuditEvents', options, false, ['Organizations']);
+
+/**
+ * List organization security events for owners
+ */
+export const listOrganizationAuditEventsOptions = (options: Options<ListOrganizationAuditEventsData>) => queryOptions<ListOrganizationAuditEventsResponse, ListOrganizationAuditEventsError, ListOrganizationAuditEventsResponse, ReturnType<typeof listOrganizationAuditEventsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listOrganizationAuditEvents({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listOrganizationAuditEventsQueryKey(options)
+});
+
+export const listOrganizationAuditEventsInfiniteQueryKey = (options: Options<ListOrganizationAuditEventsData>): QueryKey<Options<ListOrganizationAuditEventsData>> => createQueryKey('listOrganizationAuditEvents', options, true);
+
+/**
+ * List organization security events for owners
+ */
+export const listOrganizationAuditEventsInfiniteOptions = (options: Options<ListOrganizationAuditEventsData>) => {
+    const opts = infiniteQueryOptions<ListOrganizationAuditEventsResponse, ListOrganizationAuditEventsError, InfiniteData<ListOrganizationAuditEventsResponse>, QueryKey<Options<ListOrganizationAuditEventsData>>, string | Pick<QueryKey<Options<ListOrganizationAuditEventsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListOrganizationAuditEventsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listOrganizationAuditEvents({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listOrganizationAuditEventsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const listOrganizationMembersQueryKey = (options: Options<ListOrganizationMembersData>) => createQueryKey('listOrganizationMembers', options, false, ['Organizations']);
+
+/**
+ * List organization members visible to the requester
+ */
+export const listOrganizationMembersOptions = (options: Options<ListOrganizationMembersData>) => queryOptions<ListOrganizationMembersResponse, ListOrganizationMembersError, ListOrganizationMembersResponse, ReturnType<typeof listOrganizationMembersQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listOrganizationMembers({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listOrganizationMembersQueryKey(options)
+});
+
+export const listOrganizationMembersInfiniteQueryKey = (options: Options<ListOrganizationMembersData>): QueryKey<Options<ListOrganizationMembersData>> => createQueryKey('listOrganizationMembers', options, true);
+
+/**
+ * List organization members visible to the requester
+ */
+export const listOrganizationMembersInfiniteOptions = (options: Options<ListOrganizationMembersData>) => {
+    const opts = infiniteQueryOptions<ListOrganizationMembersResponse, ListOrganizationMembersError, InfiniteData<ListOrganizationMembersResponse>, QueryKey<Options<ListOrganizationMembersData>>, string | Pick<QueryKey<Options<ListOrganizationMembersData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListOrganizationMembersData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listOrganizationMembers({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listOrganizationMembersInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Invite a user to an organization
+ */
+export const inviteOrganizationMemberMutation = (options?: Partial<Options<InviteOrganizationMemberData>>): UseMutationOptions<InviteOrganizationMemberResponse, InviteOrganizationMemberError, Options<InviteOrganizationMemberData>> => {
+    const mutationOptions: UseMutationOptions<InviteOrganizationMemberResponse, InviteOrganizationMemberError, Options<InviteOrganizationMemberData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await inviteOrganizationMember({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Remove a member or leave the organization
+ */
+export const removeOrganizationMemberMutation = (options?: Partial<Options<RemoveOrganizationMemberData>>): UseMutationOptions<RemoveOrganizationMemberResponse, RemoveOrganizationMemberError, Options<RemoveOrganizationMemberData>> => {
+    const mutationOptions: UseMutationOptions<RemoveOrganizationMemberResponse, RemoveOrganizationMemberError, Options<RemoveOrganizationMemberData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await removeOrganizationMember({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Change a member role or the authenticated member's visibility
+ */
+export const updateOrganizationMemberMutation = (options?: Partial<Options<UpdateOrganizationMemberData>>): UseMutationOptions<UpdateOrganizationMemberResponse, UpdateOrganizationMemberError, Options<UpdateOrganizationMemberData>> => {
+    const mutationOptions: UseMutationOptions<UpdateOrganizationMemberResponse, UpdateOrganizationMemberError, Options<UpdateOrganizationMemberData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateOrganizationMember({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listOrganizationTeamsQueryKey = (options: Options<ListOrganizationTeamsData>) => createQueryKey('listOrganizationTeams', options, false, ['Organizations']);
+
+/**
+ * List teams visible to an organization member
+ */
+export const listOrganizationTeamsOptions = (options: Options<ListOrganizationTeamsData>) => queryOptions<ListOrganizationTeamsResponse, ListOrganizationTeamsError, ListOrganizationTeamsResponse, ReturnType<typeof listOrganizationTeamsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listOrganizationTeams({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listOrganizationTeamsQueryKey(options)
+});
+
+export const listOrganizationTeamsInfiniteQueryKey = (options: Options<ListOrganizationTeamsData>): QueryKey<Options<ListOrganizationTeamsData>> => createQueryKey('listOrganizationTeams', options, true);
+
+/**
+ * List teams visible to an organization member
+ */
+export const listOrganizationTeamsInfiniteOptions = (options: Options<ListOrganizationTeamsData>) => {
+    const opts = infiniteQueryOptions<ListOrganizationTeamsResponse, ListOrganizationTeamsError, InfiniteData<ListOrganizationTeamsResponse>, QueryKey<Options<ListOrganizationTeamsData>>, string | Pick<QueryKey<Options<ListOrganizationTeamsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListOrganizationTeamsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listOrganizationTeams({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listOrganizationTeamsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Create an organization team
+ */
+export const createOrganizationTeamMutation = (options?: Partial<Options<CreateOrganizationTeamData>>): UseMutationOptions<CreateOrganizationTeamResponse, CreateOrganizationTeamError, Options<CreateOrganizationTeamData>> => {
+    const mutationOptions: UseMutationOptions<CreateOrganizationTeamResponse, CreateOrganizationTeamError, Options<CreateOrganizationTeamData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createOrganizationTeam({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete a team and its child-team hierarchy
+ */
+export const deleteOrganizationTeamMutation = (options?: Partial<Options<DeleteOrganizationTeamData>>): UseMutationOptions<DeleteOrganizationTeamResponse, DeleteOrganizationTeamError, Options<DeleteOrganizationTeamData>> => {
+    const mutationOptions: UseMutationOptions<DeleteOrganizationTeamResponse, DeleteOrganizationTeamError, Options<DeleteOrganizationTeamData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteOrganizationTeam({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Update team settings or hierarchy
+ */
+export const updateOrganizationTeamMutation = (options?: Partial<Options<UpdateOrganizationTeamData>>): UseMutationOptions<UpdateOrganizationTeamResponse, UpdateOrganizationTeamError, Options<UpdateOrganizationTeamData>> => {
+    const mutationOptions: UseMutationOptions<UpdateOrganizationTeamResponse, UpdateOrganizationTeamError, Options<UpdateOrganizationTeamData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateOrganizationTeam({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listOrganizationTeamMembersQueryKey = (options: Options<ListOrganizationTeamMembersData>) => createQueryKey('listOrganizationTeamMembers', options, false, ['Organizations']);
+
+/**
+ * List team members
+ */
+export const listOrganizationTeamMembersOptions = (options: Options<ListOrganizationTeamMembersData>) => queryOptions<ListOrganizationTeamMembersResponse, ListOrganizationTeamMembersError, ListOrganizationTeamMembersResponse, ReturnType<typeof listOrganizationTeamMembersQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listOrganizationTeamMembers({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listOrganizationTeamMembersQueryKey(options)
+});
+
+export const listOrganizationTeamMembersInfiniteQueryKey = (options: Options<ListOrganizationTeamMembersData>): QueryKey<Options<ListOrganizationTeamMembersData>> => createQueryKey('listOrganizationTeamMembers', options, true);
+
+/**
+ * List team members
+ */
+export const listOrganizationTeamMembersInfiniteOptions = (options: Options<ListOrganizationTeamMembersData>) => {
+    const opts = infiniteQueryOptions<ListOrganizationTeamMembersResponse, ListOrganizationTeamMembersError, InfiniteData<ListOrganizationTeamMembersResponse>, QueryKey<Options<ListOrganizationTeamMembersData>>, string | Pick<QueryKey<Options<ListOrganizationTeamMembersData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListOrganizationTeamMembersData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listOrganizationTeamMembers({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listOrganizationTeamMembersInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Remove a member from a team
+ */
+export const removeOrganizationTeamMemberMutation = (options?: Partial<Options<RemoveOrganizationTeamMemberData>>): UseMutationOptions<RemoveOrganizationTeamMemberResponse, RemoveOrganizationTeamMemberError, Options<RemoveOrganizationTeamMemberData>> => {
+    const mutationOptions: UseMutationOptions<RemoveOrganizationTeamMemberResponse, RemoveOrganizationTeamMemberError, Options<RemoveOrganizationTeamMemberData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await removeOrganizationTeamMember({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Add or update a team member
+ */
+export const putOrganizationTeamMemberMutation = (options?: Partial<Options<PutOrganizationTeamMemberData>>): UseMutationOptions<PutOrganizationTeamMemberResponse, PutOrganizationTeamMemberError, Options<PutOrganizationTeamMemberData>> => {
+    const mutationOptions: UseMutationOptions<PutOrganizationTeamMemberResponse, PutOrganizationTeamMemberError, Options<PutOrganizationTeamMemberData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putOrganizationTeamMember({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listOrganizationRepositoriesQueryKey = (options: Options<ListOrganizationRepositoriesData>) => createQueryKey('listOrganizationRepositories', options, false, ['Organizations']);
+
+/**
+ * List repositories owned by an organization
+ */
+export const listOrganizationRepositoriesOptions = (options: Options<ListOrganizationRepositoriesData>) => queryOptions<ListOrganizationRepositoriesResponse, ListOrganizationRepositoriesError, ListOrganizationRepositoriesResponse, ReturnType<typeof listOrganizationRepositoriesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listOrganizationRepositories({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listOrganizationRepositoriesQueryKey(options)
+});
+
+export const listOrganizationRepositoriesInfiniteQueryKey = (options: Options<ListOrganizationRepositoriesData>): QueryKey<Options<ListOrganizationRepositoriesData>> => createQueryKey('listOrganizationRepositories', options, true);
+
+/**
+ * List repositories owned by an organization
+ */
+export const listOrganizationRepositoriesInfiniteOptions = (options: Options<ListOrganizationRepositoriesData>) => {
+    const opts = infiniteQueryOptions<ListOrganizationRepositoriesResponse, ListOrganizationRepositoriesError, InfiniteData<ListOrganizationRepositoriesResponse>, QueryKey<Options<ListOrganizationRepositoriesData>>, string | Pick<QueryKey<Options<ListOrganizationRepositoriesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListOrganizationRepositoriesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listOrganizationRepositories({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listOrganizationRepositoriesInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const listOrganizationRepositoryCollaboratorsQueryKey = (options: Options<ListOrganizationRepositoryCollaboratorsData>) => createQueryKey('listOrganizationRepositoryCollaborators', options, false, ['Organizations']);
+
+/**
+ * List direct and outside collaborators for an organization repository
+ */
+export const listOrganizationRepositoryCollaboratorsOptions = (options: Options<ListOrganizationRepositoryCollaboratorsData>) => queryOptions<ListOrganizationRepositoryCollaboratorsResponse, ListOrganizationRepositoryCollaboratorsError, ListOrganizationRepositoryCollaboratorsResponse, ReturnType<typeof listOrganizationRepositoryCollaboratorsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listOrganizationRepositoryCollaborators({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listOrganizationRepositoryCollaboratorsQueryKey(options)
+});
+
+export const listOrganizationRepositoryCollaboratorsInfiniteQueryKey = (options: Options<ListOrganizationRepositoryCollaboratorsData>): QueryKey<Options<ListOrganizationRepositoryCollaboratorsData>> => createQueryKey('listOrganizationRepositoryCollaborators', options, true);
+
+/**
+ * List direct and outside collaborators for an organization repository
+ */
+export const listOrganizationRepositoryCollaboratorsInfiniteOptions = (options: Options<ListOrganizationRepositoryCollaboratorsData>) => {
+    const opts = infiniteQueryOptions<ListOrganizationRepositoryCollaboratorsResponse, ListOrganizationRepositoryCollaboratorsError, InfiniteData<ListOrganizationRepositoryCollaboratorsResponse>, QueryKey<Options<ListOrganizationRepositoryCollaboratorsData>>, string | Pick<QueryKey<Options<ListOrganizationRepositoryCollaboratorsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListOrganizationRepositoryCollaboratorsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listOrganizationRepositoryCollaborators({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listOrganizationRepositoryCollaboratorsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Remove a direct repository collaborator
+ */
+export const removeOrganizationRepositoryCollaboratorMutation = (options?: Partial<Options<RemoveOrganizationRepositoryCollaboratorData>>): UseMutationOptions<RemoveOrganizationRepositoryCollaboratorResponse, RemoveOrganizationRepositoryCollaboratorError, Options<RemoveOrganizationRepositoryCollaboratorData>> => {
+    const mutationOptions: UseMutationOptions<RemoveOrganizationRepositoryCollaboratorResponse, RemoveOrganizationRepositoryCollaboratorError, Options<RemoveOrganizationRepositoryCollaboratorData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await removeOrganizationRepositoryCollaborator({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Add or update a direct repository collaborator
+ */
+export const putOrganizationRepositoryCollaboratorMutation = (options?: Partial<Options<PutOrganizationRepositoryCollaboratorData>>): UseMutationOptions<PutOrganizationRepositoryCollaboratorResponse, PutOrganizationRepositoryCollaboratorError, Options<PutOrganizationRepositoryCollaboratorData>> => {
+    const mutationOptions: UseMutationOptions<PutOrganizationRepositoryCollaboratorResponse, PutOrganizationRepositoryCollaboratorError, Options<PutOrganizationRepositoryCollaboratorData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putOrganizationRepositoryCollaborator({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listOrganizationTeamRepositoriesQueryKey = (options: Options<ListOrganizationTeamRepositoriesData>) => createQueryKey('listOrganizationTeamRepositories', options, false, ['Organizations']);
+
+/**
+ * List repository roles assigned to a team
+ */
+export const listOrganizationTeamRepositoriesOptions = (options: Options<ListOrganizationTeamRepositoriesData>) => queryOptions<ListOrganizationTeamRepositoriesResponse, ListOrganizationTeamRepositoriesError, ListOrganizationTeamRepositoriesResponse, ReturnType<typeof listOrganizationTeamRepositoriesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listOrganizationTeamRepositories({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listOrganizationTeamRepositoriesQueryKey(options)
+});
+
+export const listOrganizationTeamRepositoriesInfiniteQueryKey = (options: Options<ListOrganizationTeamRepositoriesData>): QueryKey<Options<ListOrganizationTeamRepositoriesData>> => createQueryKey('listOrganizationTeamRepositories', options, true);
+
+/**
+ * List repository roles assigned to a team
+ */
+export const listOrganizationTeamRepositoriesInfiniteOptions = (options: Options<ListOrganizationTeamRepositoriesData>) => {
+    const opts = infiniteQueryOptions<ListOrganizationTeamRepositoriesResponse, ListOrganizationTeamRepositoriesError, InfiniteData<ListOrganizationTeamRepositoriesResponse>, QueryKey<Options<ListOrganizationTeamRepositoriesData>>, string | Pick<QueryKey<Options<ListOrganizationTeamRepositoriesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListOrganizationTeamRepositoriesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listOrganizationTeamRepositories({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listOrganizationTeamRepositoriesInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Remove a team repository role
+ */
+export const removeOrganizationTeamRepositoryMutation = (options?: Partial<Options<RemoveOrganizationTeamRepositoryData>>): UseMutationOptions<RemoveOrganizationTeamRepositoryResponse, RemoveOrganizationTeamRepositoryError, Options<RemoveOrganizationTeamRepositoryData>> => {
+    const mutationOptions: UseMutationOptions<RemoveOrganizationTeamRepositoryResponse, RemoveOrganizationTeamRepositoryError, Options<RemoveOrganizationTeamRepositoryData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await removeOrganizationTeamRepository({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Assign a team role on an organization repository
+ */
+export const putOrganizationTeamRepositoryMutation = (options?: Partial<Options<PutOrganizationTeamRepositoryData>>): UseMutationOptions<PutOrganizationTeamRepositoryResponse, PutOrganizationTeamRepositoryError, Options<PutOrganizationTeamRepositoryData>> => {
+    const mutationOptions: UseMutationOptions<PutOrganizationTeamRepositoryResponse, PutOrganizationTeamRepositoryError, Options<PutOrganizationTeamRepositoryData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putOrganizationTeamRepository({
                 ...options,
                 ...fnOptions,
                 throwOnError: true
@@ -353,6 +1182,36 @@ export const getStarsOptions = (options: Options<GetStarsData>) => queryOptions<
     queryKey: getStarsQueryKey(options)
 });
 
+export const getStarsInfiniteQueryKey = (options: Options<GetStarsData>): QueryKey<Options<GetStarsData>> => createQueryKey('getStars', options, true);
+
+/**
+ * Get projected stars for a repository
+ */
+export const getStarsInfiniteOptions = (options: Options<GetStarsData>) => {
+    const opts = infiniteQueryOptions<GetStarsResponse, GetStarsError, InfiniteData<GetStarsResponse>, QueryKey<Options<GetStarsData>>, string | Pick<QueryKey<Options<GetStarsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetStarsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getStars({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getStarsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
 /**
  * Publish the current developer's star
  */
@@ -387,6 +1246,36 @@ export const getIssuesOptions = (options: Options<GetIssuesData>) => queryOption
     },
     queryKey: getIssuesQueryKey(options)
 });
+
+export const getIssuesInfiniteQueryKey = (options: Options<GetIssuesData>): QueryKey<Options<GetIssuesData>> => createQueryKey('getIssues', options, true);
+
+/**
+ * Get projected issues for a repository
+ */
+export const getIssuesInfiniteOptions = (options: Options<GetIssuesData>) => {
+    const opts = infiniteQueryOptions<GetIssuesResponse, GetIssuesError, InfiniteData<GetIssuesResponse>, QueryKey<Options<GetIssuesData>>, string | Pick<QueryKey<Options<GetIssuesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetIssuesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getIssues({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getIssuesInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
 
 /**
  * Publish a reporter-authored issue
@@ -475,6 +1364,36 @@ export const getIssueCommentsOptions = (options: Options<GetIssueCommentsData>) 
     queryKey: getIssueCommentsQueryKey(options)
 });
 
+export const getIssueCommentsInfiniteQueryKey = (options: Options<GetIssueCommentsData>): QueryKey<Options<GetIssueCommentsData>> => createQueryKey('getIssueComments', options, true);
+
+/**
+ * Get projected comments for an issue
+ */
+export const getIssueCommentsInfiniteOptions = (options: Options<GetIssueCommentsData>) => {
+    const opts = infiniteQueryOptions<GetIssueCommentsResponse, GetIssueCommentsError, InfiniteData<GetIssueCommentsResponse>, QueryKey<Options<GetIssueCommentsData>>, string | Pick<QueryKey<Options<GetIssueCommentsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetIssueCommentsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getIssueComments({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getIssueCommentsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
 /**
  * Publish an author-owned issue comment
  */
@@ -509,6 +1428,36 @@ export const listPullRequestsOptions = (options: Options<ListPullRequestsData>) 
     },
     queryKey: listPullRequestsQueryKey(options)
 });
+
+export const listPullRequestsInfiniteQueryKey = (options: Options<ListPullRequestsData>): QueryKey<Options<ListPullRequestsData>> => createQueryKey('listPullRequests', options, true);
+
+/**
+ * List projected pull requests targeting a repository
+ */
+export const listPullRequestsInfiniteOptions = (options: Options<ListPullRequestsData>) => {
+    const opts = infiniteQueryOptions<ListPullRequestsResponse, ListPullRequestsError, InfiniteData<ListPullRequestsResponse>, QueryKey<Options<ListPullRequestsData>>, string | Pick<QueryKey<Options<ListPullRequestsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListPullRequestsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listPullRequests({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listPullRequestsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
 
 /**
  * Publish a contributor-authored pull request
@@ -580,6 +1529,36 @@ export const listPullRequestReviewsOptions = (options: Options<ListPullRequestRe
     },
     queryKey: listPullRequestReviewsQueryKey(options)
 });
+
+export const listPullRequestReviewsInfiniteQueryKey = (options: Options<ListPullRequestReviewsData>): QueryKey<Options<ListPullRequestReviewsData>> => createQueryKey('listPullRequestReviews', options, true);
+
+/**
+ * List reviews for the exact current pull request CID
+ */
+export const listPullRequestReviewsInfiniteOptions = (options: Options<ListPullRequestReviewsData>) => {
+    const opts = infiniteQueryOptions<ListPullRequestReviewsResponse, ListPullRequestReviewsError, InfiniteData<ListPullRequestReviewsResponse>, QueryKey<Options<ListPullRequestReviewsData>>, string | Pick<QueryKey<Options<ListPullRequestReviewsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListPullRequestReviewsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listPullRequestReviews({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listPullRequestReviewsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
 
 /**
  * Publish a reviewer-authored review
@@ -735,35 +1714,6 @@ export const listNetworkRepositoriesOptions = (options?: Options<ListNetworkRepo
     },
     queryKey: listNetworkRepositoriesQueryKey(options)
 });
-
-const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
-    const params = { ...queryKey[0] };
-    if (page.body) {
-        params.body = {
-            ...queryKey[0].body as any,
-            ...page.body as any
-        };
-    }
-    if (page.headers) {
-        params.headers = {
-            ...queryKey[0].headers,
-            ...page.headers
-        };
-    }
-    if (page.path) {
-        params.path = {
-            ...queryKey[0].path as any,
-            ...page.path as any
-        };
-    }
-    if (page.query) {
-        params.query = {
-            ...queryKey[0].query as any,
-            ...page.query as any
-        };
-    }
-    return params as unknown as typeof page;
-};
 
 export const listNetworkRepositoriesInfiniteQueryKey = (options?: Options<ListNetworkRepositoriesData>): QueryKey<Options<ListNetworkRepositoriesData>> => createQueryKey('listNetworkRepositories', options, true);
 
@@ -1432,6 +2382,36 @@ export const listRepositoryBranchesOptions = (options: Options<ListRepositoryBra
     queryKey: listRepositoryBranchesQueryKey(options)
 });
 
+export const listRepositoryBranchesInfiniteQueryKey = (options: Options<ListRepositoryBranchesData>): QueryKey<Options<ListRepositoryBranchesData>> => createQueryKey('listRepositoryBranches', options, true);
+
+/**
+ * List repository branches
+ */
+export const listRepositoryBranchesInfiniteOptions = (options: Options<ListRepositoryBranchesData>) => {
+    const opts = infiniteQueryOptions<ListRepositoryBranchesResponse, ListRepositoryBranchesError, InfiniteData<ListRepositoryBranchesResponse>, QueryKey<Options<ListRepositoryBranchesData>>, string | Pick<QueryKey<Options<ListRepositoryBranchesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListRepositoryBranchesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listRepositoryBranches({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listRepositoryBranchesInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
 export const listRepositoryTagsQueryKey = (options: Options<ListRepositoryTagsData>) => createQueryKey('listRepositoryTags', options, false, ['Repositories']);
 
 /**
@@ -1449,6 +2429,36 @@ export const listRepositoryTagsOptions = (options: Options<ListRepositoryTagsDat
     },
     queryKey: listRepositoryTagsQueryKey(options)
 });
+
+export const listRepositoryTagsInfiniteQueryKey = (options: Options<ListRepositoryTagsData>): QueryKey<Options<ListRepositoryTagsData>> => createQueryKey('listRepositoryTags', options, true);
+
+/**
+ * List repository tags
+ */
+export const listRepositoryTagsInfiniteOptions = (options: Options<ListRepositoryTagsData>) => {
+    const opts = infiniteQueryOptions<ListRepositoryTagsResponse, ListRepositoryTagsError, InfiniteData<ListRepositoryTagsResponse>, QueryKey<Options<ListRepositoryTagsData>>, string | Pick<QueryKey<Options<ListRepositoryTagsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListRepositoryTagsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listRepositoryTags({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listRepositoryTagsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
 
 export const getRepositoryTreeQueryKey = (options: Options<GetRepositoryTreeData>) => createQueryKey('getRepositoryTree', options, false, ['Repositories']);
 
@@ -1503,6 +2513,36 @@ export const listRepositoryCommitsOptions = (options: Options<ListRepositoryComm
     },
     queryKey: listRepositoryCommitsQueryKey(options)
 });
+
+export const listRepositoryCommitsInfiniteQueryKey = (options: Options<ListRepositoryCommitsData>): QueryKey<Options<ListRepositoryCommitsData>> => createQueryKey('listRepositoryCommits', options, true);
+
+/**
+ * List repository commit history
+ */
+export const listRepositoryCommitsInfiniteOptions = (options: Options<ListRepositoryCommitsData>) => {
+    const opts = infiniteQueryOptions<ListRepositoryCommitsResponse, ListRepositoryCommitsError, InfiniteData<ListRepositoryCommitsResponse>, QueryKey<Options<ListRepositoryCommitsData>>, string | Pick<QueryKey<Options<ListRepositoryCommitsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListRepositoryCommitsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listRepositoryCommits({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listRepositoryCommitsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
 
 export const getRepositoryCommitQueryKey = (options: Options<GetRepositoryCommitData>) => createQueryKey('getRepositoryCommit', options, false, ['Repositories']);
 
@@ -1576,6 +2616,36 @@ export const listAccessTokensOptions = (options?: Options<ListAccessTokensData>)
     queryKey: listAccessTokensQueryKey(options)
 });
 
+export const listAccessTokensInfiniteQueryKey = (options?: Options<ListAccessTokensData>): QueryKey<Options<ListAccessTokensData>> => createQueryKey('listAccessTokens', options, true);
+
+/**
+ * List active personal access tokens
+ */
+export const listAccessTokensInfiniteOptions = (options?: Options<ListAccessTokensData>) => {
+    const opts = infiniteQueryOptions<ListAccessTokensResponse, ListAccessTokensError, InfiniteData<ListAccessTokensResponse>, QueryKey<Options<ListAccessTokensData>>, string | Pick<QueryKey<Options<ListAccessTokensData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListAccessTokensData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listAccessTokens({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listAccessTokensInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
 /**
  * Create a personal access token
  */
@@ -1627,6 +2697,36 @@ export const listSshKeysOptions = (options?: Options<ListSshKeysData>) => queryO
     },
     queryKey: listSshKeysQueryKey(options)
 });
+
+export const listSshKeysInfiniteQueryKey = (options?: Options<ListSshKeysData>): QueryKey<Options<ListSshKeysData>> => createQueryKey('listSshKeys', options, true);
+
+/**
+ * List active SSH public keys
+ */
+export const listSshKeysInfiniteOptions = (options?: Options<ListSshKeysData>) => {
+    const opts = infiniteQueryOptions<ListSshKeysResponse, ListSshKeysError, InfiniteData<ListSshKeysResponse>, QueryKey<Options<ListSshKeysData>>, string | Pick<QueryKey<Options<ListSshKeysData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListSshKeysData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listSshKeys({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listSshKeysInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
 
 /**
  * Register an SSH public key

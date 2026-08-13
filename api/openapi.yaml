@@ -10,6 +10,7 @@
     { "name": "Health" },
     { "name": "Identity" },
     { "name": "Profiles" },
+    { "name": "Organizations" },
     { "name": "Repositories" },
     { "name": "Credentials" },
     { "name": "Passkeys" },
@@ -208,6 +209,7 @@
         "tags": ["Passkeys"],
         "summary": "List passkey metadata for the current browser session",
         "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
         "responses": {
           "200": { "description": "Active passkey metadata", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PasskeyList" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
@@ -275,6 +277,191 @@
         }
       }
     },
+    "/api/v1/organizations": {
+      "get": {
+        "operationId": "listOrganizations",
+        "tags": ["Organizations"],
+        "summary": "List organizations for the authenticated user",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": {
+          "200": { "description": "Organization memberships", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationList" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "operationId": "createOrganization",
+        "tags": ["Organizations"],
+        "summary": "Create an organization with the authenticated user as its first owner",
+        "security": [{ "sessionCookie": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateOrganizationRequest" } } } },
+        "responses": {
+          "201": { "description": "Organization created and published", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Organization" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "AT Protocol provider unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/organization-invitations": {
+      "get": {
+        "operationId": "listOrganizationInvitationsForCurrentUser",
+        "tags": ["Organizations"],
+        "summary": "List active organization invitations for the authenticated user",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "Pending invitations", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationInvitationList" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" } }
+      }
+    },
+    "/api/v1/organization-invitations/{invitation}/accept": {
+      "post": {
+        "operationId": "acceptOrganizationInvitation",
+        "tags": ["Organizations"],
+        "summary": "Accept an organization invitation",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "name": "invitation", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": { "description": "Membership activated", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationMember" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" },
+          "502": { "description": "AT Protocol provider unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/organizations/{organization}": {
+      "get": {
+        "operationId": "getOrganization",
+        "tags": ["Organizations"],
+        "summary": "Get an organization profile",
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }],
+          "responses": { "200": { "description": "Organization profile", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Organization" } } } }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "patch": {
+        "operationId": "updateOrganization", "tags": ["Organizations"], "summary": "Update organization profile and repository policy", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateOrganizationRequest" } } } },
+        "responses": { "200": { "description": "Organization updated and republished", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Organization" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "description": "AT Protocol provider unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } } }
+      }
+    },
+    "/api/v1/organizations/{organization}/invitations": {
+      "get": {
+        "operationId": "listOrganizationInvitations", "tags": ["Organizations"], "summary": "List active invitations for organization owners", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "Active organization invitations", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationInvitationList" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/v1/organizations/{organization}/invitations/{invitation}": {
+      "delete": {
+        "operationId": "revokeOrganizationInvitation", "tags": ["Organizations"], "summary": "Revoke a pending organization invitation", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "invitation", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "204": { "description": "Invitation revoked", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "502": { "description": "AT Protocol provider unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } } }
+      }
+    },
+    "/api/v1/organizations/{organization}/audit-log": {
+      "get": {
+        "operationId": "listOrganizationAuditEvents", "tags": ["Organizations"], "summary": "List organization security events for owners", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "Newest-first organization audit events", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationAuditEventList" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/v1/organizations/{organization}/members": {
+      "get": {
+        "operationId": "listOrganizationMembers",
+        "tags": ["Organizations"],
+        "summary": "List organization members visible to the requester",
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "Organization members", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationMemberList" } } } }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "post": {
+        "operationId": "inviteOrganizationMember",
+        "tags": ["Organizations"],
+        "summary": "Invite a user to an organization",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InviteOrganizationMemberRequest" } } } },
+        "responses": { "201": { "description": "Invitation published", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationInvitation" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      }
+    },
+    "/api/v1/organizations/{organization}/members/{member}": {
+      "patch": {
+        "operationId": "updateOrganizationMember",
+        "tags": ["Organizations"],
+        "summary": "Change a member role or the authenticated member's visibility",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "member", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateOrganizationMemberRequest" } } } },
+        "responses": { "200": { "description": "Membership updated", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationMember" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      },
+      "delete": {
+        "operationId": "removeOrganizationMember",
+        "tags": ["Organizations"],
+        "summary": "Remove a member or leave the organization",
+        "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "member", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "204": { "description": "Membership removed", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" } }
+      }
+    },
+    "/api/v1/organizations/{organization}/teams": {
+      "get": {
+        "operationId": "listOrganizationTeams", "tags": ["Organizations"], "summary": "List teams visible to an organization member", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "Visible organization teams", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationTeamList" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "post": {
+        "operationId": "createOrganizationTeam", "tags": ["Organizations"], "summary": "Create an organization team", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateOrganizationTeamRequest" } } } },
+        "responses": { "201": { "description": "Team created", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationTeam" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      }
+    },
+    "/api/v1/organizations/{organization}/teams/{team}": {
+      "patch": {
+        "operationId": "updateOrganizationTeam", "tags": ["Organizations"], "summary": "Update team settings or hierarchy", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "team", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateOrganizationTeamRequest" } } } },
+        "responses": { "200": { "description": "Team settings updated", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationTeam" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      },
+      "delete": {
+        "operationId": "deleteOrganizationTeam", "tags": ["Organizations"], "summary": "Delete a team and its child-team hierarchy", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "team", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "204": { "description": "Team hierarchy deleted", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/v1/organizations/{organization}/teams/{team}/members": {
+      "get": {
+        "operationId": "listOrganizationTeamMembers", "tags": ["Organizations"], "summary": "List team members", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "team", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "Team members", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationTeamMemberList" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/v1/organizations/{organization}/teams/{team}/members/{member}": {
+      "put": {
+        "operationId": "putOrganizationTeamMember", "tags": ["Organizations"], "summary": "Add or update a team member", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "team", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "name": "member", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutOrganizationTeamMemberRequest" } } } },
+        "responses": { "200": { "description": "Team membership saved", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationTeamMember" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      },
+      "delete": {
+        "operationId": "removeOrganizationTeamMember", "tags": ["Organizations"], "summary": "Remove a member from a team", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "team", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "name": "member", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "204": { "description": "Team membership removed", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/v1/organizations/{organization}/repositories": {
+      "get": { "operationId": "listOrganizationRepositories", "tags": ["Organizations"], "summary": "List repositories owned by an organization", "security": [{ "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }], "responses": { "200": { "description": "Organization repositories", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryList" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } } }
+    },
+    "/api/v1/organizations/{organization}/repositories/{repository}/collaborators": {
+      "get": { "operationId": "listOrganizationRepositoryCollaborators", "tags": ["Organizations"], "summary": "List direct and outside collaborators for an organization repository", "security": [{ "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "repository", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }], "responses": { "200": { "description": "Repository collaborators", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationRepositoryCollaboratorList" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } } }
+    },
+    "/api/v1/organizations/{organization}/repositories/{repository}/collaborators/{collaborator}": {
+      "put": { "operationId": "putOrganizationRepositoryCollaborator", "tags": ["Organizations"], "summary": "Add or update a direct repository collaborator", "security": [{ "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "repository", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "name": "collaborator", "in": "path", "required": true, "schema": { "type": "string" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutOrganizationRepositoryCollaboratorRequest" } } } }, "responses": { "200": { "description": "Collaborator assignment saved", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationRepositoryCollaborator" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } } },
+      "delete": { "operationId": "removeOrganizationRepositoryCollaborator", "tags": ["Organizations"], "summary": "Remove a direct repository collaborator", "security": [{ "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "repository", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "name": "collaborator", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "204": { "description": "Collaborator assignment removed", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } } }
+    },
+    "/api/v1/organizations/{organization}/teams/{team}/repositories": {
+      "get": { "operationId": "listOrganizationTeamRepositories", "tags": ["Organizations"], "summary": "List repository roles assigned to a team", "security": [{ "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "team", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }], "responses": { "200": { "description": "Team repository assignments", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationTeamRepositoryList" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } } }
+    },
+    "/api/v1/organizations/{organization}/teams/{team}/repositories/{repository}": {
+      "put": { "operationId": "putOrganizationTeamRepository", "tags": ["Organizations"], "summary": "Assign a team role on an organization repository", "security": [{ "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "team", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "name": "repository", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutOrganizationTeamRepositoryRequest" } } } }, "responses": { "200": { "description": "Team repository role saved", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrganizationTeamRepository" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } } },
+      "delete": { "operationId": "removeOrganizationTeamRepository", "tags": ["Organizations"], "summary": "Remove a team repository role", "security": [{ "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/OrganizationSlug" }, { "name": "team", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "name": "repository", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "204": { "description": "Team repository role removed", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } } }
+    },
     "/api/v1/repositories": {
       "post": {
         "operationId": "createRepository",
@@ -306,7 +493,7 @@
     "/api/v1/stars": {
       "get": {
         "operationId": "getStars", "tags": ["Stars"], "summary": "Get projected stars for a repository", "security": [{}, { "sessionCookie": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
         "responses": {
           "200": { "description": "Current bounded star projection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StarList" } } } },
           "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
@@ -336,7 +523,7 @@
     "/api/v1/issues": {
       "get": {
         "operationId": "getIssues", "tags": ["Issues"], "summary": "Get projected issues for a repository", "security": [{}, { "sessionCookie": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
         "responses": {
           "200": { "description": "Current bounded issue projection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueList" } } } },
           "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
@@ -378,7 +565,7 @@
     "/api/v1/issues/comments": {
       "get": {
         "operationId": "getIssueComments", "tags": ["Comments"], "summary": "Get projected comments for an issue", "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/IssueURI" }],
+        "parameters": [{ "$ref": "#/components/parameters/IssueURI" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
         "responses": {
           "200": { "description": "Current bounded comment projection, personalized for a valid browser session", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommentList" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" },
@@ -410,7 +597,7 @@
     "/api/v1/pull-requests": {
       "get": {
         "operationId": "listPullRequests", "tags": ["Pull Requests"], "summary": "List projected pull requests targeting a repository", "security": [{}, { "sessionCookie": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
         "responses": {
           "200": { "description": "Current bounded pull request projection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestList" } } } },
           "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
@@ -448,7 +635,7 @@
     "/api/v1/pull-requests/reviews": {
       "get": {
         "operationId": "listPullRequestReviews", "tags": ["Pull Requests"], "summary": "List reviews for the exact current pull request CID", "security": [{}, { "sessionCookie": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }],
+        "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
         "responses": { "200": { "description": "Current bounded reviews", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestReviewList" } } } }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
       },
       "post": {
@@ -530,10 +717,7 @@
         "tags": ["Repositories"],
         "summary": "Discover public repositories indexed from the network",
         "security": [],
-        "parameters": [
-          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 } },
-          { "name": "cursor", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 4096 } }
-        ],
+        "parameters": [{ "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
         "responses": {
           "200": {
             "description": "A page of public network repositories",
@@ -728,7 +912,9 @@
         "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
         "parameters": [
           { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
-          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } },
+          { "$ref": "#/components/parameters/Limit" },
+          { "$ref": "#/components/parameters/Cursor" }
         ],
         "responses": {
           "200": { "description": "Repository branches", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchList" } } } },
@@ -745,7 +931,9 @@
         "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
         "parameters": [
           { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
-          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } },
+          { "$ref": "#/components/parameters/Limit" },
+          { "$ref": "#/components/parameters/Cursor" }
         ],
         "responses": {
           "200": { "description": "Repository tags", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TagList" } } } },
@@ -813,7 +1001,8 @@
           { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
           { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } },
           { "name": "ref", "in": "query", "required": false, "schema": { "type": "string", "minLength": 1, "maxLength": 1024 } },
-          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 } }
+          { "$ref": "#/components/parameters/Limit" },
+          { "$ref": "#/components/parameters/Cursor" }
         ],
         "responses": {
           "200": { "description": "Commit history", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CommitList" } } } },
@@ -893,6 +1082,7 @@
         "tags": ["Credentials"],
         "summary": "List active personal access tokens",
         "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
         "responses": {
           "200": { "description": "Active personal access tokens", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AccessTokenList" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
@@ -936,6 +1126,7 @@
         "tags": ["Credentials"],
         "summary": "List active SSH public keys",
         "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
         "responses": {
           "200": { "description": "Active SSH public keys", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SSHKeyList" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" },
@@ -984,6 +1175,7 @@
       "RequestID": { "description": "Identifier for correlating a request with logs and traces", "schema": { "type": "string" } }
     },
     "parameters": {
+      "OrganizationSlug": { "name": "organization", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/OrganizationSlug" } },
       "RepositoryURI": { "name": "repository_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "IssueURI": { "name": "issue_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "PullRequestURI": { "name": "pull_request_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
@@ -1053,6 +1245,106 @@
           "handle": { "type": "string", "nullable": true }
         }
       },
+      "OrganizationSlug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "maxLength": 100 },
+      "Organization": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "slug", "name", "creator_did", "base_permission", "members_can_create_repositories", "state", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "uri": { "type": "string", "nullable": true },
+          "cid": { "type": "string", "nullable": true },
+          "slug": { "$ref": "#/components/schemas/OrganizationSlug" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "website": { "type": "string", "format": "uri", "nullable": true },
+          "location": { "type": "string", "nullable": true },
+          "creator_did": { "type": "string" },
+          "base_permission": { "type": "string", "enum": ["none", "read", "write"] },
+          "members_can_create_repositories": { "type": "boolean" },
+          "state": { "type": "string", "enum": ["creating", "active", "failed", "deleting", "deleted"] },
+          "viewer_role": { "type": "string", "enum": ["owner", "member"], "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "OrganizationList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Organization" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "CreateOrganizationRequest": {
+        "type": "object", "additionalProperties": false, "required": ["slug", "name"],
+        "properties": {
+          "slug": { "$ref": "#/components/schemas/OrganizationSlug" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "description": { "type": "string", "maxLength": 2000 },
+          "website": { "type": "string", "format": "uri", "maxLength": 2048 },
+          "location": { "type": "string", "maxLength": 255 },
+          "base_permission": { "type": "string", "enum": ["none", "read", "write"], "default": "read" },
+          "members_can_create_repositories": { "type": "boolean", "default": true }
+        }
+      },
+      "UpdateOrganizationRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "base_permission", "members_can_create_repositories"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "description": { "type": "string", "maxLength": 2000 },
+          "website": { "type": "string", "format": "uri", "maxLength": 2048 },
+          "location": { "type": "string", "maxLength": 255 },
+          "base_permission": { "type": "string", "enum": ["none", "read", "write"] },
+          "members_can_create_repositories": { "type": "boolean" }
+        }
+      },
+      "OrganizationMember": {
+        "type": "object", "additionalProperties": false,
+        "required": ["did", "role", "visibility", "joined_at", "updated_at"],
+        "properties": {
+          "did": { "type": "string" }, "handle": { "type": "string", "nullable": true },
+          "role": { "type": "string", "enum": ["owner", "member"] },
+          "visibility": { "type": "string", "enum": ["private", "public"] },
+          "joined_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "OrganizationMemberList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrganizationMember" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "InviteOrganizationMemberRequest": {
+        "type": "object", "additionalProperties": false, "required": ["did"],
+        "properties": { "did": { "type": "string", "minLength": 1 }, "role": { "type": "string", "enum": ["owner", "member"], "default": "member" } }
+      },
+      "UpdateOrganizationMemberRequest": {
+        "type": "object", "additionalProperties": false, "minProperties": 1,
+        "properties": { "role": { "type": "string", "enum": ["owner", "member"] }, "visibility": { "type": "string", "enum": ["private", "public"] } }
+      },
+      "OrganizationInvitation": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "organization_id", "invitee_did", "role", "invited_by_did", "created_at", "expires_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" }, "organization_id": { "type": "string", "format": "uuid" },
+          "organization_slug": { "type": "string", "nullable": true }, "organization_name": { "type": "string", "nullable": true },
+          "invitee_did": { "type": "string" }, "role": { "type": "string", "enum": ["owner", "member"] }, "invited_by_did": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }, "expires_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "OrganizationInvitationList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrganizationInvitation" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "OrganizationAuditEvent": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "actor_did", "action", "target_type", "target_id", "metadata", "created_at"],
+        "properties": { "id": { "type": "string", "format": "uuid" }, "actor_did": { "type": "string" }, "action": { "type": "string" }, "target_type": { "type": "string" }, "target_id": { "type": "string" }, "request_id": { "type": "string", "nullable": true }, "metadata": { "type": "object", "additionalProperties": true }, "created_at": { "type": "string", "format": "date-time" } }
+      },
+      "OrganizationAuditEventList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrganizationAuditEvent" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "OrganizationTeam": {
+        "type": "object", "additionalProperties": false, "required": ["id", "organization_id", "slug", "name", "visibility", "created_at", "updated_at"],
+        "properties": { "id": { "type": "string", "format": "uuid" }, "organization_id": { "type": "string", "format": "uuid" }, "parent_team_id": { "type": "string", "format": "uuid", "nullable": true }, "slug": { "type": "string" }, "name": { "type": "string" }, "description": { "type": "string", "nullable": true }, "visibility": { "type": "string", "enum": ["visible", "secret"] }, "viewer_role": { "type": "string", "enum": ["member", "maintainer"], "nullable": true }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } }
+      },
+      "OrganizationTeamList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrganizationTeam" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "CreateOrganizationTeamRequest": { "type": "object", "additionalProperties": false, "required": ["slug", "name"], "properties": { "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "maxLength": 100 }, "name": { "type": "string", "minLength": 1, "maxLength": 255 }, "description": { "type": "string", "maxLength": 2000 }, "visibility": { "type": "string", "enum": ["visible", "secret"], "default": "visible" }, "parent_team_id": { "type": "string", "format": "uuid", "nullable": true, "description": "Optional parent whose repository access the child inherits." } } },
+      "UpdateOrganizationTeamRequest": { "type": "object", "additionalProperties": false, "required": ["name", "visibility", "parent_team_id"], "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 255 }, "description": { "type": "string", "maxLength": 2000 }, "visibility": { "type": "string", "enum": ["visible", "secret"] }, "parent_team_id": { "type": "string", "format": "uuid", "nullable": true, "description": "Parent team, or null to make the team top-level." } } },
+      "OrganizationTeamMember": { "type": "object", "additionalProperties": false, "required": ["did", "role", "created_at", "updated_at"], "properties": { "did": { "type": "string" }, "handle": { "type": "string", "nullable": true }, "role": { "type": "string", "enum": ["member", "maintainer"] }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } } },
+      "OrganizationTeamMemberList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrganizationTeamMember" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "PutOrganizationTeamMemberRequest": { "type": "object", "additionalProperties": false, "properties": { "role": { "type": "string", "enum": ["member", "maintainer"], "default": "member" } } },
+      "OrganizationTeamRepository": { "type": "object", "additionalProperties": false, "required": ["repository_id", "repository_slug", "role", "created_at", "updated_at"], "properties": { "repository_id": { "type": "string", "format": "uuid" }, "repository_slug": { "type": "string" }, "role": { "type": "string", "enum": ["read", "triage", "write", "maintain", "admin"] }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } } },
+      "OrganizationTeamRepositoryList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrganizationTeamRepository" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "PutOrganizationTeamRepositoryRequest": { "type": "object", "additionalProperties": false, "required": ["role"], "properties": { "role": { "type": "string", "enum": ["read", "triage", "write", "maintain", "admin"] } } },
+      "OrganizationRepositoryCollaborator": { "type": "object", "additionalProperties": false, "required": ["repository_id", "did", "role", "created_at", "updated_at"], "properties": { "repository_id": { "type": "string", "format": "uuid" }, "repository_slug": { "type": "string", "nullable": true }, "did": { "type": "string" }, "handle": { "type": "string", "nullable": true }, "role": { "type": "string", "enum": ["read", "triage", "write", "maintain", "admin"] }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } } },
+      "OrganizationRepositoryCollaboratorList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrganizationRepositoryCollaborator" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "PutOrganizationRepositoryCollaboratorRequest": { "type": "object", "additionalProperties": false, "required": ["role"], "properties": { "role": { "type": "string", "enum": ["read", "triage", "write", "maintain", "admin"] } } },
       "StartATProtoLoginRequest": {
         "type": "object",
         "required": ["identifier"],
@@ -1115,8 +1407,8 @@
       "PasskeyList": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["data"],
-        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Passkey" } } }
+        "required": ["items", "page"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Passkey" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "DeveloperProfile": {
         "type": "object",
@@ -1178,9 +1470,9 @@
       },
       "AccessTokenList": {
         "type": "object",
-        "required": ["data", "page"],
+        "required": ["items", "page"],
         "properties": {
-          "data": { "type": "array", "items": { "$ref": "#/components/schemas/AccessToken" } },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/AccessToken" } },
           "page": { "$ref": "#/components/schemas/Page" }
         }
       },
@@ -1207,9 +1499,9 @@
       },
       "SSHKeyList": {
         "type": "object",
-        "required": ["data", "page"],
+        "required": ["items", "page"],
         "properties": {
-          "data": { "type": "array", "items": { "$ref": "#/components/schemas/SSHKey" } },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/SSHKey" } },
           "page": { "$ref": "#/components/schemas/Page" }
         }
       },
@@ -1223,6 +1515,7 @@
           "description": { "type": "string", "maxLength": 2000 },
           "visibility": { "type": "string", "enum": ["public", "private"], "default": "public" },
           "default_branch": { "type": "string", "default": "main", "minLength": 1, "maxLength": 255 }
+          ,"organization": { "$ref": "#/components/schemas/OrganizationSlug", "description": "Create the repository in this organization instead of the current account." }
         }
       },
       "RepositoryOwner": {
@@ -1230,7 +1523,9 @@
         "required": ["did"],
         "properties": {
           "did": { "type": "string" },
-          "handle": { "type": "string", "nullable": true }
+          "handle": { "type": "string", "nullable": true },
+          "kind": { "type": "string", "enum": ["account", "organization"] },
+          "organization_slug": { "$ref": "#/components/schemas/OrganizationSlug", "nullable": true }
         }
       },
       "RepositoryHosting": {
@@ -1261,6 +1556,7 @@
           "default_branch": { "type": "string" },
           "owner": { "$ref": "#/components/schemas/RepositoryOwner" },
           "hosting": { "$ref": "#/components/schemas/RepositoryHosting" },
+          "viewer_can_admin": { "type": "boolean", "description": "Whether the current viewer has the repository admin role and may manage direct collaborators." },
           "star_count": { "type": "integer", "format": "int64", "minimum": 0 },
           "issue_count": { "type": "integer", "format": "int64", "minimum": 0 },
           "open_issue_count": { "type": "integer", "format": "int64", "minimum": 0 },
@@ -1271,21 +1567,22 @@
           "updated_at": { "type": "string", "format": "date-time" }
         }
       },
+      "RepositoryList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }, "page": { "$ref": "#/components/schemas/Page" } } },
       "NetworkRepositoryList": {
         "type": "object",
-        "required": ["data", "page"],
+        "required": ["items", "page"],
         "properties": {
-          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } },
           "page": { "$ref": "#/components/schemas/Page" }
         }
       },
       "RepositorySearchPage": {
-        "type": "object", "additionalProperties": false, "required": ["data", "page"],
-        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }, "page": { "$ref": "#/components/schemas/Page" } }
+        "type": "object", "additionalProperties": false, "required": ["items", "page"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "ProfileSearchPage": {
-        "type": "object", "additionalProperties": false, "required": ["data", "page"],
-        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeveloperProfile" } }, "page": { "$ref": "#/components/schemas/Page" } }
+        "type": "object", "additionalProperties": false, "required": ["items", "page"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/DeveloperProfile" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "SyncRepository": {
         "type": "object",
@@ -1413,8 +1710,8 @@
         }
       },
       "StarList": {
-        "type": "object", "required": ["star_count", "data"],
-        "properties": { "star_count": { "type": "integer", "format": "int64", "minimum": 0 }, "data": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/Star" } } }
+        "type": "object", "required": ["star_count", "items", "page"],
+        "properties": { "star_count": { "type": "integer", "format": "int64", "minimum": 0 }, "items": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/Star" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "StarMutation": {
         "type": "object", "required": ["star", "projected"],
@@ -1451,8 +1748,8 @@
         }
       },
       "IssueList": {
-        "type": "object", "additionalProperties": false, "required": ["issue_count", "open_issue_count", "data"],
-        "properties": { "issue_count": { "type": "integer", "format": "int64", "minimum": 0 }, "open_issue_count": { "type": "integer", "format": "int64", "minimum": 0 }, "data": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/Issue" } } }
+        "type": "object", "additionalProperties": false, "required": ["issue_count", "open_issue_count", "items", "page"],
+        "properties": { "issue_count": { "type": "integer", "format": "int64", "minimum": 0 }, "open_issue_count": { "type": "integer", "format": "int64", "minimum": 0 }, "items": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/Issue" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "CreateIssueRequest": {
         "type": "object", "additionalProperties": false, "required": ["repository_uri", "title", "body"],
@@ -1493,8 +1790,8 @@
         }
       },
       "PullRequestList": {
-        "type": "object", "additionalProperties": false, "required": ["pull_request_count", "open_pull_request_count", "data"],
-        "properties": { "pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 }, "open_pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 }, "data": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/PullRequest" } } }
+        "type": "object", "additionalProperties": false, "required": ["pull_request_count", "open_pull_request_count", "items", "page"],
+        "properties": { "pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 }, "open_pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 }, "items": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/PullRequest" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "CreatePullRequestRequest": {
         "type": "object", "additionalProperties": false, "required": ["source_repository_uri", "target_repository_uri", "source_branch", "target_branch", "head_sha", "title", "body"],
@@ -1513,7 +1810,7 @@
         "type": "object", "additionalProperties": false, "required": ["uri", "cid", "author_did", "pull_request_uri", "pull_request_cid", "verdict", "body", "created_at", "updated_at"],
         "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "pull_request_uri": { "type": "string" }, "pull_request_cid": { "type": "string" }, "verdict": { "type": "string", "enum": ["comment", "approve", "request_changes"] }, "body": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } }
       },
-      "PullRequestReviewList": { "type": "object", "additionalProperties": false, "required": ["data"], "properties": { "data": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/PullRequestReview" } } } },
+      "PullRequestReviewList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/PullRequestReview" } }, "page": { "$ref": "#/components/schemas/Page" } } },
       "CreatePullRequestReviewRequest": { "type": "object", "additionalProperties": false, "required": ["pull_request_uri", "verdict", "body"], "properties": { "pull_request_uri": { "type": "string", "minLength": 1 }, "verdict": { "type": "string", "enum": ["comment", "approve", "request_changes"] }, "body": { "type": "string", "maxLength": 65535 } } },
       "PullRequestReviewMutation": { "type": "object", "additionalProperties": false, "required": ["review", "projected"], "properties": { "review": { "$ref": "#/components/schemas/PullRequestReviewEnvelope" }, "projected": { "type": "boolean", "enum": [false] } } },
       "PullRequestStatusEnvelope": {
@@ -1555,8 +1852,8 @@
         }
       },
       "CommentList": {
-        "type": "object", "additionalProperties": false, "required": ["comment_count", "data"],
-        "properties": { "comment_count": { "type": "integer", "format": "int64", "minimum": 0 }, "data": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/Comment" } } }
+        "type": "object", "additionalProperties": false, "required": ["comment_count", "items", "page"],
+        "properties": { "comment_count": { "type": "integer", "format": "int64", "minimum": 0 }, "items": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/Comment" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "CreateCommentRequest": {
         "type": "object", "additionalProperties": false, "required": ["issue_uri", "body"],
@@ -1587,8 +1884,8 @@
       },
       "BranchList": {
         "type": "object",
-        "required": ["data"],
-        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Branch" } } }
+        "required": ["items", "page"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Branch" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "Tag": {
         "type": "object",
@@ -1603,8 +1900,8 @@
       },
       "TagList": {
         "type": "object",
-        "required": ["data"],
-        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/Tag" } } }
+        "required": ["items", "page"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Tag" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "Tree": {
         "type": "object",
@@ -1656,8 +1953,8 @@
       },
       "CommitList": {
         "type": "object",
-        "required": ["data"],
-        "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/CommitSummary" } } }
+        "required": ["items", "page"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/CommitSummary" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "DiffFile": {
         "type": "object",

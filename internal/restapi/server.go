@@ -12,6 +12,7 @@ import (
 
 	"github.com/adenosine-dev/adenosine/api"
 	generated "github.com/adenosine-dev/adenosine/api/generated/go"
+	"github.com/adenosine-dev/adenosine/internal/requestcontext"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -96,6 +97,7 @@ func requestMiddleware(logger *slog.Logger, count metric.Int64Counter, duration 
 		w.Header().Set("X-Request-ID", requestID)
 		response := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 		requestContext := context.WithValue(r.Context(), requestIDContextKey{}, requestID)
+		requestContext = requestcontext.WithRequestID(requestContext, requestID)
 		request := r.WithContext(requestContext)
 		next.ServeHTTP(response, request)
 

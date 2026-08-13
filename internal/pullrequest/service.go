@@ -54,6 +54,10 @@ type repositoryWriter interface {
 	CanWriteRepository(context.Context, string, repository.ID) (bool, error)
 }
 
+type repositoryTriager interface {
+	CanTriageRepository(context.Context, string, repository.ID) (bool, error)
+}
+
 type mergeEventWriter interface {
 	GitRefsUpdated(context.Context, event.GitRefsUpdated) error
 }
@@ -152,6 +156,7 @@ type repositoryTargets struct {
 type statusTarget struct {
 	Subject          StrongRef
 	TargetRepository StrongRef
+	RepositoryID     *repository.ID
 	StatusCreatedAt  time.Time
 }
 
@@ -289,7 +294,17 @@ func (service *Service) PutStatus(ctx context.Context, authorDID string, input S
 		return Status{}, err
 	}
 	if authorDID != ownerDID {
-		return Status{}, &AuthorizationError{Err: errors.New("status author is not target repository owner")}
+		triager, ok := service.authorizer.(repositoryTriager)
+		if !ok || target.RepositoryID == nil {
+			return Status{}, &AuthorizationError{Err: errors.New("status actor lacks repository triage permission")}
+		}
+		allowed, authorizeErr := triager.CanTriageRepository(ctx, authorDID, *target.RepositoryID)
+		if authorizeErr != nil {
+			return Status{}, fmt.Errorf("authorize pull request status: %w", authorizeErr)
+		}
+		if !allowed {
+			return Status{}, &AuthorizationError{Err: errors.New("status actor lacks repository triage permission")}
+		}
 	}
 	now := service.clock.Now().UTC()
 	createdAt := target.StatusCreatedAt
@@ -297,7 +312,7 @@ func (service *Service) PutStatus(ctx context.Context, authorDID string, input S
 		createdAt = now
 	}
 	record := StatusRecord{Subject: target.Subject, TargetRepository: target.TargetRepository, State: input.State, CreatedAt: createdAt, UpdatedAt: now}
-	return service.publisher.PutPullRequestStatus(ctx, authorDID, record)
+	return service.publisher.PutPullRequestStatus(ctx, ownerDID, record)
 }
 
 // Merge refreshes and atomically merges one exact open projection, then records and publishes the result.

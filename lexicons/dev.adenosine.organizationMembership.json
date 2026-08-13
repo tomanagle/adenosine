@@ -1,0 +1,22 @@
+{
+  "lexicon": 1,
+  "id": "dev.adenosine.organizationMembership",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A user's public attestation of an organization membership grant. Private membership is never published to an AT repository.",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["organization", "grant", "visibility", "createdAt", "updatedAt"],
+        "properties": {
+          "organization": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+          "grant": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+          "visibility": { "type": "string", "knownValues": ["public"], "maxLength": 16 },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

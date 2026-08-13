@@ -69,6 +69,26 @@ type ProfilePage struct {
 	NextCursor *string
 }
 
+type IssuePage struct {
+	Projection issue.Projection
+	NextCursor *string
+}
+
+type StarPage struct {
+	Projection star.Projection
+	NextCursor *string
+}
+
+type PullRequestPage struct {
+	Projection pullrequest.Projection
+	NextCursor *string
+}
+
+type PullRequestReviewPage struct {
+	Reviews    []pullrequest.ProjectedReview
+	NextCursor *string
+}
+
 type Store interface {
 	SearchRepositories(context.Context, string, Sort, int, string, *Cursor) ([]RepositoryResult, error)
 	SearchProfiles(context.Context, string, Sort, int, string, *Cursor) ([]ProfileResult, error)
@@ -84,11 +104,11 @@ type issueResolverStore interface {
 
 type collaborationStore interface {
 	ResolveProfile(context.Context, string, string) (profile.Profile, error)
-	ListIssues(context.Context, string, string, int) (issue.Projection, error)
-	ListStars(context.Context, string, string, int) (star.Projection, error)
-	ListPullRequests(context.Context, string, string, int) (pullrequest.Projection, error)
+	ListIssues(context.Context, string, string, int, *Cursor) (issue.Projection, error)
+	ListStars(context.Context, string, string, int, *Cursor) (star.Projection, error)
+	ListPullRequests(context.Context, string, string, int, *Cursor) (pullrequest.Projection, error)
 	ResolvePullRequest(context.Context, string, string) (pullrequest.ProjectedPullRequest, error)
-	ListPullRequestReviews(context.Context, string, string, int) ([]pullrequest.ProjectedReview, error)
+	ListPullRequestReviews(context.Context, string, string, int, *Cursor) ([]pullrequest.ProjectedReview, error)
 }
 
 type Service struct{ store Store }
@@ -126,7 +146,7 @@ func (service *Service) ListIssues(ctx context.Context, repositoryURI, viewerDID
 	if !ok {
 		return issue.Projection{}, ErrNotFound
 	}
-	return store.ListIssues(ctx, repositoryURI, viewerDID, 100)
+	return store.ListIssues(ctx, repositoryURI, viewerDID, 100, nil)
 }
 
 func (service *Service) ListStars(ctx context.Context, repositoryURI, viewerDID string) (star.Projection, error) {
@@ -134,7 +154,7 @@ func (service *Service) ListStars(ctx context.Context, repositoryURI, viewerDID 
 	if !ok {
 		return star.Projection{}, ErrNotFound
 	}
-	return store.ListStars(ctx, repositoryURI, viewerDID, 100)
+	return store.ListStars(ctx, repositoryURI, viewerDID, 100, nil)
 }
 
 func (service *Service) ListPullRequests(ctx context.Context, repositoryURI, viewerDID string) (pullrequest.Projection, error) {
@@ -142,7 +162,7 @@ func (service *Service) ListPullRequests(ctx context.Context, repositoryURI, vie
 	if !ok {
 		return pullrequest.Projection{}, ErrNotFound
 	}
-	return store.ListPullRequests(ctx, repositoryURI, viewerDID, 100)
+	return store.ListPullRequests(ctx, repositoryURI, viewerDID, 100, nil)
 }
 
 func (service *Service) ResolvePullRequest(ctx context.Context, uri, viewerDID string) (pullrequest.ProjectedPullRequest, error) {
@@ -158,7 +178,113 @@ func (service *Service) ListPullRequestReviews(ctx context.Context, uri, viewerD
 	if !ok {
 		return nil, ErrNotFound
 	}
-	return store.ListPullRequestReviews(ctx, uri, viewerDID, 100)
+	return store.ListPullRequestReviews(ctx, uri, viewerDID, 100, nil)
+}
+
+func (service *Service) PageIssues(ctx context.Context, repositoryURI, viewerDID string, limit int, encodedCursor string) (IssuePage, error) {
+	store, ok := service.store.(collaborationStore)
+	if !ok {
+		return IssuePage{}, ErrNotFound
+	}
+	cursor, err := validateCollectionCursor(encodedCursor, "issue", repositoryURI, limit)
+	if err != nil {
+		return IssuePage{}, err
+	}
+	projection, err := store.ListIssues(ctx, repositoryURI, viewerDID, limit+1, cursor)
+	if err != nil {
+		return IssuePage{}, err
+	}
+	page := IssuePage{Projection: projection}
+	if len(page.Projection.Issues) > limit {
+		last := page.Projection.Issues[limit-1]
+		page.Projection.Issues = page.Projection.Issues[:limit]
+		next := encodeCursor("issue", repositoryURI, SortRecent, Cursor{IndexedAt: last.CreatedAt, Identity: last.URI})
+		page.NextCursor = &next
+	}
+	return page, nil
+}
+
+func (service *Service) PageStars(ctx context.Context, repositoryURI, viewerDID string, limit int, encodedCursor string) (StarPage, error) {
+	store, ok := service.store.(collaborationStore)
+	if !ok {
+		return StarPage{}, ErrNotFound
+	}
+	cursor, err := validateCollectionCursor(encodedCursor, "star", repositoryURI, limit)
+	if err != nil {
+		return StarPage{}, err
+	}
+	projection, err := store.ListStars(ctx, repositoryURI, viewerDID, limit+1, cursor)
+	if err != nil {
+		return StarPage{}, err
+	}
+	page := StarPage{Projection: projection}
+	if len(page.Projection.Stars) > limit {
+		last := page.Projection.Stars[limit-1]
+		page.Projection.Stars = page.Projection.Stars[:limit]
+		next := encodeCursor("star", repositoryURI, SortRecent, Cursor{IndexedAt: last.CreatedAt, Identity: last.URI})
+		page.NextCursor = &next
+	}
+	return page, nil
+}
+
+func (service *Service) PagePullRequests(ctx context.Context, repositoryURI, viewerDID string, limit int, encodedCursor string) (PullRequestPage, error) {
+	store, ok := service.store.(collaborationStore)
+	if !ok {
+		return PullRequestPage{}, ErrNotFound
+	}
+	cursor, err := validateCollectionCursor(encodedCursor, "pull-request", repositoryURI, limit)
+	if err != nil {
+		return PullRequestPage{}, err
+	}
+	projection, err := store.ListPullRequests(ctx, repositoryURI, viewerDID, limit+1, cursor)
+	if err != nil {
+		return PullRequestPage{}, err
+	}
+	page := PullRequestPage{Projection: projection}
+	if len(page.Projection.PullRequests) > limit {
+		last := page.Projection.PullRequests[limit-1]
+		page.Projection.PullRequests = page.Projection.PullRequests[:limit]
+		next := encodeCursor("pull-request", repositoryURI, SortRecent, Cursor{IndexedAt: last.CreatedAt, Identity: last.URI})
+		page.NextCursor = &next
+	}
+	return page, nil
+}
+
+func (service *Service) PagePullRequestReviews(ctx context.Context, uri, viewerDID string, limit int, encodedCursor string) (PullRequestReviewPage, error) {
+	store, ok := service.store.(collaborationStore)
+	if !ok {
+		return PullRequestReviewPage{}, ErrNotFound
+	}
+	cursor, err := validateCollectionCursor(encodedCursor, "pull-request-review", uri, limit)
+	if err != nil {
+		return PullRequestReviewPage{}, err
+	}
+	reviews, err := store.ListPullRequestReviews(ctx, uri, viewerDID, limit+1, cursor)
+	if err != nil {
+		return PullRequestReviewPage{}, err
+	}
+	page := PullRequestReviewPage{Reviews: reviews}
+	if len(page.Reviews) > limit {
+		last := page.Reviews[limit-1]
+		page.Reviews = page.Reviews[:limit]
+		next := encodeCursor("pull-request-review", uri, SortRecent, Cursor{IndexedAt: last.CreatedAt, Identity: last.URI})
+		page.NextCursor = &next
+	}
+	return page, nil
+}
+
+func validateCollectionCursor(encoded, kind, identity string, limit int) (*Cursor, error) {
+	if limit < 1 || limit > 100 {
+		return nil, ErrInvalidLimit
+	}
+	if encoded == "" {
+		return nil, nil
+	}
+	cursor, err := decodeCursor(encoded, kind, identity, SortRecent)
+	if err != nil {
+		return nil, err
+	}
+	return &cursor, nil
 }
 
 func (service *Service) Repositories(ctx context.Context, query string, sort Sort, limit int, cursor, viewerDID string) (RepositoryPage, error) {

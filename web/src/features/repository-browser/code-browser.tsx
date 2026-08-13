@@ -205,12 +205,12 @@ function BrowserToolbar({
             })
           }}
         >
-          {!branches.data?.data.some((branch) => branch.name === revision) &&
-          !tags.data?.data.some((tag) => tag.name === revision) ? (
+          {!branches.data?.items.some((branch) => branch.name === revision) &&
+          !tags.data?.items.some((tag) => tag.name === revision) ? (
             <option value={revision}>{revision}</option>
           ) : null}
           <optgroup label="Branches">
-            {branches.data?.data.map((branch) => (
+            {branches.data?.items.map((branch) => (
               <option key={branch.name} value={branch.name}>
                 {branch.name}
                 {branch.default ? ' (default)' : ''}
@@ -218,7 +218,7 @@ function BrowserToolbar({
             ))}
           </optgroup>
           <optgroup label="Tags">
-            {tags.data?.data.map((tag) => (
+            {tags.data?.items.map((tag) => (
               <option key={tag.name} value={tag.name}>
                 {tag.name}
               </option>

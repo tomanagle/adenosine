@@ -13,6 +13,201 @@ export type CurrentIdentity = {
     handle?: string | null;
 };
 
+export type OrganizationSlug = string;
+
+export type Organization = {
+    id: string;
+    uri?: string | null;
+    cid?: string | null;
+    slug: OrganizationSlug;
+    name: string;
+    description?: string | null;
+    website?: string | null;
+    location?: string | null;
+    creator_did: string;
+    base_permission: 'none' | 'read' | 'write';
+    members_can_create_repositories: boolean;
+    state: 'creating' | 'active' | 'failed' | 'deleting' | 'deleted';
+    viewer_role?: 'owner' | 'member';
+    created_at: string;
+    updated_at: string;
+};
+
+export type OrganizationList = {
+    items: Array<Organization>;
+    page: Page;
+};
+
+export type CreateOrganizationRequest = {
+    slug: OrganizationSlug;
+    name: string;
+    description?: string;
+    website?: string;
+    location?: string;
+    base_permission?: 'none' | 'read' | 'write';
+    members_can_create_repositories?: boolean;
+};
+
+export type UpdateOrganizationRequest = {
+    name: string;
+    description?: string;
+    website?: string;
+    location?: string;
+    base_permission: 'none' | 'read' | 'write';
+    members_can_create_repositories: boolean;
+};
+
+export type OrganizationMember = {
+    did: string;
+    handle?: string | null;
+    role: 'owner' | 'member';
+    visibility: 'private' | 'public';
+    joined_at: string;
+    updated_at: string;
+};
+
+export type OrganizationMemberList = {
+    items: Array<OrganizationMember>;
+    page: Page;
+};
+
+export type InviteOrganizationMemberRequest = {
+    did: string;
+    role?: 'owner' | 'member';
+};
+
+export type UpdateOrganizationMemberRequest = {
+    role?: 'owner' | 'member';
+    visibility?: 'private' | 'public';
+};
+
+export type OrganizationInvitation = {
+    id: string;
+    organization_id: string;
+    organization_slug?: string | null;
+    organization_name?: string | null;
+    invitee_did: string;
+    role: 'owner' | 'member';
+    invited_by_did: string;
+    created_at: string;
+    expires_at: string;
+};
+
+export type OrganizationInvitationList = {
+    items: Array<OrganizationInvitation>;
+    page: Page;
+};
+
+export type OrganizationAuditEvent = {
+    id: string;
+    actor_did: string;
+    action: string;
+    target_type: string;
+    target_id: string;
+    request_id?: string | null;
+    metadata: {
+        [key: string]: unknown;
+    };
+    created_at: string;
+};
+
+export type OrganizationAuditEventList = {
+    items: Array<OrganizationAuditEvent>;
+    page: Page;
+};
+
+export type OrganizationTeam = {
+    id: string;
+    organization_id: string;
+    parent_team_id?: string | null;
+    slug: string;
+    name: string;
+    description?: string | null;
+    visibility: 'visible' | 'secret';
+    viewer_role?: 'member' | 'maintainer';
+    created_at: string;
+    updated_at: string;
+};
+
+export type OrganizationTeamList = {
+    items: Array<OrganizationTeam>;
+    page: Page;
+};
+
+export type CreateOrganizationTeamRequest = {
+    slug: string;
+    name: string;
+    description?: string;
+    visibility?: 'visible' | 'secret';
+    /**
+     * Optional parent whose repository access the child inherits.
+     */
+    parent_team_id?: string | null;
+};
+
+export type UpdateOrganizationTeamRequest = {
+    name: string;
+    description?: string;
+    visibility: 'visible' | 'secret';
+    /**
+     * Parent team, or null to make the team top-level.
+     */
+    parent_team_id: string | null;
+};
+
+export type OrganizationTeamMember = {
+    did: string;
+    handle?: string | null;
+    role: 'member' | 'maintainer';
+    created_at: string;
+    updated_at: string;
+};
+
+export type OrganizationTeamMemberList = {
+    items: Array<OrganizationTeamMember>;
+    page: Page;
+};
+
+export type PutOrganizationTeamMemberRequest = {
+    role?: 'member' | 'maintainer';
+};
+
+export type OrganizationTeamRepository = {
+    repository_id: string;
+    repository_slug: string;
+    role: 'read' | 'triage' | 'write' | 'maintain' | 'admin';
+    created_at: string;
+    updated_at: string;
+};
+
+export type OrganizationTeamRepositoryList = {
+    items: Array<OrganizationTeamRepository>;
+    page: Page;
+};
+
+export type PutOrganizationTeamRepositoryRequest = {
+    role: 'read' | 'triage' | 'write' | 'maintain' | 'admin';
+};
+
+export type OrganizationRepositoryCollaborator = {
+    repository_id: string;
+    repository_slug?: string | null;
+    did: string;
+    handle?: string | null;
+    role: 'read' | 'triage' | 'write' | 'maintain' | 'admin';
+    created_at: string;
+    updated_at: string;
+};
+
+export type OrganizationRepositoryCollaboratorList = {
+    items: Array<OrganizationRepositoryCollaborator>;
+    page: Page;
+};
+
+export type PutOrganizationRepositoryCollaboratorRequest = {
+    role: 'read' | 'triage' | 'write' | 'maintain' | 'admin';
+};
+
 export type StartAtProtoLoginRequest = {
     identifier: string;
 };
@@ -58,7 +253,8 @@ export type Passkey = {
 };
 
 export type PasskeyList = {
-    data: Array<Passkey>;
+    items: Array<Passkey>;
+    page: Page;
 };
 
 export type DeveloperProfile = {
@@ -107,7 +303,7 @@ export type CreateAccessTokenRequest = {
 };
 
 export type AccessTokenList = {
-    data: Array<AccessToken>;
+    items: Array<AccessToken>;
     page: Page;
 };
 
@@ -127,7 +323,7 @@ export type CreateSshKeyRequest = {
 };
 
 export type SshKeyList = {
-    data: Array<SshKey>;
+    items: Array<SshKey>;
     page: Page;
 };
 
@@ -139,11 +335,14 @@ export type CreateRepositoryRequest = {
     description?: string;
     visibility?: 'public' | 'private';
     default_branch?: string;
+    organization?: OrganizationSlug;
 };
 
 export type RepositoryOwner = {
     did: string;
     handle?: string | null;
+    kind?: 'account' | 'organization';
+    organization_slug?: OrganizationSlug;
 };
 
 /**
@@ -169,6 +368,10 @@ export type Repository = {
     default_branch: string;
     owner: RepositoryOwner;
     hosting: RepositoryHosting;
+    /**
+     * Whether the current viewer has the repository admin role and may manage direct collaborators.
+     */
+    viewer_can_admin?: boolean;
     star_count: number;
     issue_count: number;
     open_issue_count: number;
@@ -179,18 +382,23 @@ export type Repository = {
     updated_at: string;
 };
 
+export type RepositoryList = {
+    items: Array<Repository>;
+    page: Page;
+};
+
 export type NetworkRepositoryList = {
-    data: Array<Repository>;
+    items: Array<Repository>;
     page: Page;
 };
 
 export type RepositorySearchPage = {
-    data: Array<Repository>;
+    items: Array<Repository>;
     page: Page;
 };
 
 export type ProfileSearchPage = {
-    data: Array<DeveloperProfile>;
+    items: Array<DeveloperProfile>;
     page: Page;
 };
 
@@ -395,7 +603,8 @@ export type StarEnvelope = {
 
 export type StarList = {
     star_count: number;
-    data: Array<Star>;
+    items: Array<Star>;
+    page: Page;
 };
 
 export type StarMutation = {
@@ -448,7 +657,8 @@ export type IssueStatusEnvelope = {
 export type IssueList = {
     issue_count: number;
     open_issue_count: number;
-    data: Array<Issue>;
+    items: Array<Issue>;
+    page: Page;
 };
 
 export type CreateIssueRequest = {
@@ -515,7 +725,8 @@ export type PullRequestEnvelope = {
 export type PullRequestList = {
     pull_request_count: number;
     open_pull_request_count: number;
-    data: Array<PullRequest>;
+    items: Array<PullRequest>;
+    page: Page;
 };
 
 export type CreatePullRequestRequest = {
@@ -559,7 +770,8 @@ export type PullRequestReviewEnvelope = {
 };
 
 export type PullRequestReviewList = {
-    data: Array<PullRequestReview>;
+    items: Array<PullRequestReview>;
+    page: Page;
 };
 
 export type CreatePullRequestReviewRequest = {
@@ -646,7 +858,8 @@ export type CommentEnvelope = {
 
 export type CommentList = {
     comment_count: number;
-    data: Array<Comment>;
+    items: Array<Comment>;
+    page: Page;
 };
 
 export type CreateCommentRequest = {
@@ -680,7 +893,8 @@ export type Branch = {
 };
 
 export type BranchList = {
-    data: Array<Branch>;
+    items: Array<Branch>;
+    page: Page;
 };
 
 export type Tag = {
@@ -692,7 +906,8 @@ export type Tag = {
 };
 
 export type TagList = {
-    data: Array<Tag>;
+    items: Array<Tag>;
+    page: Page;
 };
 
 export type Tree = {
@@ -730,7 +945,8 @@ export type Commit = CommitSummary & {
 };
 
 export type CommitList = {
-    data: Array<CommitSummary>;
+    items: Array<CommitSummary>;
+    page: Page;
 };
 
 export type DiffFile = {
@@ -768,6 +984,8 @@ export type Error = {
 export type Page = {
     next_cursor: string | null;
 };
+
+export type OrganizationSlug2 = OrganizationSlug;
 
 export type RepositoryUri = string;
 
@@ -1192,7 +1410,10 @@ export type VerifyPasskeyLoginResponse = VerifyPasskeyLoginResponses[keyof Verif
 export type ListPasskeysData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
     url: '/api/v1/passkeys';
 };
 
@@ -1339,6 +1560,1071 @@ export type UpdateDeveloperProfileResponses = {
 
 export type UpdateDeveloperProfileResponse = UpdateDeveloperProfileResponses[keyof UpdateDeveloperProfileResponses];
 
+export type ListOrganizationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/organizations';
+};
+
+export type ListOrganizationsErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+};
+
+export type ListOrganizationsError = ListOrganizationsErrors[keyof ListOrganizationsErrors];
+
+export type ListOrganizationsResponses = {
+    /**
+     * Organization memberships
+     */
+    200: OrganizationList;
+};
+
+export type ListOrganizationsResponse = ListOrganizationsResponses[keyof ListOrganizationsResponses];
+
+export type CreateOrganizationData = {
+    body: CreateOrganizationRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/organizations';
+};
+
+export type CreateOrganizationErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * AT Protocol provider unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type CreateOrganizationError = CreateOrganizationErrors[keyof CreateOrganizationErrors];
+
+export type CreateOrganizationResponses = {
+    /**
+     * Organization created and published
+     */
+    201: Organization;
+};
+
+export type CreateOrganizationResponse = CreateOrganizationResponses[keyof CreateOrganizationResponses];
+
+export type ListOrganizationInvitationsForCurrentUserData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/organization-invitations';
+};
+
+export type ListOrganizationInvitationsForCurrentUserErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+};
+
+export type ListOrganizationInvitationsForCurrentUserError = ListOrganizationInvitationsForCurrentUserErrors[keyof ListOrganizationInvitationsForCurrentUserErrors];
+
+export type ListOrganizationInvitationsForCurrentUserResponses = {
+    /**
+     * Pending invitations
+     */
+    200: OrganizationInvitationList;
+};
+
+export type ListOrganizationInvitationsForCurrentUserResponse = ListOrganizationInvitationsForCurrentUserResponses[keyof ListOrganizationInvitationsForCurrentUserResponses];
+
+export type AcceptOrganizationInvitationData = {
+    body?: never;
+    path: {
+        invitation: string;
+    };
+    query?: never;
+    url: '/api/v1/organization-invitations/{invitation}/accept';
+};
+
+export type AcceptOrganizationInvitationErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * AT Protocol provider unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type AcceptOrganizationInvitationError = AcceptOrganizationInvitationErrors[keyof AcceptOrganizationInvitationErrors];
+
+export type AcceptOrganizationInvitationResponses = {
+    /**
+     * Membership activated
+     */
+    200: OrganizationMember;
+};
+
+export type AcceptOrganizationInvitationResponse = AcceptOrganizationInvitationResponses[keyof AcceptOrganizationInvitationResponses];
+
+export type GetOrganizationData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}';
+};
+
+export type GetOrganizationErrors = {
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetOrganizationError = GetOrganizationErrors[keyof GetOrganizationErrors];
+
+export type GetOrganizationResponses = {
+    /**
+     * Organization profile
+     */
+    200: Organization;
+};
+
+export type GetOrganizationResponse = GetOrganizationResponses[keyof GetOrganizationResponses];
+
+export type UpdateOrganizationData = {
+    body: UpdateOrganizationRequest;
+    path: {
+        organization: OrganizationSlug;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}';
+};
+
+export type UpdateOrganizationErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * AT Protocol provider unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type UpdateOrganizationError = UpdateOrganizationErrors[keyof UpdateOrganizationErrors];
+
+export type UpdateOrganizationResponses = {
+    /**
+     * Organization updated and republished
+     */
+    200: Organization;
+};
+
+export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
+
+export type ListOrganizationInvitationsData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/organizations/{organization}/invitations';
+};
+
+export type ListOrganizationInvitationsErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListOrganizationInvitationsError = ListOrganizationInvitationsErrors[keyof ListOrganizationInvitationsErrors];
+
+export type ListOrganizationInvitationsResponses = {
+    /**
+     * Active organization invitations
+     */
+    200: OrganizationInvitationList;
+};
+
+export type ListOrganizationInvitationsResponse = ListOrganizationInvitationsResponses[keyof ListOrganizationInvitationsResponses];
+
+export type RevokeOrganizationInvitationData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+        invitation: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/invitations/{invitation}';
+};
+
+export type RevokeOrganizationInvitationErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * AT Protocol provider unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type RevokeOrganizationInvitationError = RevokeOrganizationInvitationErrors[keyof RevokeOrganizationInvitationErrors];
+
+export type RevokeOrganizationInvitationResponses = {
+    /**
+     * Invitation revoked
+     */
+    204: void;
+};
+
+export type RevokeOrganizationInvitationResponse = RevokeOrganizationInvitationResponses[keyof RevokeOrganizationInvitationResponses];
+
+export type ListOrganizationAuditEventsData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/organizations/{organization}/audit-log';
+};
+
+export type ListOrganizationAuditEventsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListOrganizationAuditEventsError = ListOrganizationAuditEventsErrors[keyof ListOrganizationAuditEventsErrors];
+
+export type ListOrganizationAuditEventsResponses = {
+    /**
+     * Newest-first organization audit events
+     */
+    200: OrganizationAuditEventList;
+};
+
+export type ListOrganizationAuditEventsResponse = ListOrganizationAuditEventsResponses[keyof ListOrganizationAuditEventsResponses];
+
+export type ListOrganizationMembersData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/organizations/{organization}/members';
+};
+
+export type ListOrganizationMembersErrors = {
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListOrganizationMembersError = ListOrganizationMembersErrors[keyof ListOrganizationMembersErrors];
+
+export type ListOrganizationMembersResponses = {
+    /**
+     * Organization members
+     */
+    200: OrganizationMemberList;
+};
+
+export type ListOrganizationMembersResponse = ListOrganizationMembersResponses[keyof ListOrganizationMembersResponses];
+
+export type InviteOrganizationMemberData = {
+    body: InviteOrganizationMemberRequest;
+    path: {
+        organization: OrganizationSlug;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/members';
+};
+
+export type InviteOrganizationMemberErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type InviteOrganizationMemberError = InviteOrganizationMemberErrors[keyof InviteOrganizationMemberErrors];
+
+export type InviteOrganizationMemberResponses = {
+    /**
+     * Invitation published
+     */
+    201: OrganizationInvitation;
+};
+
+export type InviteOrganizationMemberResponse = InviteOrganizationMemberResponses[keyof InviteOrganizationMemberResponses];
+
+export type RemoveOrganizationMemberData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+        member: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/members/{member}';
+};
+
+export type RemoveOrganizationMemberErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+};
+
+export type RemoveOrganizationMemberError = RemoveOrganizationMemberErrors[keyof RemoveOrganizationMemberErrors];
+
+export type RemoveOrganizationMemberResponses = {
+    /**
+     * Membership removed
+     */
+    204: void;
+};
+
+export type RemoveOrganizationMemberResponse = RemoveOrganizationMemberResponses[keyof RemoveOrganizationMemberResponses];
+
+export type UpdateOrganizationMemberData = {
+    body: UpdateOrganizationMemberRequest;
+    path: {
+        organization: OrganizationSlug;
+        member: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/members/{member}';
+};
+
+export type UpdateOrganizationMemberErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateOrganizationMemberError = UpdateOrganizationMemberErrors[keyof UpdateOrganizationMemberErrors];
+
+export type UpdateOrganizationMemberResponses = {
+    /**
+     * Membership updated
+     */
+    200: OrganizationMember;
+};
+
+export type UpdateOrganizationMemberResponse = UpdateOrganizationMemberResponses[keyof UpdateOrganizationMemberResponses];
+
+export type ListOrganizationTeamsData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/organizations/{organization}/teams';
+};
+
+export type ListOrganizationTeamsErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListOrganizationTeamsError = ListOrganizationTeamsErrors[keyof ListOrganizationTeamsErrors];
+
+export type ListOrganizationTeamsResponses = {
+    /**
+     * Visible organization teams
+     */
+    200: OrganizationTeamList;
+};
+
+export type ListOrganizationTeamsResponse = ListOrganizationTeamsResponses[keyof ListOrganizationTeamsResponses];
+
+export type CreateOrganizationTeamData = {
+    body: CreateOrganizationTeamRequest;
+    path: {
+        organization: OrganizationSlug;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/teams';
+};
+
+export type CreateOrganizationTeamErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type CreateOrganizationTeamError = CreateOrganizationTeamErrors[keyof CreateOrganizationTeamErrors];
+
+export type CreateOrganizationTeamResponses = {
+    /**
+     * Team created
+     */
+    201: OrganizationTeam;
+};
+
+export type CreateOrganizationTeamResponse = CreateOrganizationTeamResponses[keyof CreateOrganizationTeamResponses];
+
+export type DeleteOrganizationTeamData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+        team: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/teams/{team}';
+};
+
+export type DeleteOrganizationTeamErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type DeleteOrganizationTeamError = DeleteOrganizationTeamErrors[keyof DeleteOrganizationTeamErrors];
+
+export type DeleteOrganizationTeamResponses = {
+    /**
+     * Team hierarchy deleted
+     */
+    204: void;
+};
+
+export type DeleteOrganizationTeamResponse = DeleteOrganizationTeamResponses[keyof DeleteOrganizationTeamResponses];
+
+export type UpdateOrganizationTeamData = {
+    body: UpdateOrganizationTeamRequest;
+    path: {
+        organization: OrganizationSlug;
+        team: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/teams/{team}';
+};
+
+export type UpdateOrganizationTeamErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateOrganizationTeamError = UpdateOrganizationTeamErrors[keyof UpdateOrganizationTeamErrors];
+
+export type UpdateOrganizationTeamResponses = {
+    /**
+     * Team settings updated
+     */
+    200: OrganizationTeam;
+};
+
+export type UpdateOrganizationTeamResponse = UpdateOrganizationTeamResponses[keyof UpdateOrganizationTeamResponses];
+
+export type ListOrganizationTeamMembersData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+        team: string;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/organizations/{organization}/teams/{team}/members';
+};
+
+export type ListOrganizationTeamMembersErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListOrganizationTeamMembersError = ListOrganizationTeamMembersErrors[keyof ListOrganizationTeamMembersErrors];
+
+export type ListOrganizationTeamMembersResponses = {
+    /**
+     * Team members
+     */
+    200: OrganizationTeamMemberList;
+};
+
+export type ListOrganizationTeamMembersResponse = ListOrganizationTeamMembersResponses[keyof ListOrganizationTeamMembersResponses];
+
+export type RemoveOrganizationTeamMemberData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+        team: string;
+        member: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/teams/{team}/members/{member}';
+};
+
+export type RemoveOrganizationTeamMemberErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type RemoveOrganizationTeamMemberError = RemoveOrganizationTeamMemberErrors[keyof RemoveOrganizationTeamMemberErrors];
+
+export type RemoveOrganizationTeamMemberResponses = {
+    /**
+     * Team membership removed
+     */
+    204: void;
+};
+
+export type RemoveOrganizationTeamMemberResponse = RemoveOrganizationTeamMemberResponses[keyof RemoveOrganizationTeamMemberResponses];
+
+export type PutOrganizationTeamMemberData = {
+    body: PutOrganizationTeamMemberRequest;
+    path: {
+        organization: OrganizationSlug;
+        team: string;
+        member: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/teams/{team}/members/{member}';
+};
+
+export type PutOrganizationTeamMemberErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type PutOrganizationTeamMemberError = PutOrganizationTeamMemberErrors[keyof PutOrganizationTeamMemberErrors];
+
+export type PutOrganizationTeamMemberResponses = {
+    /**
+     * Team membership saved
+     */
+    200: OrganizationTeamMember;
+};
+
+export type PutOrganizationTeamMemberResponse = PutOrganizationTeamMemberResponses[keyof PutOrganizationTeamMemberResponses];
+
+export type ListOrganizationRepositoriesData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/organizations/{organization}/repositories';
+};
+
+export type ListOrganizationRepositoriesErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListOrganizationRepositoriesError = ListOrganizationRepositoriesErrors[keyof ListOrganizationRepositoriesErrors];
+
+export type ListOrganizationRepositoriesResponses = {
+    /**
+     * Organization repositories
+     */
+    200: RepositoryList;
+};
+
+export type ListOrganizationRepositoriesResponse = ListOrganizationRepositoriesResponses[keyof ListOrganizationRepositoriesResponses];
+
+export type ListOrganizationRepositoryCollaboratorsData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+        repository: string;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/organizations/{organization}/repositories/{repository}/collaborators';
+};
+
+export type ListOrganizationRepositoryCollaboratorsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListOrganizationRepositoryCollaboratorsError = ListOrganizationRepositoryCollaboratorsErrors[keyof ListOrganizationRepositoryCollaboratorsErrors];
+
+export type ListOrganizationRepositoryCollaboratorsResponses = {
+    /**
+     * Repository collaborators
+     */
+    200: OrganizationRepositoryCollaboratorList;
+};
+
+export type ListOrganizationRepositoryCollaboratorsResponse = ListOrganizationRepositoryCollaboratorsResponses[keyof ListOrganizationRepositoryCollaboratorsResponses];
+
+export type RemoveOrganizationRepositoryCollaboratorData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+        repository: string;
+        collaborator: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/repositories/{repository}/collaborators/{collaborator}';
+};
+
+export type RemoveOrganizationRepositoryCollaboratorErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type RemoveOrganizationRepositoryCollaboratorError = RemoveOrganizationRepositoryCollaboratorErrors[keyof RemoveOrganizationRepositoryCollaboratorErrors];
+
+export type RemoveOrganizationRepositoryCollaboratorResponses = {
+    /**
+     * Collaborator assignment removed
+     */
+    204: void;
+};
+
+export type RemoveOrganizationRepositoryCollaboratorResponse = RemoveOrganizationRepositoryCollaboratorResponses[keyof RemoveOrganizationRepositoryCollaboratorResponses];
+
+export type PutOrganizationRepositoryCollaboratorData = {
+    body: PutOrganizationRepositoryCollaboratorRequest;
+    path: {
+        organization: OrganizationSlug;
+        repository: string;
+        collaborator: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/repositories/{repository}/collaborators/{collaborator}';
+};
+
+export type PutOrganizationRepositoryCollaboratorErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type PutOrganizationRepositoryCollaboratorError = PutOrganizationRepositoryCollaboratorErrors[keyof PutOrganizationRepositoryCollaboratorErrors];
+
+export type PutOrganizationRepositoryCollaboratorResponses = {
+    /**
+     * Collaborator assignment saved
+     */
+    200: OrganizationRepositoryCollaborator;
+};
+
+export type PutOrganizationRepositoryCollaboratorResponse = PutOrganizationRepositoryCollaboratorResponses[keyof PutOrganizationRepositoryCollaboratorResponses];
+
+export type ListOrganizationTeamRepositoriesData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+        team: string;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/organizations/{organization}/teams/{team}/repositories';
+};
+
+export type ListOrganizationTeamRepositoriesErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListOrganizationTeamRepositoriesError = ListOrganizationTeamRepositoriesErrors[keyof ListOrganizationTeamRepositoriesErrors];
+
+export type ListOrganizationTeamRepositoriesResponses = {
+    /**
+     * Team repository assignments
+     */
+    200: OrganizationTeamRepositoryList;
+};
+
+export type ListOrganizationTeamRepositoriesResponse = ListOrganizationTeamRepositoriesResponses[keyof ListOrganizationTeamRepositoriesResponses];
+
+export type RemoveOrganizationTeamRepositoryData = {
+    body?: never;
+    path: {
+        organization: OrganizationSlug;
+        team: string;
+        repository: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/teams/{team}/repositories/{repository}';
+};
+
+export type RemoveOrganizationTeamRepositoryErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type RemoveOrganizationTeamRepositoryError = RemoveOrganizationTeamRepositoryErrors[keyof RemoveOrganizationTeamRepositoryErrors];
+
+export type RemoveOrganizationTeamRepositoryResponses = {
+    /**
+     * Team repository role removed
+     */
+    204: void;
+};
+
+export type RemoveOrganizationTeamRepositoryResponse = RemoveOrganizationTeamRepositoryResponses[keyof RemoveOrganizationTeamRepositoryResponses];
+
+export type PutOrganizationTeamRepositoryData = {
+    body: PutOrganizationTeamRepositoryRequest;
+    path: {
+        organization: OrganizationSlug;
+        team: string;
+        repository: string;
+    };
+    query?: never;
+    url: '/api/v1/organizations/{organization}/teams/{team}/repositories/{repository}';
+};
+
+export type PutOrganizationTeamRepositoryErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type PutOrganizationTeamRepositoryError = PutOrganizationTeamRepositoryErrors[keyof PutOrganizationTeamRepositoryErrors];
+
+export type PutOrganizationTeamRepositoryResponses = {
+    /**
+     * Team repository role saved
+     */
+    200: OrganizationTeamRepository;
+};
+
+export type PutOrganizationTeamRepositoryResponse = PutOrganizationTeamRepositoryResponses[keyof PutOrganizationTeamRepositoryResponses];
+
 export type CreateRepositoryData = {
     body: CreateRepositoryRequest;
     headers?: {
@@ -1439,6 +2725,8 @@ export type GetStarsData = {
     path?: never;
     query: {
         repository_uri: string;
+        limit?: number;
+        cursor?: string;
     };
     url: '/api/v1/stars';
 };
@@ -1523,6 +2811,8 @@ export type GetIssuesData = {
     path?: never;
     query: {
         repository_uri: string;
+        limit?: number;
+        cursor?: string;
     };
     url: '/api/v1/issues';
 };
@@ -1747,6 +3037,8 @@ export type GetIssueCommentsData = {
     path?: never;
     query: {
         issue_uri: string;
+        limit?: number;
+        cursor?: string;
     };
     url: '/api/v1/issues/comments';
 };
@@ -1841,6 +3133,8 @@ export type ListPullRequestsData = {
     path?: never;
     query: {
         repository_uri: string;
+        limit?: number;
+        cursor?: string;
     };
     url: '/api/v1/pull-requests';
 };
@@ -1993,6 +3287,8 @@ export type ListPullRequestReviewsData = {
     path?: never;
     query: {
         pull_request_uri: string;
+        limit?: number;
+        cursor?: string;
     };
     url: '/api/v1/pull-requests/reviews';
 };
@@ -3555,7 +4851,10 @@ export type ListRepositoryBranchesData = {
         owner: string;
         repo: RepositorySlug;
     };
-    query?: never;
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
     url: '/api/v1/repositories/{owner}/{repo}/branches';
 };
 
@@ -3587,7 +4886,10 @@ export type ListRepositoryTagsData = {
         owner: string;
         repo: RepositorySlug;
     };
-    query?: never;
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
     url: '/api/v1/repositories/{owner}/{repo}/tags';
 };
 
@@ -3706,6 +5008,7 @@ export type ListRepositoryCommitsData = {
     query?: {
         ref?: string;
         limit?: number;
+        cursor?: string;
     };
     url: '/api/v1/repositories/{owner}/{repo}/commits';
 };
@@ -3874,7 +5177,10 @@ export type GetRepositoryMergeBaseResponse = GetRepositoryMergeBaseResponses[key
 export type ListAccessTokensData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
     url: '/api/v1/tokens';
 };
 
@@ -3979,7 +5285,10 @@ export type RevokeAccessTokenResponse = RevokeAccessTokenResponses[keyof RevokeA
 export type ListSshKeysData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
     url: '/api/v1/ssh-keys';
 };
 

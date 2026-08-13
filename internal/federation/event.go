@@ -3,6 +3,8 @@ package federation
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/base32"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -24,20 +26,25 @@ import (
 )
 
 const (
-	ProfileCollection           = "dev.adenosine.profile"
-	RepositoryCollection        = "dev.adenosine.repo"
-	StarCollection              = star.Collection
-	IssueCollection             = issue.Collection
-	IssueStatusCollection       = issue.StatusCollection
-	PullRequestCollection       = pullrequest.Collection
-	PullRequestStatusCollection = pullrequest.StatusCollection
-	PullRequestReviewCollection = pullrequest.ReviewCollection
-	maxEventBytes               = 1 << 20
+	ProfileCollection                = "dev.adenosine.profile"
+	RepositoryCollection             = "dev.adenosine.repo"
+	StarCollection                   = star.Collection
+	IssueCollection                  = issue.Collection
+	IssueStatusCollection            = issue.StatusCollection
+	PullRequestCollection            = pullrequest.Collection
+	PullRequestStatusCollection      = pullrequest.StatusCollection
+	PullRequestReviewCollection      = pullrequest.ReviewCollection
+	OrganizationCollection           = "dev.adenosine.organization"
+	OrganizationGrantCollection      = "dev.adenosine.organizationGrant"
+	OrganizationMembershipCollection = "dev.adenosine.organizationMembership"
+	OrganizationRevocationCollection = "dev.adenosine.organizationRevocation"
+	maxEventBytes                    = 1 << 20
 )
 
 var (
-	slugPattern     = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
-	starRKeyPattern = regexp.MustCompile(`^[a-z2-7]{52}$`)
+	slugPattern             = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
+	organizationSlugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
+	starRKeyPattern         = regexp.MustCompile(`^[a-z2-7]{52}$`)
 )
 
 // ErrInvalidEvent identifies untrusted input which should be acknowledged and discarded.
@@ -53,22 +60,26 @@ type Event struct {
 
 // RecordEvent is a validated Tap record mutation.
 type RecordEvent struct {
-	DID               string
-	Collection        string
-	RKey              string
-	URI               string
-	Action            string
-	CID               string
-	Raw               []byte
-	Profile           *ProfileRecord
-	Repository        *RepositoryRecord
-	Star              *StarRecord
-	Issue             *issue.Record
-	IssueComment      *issue.CommentRecord
-	IssueStatus       *issue.StatusRecord
-	PullRequest       *pullrequest.Record
-	PullRequestStatus *pullrequest.StatusRecord
-	PullRequestReview *pullrequest.ReviewRecord
+	DID                    string
+	Collection             string
+	RKey                   string
+	URI                    string
+	Action                 string
+	CID                    string
+	Raw                    []byte
+	Profile                *ProfileRecord
+	Repository             *RepositoryRecord
+	Star                   *StarRecord
+	Issue                  *issue.Record
+	IssueComment           *issue.CommentRecord
+	IssueStatus            *issue.StatusRecord
+	PullRequest            *pullrequest.Record
+	PullRequestStatus      *pullrequest.StatusRecord
+	PullRequestReview      *pullrequest.ReviewRecord
+	Organization           *OrganizationRecord
+	OrganizationGrant      *OrganizationGrantRecord
+	OrganizationMembership *OrganizationMembershipRecord
+	OrganizationRevocation *OrganizationRevocationRecord
 }
 
 // IdentityEvent is a validated Tap identity projection.
@@ -99,6 +110,7 @@ type RepositoryRecord struct {
 	Web           string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+	Organization  *StrongRef
 }
 
 // StarRecord is the decoded subset needed by the federation projection.
@@ -106,6 +118,33 @@ type StarRecord struct {
 	RepositoryURI string
 	RepositoryCID string
 	CreatedAt     time.Time
+}
+
+type StrongRef struct {
+	URI string
+	CID string
+}
+type OrganizationRecord struct {
+	Slug, Name, Description, Website, Location string
+	CreatedAt, UpdatedAt                       time.Time
+}
+type OrganizationGrantRecord struct {
+	Organization  StrongRef
+	Subject, Role string
+	Authority     StrongRef
+	CreatedAt     time.Time
+	ExpiresAt     *time.Time
+}
+type OrganizationMembershipRecord struct {
+	Organization, Grant  StrongRef
+	Visibility           string
+	CreatedAt, UpdatedAt time.Time
+}
+type OrganizationRevocationRecord struct {
+	Organization, Grant StrongRef
+	Subject             string
+	Authority           StrongRef
+	CreatedAt           time.Time
 }
 
 type envelope struct {
@@ -204,7 +243,7 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 	if err != nil || collection.String() != wire.Collection {
 		return RecordEvent{}, invalid("collection is not a canonical NSID")
 	}
-	if wire.Collection != ProfileCollection && wire.Collection != RepositoryCollection && wire.Collection != StarCollection && wire.Collection != IssueCollection && wire.Collection != issue.CommentCollection && wire.Collection != IssueStatusCollection && wire.Collection != PullRequestCollection && wire.Collection != PullRequestStatusCollection && wire.Collection != PullRequestReviewCollection {
+	if wire.Collection != ProfileCollection && wire.Collection != RepositoryCollection && wire.Collection != StarCollection && wire.Collection != IssueCollection && wire.Collection != issue.CommentCollection && wire.Collection != IssueStatusCollection && wire.Collection != PullRequestCollection && wire.Collection != PullRequestStatusCollection && wire.Collection != PullRequestReviewCollection && wire.Collection != OrganizationCollection && wire.Collection != OrganizationGrantCollection && wire.Collection != OrganizationMembershipCollection && wire.Collection != OrganizationRevocationCollection {
 		return RecordEvent{}, invalid("unsupported collection %q", wire.Collection)
 	}
 	rkey, err := syntax.ParseRecordKey(wire.RKey)
@@ -245,6 +284,9 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 		if err := pullrequest.ValidateRecordKey(wire.RKey); err != nil {
 			return RecordEvent{}, invalid("pull request record rkey: %v", err)
 		}
+	}
+	if wire.Collection == OrganizationMembershipCollection && !starRKeyPattern.MatchString(wire.RKey) {
+		return RecordEvent{}, invalid("organization membership rkey is not deterministic key shaped")
 	}
 	switch wire.Action {
 	case "delete":
@@ -331,7 +373,7 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 			return RecordEvent{}, invalid("pull request status rkey does not match pull request URI")
 		}
 		result.PullRequestStatus = &value
-	} else {
+	} else if wire.Collection == PullRequestReviewCollection {
 		value, err := decodePullRequestReviewRecord(wire.Record)
 		if err != nil {
 			return RecordEvent{}, err
@@ -340,6 +382,35 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 			return RecordEvent{}, invalid("pull request review: %v", err)
 		}
 		result.PullRequestReview = &value
+	} else if wire.Collection == OrganizationCollection {
+		value, err := decodeOrganizationRecord(wire.Record)
+		if err != nil {
+			return RecordEvent{}, err
+		}
+		result.Organization = &value
+	} else if wire.Collection == OrganizationGrantCollection {
+		value, err := decodeOrganizationGrantRecord(wire.Record)
+		if err != nil {
+			return RecordEvent{}, err
+		}
+		result.OrganizationGrant = &value
+	} else if wire.Collection == OrganizationMembershipCollection {
+		value, err := decodeOrganizationMembershipRecord(wire.Record)
+		if err != nil {
+			return RecordEvent{}, err
+		}
+		digest := sha256.Sum256([]byte(value.Organization.URI))
+		expected := strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(digest[:]))
+		if wire.RKey != expected {
+			return RecordEvent{}, invalid("organization membership rkey does not match organization URI")
+		}
+		result.OrganizationMembership = &value
+	} else {
+		value, err := decodeOrganizationRevocationRecord(wire.Record)
+		if err != nil {
+			return RecordEvent{}, err
+		}
+		result.OrganizationRevocation = &value
 	}
 	return result, nil
 }
@@ -607,13 +678,168 @@ func decodeProfileRecord(raw []byte) (ProfileRecord, error) {
 	return ProfileRecord{DisplayName: wire.DisplayName, Bio: wire.Bio, Website: wire.Website, Location: wire.Location, CreatedAt: createdAt}, nil
 }
 
+func decodeOrganizationRecord(raw []byte) (OrganizationRecord, error) {
+	var wire struct {
+		Type        string `json:"$type"`
+		Slug        string `json:"slug"`
+		Name        string `json:"name"`
+		Description string `json:"description,omitempty"`
+		Website     string `json:"website,omitempty"`
+		Location    string `json:"location,omitempty"`
+		CreatedAt   string `json:"createdAt"`
+		UpdatedAt   string `json:"updatedAt"`
+	}
+	if err := decodeStrict(raw, &wire); err != nil {
+		return OrganizationRecord{}, invalid("decode organization record: %v", err)
+	}
+	if wire.Type != OrganizationCollection || len(wire.Slug) > 100 || !organizationSlugPattern.MatchString(wire.Slug) || !validText(wire.Name, 255, 100, true) || !validText(wire.Description, 2000, 2000, false) || !validText(wire.Location, 255, 100, false) {
+		return OrganizationRecord{}, invalid("organization record fields are invalid")
+	}
+	if wire.Website != "" {
+		if len(wire.Website) > 2048 || validateWebEndpoint(wire.Website) != nil {
+			return OrganizationRecord{}, invalid("organization website is invalid")
+		}
+	}
+	createdAt, err := canonicalDatetime(wire.CreatedAt)
+	if err != nil {
+		return OrganizationRecord{}, err
+	}
+	updatedAt, err := canonicalDatetime(wire.UpdatedAt)
+	if err != nil {
+		return OrganizationRecord{}, err
+	}
+	if updatedAt.Before(createdAt) {
+		return OrganizationRecord{}, invalid("organization updatedAt must not precede createdAt")
+	}
+	return OrganizationRecord{Slug: wire.Slug, Name: wire.Name, Description: wire.Description, Website: wire.Website, Location: wire.Location, CreatedAt: createdAt, UpdatedAt: updatedAt}, nil
+}
+
+func decodeOrganizationGrantRecord(raw []byte) (OrganizationGrantRecord, error) {
+	var wire struct {
+		Type         string    `json:"$type"`
+		Organization StrongRef `json:"organization"`
+		Subject      string    `json:"subject"`
+		Role         string    `json:"role"`
+		Authority    StrongRef `json:"authority"`
+		CreatedAt    string    `json:"createdAt"`
+		ExpiresAt    string    `json:"expiresAt,omitempty"`
+	}
+	if err := decodeStrict(raw, &wire); err != nil {
+		return OrganizationGrantRecord{}, invalid("decode organization grant: %v", err)
+	}
+	if wire.Type != OrganizationGrantCollection || (wire.Role != "owner" && wire.Role != "member") || canonicalDID(wire.Subject) != nil {
+		return OrganizationGrantRecord{}, invalid("organization grant fields are invalid")
+	}
+	if err := validateStrongRef(wire.Organization, OrganizationCollection); err != nil {
+		return OrganizationGrantRecord{}, err
+	}
+	if err := validateStrongRef(wire.Authority, ""); err != nil {
+		return OrganizationGrantRecord{}, err
+	}
+	createdAt, err := canonicalDatetime(wire.CreatedAt)
+	if err != nil {
+		return OrganizationGrantRecord{}, err
+	}
+	var expiresAt *time.Time
+	if wire.ExpiresAt != "" {
+		parsed, parseErr := canonicalDatetime(wire.ExpiresAt)
+		if parseErr != nil || !parsed.After(createdAt) {
+			return OrganizationGrantRecord{}, invalid("organization grant expiry is invalid")
+		}
+		expiresAt = &parsed
+	}
+	return OrganizationGrantRecord{Organization: wire.Organization, Subject: wire.Subject, Role: wire.Role, Authority: wire.Authority, CreatedAt: createdAt, ExpiresAt: expiresAt}, nil
+}
+
+func decodeOrganizationMembershipRecord(raw []byte) (OrganizationMembershipRecord, error) {
+	var wire struct {
+		Type         string    `json:"$type"`
+		Organization StrongRef `json:"organization"`
+		Grant        StrongRef `json:"grant"`
+		Visibility   string    `json:"visibility"`
+		CreatedAt    string    `json:"createdAt"`
+		UpdatedAt    string    `json:"updatedAt"`
+	}
+	if err := decodeStrict(raw, &wire); err != nil {
+		return OrganizationMembershipRecord{}, invalid("decode organization membership: %v", err)
+	}
+	if wire.Type != OrganizationMembershipCollection || wire.Visibility != "public" {
+		return OrganizationMembershipRecord{}, invalid("organization membership fields are invalid")
+	}
+	if err := validateStrongRef(wire.Organization, OrganizationCollection); err != nil {
+		return OrganizationMembershipRecord{}, err
+	}
+	if err := validateStrongRef(wire.Grant, OrganizationGrantCollection); err != nil {
+		return OrganizationMembershipRecord{}, err
+	}
+	createdAt, err := canonicalDatetime(wire.CreatedAt)
+	if err != nil {
+		return OrganizationMembershipRecord{}, err
+	}
+	updatedAt, err := canonicalDatetime(wire.UpdatedAt)
+	if err != nil {
+		return OrganizationMembershipRecord{}, err
+	}
+	if updatedAt.Before(createdAt) {
+		return OrganizationMembershipRecord{}, invalid("organization membership updatedAt must not precede createdAt")
+	}
+	return OrganizationMembershipRecord{Organization: wire.Organization, Grant: wire.Grant, Visibility: wire.Visibility, CreatedAt: createdAt, UpdatedAt: updatedAt}, nil
+}
+
+func decodeOrganizationRevocationRecord(raw []byte) (OrganizationRevocationRecord, error) {
+	var wire struct {
+		Type         string    `json:"$type"`
+		Organization StrongRef `json:"organization"`
+		Grant        StrongRef `json:"grant"`
+		Subject      string    `json:"subject"`
+		Authority    StrongRef `json:"authority"`
+		CreatedAt    string    `json:"createdAt"`
+	}
+	if err := decodeStrict(raw, &wire); err != nil {
+		return OrganizationRevocationRecord{}, invalid("decode organization revocation: %v", err)
+	}
+	if wire.Type != OrganizationRevocationCollection || canonicalDID(wire.Subject) != nil {
+		return OrganizationRevocationRecord{}, invalid("organization revocation fields are invalid")
+	}
+	if err := validateStrongRef(wire.Organization, OrganizationCollection); err != nil {
+		return OrganizationRevocationRecord{}, err
+	}
+	if err := validateStrongRef(wire.Grant, OrganizationGrantCollection); err != nil {
+		return OrganizationRevocationRecord{}, err
+	}
+	if err := validateStrongRef(wire.Authority, ""); err != nil {
+		return OrganizationRevocationRecord{}, err
+	}
+	createdAt, err := canonicalDatetime(wire.CreatedAt)
+	if err != nil {
+		return OrganizationRevocationRecord{}, err
+	}
+	return OrganizationRevocationRecord{Organization: wire.Organization, Grant: wire.Grant, Subject: wire.Subject, Authority: wire.Authority, CreatedAt: createdAt}, nil
+}
+
+func validateStrongRef(value StrongRef, collection string) error {
+	uri, err := syntax.ParseATURI(value.URI)
+	if err != nil || uri.String() != value.URI {
+		return invalid("strong reference URI is invalid")
+	}
+	cid, err := syntax.ParseCID(value.CID)
+	if err != nil || cid.String() != value.CID {
+		return invalid("strong reference CID is invalid")
+	}
+	if collection != "" && !strings.Contains(value.URI, "/"+collection+"/") {
+		return invalid("strong reference collection is invalid")
+	}
+	return nil
+}
+
 func decodeRepositoryRecord(raw []byte) (RepositoryRecord, error) {
 	var wire struct {
-		Type          string `json:"$type"`
-		Slug          string `json:"slug"`
-		Name          string `json:"name"`
-		Description   string `json:"description,omitempty"`
-		DefaultBranch string `json:"defaultBranch"`
+		Type          string     `json:"$type"`
+		Slug          string     `json:"slug"`
+		Name          string     `json:"name"`
+		Description   string     `json:"description,omitempty"`
+		Organization  *StrongRef `json:"organization,omitempty"`
+		DefaultBranch string     `json:"defaultBranch"`
 		Git           struct {
 			HTTPS string `json:"https"`
 			SSH   string `json:"ssh,omitempty"`
@@ -648,6 +874,11 @@ func decodeRepositoryRecord(raw []byte) (RepositoryRecord, error) {
 	if err := validateWebEndpoint(wire.Web); err != nil {
 		return RepositoryRecord{}, invalid("web URL: %v", err)
 	}
+	if wire.Organization != nil {
+		if err := validateStrongRef(*wire.Organization, OrganizationCollection); err != nil {
+			return RepositoryRecord{}, err
+		}
+	}
 	createdAt, err := canonicalDatetime(wire.CreatedAt)
 	if err != nil {
 		return RepositoryRecord{}, err
@@ -661,7 +892,7 @@ func decodeRepositoryRecord(raw []byte) (RepositoryRecord, error) {
 	}
 	return RepositoryRecord{
 		Slug: wire.Slug, Name: wire.Name, Description: wire.Description, DefaultBranch: wire.DefaultBranch,
-		GitHTTPS: wire.Git.HTTPS, GitSSH: wire.Git.SSH, Web: wire.Web, CreatedAt: createdAt, UpdatedAt: updatedAt,
+		GitHTTPS: wire.Git.HTTPS, GitSSH: wire.Git.SSH, Web: wire.Web, CreatedAt: createdAt, UpdatedAt: updatedAt, Organization: wire.Organization,
 	}, nil
 }
 

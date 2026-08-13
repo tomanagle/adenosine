@@ -1,0 +1,22 @@
+{
+  "lexicon": 1,
+  "id": "dev.adenosine.organizationRevocation",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "An organization owner revokes a specific membership grant.",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["organization", "grant", "subject", "authority", "createdAt"],
+        "properties": {
+          "organization": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+          "grant": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+          "subject": { "type": "string", "format": "did" },
+          "authority": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

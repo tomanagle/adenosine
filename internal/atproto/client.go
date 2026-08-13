@@ -14,6 +14,9 @@ import (
 
 	dbgen "github.com/adenosine-dev/adenosine/internal/database/generated"
 	localidentity "github.com/adenosine-dev/adenosine/internal/identity"
+	"github.com/adenosine-dev/adenosine/internal/issue"
+	"github.com/adenosine-dev/adenosine/internal/pullrequest"
+	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/bluesky-social/indigo/atproto/atclient"
 	"github.com/bluesky-social/indigo/atproto/auth/oauth"
 	indigoidentity "github.com/bluesky-social/indigo/atproto/identity"
@@ -21,6 +24,40 @@ import (
 )
 
 const oauthScope = "atproto"
+
+// publishedCollections are every collection this server writes to an owner's
+// repository. Their granular scopes are requested at login because a PDS
+// authorizes record writes per collection.
+func publishedCollections() []string {
+	return []string{
+		repositoryCollection,
+		profileCollection,
+		organizationCollection,
+		"dev.adenosine.organizationGrant",
+		"dev.adenosine.organizationMembership",
+		"dev.adenosine.organizationRevocation",
+		issue.Collection,
+		issue.CommentCollection,
+		issue.StatusCollection,
+		pullrequest.Collection,
+		pullrequest.ReviewCollection,
+		pullrequest.StatusCollection,
+		star.Collection,
+	}
+}
+
+// oauthScopes keeps the delegation least-privilege: the base scope plus one
+// granular repository scope per published collection, and never a transitional
+// scope that would grant unrelated account access.
+func oauthScopes() []string {
+	collections := publishedCollections()
+	scopes := make([]string, 0, len(collections)+1)
+	scopes = append(scopes, oauthScope)
+	for _, collection := range collections {
+		scopes = append(scopes, "repo:"+collection)
+	}
+	return scopes
+}
 
 type oauthFlow interface {
 	StartAuthFlow(context.Context, string) (string, error)
@@ -177,9 +214,9 @@ func build(baseURL string, queries *dbgen.Queries, stateKey, credentialKey []byt
 	var config oauth.ClientConfig
 	parsedBase, _ := url.Parse(base)
 	if parsedBase.Scheme == "http" && isLoopbackIP(parsedBase.Hostname()) {
-		config = oauth.NewLocalhostConfig(callbackURL, []string{oauthScope})
+		config = oauth.NewLocalhostConfig(callbackURL, oauthScopes())
 	} else {
-		config = oauth.NewPublicConfig(base+"/oauth/client-metadata.json", callbackURL, []string{oauthScope})
+		config = oauth.NewPublicConfig(base+"/oauth/client-metadata.json", callbackURL, oauthScopes())
 	}
 
 	httpClient := options.httpClient

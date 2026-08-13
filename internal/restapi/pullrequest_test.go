@@ -138,7 +138,7 @@ func TestPullRequestEndpoints(t *testing.T) {
 			}
 			if testCase.name == "anonymous list" {
 				var body generated.PullRequestList
-				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.PullRequestCount != 5 || body.OpenPullRequestCount != 3 || len(body.Data) != 1 || body.Data[0].ReviewCount != 1 {
+				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.PullRequestCount != 5 || body.OpenPullRequestCount != 3 || len(body.Items) != 1 || body.Items[0].ReviewCount != 1 {
 					t.Fatalf("list response = %#v, %v", body, err)
 				}
 			}

@@ -34,7 +34,7 @@ func (store *PostgresDiscoveryStore) ListNetworkRepositories(ctx context.Context
 	for index, row := range rows {
 		repositories[index] = DiscoveryRepository{
 			URI: row.Uri, CID: row.Cid.String, LocalRepositoryID: optionalUUID(row.LocalRepositoryID), OwnerDID: row.OwnerDid,
-			OwnerHandle: row.Handle.String, Slug: row.Slug.String, Name: row.Name.String,
+			OwnerHandle: row.Handle.String, OrganizationSlug: row.OrganizationSlug.String, Slug: row.Slug.String, Name: row.Name.String,
 			Description: row.Description.String, DefaultBranch: row.DefaultBranch.String,
 			GitHTTPS: row.GitHttps.String, GitSSH: row.GitSsh.String, Web: row.Web.String,
 			CreatedAt: row.RecordCreatedAt.Time, UpdatedAt: row.RecordUpdatedAt.Time, IndexedAt: row.IndexedAt.Time,

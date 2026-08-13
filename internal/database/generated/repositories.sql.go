@@ -15,7 +15,7 @@ const activateRepository = `-- name: ActivateRepository :one
 UPDATE core.repositories
 SET state = 'active', at_uri = $1, at_cid = $2, updated_at = $3
 WHERE id = $4 AND deleted_at IS NULL
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id
 `
 
 type ActivateRepositoryParams struct {
@@ -48,39 +48,42 @@ func (q *Queries) ActivateRepository(ctx context.Context, arg ActivateRepository
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
 const createRepository = `-- name: CreateRepository :one
 INSERT INTO core.repositories (
-    id, owner_did, slug, display_name, description, visibility, state,
+    id, owner_did, organization_id, slug, display_name, description, visibility, state,
     default_branch, storage_key, at_uri, at_cid, created_at, updated_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id
 `
 
 type CreateRepositoryParams struct {
-	ID            pgtype.UUID        `json:"id"`
-	OwnerDid      string             `json:"owner_did"`
-	Slug          string             `json:"slug"`
-	DisplayName   pgtype.Text        `json:"display_name"`
-	Description   pgtype.Text        `json:"description"`
-	Visibility    string             `json:"visibility"`
-	State         string             `json:"state"`
-	DefaultBranch string             `json:"default_branch"`
-	StorageKey    string             `json:"storage_key"`
-	AtUri         pgtype.Text        `json:"at_uri"`
-	AtCid         pgtype.Text        `json:"at_cid"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+	ID             pgtype.UUID        `json:"id"`
+	OwnerDid       string             `json:"owner_did"`
+	OrganizationID pgtype.UUID        `json:"organization_id"`
+	Slug           string             `json:"slug"`
+	DisplayName    pgtype.Text        `json:"display_name"`
+	Description    pgtype.Text        `json:"description"`
+	Visibility     string             `json:"visibility"`
+	State          string             `json:"state"`
+	DefaultBranch  string             `json:"default_branch"`
+	StorageKey     string             `json:"storage_key"`
+	AtUri          pgtype.Text        `json:"at_uri"`
+	AtCid          pgtype.Text        `json:"at_cid"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
 func (q *Queries) CreateRepository(ctx context.Context, arg CreateRepositoryParams) (CoreRepository, error) {
 	row := q.db.QueryRow(ctx, createRepository,
 		arg.ID,
 		arg.OwnerDid,
+		arg.OrganizationID,
 		arg.Slug,
 		arg.DisplayName,
 		arg.Description,
@@ -109,12 +112,13 @@ func (q *Queries) CreateRepository(ctx context.Context, arg CreateRepositoryPara
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
 const getRepository = `-- name: GetRepository :one
-SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at FROM core.repositories WHERE id = $1 AND deleted_at IS NULL
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id FROM core.repositories WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetRepository(ctx context.Context, id pgtype.UUID) (CoreRepository, error) {
@@ -135,15 +139,20 @@ func (q *Queries) GetRepository(ctx context.Context, id pgtype.UUID) (CoreReposi
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
 const getRepositoryByOwnerSlug = `-- name: GetRepositoryByOwnerSlug :one
-SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at
+SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id
 FROM core.repositories AS repository
 JOIN core.accounts AS owner ON owner.did = repository.owner_did
-WHERE (repository.owner_did = $1 OR lower(owner.handle_cache) = lower($1))
+LEFT JOIN core.organizations AS organization ON organization.id = repository.organization_id AND organization.deleted_at IS NULL
+WHERE (
+    (repository.organization_id IS NULL AND (repository.owner_did = $1 OR lower(owner.handle_cache) = lower($1)))
+    OR lower(organization.slug) = lower($1)
+  )
   AND lower(repository.slug) = lower($2)
   AND repository.deleted_at IS NULL
 `
@@ -171,12 +180,56 @@ func (q *Queries) GetRepositoryByOwnerSlug(ctx context.Context, arg GetRepositor
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }
 
+const listRepositoriesByOrganization = `-- name: ListRepositoriesByOrganization :many
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id
+FROM core.repositories
+WHERE organization_id = $1 AND deleted_at IS NULL
+ORDER BY created_at DESC, id DESC
+`
+
+func (q *Queries) ListRepositoriesByOrganization(ctx context.Context, organizationID pgtype.UUID) ([]CoreRepository, error) {
+	rows, err := q.db.Query(ctx, listRepositoriesByOrganization, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CoreRepository{}
+	for rows.Next() {
+		var i CoreRepository
+		if err := rows.Scan(
+			&i.ID,
+			&i.OwnerDid,
+			&i.Slug,
+			&i.DisplayName,
+			&i.Description,
+			&i.Visibility,
+			&i.State,
+			&i.DefaultBranch,
+			&i.StorageKey,
+			&i.AtUri,
+			&i.AtCid,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRepositoriesByOwner = `-- name: ListRepositoriesByOwner :many
-SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id
 FROM core.repositories
 WHERE owner_did = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC, id DESC
@@ -212,6 +265,129 @@ func (q *Queries) ListRepositoriesByOwner(ctx context.Context, arg ListRepositor
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.OrganizationID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const pageRepositoriesByOrganization = `-- name: PageRepositoriesByOrganization :many
+WITH RECURSIVE team_lineage AS (
+  SELECT team.id, team.parent_team_id
+  FROM core.organization_team_members AS team_member
+  JOIN core.organization_teams AS team ON team.id = team_member.team_id
+  WHERE team_member.account_did = $1
+    AND team.organization_id = $2
+    AND team.deleted_at IS NULL
+  UNION
+  SELECT parent.id, parent.parent_team_id
+  FROM core.organization_teams AS parent
+  JOIN team_lineage AS child ON child.parent_team_id = parent.id
+  WHERE parent.organization_id = $2
+    AND parent.deleted_at IS NULL
+)
+SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id,
+  (
+    EXISTS (
+      SELECT 1 FROM core.organization_members AS member
+      WHERE member.organization_id = repository.organization_id
+        AND member.account_did = $1
+        AND member.role = 'owner'
+    )
+    OR EXISTS (
+      SELECT 1 FROM core.repository_collaborators AS collaborator
+      WHERE collaborator.repository_id = repository.id
+        AND collaborator.account_did = $1
+        AND collaborator.role = 'admin'
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM team_lineage
+      JOIN core.organization_team_repositories AS team_repository
+        ON team_repository.team_id = team_lineage.id
+      WHERE team_repository.repository_id = repository.id
+        AND team_repository.role = 'admin'
+    )
+  ) AS viewer_can_admin
+FROM core.repositories AS repository
+WHERE repository.organization_id = $2
+  AND repository.deleted_at IS NULL
+  AND (
+    $3::uuid IS NULL
+    OR (repository.created_at, repository.id) < (
+      SELECT cursor.created_at, cursor.id
+      FROM core.repositories AS cursor
+      WHERE cursor.organization_id = $2
+        AND cursor.id = $3::uuid
+    )
+  )
+ORDER BY repository.created_at DESC, repository.id DESC
+LIMIT $4
+`
+
+type PageRepositoriesByOrganizationParams struct {
+	AccountDid     string      `json:"account_did"`
+	OrganizationID pgtype.UUID `json:"organization_id"`
+	AfterID        pgtype.UUID `json:"after_id"`
+	PageLimit      int32       `json:"page_limit"`
+}
+
+type PageRepositoriesByOrganizationRow struct {
+	ID             pgtype.UUID        `json:"id"`
+	OwnerDid       string             `json:"owner_did"`
+	Slug           string             `json:"slug"`
+	DisplayName    pgtype.Text        `json:"display_name"`
+	Description    pgtype.Text        `json:"description"`
+	Visibility     string             `json:"visibility"`
+	State          string             `json:"state"`
+	DefaultBranch  string             `json:"default_branch"`
+	StorageKey     string             `json:"storage_key"`
+	AtUri          pgtype.Text        `json:"at_uri"`
+	AtCid          pgtype.Text        `json:"at_cid"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
+	OrganizationID pgtype.UUID        `json:"organization_id"`
+	ViewerCanAdmin pgtype.Bool        `json:"viewer_can_admin"`
+}
+
+func (q *Queries) PageRepositoriesByOrganization(ctx context.Context, arg PageRepositoriesByOrganizationParams) ([]PageRepositoriesByOrganizationRow, error) {
+	rows, err := q.db.Query(ctx, pageRepositoriesByOrganization,
+		arg.AccountDid,
+		arg.OrganizationID,
+		arg.AfterID,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PageRepositoriesByOrganizationRow{}
+	for rows.Next() {
+		var i PageRepositoriesByOrganizationRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OwnerDid,
+			&i.Slug,
+			&i.DisplayName,
+			&i.Description,
+			&i.Visibility,
+			&i.State,
+			&i.DefaultBranch,
+			&i.StorageKey,
+			&i.AtUri,
+			&i.AtCid,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.OrganizationID,
+			&i.ViewerCanAdmin,
 		); err != nil {
 			return nil, err
 		}
@@ -227,7 +403,7 @@ const updateRepositoryState = `-- name: UpdateRepositoryState :one
 UPDATE core.repositories
 SET state = $2, updated_at = $3
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id
 `
 
 type UpdateRepositoryStateParams struct {
@@ -254,6 +430,7 @@ func (q *Queries) UpdateRepositoryState(ctx context.Context, arg UpdateRepositor
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OrganizationID,
 	)
 	return i, err
 }

@@ -89,13 +89,16 @@ FROM network.issues issue JOIN network.repositories repository ON repository.uri
 WHERE issue.repository_uri = $2::text AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, issue.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, issue.uri))
-ORDER BY issue.record_created_at DESC, issue.uri DESC LIMIT $3
+  AND ($3::text IS NULL OR (issue.record_created_at, issue.uri) < ($4::timestamptz, $3::text))
+ORDER BY issue.record_created_at DESC, issue.uri DESC LIMIT $5
 `
 
 type ListSearchIssuesParams struct {
-	ViewerDid     pgtype.Text `json:"viewer_did"`
-	RepositoryUri string      `json:"repository_uri"`
-	ResultLimit   int32       `json:"result_limit"`
+	ViewerDid       pgtype.Text        `json:"viewer_did"`
+	RepositoryUri   string             `json:"repository_uri"`
+	CursorUri       pgtype.Text        `json:"cursor_uri"`
+	CursorCreatedAt pgtype.Timestamptz `json:"cursor_created_at"`
+	ResultLimit     int32              `json:"result_limit"`
 }
 
 type ListSearchIssuesRow struct {
@@ -122,7 +125,13 @@ type ListSearchIssuesRow struct {
 }
 
 func (q *Queries) ListSearchIssues(ctx context.Context, arg ListSearchIssuesParams) ([]ListSearchIssuesRow, error) {
-	rows, err := q.db.Query(ctx, listSearchIssues, arg.ViewerDid, arg.RepositoryUri, arg.ResultLimit)
+	rows, err := q.db.Query(ctx, listSearchIssues,
+		arg.ViewerDid,
+		arg.RepositoryUri,
+		arg.CursorUri,
+		arg.CursorCreatedAt,
+		arg.ResultLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -169,17 +178,26 @@ JOIN network.repositories repository ON repository.uri = pull.target_repository_
 WHERE pull.uri = $1::text AND review.deleted_at IS NULL AND review.cid IS NOT NULL AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did IN (repository.owner_did, pull.author_did, review.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri IN (repository.uri, pull.uri, review.uri))
-ORDER BY review.record_created_at, review.uri LIMIT $3
+  AND ($3::text IS NULL OR (review.record_created_at, review.uri) > ($4::timestamptz, $3::text))
+ORDER BY review.record_created_at, review.uri LIMIT $5
 `
 
 type ListSearchPullRequestReviewsParams struct {
-	PullRequestUri string      `json:"pull_request_uri"`
-	ViewerDid      pgtype.Text `json:"viewer_did"`
-	ResultLimit    int32       `json:"result_limit"`
+	PullRequestUri  string             `json:"pull_request_uri"`
+	ViewerDid       pgtype.Text        `json:"viewer_did"`
+	CursorUri       pgtype.Text        `json:"cursor_uri"`
+	CursorCreatedAt pgtype.Timestamptz `json:"cursor_created_at"`
+	ResultLimit     int32              `json:"result_limit"`
 }
 
 func (q *Queries) ListSearchPullRequestReviews(ctx context.Context, arg ListSearchPullRequestReviewsParams) ([]NetworkPullRequestReview, error) {
-	rows, err := q.db.Query(ctx, listSearchPullRequestReviews, arg.PullRequestUri, arg.ViewerDid, arg.ResultLimit)
+	rows, err := q.db.Query(ctx, listSearchPullRequestReviews,
+		arg.PullRequestUri,
+		arg.ViewerDid,
+		arg.CursorUri,
+		arg.CursorCreatedAt,
+		arg.ResultLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -221,13 +239,16 @@ FROM network.pull_requests pull JOIN network.repositories repository ON reposito
 WHERE pull.target_repository_uri = $2::text AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, pull.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, pull.uri))
-ORDER BY pull.record_created_at DESC, pull.uri DESC LIMIT $3
+  AND ($3::text IS NULL OR (pull.record_created_at, pull.uri) < ($4::timestamptz, $3::text))
+ORDER BY pull.record_created_at DESC, pull.uri DESC LIMIT $5
 `
 
 type ListSearchPullRequestsParams struct {
-	ViewerDid     pgtype.Text `json:"viewer_did"`
-	RepositoryUri string      `json:"repository_uri"`
-	ResultLimit   int32       `json:"result_limit"`
+	ViewerDid       pgtype.Text        `json:"viewer_did"`
+	RepositoryUri   string             `json:"repository_uri"`
+	CursorUri       pgtype.Text        `json:"cursor_uri"`
+	CursorCreatedAt pgtype.Timestamptz `json:"cursor_created_at"`
+	ResultLimit     int32              `json:"result_limit"`
 }
 
 type ListSearchPullRequestsRow struct {
@@ -260,7 +281,13 @@ type ListSearchPullRequestsRow struct {
 }
 
 func (q *Queries) ListSearchPullRequests(ctx context.Context, arg ListSearchPullRequestsParams) ([]ListSearchPullRequestsRow, error) {
-	rows, err := q.db.Query(ctx, listSearchPullRequests, arg.ViewerDid, arg.RepositoryUri, arg.ResultLimit)
+	rows, err := q.db.Query(ctx, listSearchPullRequests,
+		arg.ViewerDid,
+		arg.RepositoryUri,
+		arg.CursorUri,
+		arg.CursorCreatedAt,
+		arg.ResultLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -312,17 +339,26 @@ FROM network.stars star JOIN network.repositories repository ON repository.uri =
 WHERE star.repository_uri = $1::text AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did IN (repository.owner_did, star.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri IN (repository.uri, star.uri))
-ORDER BY star.record_created_at DESC, star.uri DESC LIMIT $3
+  AND ($3::text IS NULL OR (star.record_created_at, star.uri) < ($4::timestamptz, $3::text))
+ORDER BY star.record_created_at DESC, star.uri DESC LIMIT $5
 `
 
 type ListSearchStarsParams struct {
-	RepositoryUri string      `json:"repository_uri"`
-	ViewerDid     pgtype.Text `json:"viewer_did"`
-	ResultLimit   int32       `json:"result_limit"`
+	RepositoryUri   string             `json:"repository_uri"`
+	ViewerDid       pgtype.Text        `json:"viewer_did"`
+	CursorUri       pgtype.Text        `json:"cursor_uri"`
+	CursorCreatedAt pgtype.Timestamptz `json:"cursor_created_at"`
+	ResultLimit     int32              `json:"result_limit"`
 }
 
 func (q *Queries) ListSearchStars(ctx context.Context, arg ListSearchStarsParams) ([]NetworkStar, error) {
-	rows, err := q.db.Query(ctx, listSearchStars, arg.RepositoryUri, arg.ViewerDid, arg.ResultLimit)
+	rows, err := q.db.Query(ctx, listSearchStars,
+		arg.RepositoryUri,
+		arg.ViewerDid,
+		arg.CursorUri,
+		arg.CursorCreatedAt,
+		arg.ResultLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -578,7 +614,7 @@ SELECT repository.uri, repository.cid, repository.local_repository_id, repositor
        repository.slug, repository.name, repository.description, repository.default_branch,
        repository.git_https, repository.git_ssh, repository.web, repository.record_created_at,
        repository.record_updated_at, repository.indexed_at,
-       coalesce(profile.handle, identity.handle) AS owner_handle,
+       coalesce(profile.handle, identity.handle) AS owner_handle, organization.slug AS organization_slug,
        (SELECT count(*) FROM network.stars AS star WHERE star.repository_uri = repository.uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = star.author_did)
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = star.uri)) AS star_count,
@@ -600,11 +636,12 @@ SELECT repository.uri, repository.cid, repository.local_repository_id, repositor
 FROM network.repositories AS repository
 LEFT JOIN network.profiles AS profile ON profile.did = repository.owner_did AND profile.deleted_at IS NULL
 LEFT JOIN network.identities AS identity ON identity.did = repository.owner_did AND identity.is_active
+LEFT JOIN network.organizations AS organization ON organization.uri = repository.organization_uri AND organization.deleted_at IS NULL
 LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
 WHERE repository.deleted_at IS NULL
   AND repository.cid IS NOT NULL
   AND lower(repository.slug) = lower($2::text)
-  AND (repository.owner_did = $3::text OR lower(coalesce(profile.handle, identity.handle, '')) = lower($3::text))
+  AND (repository.owner_did = $3::text OR lower(coalesce(profile.handle, identity.handle, '')) = lower($3::text) OR lower(coalesce(organization.slug, '')) = lower($3::text))
   AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids AS block WHERE block.account_did = $1 AND block.blocked_did = repository.owner_did)
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records AS hidden WHERE hidden.account_did = $1 AND hidden.record_uri = repository.uri)
@@ -634,6 +671,7 @@ type ResolveSearchRepositoryRow struct {
 	RecordUpdatedAt      pgtype.Timestamptz `json:"record_updated_at"`
 	IndexedAt            pgtype.Timestamptz `json:"indexed_at"`
 	OwnerHandle          pgtype.Text        `json:"owner_handle"`
+	OrganizationSlug     pgtype.Text        `json:"organization_slug"`
 	StarCount            int64              `json:"star_count"`
 	IssueCount           int64              `json:"issue_count"`
 	OpenIssueCount       int64              `json:"open_issue_count"`
@@ -661,6 +699,7 @@ func (q *Queries) ResolveSearchRepository(ctx context.Context, arg ResolveSearch
 		&i.RecordUpdatedAt,
 		&i.IndexedAt,
 		&i.OwnerHandle,
+		&i.OrganizationSlug,
 		&i.StarCount,
 		&i.IssueCount,
 		&i.OpenIssueCount,
@@ -804,7 +843,7 @@ func (q *Queries) SearchProfiles(ctx context.Context, arg SearchProfilesParams) 
 const searchRepositories = `-- name: SearchRepositories :many
 WITH candidates AS (
     SELECT repository.uri, repository.cid, repository.local_repository_id,
-           repository.owner_did, coalesce(profile.handle, identity.handle) AS owner_handle,
+           repository.owner_did, coalesce(profile.handle, identity.handle) AS owner_handle, organization.slug AS organization_slug,
            repository.slug, repository.name, repository.description, repository.default_branch,
            repository.git_https, repository.git_ssh, repository.web,
            repository.record_created_at, repository.record_updated_at, repository.indexed_at,
@@ -826,6 +865,7 @@ WITH candidates AS (
     FROM network.repositories AS repository
     LEFT JOIN network.profiles AS profile ON profile.did = repository.owner_did AND profile.deleted_at IS NULL
     LEFT JOIN network.identities AS identity ON identity.did = repository.owner_did AND identity.is_active
+    LEFT JOIN network.organizations AS organization ON organization.uri = repository.organization_uri AND organization.deleted_at IS NULL
     LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
     WHERE repository.deleted_at IS NULL
       AND repository.cid IS NOT NULL
@@ -847,7 +887,7 @@ WITH candidates AS (
            OR lower(coalesce(profile.handle, identity.handle, '')) LIKE '%' || lower($8::text) || '%' ESCAPE '\'
       )
 )
-SELECT uri, cid, local_repository_id, owner_did, owner_handle, slug, name, description, default_branch, git_https, git_ssh, web, record_created_at, record_updated_at, indexed_at, star_count, issue_count, open_issue_count, comment_count, pull_request_count, open_pull_request_count, score FROM candidates
+SELECT uri, cid, local_repository_id, owner_did, owner_handle, organization_slug, slug, name, description, default_branch, git_https, git_ssh, web, record_created_at, record_updated_at, indexed_at, star_count, issue_count, open_issue_count, comment_count, pull_request_count, open_pull_request_count, score FROM candidates
 WHERE $1::text IS NULL
    OR CASE WHEN $2::text = 'relevance'
        THEN (score, indexed_at, uri) < ($3::double precision, $4::timestamptz, $1::text)
@@ -877,6 +917,7 @@ type SearchRepositoriesRow struct {
 	LocalRepositoryID    pgtype.UUID        `json:"local_repository_id"`
 	OwnerDid             string             `json:"owner_did"`
 	OwnerHandle          pgtype.Text        `json:"owner_handle"`
+	OrganizationSlug     pgtype.Text        `json:"organization_slug"`
 	Slug                 pgtype.Text        `json:"slug"`
 	Name                 pgtype.Text        `json:"name"`
 	Description          pgtype.Text        `json:"description"`
@@ -920,6 +961,7 @@ func (q *Queries) SearchRepositories(ctx context.Context, arg SearchRepositories
 			&i.LocalRepositoryID,
 			&i.OwnerDid,
 			&i.OwnerHandle,
+			&i.OrganizationSlug,
 			&i.Slug,
 			&i.Name,
 			&i.Description,

@@ -33,6 +33,7 @@ type DiscoveryRepository struct {
 	LocalRepositoryID    *uuid.UUID
 	OwnerDID             string
 	OwnerHandle          string
+	OrganizationSlug     string
 	Slug                 string
 	Name                 string
 	Description          string

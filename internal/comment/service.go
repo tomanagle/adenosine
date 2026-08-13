@@ -41,6 +41,10 @@ type projectionStore interface {
 	GetParentTarget(context.Context, string) (parentTarget, error)
 }
 
+type paginatedProjectionStore interface {
+	GetProjectionAfter(context.Context, string, string, int, string) (Projection, error)
+}
+
 // Publisher writes authoritative comment records to the authenticated PDS.
 type Publisher interface {
 	CreateIssueComment(context.Context, string, string, issue.CommentRecord) (issue.Comment, error)
@@ -74,6 +78,33 @@ func (service *Service) Get(ctx context.Context, issueURI, viewerDID string) (Pr
 	projection, err := service.store.GetProjection(ctx, issueURI, viewerDID, 100)
 	if err != nil {
 		return Projection{}, projectionError("get comment projection", err)
+	}
+	if projection.Comments == nil {
+		projection.Comments = []ProjectedComment{}
+	}
+	return projection, nil
+}
+
+// GetPage returns a keyset page after the exact comment URI supplied by a validated API cursor.
+func (service *Service) GetPage(ctx context.Context, issueURI, viewerDID string, limit int, afterURI string) (Projection, error) {
+	if err := validateATURI(issueURI, issue.Collection, "issueURI"); err != nil {
+		return Projection{}, err
+	}
+	if viewerDID != "" {
+		if err := validateDID(viewerDID, "viewerDID"); err != nil {
+			return Projection{}, err
+		}
+	}
+	if limit < 1 || limit > 101 {
+		return Projection{}, &issue.ValidationError{Field: "limit", Problem: "must be between 1 and 101"}
+	}
+	store, ok := service.store.(paginatedProjectionStore)
+	if !ok {
+		return service.Get(ctx, issueURI, viewerDID)
+	}
+	projection, err := store.GetProjectionAfter(ctx, issueURI, viewerDID, limit, afterURI)
+	if err != nil {
+		return Projection{}, projectionError("get comment projection page", err)
 	}
 	if projection.Comments == nil {
 		projection.Comments = []ProjectedComment{}

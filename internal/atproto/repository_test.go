@@ -79,7 +79,8 @@ func TestRepositoryPublishUsesStableUUIDKeyAndPersistsRotatedSession(t *testing.
 			createdAt := time.Date(2026, time.August, 9, 12, 0, 0, 0, time.UTC)
 			identity, err := client.Publish(context.Background(), repository.Publication{
 				ID: id, OwnerDID: canonicalDID, Slug: "project", Name: "project", DefaultBranch: "main",
-				GitHTTPS: "https://code.test/did:plc:owner/project.git", GitSSH: "ssh://git@code.test/did:plc:owner/project.git",
+				Organization: &repository.ATIdentity{URI: "at://" + canonicalDID + "/dev.adenosine.organization/org", CID: profileCID},
+				GitHTTPS:     "https://code.test/did:plc:owner/project.git", GitSSH: "ssh://git@code.test/did:plc:owner/project.git",
 				Web: "https://code.test/did:plc:owner/project", CreatedAt: createdAt, UpdatedAt: createdAt,
 			})
 			if err != nil {
@@ -90,7 +91,8 @@ func TestRepositoryPublishUsesStableUUIDKeyAndPersistsRotatedSession(t *testing.
 				t.Fatalf("put input = %#v", api.postInput)
 			}
 			wantGit := map[string]any{"https": "https://code.test/did:plc:owner/project.git", "ssh": "ssh://git@code.test/did:plc:owner/project.git"}
-			if input.Record["slug"] != "project" || !reflect.DeepEqual(input.Record["git"], wantGit) || store.calls != 1 || store.saved.DPoPHostNonce != "rotated" {
+			wantOrganization := map[string]any{"uri": "at://" + canonicalDID + "/dev.adenosine.organization/org", "cid": profileCID}
+			if input.Record["slug"] != "project" || !reflect.DeepEqual(input.Record["git"], wantGit) || !reflect.DeepEqual(input.Record["organization"], wantOrganization) || store.calls != 1 || store.saved.DPoPHostNonce != "rotated" {
 				t.Fatalf("record/session = %#v / %#v", input.Record, store.saved)
 			}
 			if identity.URI != api.output.URI || identity.CID != profileCID {

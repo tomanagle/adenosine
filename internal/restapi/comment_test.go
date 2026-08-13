@@ -120,7 +120,7 @@ func TestCommentEndpoints(t *testing.T) {
 					t.Fatalf("Vary = %q, want Cookie", response.Header().Get("Vary"))
 				}
 				var body generated.CommentList
-				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.CommentCount != 3 || len(body.Data) != 1 || body.Data[0].Uri != restCommentURI || body.Data[0].IssueUri != restIssueURI || body.Data[0].ParentUri != nil || body.Data[0].ParentCid != nil || body.Data[0].IndexedAt != indexedAt {
+				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.CommentCount != 3 || len(body.Items) != 1 || body.Items[0].Uri != restCommentURI || body.Items[0].IssueUri != restIssueURI || body.Items[0].ParentUri != nil || body.Items[0].ParentCid != nil || body.Items[0].IndexedAt != indexedAt {
 					t.Fatalf("GET response = %#v, %v", body, err)
 				}
 				if !strings.Contains(response.Body.String(), `"parent_uri":null`) || !strings.Contains(response.Body.String(), `"parent_cid":null`) {

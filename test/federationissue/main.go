@@ -93,7 +93,7 @@ func run(ctx context.Context) error {
 	}
 	defer db.Close()
 
-	service := issue.NewService(issue.NewPostgresStore(db.Queries()), deterministicPublisher{}, fixedClock{})
+	service := issue.NewService(issue.NewPostgresStore(db.Queries()), deterministicPublisher{}, fixedClock{}, nil)
 	created, err := service.Create(ctx, reporterDID, issue.CreateInput{RepositoryURI: repositoryURI, Title: issueTitle, Body: issueBody})
 	if err != nil {
 		return fmt.Errorf("create issue through B service: %w", err)

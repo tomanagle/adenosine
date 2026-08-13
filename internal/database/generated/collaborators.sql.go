@@ -11,19 +11,105 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const canAdminOrganizationRepository = `-- name: CanAdminOrganizationRepository :one
+WITH RECURSIVE team_lineage AS (
+  SELECT team.id, team.parent_team_id
+  FROM core.organization_team_members AS team_member
+  JOIN core.organization_teams AS team ON team.id = team_member.team_id
+  WHERE team_member.account_did = $3
+    AND team.organization_id = $2
+    AND team.deleted_at IS NULL
+  UNION
+  SELECT parent.id, parent.parent_team_id
+  FROM core.organization_teams AS parent
+  JOIN team_lineage AS child ON child.parent_team_id = parent.id
+  WHERE parent.organization_id = $2
+    AND parent.deleted_at IS NULL
+)
+SELECT EXISTS (
+  SELECT 1
+  FROM core.repositories AS repository
+  WHERE repository.id = $1
+    AND repository.organization_id = $2
+    AND repository.deleted_at IS NULL
+    AND (
+      EXISTS (
+        SELECT 1
+        FROM core.organization_members AS member
+        WHERE member.organization_id = repository.organization_id
+          AND member.account_did = $3
+          AND member.role = 'owner'
+      )
+      OR EXISTS (
+        SELECT 1
+        FROM core.repository_collaborators AS collaborator
+        WHERE collaborator.repository_id = repository.id
+          AND collaborator.account_did = $3
+          AND collaborator.role = 'admin'
+      )
+      OR EXISTS (
+        SELECT 1
+        FROM team_lineage
+        JOIN core.organization_team_repositories AS team_repository
+          ON team_repository.team_id = team_lineage.id
+        WHERE team_repository.repository_id = repository.id
+          AND team_repository.role = 'admin'
+      )
+    )
+)
+`
+
+type CanAdminOrganizationRepositoryParams struct {
+	RepositoryID   pgtype.UUID `json:"repository_id"`
+	OrganizationID pgtype.UUID `json:"organization_id"`
+	AccountDid     string      `json:"account_did"`
+}
+
+func (q *Queries) CanAdminOrganizationRepository(ctx context.Context, arg CanAdminOrganizationRepositoryParams) (bool, error) {
+	row := q.db.QueryRow(ctx, canAdminOrganizationRepository, arg.RepositoryID, arg.OrganizationID, arg.AccountDid)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const canReadRepository = `-- name: CanReadRepository :one
+WITH RECURSIVE team_lineage AS (
+  SELECT team.id, team.parent_team_id
+  FROM core.organization_team_members AS team_member
+  JOIN core.organization_teams AS team ON team.id = team_member.team_id
+  WHERE team_member.account_did = $1 AND team.deleted_at IS NULL
+  UNION
+  SELECT parent.id, parent.parent_team_id
+  FROM core.organization_teams AS parent
+  JOIN team_lineage AS child ON child.parent_team_id = parent.id
+  WHERE parent.deleted_at IS NULL
+)
 SELECT EXISTS (
     SELECT 1
     FROM core.repositories AS repository
     LEFT JOIN core.repository_collaborators AS collaborator
       ON collaborator.repository_id = repository.id
      AND collaborator.account_did = $1
+    LEFT JOIN core.organization_members AS organization_member
+      ON organization_member.organization_id = repository.organization_id
+     AND organization_member.account_did = $1
     WHERE repository.id = $2
       AND repository.deleted_at IS NULL
       AND (
         repository.visibility = 'public'
-        OR repository.owner_did = $1
-        OR collaborator.role IN ('read', 'write', 'maintain', 'admin')
+        OR (repository.organization_id IS NULL AND repository.owner_did = $1)
+        OR organization_member.role = 'owner'
+        OR (organization_member.account_did IS NOT NULL AND EXISTS (
+          SELECT 1 FROM core.organizations AS organization
+          WHERE organization.id = repository.organization_id AND organization.base_permission IN ('read', 'write')
+        ))
+        OR EXISTS (
+          SELECT 1 FROM team_lineage
+          JOIN core.organization_team_repositories AS team_repository ON team_repository.team_id = team_lineage.id
+          WHERE team_repository.repository_id = repository.id
+            AND team_repository.role IN ('read', 'triage', 'write', 'maintain', 'admin')
+        )
+        OR collaborator.role IN ('read', 'triage', 'write', 'maintain', 'admin')
       )
 )
 `
@@ -40,17 +126,95 @@ func (q *Queries) CanReadRepository(ctx context.Context, arg CanReadRepositoryPa
 	return exists, err
 }
 
-const canWriteRepository = `-- name: CanWriteRepository :one
+const canTriageRepository = `-- name: CanTriageRepository :one
+WITH RECURSIVE team_lineage AS (
+  SELECT team.id, team.parent_team_id
+  FROM core.organization_team_members AS team_member
+  JOIN core.organization_teams AS team ON team.id = team_member.team_id
+  WHERE team_member.account_did = $1 AND team.deleted_at IS NULL
+  UNION
+  SELECT parent.id, parent.parent_team_id
+  FROM core.organization_teams AS parent
+  JOIN team_lineage AS child ON child.parent_team_id = parent.id
+  WHERE parent.deleted_at IS NULL
+)
 SELECT EXISTS (
     SELECT 1
     FROM core.repositories AS repository
     LEFT JOIN core.repository_collaborators AS collaborator
       ON collaborator.repository_id = repository.id
      AND collaborator.account_did = $1
+    LEFT JOIN core.organization_members AS organization_member
+      ON organization_member.organization_id = repository.organization_id
+     AND organization_member.account_did = $1
     WHERE repository.id = $2
       AND repository.deleted_at IS NULL
       AND (
-        repository.owner_did = $1
+        (repository.organization_id IS NULL AND repository.owner_did = $1)
+        OR organization_member.role = 'owner'
+        OR (organization_member.account_did IS NOT NULL AND EXISTS (
+          SELECT 1 FROM core.organizations AS organization
+          WHERE organization.id = repository.organization_id AND organization.base_permission = 'write'
+        ))
+        OR EXISTS (
+          SELECT 1 FROM team_lineage
+          JOIN core.organization_team_repositories AS team_repository ON team_repository.team_id = team_lineage.id
+          WHERE team_repository.repository_id = repository.id
+            AND team_repository.role IN ('triage', 'write', 'maintain', 'admin')
+        )
+        OR collaborator.role IN ('triage', 'write', 'maintain', 'admin')
+      )
+)
+`
+
+type CanTriageRepositoryParams struct {
+	AccountDid   string      `json:"account_did"`
+	RepositoryID pgtype.UUID `json:"repository_id"`
+}
+
+func (q *Queries) CanTriageRepository(ctx context.Context, arg CanTriageRepositoryParams) (bool, error) {
+	row := q.db.QueryRow(ctx, canTriageRepository, arg.AccountDid, arg.RepositoryID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const canWriteRepository = `-- name: CanWriteRepository :one
+WITH RECURSIVE team_lineage AS (
+  SELECT team.id, team.parent_team_id
+  FROM core.organization_team_members AS team_member
+  JOIN core.organization_teams AS team ON team.id = team_member.team_id
+  WHERE team_member.account_did = $1 AND team.deleted_at IS NULL
+  UNION
+  SELECT parent.id, parent.parent_team_id
+  FROM core.organization_teams AS parent
+  JOIN team_lineage AS child ON child.parent_team_id = parent.id
+  WHERE parent.deleted_at IS NULL
+)
+SELECT EXISTS (
+    SELECT 1
+    FROM core.repositories AS repository
+    LEFT JOIN core.repository_collaborators AS collaborator
+      ON collaborator.repository_id = repository.id
+     AND collaborator.account_did = $1
+    LEFT JOIN core.organization_members AS organization_member
+      ON organization_member.organization_id = repository.organization_id
+     AND organization_member.account_did = $1
+    WHERE repository.id = $2
+      AND repository.deleted_at IS NULL
+      AND (
+        (repository.organization_id IS NULL AND repository.owner_did = $1)
+        OR organization_member.role = 'owner'
+        OR (organization_member.account_did IS NOT NULL AND EXISTS (
+          SELECT 1 FROM core.organizations AS organization
+          WHERE organization.id = repository.organization_id AND organization.base_permission = 'write'
+        ))
+        OR EXISTS (
+          SELECT 1 FROM team_lineage
+          JOIN core.organization_team_repositories AS team_repository ON team_repository.team_id = team_lineage.id
+          WHERE team_repository.repository_id = repository.id
+            AND team_repository.role IN ('write', 'maintain', 'admin')
+        )
         OR collaborator.role IN ('write', 'maintain', 'admin')
       )
 )
@@ -68,6 +232,29 @@ func (q *Queries) CanWriteRepository(ctx context.Context, arg CanWriteRepository
 	return exists, err
 }
 
+const deleteOrganizationRepositoryCollaborator = `-- name: DeleteOrganizationRepositoryCollaborator :execrows
+DELETE FROM core.repository_collaborators AS collaborator
+USING core.repositories AS repository
+WHERE collaborator.repository_id = repository.id
+  AND collaborator.repository_id = $1
+  AND collaborator.account_did = $2
+  AND repository.organization_id = $3
+`
+
+type DeleteOrganizationRepositoryCollaboratorParams struct {
+	RepositoryID   pgtype.UUID `json:"repository_id"`
+	AccountDid     string      `json:"account_did"`
+	OrganizationID pgtype.UUID `json:"organization_id"`
+}
+
+func (q *Queries) DeleteOrganizationRepositoryCollaborator(ctx context.Context, arg DeleteOrganizationRepositoryCollaboratorParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteOrganizationRepositoryCollaborator, arg.RepositoryID, arg.AccountDid, arg.OrganizationID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getRepositoryCollaborator = `-- name: GetRepositoryCollaborator :one
 SELECT repository_id, account_did, role, created_at, updated_at
 FROM core.repository_collaborators
@@ -81,6 +268,116 @@ type GetRepositoryCollaboratorParams struct {
 
 func (q *Queries) GetRepositoryCollaborator(ctx context.Context, arg GetRepositoryCollaboratorParams) (CoreRepositoryCollaborator, error) {
 	row := q.db.QueryRow(ctx, getRepositoryCollaborator, arg.RepositoryID, arg.AccountDid)
+	var i CoreRepositoryCollaborator
+	err := row.Scan(
+		&i.RepositoryID,
+		&i.AccountDid,
+		&i.Role,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listOrganizationRepositoryCollaborators = `-- name: ListOrganizationRepositoryCollaborators :many
+SELECT collaborator.repository_id, collaborator.account_did, collaborator.role, collaborator.created_at, collaborator.updated_at, account.handle_cache, repository.slug AS repository_slug
+FROM core.repository_collaborators AS collaborator
+JOIN core.repositories AS repository ON repository.id = collaborator.repository_id
+JOIN core.accounts AS account ON account.did = collaborator.account_did
+WHERE repository.organization_id = $1
+  AND repository.id = $2
+  AND repository.deleted_at IS NULL
+  AND (
+    $3::text IS NULL
+    OR (lower(COALESCE(account.handle_cache, collaborator.account_did)), collaborator.account_did) > (
+      SELECT lower(COALESCE(cursor_account.handle_cache, cursor.account_did)), cursor.account_did
+      FROM core.repository_collaborators AS cursor
+      JOIN core.accounts AS cursor_account ON cursor_account.did = cursor.account_did
+      WHERE cursor.repository_id = $2
+        AND cursor.account_did = $3::text
+    )
+  )
+ORDER BY lower(COALESCE(account.handle_cache, collaborator.account_did)), collaborator.account_did
+LIMIT $4
+`
+
+type ListOrganizationRepositoryCollaboratorsParams struct {
+	OrganizationID pgtype.UUID `json:"organization_id"`
+	RepositoryID   pgtype.UUID `json:"repository_id"`
+	AfterDid       pgtype.Text `json:"after_did"`
+	PageLimit      int32       `json:"page_limit"`
+}
+
+type ListOrganizationRepositoryCollaboratorsRow struct {
+	RepositoryID   pgtype.UUID        `json:"repository_id"`
+	AccountDid     string             `json:"account_did"`
+	Role           string             `json:"role"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	HandleCache    pgtype.Text        `json:"handle_cache"`
+	RepositorySlug string             `json:"repository_slug"`
+}
+
+func (q *Queries) ListOrganizationRepositoryCollaborators(ctx context.Context, arg ListOrganizationRepositoryCollaboratorsParams) ([]ListOrganizationRepositoryCollaboratorsRow, error) {
+	rows, err := q.db.Query(ctx, listOrganizationRepositoryCollaborators,
+		arg.OrganizationID,
+		arg.RepositoryID,
+		arg.AfterDid,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOrganizationRepositoryCollaboratorsRow{}
+	for rows.Next() {
+		var i ListOrganizationRepositoryCollaboratorsRow
+		if err := rows.Scan(
+			&i.RepositoryID,
+			&i.AccountDid,
+			&i.Role,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.HandleCache,
+			&i.RepositorySlug,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const putOrganizationRepositoryCollaborator = `-- name: PutOrganizationRepositoryCollaborator :one
+INSERT INTO core.repository_collaborators (repository_id, account_did, role, created_at, updated_at)
+SELECT repository.id, $1, $2, $3, $3
+FROM core.repositories AS repository
+WHERE repository.id = $4
+  AND repository.organization_id = $5
+  AND repository.deleted_at IS NULL
+ON CONFLICT (repository_id, account_did) DO UPDATE SET role = EXCLUDED.role, updated_at = EXCLUDED.updated_at
+RETURNING repository_id, account_did, role, created_at, updated_at
+`
+
+type PutOrganizationRepositoryCollaboratorParams struct {
+	AccountDid     string             `json:"account_did"`
+	Role           string             `json:"role"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	RepositoryID   pgtype.UUID        `json:"repository_id"`
+	OrganizationID pgtype.UUID        `json:"organization_id"`
+}
+
+func (q *Queries) PutOrganizationRepositoryCollaborator(ctx context.Context, arg PutOrganizationRepositoryCollaboratorParams) (CoreRepositoryCollaborator, error) {
+	row := q.db.QueryRow(ctx, putOrganizationRepositoryCollaborator,
+		arg.AccountDid,
+		arg.Role,
+		arg.UpdatedAt,
+		arg.RepositoryID,
+		arg.OrganizationID,
+	)
 	var i CoreRepositoryCollaborator
 	err := row.Scan(
 		&i.RepositoryID,

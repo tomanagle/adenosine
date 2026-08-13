@@ -151,7 +151,7 @@ func TestIssueEndpoints(t *testing.T) {
 			}
 			if testCase.wantStatus == http.StatusOK {
 				var body generated.IssueList
-				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.IssueCount != 7 || body.OpenIssueCount != 4 || len(body.Data) != 1 || body.Data[0].Uri != restIssueURI || body.Data[0].Cid != restIssueCID || body.Data[0].AuthorDid != "did:plc:alice" || body.Data[0].RepositoryUri != restIssueRepositoryURI || body.Data[0].RepositoryCid != restIssueCID || body.Data[0].Title != "title" || body.Data[0].Body != "body" || body.Data[0].State != generated.IssueState(issue.StateOpen) || body.Data[0].StatusUri != nil || body.Data[0].StatusCid != nil || body.Data[0].CreatedAt != createdAt || body.Data[0].UpdatedAt != updatedAt || body.Data[0].IndexedAt != indexedAt {
+				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.IssueCount != 7 || body.OpenIssueCount != 4 || len(body.Items) != 1 || body.Items[0].Uri != restIssueURI || body.Items[0].Cid != restIssueCID || body.Items[0].AuthorDid != "did:plc:alice" || body.Items[0].RepositoryUri != restIssueRepositoryURI || body.Items[0].RepositoryCid != restIssueCID || body.Items[0].Title != "title" || body.Items[0].Body != "body" || body.Items[0].State != generated.IssueState(issue.StateOpen) || body.Items[0].StatusUri != nil || body.Items[0].StatusCid != nil || body.Items[0].CreatedAt != createdAt || body.Items[0].UpdatedAt != updatedAt || body.Items[0].IndexedAt != indexedAt {
 					t.Fatalf("GET response = %#v, %v", body, err)
 				}
 				if !strings.Contains(response.Body.String(), `"status_uri":null`) || !strings.Contains(response.Body.String(), `"status_cid":null`) || !strings.Contains(response.Body.String(), `"comment_count":3`) {

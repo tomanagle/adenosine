@@ -7,6 +7,7 @@ import (
 	"time"
 
 	dbgen "github.com/adenosine-dev/adenosine/internal/database/generated"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -25,24 +26,27 @@ func NewPostgresStore(queries *dbgen.Queries) *PostgresStore {
 // Create inserts repository metadata.
 func (store *PostgresStore) Create(ctx context.Context, repository Repository) (Repository, error) {
 	row, err := store.queries.CreateRepository(ctx, dbgen.CreateRepositoryParams{
-		ID:            pgUUID(repository.ID),
-		OwnerDid:      repository.OwnerDID,
-		Slug:          repository.Slug,
-		DisplayName:   pgText(repository.DisplayName),
-		Description:   pgText(repository.Description),
-		Visibility:    string(repository.Visibility),
-		State:         string(repository.State),
-		DefaultBranch: repository.DefaultBranch,
-		StorageKey:    repository.StorageKey,
-		AtUri:         pgText(repository.ATURI),
-		AtCid:         pgText(repository.ATCID),
-		CreatedAt:     pgTime(repository.CreatedAt),
-		UpdatedAt:     pgTime(repository.UpdatedAt),
+		ID:             pgUUID(repository.ID),
+		OwnerDid:       repository.OwnerDID,
+		OrganizationID: pgOptionalUUID(repository.OrganizationID),
+		Slug:           repository.Slug,
+		DisplayName:    pgText(repository.DisplayName),
+		Description:    pgText(repository.Description),
+		Visibility:     string(repository.Visibility),
+		State:          string(repository.State),
+		DefaultBranch:  repository.DefaultBranch,
+		StorageKey:     repository.StorageKey,
+		AtUri:          pgText(repository.ATURI),
+		AtCid:          pgText(repository.ATCID),
+		CreatedAt:      pgTime(repository.CreatedAt),
+		UpdatedAt:      pgTime(repository.UpdatedAt),
 	})
 	if err != nil {
 		return Repository{}, mapStoreError(err)
 	}
-	return repositoryFromRow(row), nil
+	created := repositoryFromRow(row)
+	created.OrganizationSlug = repository.OrganizationSlug
+	return created, nil
 }
 
 // GetByOwnerSlug loads an active repository route by owner DID and slug.
@@ -54,7 +58,45 @@ func (store *PostgresStore) GetByOwnerSlug(ctx context.Context, ownerDID, slug s
 	if err != nil {
 		return Repository{}, mapStoreError(err)
 	}
-	return repositoryFromRow(row), nil
+	value := repositoryFromRow(row)
+	if value.OrganizationID != nil {
+		organization, organizationErr := store.queries.GetOrganizationByID(ctx, pgtype.UUID{Bytes: *value.OrganizationID, Valid: true})
+		if organizationErr != nil {
+			return Repository{}, mapStoreError(organizationErr)
+		}
+		value.OrganizationSlug = organization.Slug
+	}
+	return value, nil
+}
+
+func (store *PostgresStore) ListByOrganization(ctx context.Context, organizationID uuid.UUID) ([]Repository, error) {
+	rows, err := store.queries.ListRepositoriesByOrganization(ctx, pgtype.UUID{Bytes: organizationID, Valid: true})
+	if err != nil {
+		return nil, mapStoreError(err)
+	}
+	result := make([]Repository, len(rows))
+	for index, row := range rows {
+		result[index] = repositoryFromRow(row)
+	}
+	return result, nil
+}
+
+func (store *PostgresStore) PageByOrganization(ctx context.Context, organizationID uuid.UUID, actorDID string, after *uuid.UUID, limit int32) ([]Repository, error) {
+	var afterID pgtype.UUID
+	if after != nil {
+		afterID = pgtype.UUID{Bytes: *after, Valid: true}
+	}
+	rows, err := store.queries.PageRepositoriesByOrganization(ctx, dbgen.PageRepositoriesByOrganizationParams{
+		OrganizationID: pgtype.UUID{Bytes: organizationID, Valid: true}, AccountDid: actorDID, AfterID: afterID, PageLimit: limit,
+	})
+	if err != nil {
+		return nil, mapStoreError(err)
+	}
+	result := make([]Repository, len(rows))
+	for index, row := range rows {
+		result[index] = repositoryFromPageRow(row)
+	}
+	return result, nil
 }
 
 // UpdateState persists a repository lifecycle transition.
@@ -86,7 +128,7 @@ func (store *PostgresStore) Activate(ctx context.Context, id ID, identity *ATIde
 }
 
 func repositoryFromRow(row dbgen.CoreRepository) Repository {
-	return Repository{
+	value := Repository{
 		ID:            ID(row.ID.Bytes),
 		OwnerDID:      row.OwnerDid,
 		Slug:          row.Slug,
@@ -101,6 +143,30 @@ func repositoryFromRow(row dbgen.CoreRepository) Repository {
 		CreatedAt:     row.CreatedAt.Time,
 		UpdatedAt:     row.UpdatedAt.Time,
 	}
+	if row.OrganizationID.Valid {
+		id := uuid.UUID(row.OrganizationID.Bytes)
+		value.OrganizationID = &id
+	}
+	return value
+}
+
+func repositoryFromPageRow(row dbgen.PageRepositoriesByOrganizationRow) Repository {
+	value := repositoryFromRow(dbgen.CoreRepository{
+		ID: row.ID, OwnerDid: row.OwnerDid, Slug: row.Slug, DisplayName: row.DisplayName,
+		Description: row.Description, Visibility: row.Visibility, State: row.State,
+		DefaultBranch: row.DefaultBranch, StorageKey: row.StorageKey, AtUri: row.AtUri,
+		AtCid: row.AtCid, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+		DeletedAt: row.DeletedAt, OrganizationID: row.OrganizationID,
+	})
+	value.ViewerCanAdmin = row.ViewerCanAdmin.Bool
+	return value
+}
+
+func pgOptionalUUID(id *uuid.UUID) pgtype.UUID {
+	if id == nil {
+		return pgtype.UUID{}
+	}
+	return pgtype.UUID{Bytes: *id, Valid: true}
 }
 
 func mapStoreError(err error) error {

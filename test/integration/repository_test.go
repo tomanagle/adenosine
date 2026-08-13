@@ -25,6 +25,14 @@ func (store *memoryRepositoryStore) GetByOwnerSlug(context.Context, string, stri
 	return store.repository, nil
 }
 
+func (store *memoryRepositoryStore) ListByOrganization(context.Context, uuid.UUID) ([]repository.Repository, error) {
+	return []repository.Repository{}, nil
+}
+
+func (store *memoryRepositoryStore) PageByOrganization(context.Context, uuid.UUID, string, *uuid.UUID, int32) ([]repository.Repository, error) {
+	return []repository.Repository{}, nil
+}
+
 func (store *memoryRepositoryStore) UpdateState(_ context.Context, id repository.ID, state repository.State, updatedAt time.Time) (repository.Repository, error) {
 	store.repository.ID = id
 	store.repository.State = state

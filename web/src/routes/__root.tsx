@@ -1,6 +1,9 @@
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 
+import adenosineMarkDark from '@/assets/adenosine-mark-dark.svg?url'
+import adenosineMarkLight from '@/assets/adenosine-mark-light.svg?url'
+import { AppShell } from '@/components/app-shell'
 import { identityQueryOptions } from '@/features/identity/identity.query'
 import globalsCss from '@/styles/globals.css?url'
 
@@ -16,16 +19,35 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'Adenosine' },
-      { name: 'description', content: 'A public, federated Git forge.' },
+      { name: 'description', content: 'Federated Git hosting with portable identity.' },
     ],
-    links: [{ rel: 'stylesheet', href: globalsCss }],
+    links: [
+      { rel: 'stylesheet', href: globalsCss },
+      {
+        rel: 'icon',
+        type: 'image/svg+xml',
+        href: adenosineMarkLight,
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        rel: 'icon',
+        type: 'image/svg+xml',
+        href: adenosineMarkDark,
+        media: '(prefers-color-scheme: dark)',
+      },
+    ],
   }),
   component: RootComponent,
   shellComponent: RootDocument,
 })
 
 function RootComponent() {
-  return <Outlet />
+  const { identity } = Route.useRouteContext()
+  return (
+    <AppShell identity={identity}>
+      <Outlet />
+    </AppShell>
+  )
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
