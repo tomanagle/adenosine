@@ -15,23 +15,24 @@ import (
 
 // Config is immutable process configuration assembled at startup.
 type Config struct {
-	BaseURL            string
-	ListenAddr         string
-	DatabaseURL        string
-	ElectricURL        string
-	ElectricSecret     string
-	RepositoryRoot     string
-	GitBinary          string
-	SSHListenAddr      string
-	SSHHost            string
-	SSHPort            uint16
-	SSHHostKeyPath     string
-	OAuthStateKey      []byte
-	OAuthCredentialKey []byte
-	TapConsumer        string
-	TapAdminPassword   string
-	SessionLifetime    time.Duration
-	ShutdownTimeout    time.Duration
+	BaseURL                     string
+	ListenAddr                  string
+	DatabaseURL                 string
+	ElectricURL                 string
+	ElectricSecret              string
+	RepositoryRoot              string
+	GitBinary                   string
+	SSHListenAddr               string
+	SSHHost                     string
+	SSHPort                     uint16
+	SSHHostKeyPath              string
+	OAuthStateKey               []byte
+	OAuthCredentialKey          []byte
+	TapConsumer                 string
+	TapAdminPassword            string
+	SessionLifetime             time.Duration
+	ShutdownTimeout             time.Duration
+	RepositoryDeletionRetention time.Duration
 }
 
 // Must loads valid process configuration or panics during startup.
@@ -60,6 +61,11 @@ func load() (Config, error) {
 		SessionLifetime:  30 * 24 * time.Hour,
 		ShutdownTimeout:  10 * time.Second,
 	}
+	repositoryDeletionRetention, err := durationOrDefault("ADENOSINE_REPOSITORY_DELETION_RETENTION", 7*24*time.Hour)
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.RepositoryDeletionRetention = repositoryDeletionRetention
 	cfg.TapConsumer = strings.TrimSpace(os.Getenv("ADENOSINE_TAP_CONSUMER"))
 	if cfg.ElectricURL != "" {
 		canonical, err := canonicalElectricURL(cfg.ElectricURL)
@@ -152,7 +158,22 @@ func (c Config) Validate() error {
 	if c.ShutdownTimeout <= 0 {
 		return fmt.Errorf("shutdown timeout must be positive")
 	}
+	if c.RepositoryDeletionRetention < 0 {
+		return fmt.Errorf("ADENOSINE_REPOSITORY_DELETION_RETENTION must not be negative")
+	}
 	return nil
+}
+
+func durationOrDefault(name string, fallback time.Duration) (time.Duration, error) {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return fallback, nil
+	}
+	duration, err := time.ParseDuration(value)
+	if err != nil {
+		return 0, fmt.Errorf("%s must be a valid duration: %w", name, err)
+	}
+	return duration, nil
 }
 
 func canonicalElectricURL(value string) (string, error) {

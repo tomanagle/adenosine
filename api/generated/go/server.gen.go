@@ -40,6 +40,36 @@ func (e AccessTokenScopes) Valid() bool {
 	}
 }
 
+// Defines values for BranchProtectionPattern.
+const (
+	BranchProtectionPatternAsterisk BranchProtectionPattern = "*"
+)
+
+// Valid indicates whether the value is a known member of the BranchProtectionPattern enum.
+func (e BranchProtectionPattern) Valid() bool {
+	switch e {
+	case BranchProtectionPatternAsterisk:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BranchProtectionInputPattern.
+const (
+	BranchProtectionInputPatternAsterisk BranchProtectionInputPattern = "*"
+)
+
+// Valid indicates whether the value is a known member of the BranchProtectionInputPattern enum.
+func (e BranchProtectionInputPattern) Valid() bool {
+	switch e {
+	case BranchProtectionInputPatternAsterisk:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CommentMutationProjected.
 const (
 	CommentMutationProjectedFalse CommentMutationProjected = false
@@ -283,6 +313,48 @@ func (e MergePullRequestRequestStrategy) Valid() bool {
 	case MergePullRequestRequestStrategyMergeCommit:
 		return true
 	case MergePullRequestRequestStrategySquash:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NotificationKind.
+const (
+	NotificationKindIssueComment      NotificationKind = "issue_comment"
+	NotificationKindMention           NotificationKind = "mention"
+	NotificationKindPullRequestMerged NotificationKind = "pull_request_merged"
+	NotificationKindPullRequestReview NotificationKind = "pull_request_review"
+)
+
+// Valid indicates whether the value is a known member of the NotificationKind enum.
+func (e NotificationKind) Valid() bool {
+	switch e {
+	case NotificationKindIssueComment:
+		return true
+	case NotificationKindMention:
+		return true
+	case NotificationKindPullRequestMerged:
+		return true
+	case NotificationKindPullRequestReview:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NotificationSubjectKind.
+const (
+	NotificationSubjectKindIssue       NotificationSubjectKind = "issue"
+	NotificationSubjectKindPullRequest NotificationSubjectKind = "pull_request"
+)
+
+// Valid indicates whether the value is a known member of the NotificationSubjectKind enum.
+func (e NotificationSubjectKind) Valid() bool {
+	switch e {
+	case NotificationSubjectKindIssue:
+		return true
+	case NotificationSubjectKindPullRequest:
 		return true
 	default:
 		return false
@@ -871,6 +943,21 @@ func (e RepositoryOwnerKind) Valid() bool {
 	}
 }
 
+// Defines values for RepositoryWebhookHasSecret.
+const (
+	True RepositoryWebhookHasSecret = true
+)
+
+// Valid indicates whether the value is a known member of the RepositoryWebhookHasSecret enum.
+func (e RepositoryWebhookHasSecret) Valid() bool {
+	switch e {
+	case True:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for StarMutationProjected.
 const (
 	False StarMutationProjected = false
@@ -1036,6 +1123,48 @@ func (e UpdateOrganizationTeamRequestVisibility) Valid() bool {
 	case Secret:
 		return true
 	case Visible:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UpdateRepositoryRequestVisibility.
+const (
+	Private UpdateRepositoryRequestVisibility = "private"
+	Public  UpdateRepositoryRequestVisibility = "public"
+)
+
+// Valid indicates whether the value is a known member of the UpdateRepositoryRequestVisibility enum.
+func (e UpdateRepositoryRequestVisibility) Valid() bool {
+	switch e {
+	case Private:
+		return true
+	case Public:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for WebhookEvent.
+const (
+	WebhookEventIssue       WebhookEvent = "issue"
+	WebhookEventPullRequest WebhookEvent = "pull_request"
+	WebhookEventPush        WebhookEvent = "push"
+	WebhookEventReview      WebhookEvent = "review"
+)
+
+// Valid indicates whether the value is a known member of the WebhookEvent enum.
+func (e WebhookEvent) Valid() bool {
+	switch e {
+	case WebhookEventIssue:
+		return true
+	case WebhookEventPullRequest:
+		return true
+	case WebhookEventPush:
+		return true
+	case WebhookEventReview:
 		return true
 	default:
 		return false
@@ -1675,6 +1804,35 @@ type BranchList struct {
 	Page  Page     `json:"page"`
 }
 
+// BranchProtection defines model for BranchProtection.
+type BranchProtection struct {
+	CreatedAt     time.Time               `json:"created_at"`
+	DenyDeletion  bool                    `json:"deny_deletion"`
+	DenyForcePush bool                    `json:"deny_force_push"`
+	Id            openapi_types.UUID      `json:"id"`
+	Pattern       BranchProtectionPattern `json:"pattern"`
+	UpdatedAt     time.Time               `json:"updated_at"`
+}
+
+// BranchProtectionPattern defines model for BranchProtection.Pattern.
+type BranchProtectionPattern string
+
+// BranchProtectionInput defines model for BranchProtectionInput.
+type BranchProtectionInput struct {
+	DenyDeletion  bool                         `json:"deny_deletion"`
+	DenyForcePush bool                         `json:"deny_force_push"`
+	Pattern       BranchProtectionInputPattern `json:"pattern"`
+}
+
+// BranchProtectionInputPattern defines model for BranchProtectionInput.Pattern.
+type BranchProtectionInputPattern string
+
+// BranchProtectionList defines model for BranchProtectionList.
+type BranchProtectionList struct {
+	Items []BranchProtection `json:"items"`
+	Page  Page               `json:"page"`
+}
+
 // Comment defines model for Comment.
 type Comment struct {
 	AuthorDid string    `json:"author_did"`
@@ -1845,10 +2003,23 @@ type CreateRepositoryRequest struct {
 // CreateRepositoryRequestVisibility defines model for CreateRepositoryRequest.Visibility.
 type CreateRepositoryRequestVisibility string
 
+// CreateRepositoryWebhookRequest defines model for CreateRepositoryWebhookRequest.
+type CreateRepositoryWebhookRequest struct {
+	Enabled *bool          `json:"enabled,omitempty"`
+	Events  []WebhookEvent `json:"events"`
+	Secret  string         `json:"secret"`
+	Url     string         `json:"url"`
+}
+
 // CreateSSHKeyRequest defines model for CreateSSHKeyRequest.
 type CreateSSHKeyRequest struct {
 	Name      string `json:"name"`
 	PublicKey string `json:"public_key"`
+}
+
+// CreateWebhookRedeliveryRequest defines model for CreateWebhookRedeliveryRequest.
+type CreateWebhookRedeliveryRequest struct {
+	DeliveryId openapi_types.UUID `json:"delivery_id"`
 }
 
 // CreatedAccessToken defines model for CreatedAccessToken.
@@ -2061,6 +2232,33 @@ type Moderation struct {
 type NetworkRepositoryList struct {
 	Items []Repository `json:"items"`
 	Page  Page         `json:"page"`
+}
+
+// Notification defines model for Notification.
+type Notification struct {
+	ActorDid       string                  `json:"actor_did"`
+	Id             openapi_types.UUID      `json:"id"`
+	Kind           NotificationKind        `json:"kind"`
+	OccurredAt     time.Time               `json:"occurred_at"`
+	Owner          string                  `json:"owner"`
+	Read           bool                    `json:"read"`
+	RepositorySlug RepositorySlug          `json:"repository_slug"`
+	RepositoryUri  string                  `json:"repository_uri"`
+	SubjectKind    NotificationSubjectKind `json:"subject_kind"`
+	SubjectUri     string                  `json:"subject_uri"`
+	Title          string                  `json:"title"`
+}
+
+// NotificationKind defines model for Notification.Kind.
+type NotificationKind string
+
+// NotificationSubjectKind defines model for Notification.SubjectKind.
+type NotificationSubjectKind string
+
+// NotificationList defines model for NotificationList.
+type NotificationList struct {
+	Items []Notification `json:"items"`
+	Page  Page           `json:"page"`
 }
 
 // NullableOrganizationSlug defines model for NullableOrganizationSlug.
@@ -2515,6 +2713,7 @@ type PutPullRequestStatusRequestState string
 
 // Repository defines model for Repository.
 type Repository struct {
+	Archived      bool                 `json:"archived"`
 	Cid           *string              `json:"cid,omitempty"`
 	CommentCount  int64                `json:"comment_count"`
 	CreatedAt     time.Time            `json:"created_at"`
@@ -2548,6 +2747,14 @@ type RepositoryState string
 
 // RepositoryVisibility defines model for Repository.Visibility.
 type RepositoryVisibility string
+
+// RepositoryDeletion defines model for RepositoryDeletion.
+type RepositoryDeletion struct {
+	Id           openapi_types.UUID `json:"id"`
+	PurgeAfter   time.Time          `json:"purge_after"`
+	RepositoryId openapi_types.UUID `json:"repository_id"`
+	RequestedAt  time.Time          `json:"requested_at"`
+}
 
 // RepositoryForkList defines model for RepositoryForkList.
 type RepositoryForkList struct {
@@ -2607,6 +2814,26 @@ type RepositorySlug = string
 type RepositoryStrongRef struct {
 	Cid string `json:"cid"`
 	Uri string `json:"uri"`
+}
+
+// RepositoryWebhook defines model for RepositoryWebhook.
+type RepositoryWebhook struct {
+	CreatedAt time.Time                  `json:"created_at"`
+	Enabled   bool                       `json:"enabled"`
+	Events    []WebhookEvent             `json:"events"`
+	HasSecret RepositoryWebhookHasSecret `json:"has_secret"`
+	Id        openapi_types.UUID         `json:"id"`
+	UpdatedAt time.Time                  `json:"updated_at"`
+	Url       string                     `json:"url"`
+}
+
+// RepositoryWebhookHasSecret defines model for RepositoryWebhook.HasSecret.
+type RepositoryWebhookHasSecret bool
+
+// RepositoryWebhookList defines model for RepositoryWebhookList.
+type RepositoryWebhookList struct {
+	Items []RepositoryWebhook `json:"items"`
+	Page  Page                `json:"page"`
 }
 
 // SSHKey defines model for SSHKey.
@@ -2862,6 +3089,11 @@ type UpdateDeveloperProfileRequest struct {
 	Website     *string `json:"website,omitempty"`
 }
 
+// UpdateNotificationRequest defines model for UpdateNotificationRequest.
+type UpdateNotificationRequest struct {
+	Read bool `json:"read"`
+}
+
 // UpdateOrganizationMemberRequest defines model for UpdateOrganizationMemberRequest.
 type UpdateOrganizationMemberRequest struct {
 	Role       *UpdateOrganizationMemberRequestRole       `json:"role,omitempty"`
@@ -2900,11 +3132,57 @@ type UpdateOrganizationTeamRequest struct {
 // UpdateOrganizationTeamRequestVisibility defines model for UpdateOrganizationTeamRequest.Visibility.
 type UpdateOrganizationTeamRequestVisibility string
 
+// UpdateRepositoryRequest defines model for UpdateRepositoryRequest.
+type UpdateRepositoryRequest struct {
+	Archived      *bool                              `json:"archived,omitempty"`
+	DefaultBranch *string                            `json:"default_branch,omitempty"`
+	Description   *string                            `json:"description,omitempty"`
+	DisplayName   *string                            `json:"display_name,omitempty"`
+	Slug          *RepositorySlug                    `json:"slug,omitempty"`
+	Visibility    *UpdateRepositoryRequestVisibility `json:"visibility,omitempty"`
+}
+
+// UpdateRepositoryRequestVisibility defines model for UpdateRepositoryRequest.Visibility.
+type UpdateRepositoryRequestVisibility string
+
+// UpdateRepositoryWebhookRequest defines model for UpdateRepositoryWebhookRequest.
+type UpdateRepositoryWebhookRequest struct {
+	Enabled bool           `json:"enabled"`
+	Events  []WebhookEvent `json:"events"`
+
+	// Secret Omit to retain the current encrypted secret.
+	Secret *string `json:"secret,omitempty"`
+	Url    string  `json:"url"`
+}
+
 // VerifyPasskeyCeremonyRequest defines model for VerifyPasskeyCeremonyRequest.
 type VerifyPasskeyCeremonyRequest struct {
 	CeremonyToken string                 `json:"ceremony_token"`
 	Response      map[string]interface{} `json:"response"`
 }
+
+// WebhookDelivery defines model for WebhookDelivery.
+type WebhookDelivery struct {
+	Attempts       int                `json:"attempts"`
+	CreatedAt      time.Time          `json:"created_at"`
+	DeliveredAt    *time.Time         `json:"delivered_at,omitempty"`
+	Event          WebhookEvent       `json:"event"`
+	FailedAt       *time.Time         `json:"failed_at,omitempty"`
+	Id             openapi_types.UUID `json:"id"`
+	LastErrorCode  *string            `json:"last_error_code,omitempty"`
+	ResponseBody   *string            `json:"response_body,omitempty"`
+	ResponseStatus *int               `json:"response_status,omitempty"`
+	WebhookId      openapi_types.UUID `json:"webhook_id"`
+}
+
+// WebhookDeliveryList defines model for WebhookDeliveryList.
+type WebhookDeliveryList struct {
+	Items []WebhookDelivery `json:"items"`
+	Page  Page              `json:"page"`
+}
+
+// WebhookEvent defines model for WebhookEvent.
+type WebhookEvent string
 
 // BlockedDID defines model for BlockedDID.
 type BlockedDID = string
@@ -3105,6 +3383,13 @@ type ListNetworkRepositoriesParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// ListNotificationsParams defines parameters for ListNotifications.
+type ListNotificationsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Unread *bool   `form:"unread,omitempty" json:"unread,omitempty"`
+}
+
 // ListOrganizationInvitationsForCurrentUserParams defines parameters for ListOrganizationInvitationsForCurrentUser.
 type ListOrganizationInvitationsForCurrentUserParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
@@ -3254,6 +3539,12 @@ type CreateRepositoryParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// ListBranchProtectionsParams defines parameters for ListBranchProtections.
+type ListBranchProtectionsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // ListRepositoryBranchesParams defines parameters for ListRepositoryBranches.
 type ListRepositoryBranchesParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
@@ -3300,6 +3591,18 @@ type ListRepositoryTagsParams struct {
 type GetRepositoryTreeParams struct {
 	Rev  *string `form:"rev,omitempty" json:"rev,omitempty"`
 	Path *string `form:"path,omitempty" json:"path,omitempty"`
+}
+
+// ListRepositoryWebhooksParams defines parameters for ListRepositoryWebhooks.
+type ListRepositoryWebhooksParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListWebhookDeliveriesParams defines parameters for ListWebhookDeliveries.
+type ListWebhookDeliveriesParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // SearchProfilesParams defines parameters for SearchProfiles.
@@ -3820,6 +4123,9 @@ type PutBlockedDIDJSONRequestBody = PutBlockedDIDRequest
 // PutHiddenRecordJSONRequestBody defines body for PutHiddenRecord for application/json ContentType.
 type PutHiddenRecordJSONRequestBody = PutHiddenRecordRequest
 
+// UpdateNotificationJSONRequestBody defines body for UpdateNotification for application/json ContentType.
+type UpdateNotificationJSONRequestBody = UpdateNotificationRequest
+
 // CreateOrganizationJSONRequestBody defines body for CreateOrganization for application/json ContentType.
 type CreateOrganizationJSONRequestBody = CreateOrganizationRequest
 
@@ -3874,8 +4180,26 @@ type PutPullRequestStatusJSONRequestBody = PutPullRequestStatusRequest
 // CreateRepositoryJSONRequestBody defines body for CreateRepository for application/json ContentType.
 type CreateRepositoryJSONRequestBody = CreateRepositoryRequest
 
+// UpdateRepositoryJSONRequestBody defines body for UpdateRepository for application/json ContentType.
+type UpdateRepositoryJSONRequestBody = UpdateRepositoryRequest
+
+// CreateBranchProtectionJSONRequestBody defines body for CreateBranchProtection for application/json ContentType.
+type CreateBranchProtectionJSONRequestBody = BranchProtectionInput
+
+// UpdateBranchProtectionJSONRequestBody defines body for UpdateBranchProtection for application/json ContentType.
+type UpdateBranchProtectionJSONRequestBody = BranchProtectionInput
+
 // CreateRepositoryForkJSONRequestBody defines body for CreateRepositoryFork for application/json ContentType.
 type CreateRepositoryForkJSONRequestBody = CreateRepositoryForkRequest
+
+// CreateRepositoryWebhookJSONRequestBody defines body for CreateRepositoryWebhook for application/json ContentType.
+type CreateRepositoryWebhookJSONRequestBody = CreateRepositoryWebhookRequest
+
+// UpdateRepositoryWebhookJSONRequestBody defines body for UpdateRepositoryWebhook for application/json ContentType.
+type UpdateRepositoryWebhookJSONRequestBody = UpdateRepositoryWebhookRequest
+
+// CreateWebhookRedeliveryJSONRequestBody defines body for CreateWebhookRedelivery for application/json ContentType.
+type CreateWebhookRedeliveryJSONRequestBody = CreateWebhookRedeliveryRequest
 
 // CreateSSHKeyJSONRequestBody defines body for CreateSSHKey for application/json ContentType.
 type CreateSSHKeyJSONRequestBody = CreateSSHKeyRequest
@@ -4016,6 +4340,15 @@ type ServerInterface interface {
 	// Discover public repositories indexed from the network
 	// (GET /api/v1/network/repositories)
 	ListNetworkRepositories(w http.ResponseWriter, r *http.Request, params ListNetworkRepositoriesParams)
+	// List the authenticated account's notifications
+	// (GET /api/v1/notifications)
+	ListNotifications(w http.ResponseWriter, r *http.Request, params ListNotificationsParams)
+	// Dismiss a notification from the inbox
+	// (DELETE /api/v1/notifications/{notification})
+	DeleteNotification(w http.ResponseWriter, r *http.Request, notification openapi_types.UUID)
+	// Update notification read state
+	// (PATCH /api/v1/notifications/{notification})
+	UpdateNotification(w http.ResponseWriter, r *http.Request, notification openapi_types.UUID)
 	// List active organization invitations for the authenticated user
 	// (GET /api/v1/organization-invitations)
 	ListOrganizationInvitationsForCurrentUser(w http.ResponseWriter, r *http.Request, params ListOrganizationInvitationsForCurrentUserParams)
@@ -4151,12 +4484,33 @@ type ServerInterface interface {
 	// Create a locally hosted repository
 	// (POST /api/v1/repositories)
 	CreateRepository(w http.ResponseWriter, r *http.Request, params CreateRepositoryParams)
+	// Request recoverable repository deletion
+	// (DELETE /api/v1/repositories/{owner}/{repo})
+	DeleteRepository(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug)
 	// Get a local or federated repository
 	// (GET /api/v1/repositories/{owner}/{repo})
 	GetRepository(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug)
+	// Update repository settings
+	// (PATCH /api/v1/repositories/{owner}/{repo})
+	UpdateRepository(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug)
 	// Stream an immutable Git blob
 	// (GET /api/v1/repositories/{owner}/{repo}/blobs/{sha})
 	GetRepositoryBlob(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha string)
+	// List repository branch protections
+	// (GET /api/v1/repositories/{owner}/{repo}/branch-protections)
+	ListBranchProtections(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListBranchProtectionsParams)
+	// Create a repository-wide branch protection
+	// (POST /api/v1/repositories/{owner}/{repo}/branch-protections)
+	CreateBranchProtection(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug)
+	// Delete a branch protection
+	// (DELETE /api/v1/repositories/{owner}/{repo}/branch-protections/{protection})
+	DeleteBranchProtection(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, protection openapi_types.UUID)
+	// Get a branch protection
+	// (GET /api/v1/repositories/{owner}/{repo}/branch-protections/{protection})
+	GetBranchProtection(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, protection openapi_types.UUID)
+	// Replace a branch protection
+	// (PUT /api/v1/repositories/{owner}/{repo}/branch-protections/{protection})
+	UpdateBranchProtection(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, protection openapi_types.UUID)
 	// List repository branches
 	// (GET /api/v1/repositories/{owner}/{repo}/branches)
 	ListRepositoryBranches(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryBranchesParams)
@@ -4187,6 +4541,33 @@ type ServerInterface interface {
 	// List one repository tree directory
 	// (GET /api/v1/repositories/{owner}/{repo}/tree)
 	GetRepositoryTree(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryTreeParams)
+	// List repository webhooks
+	// (GET /api/v1/repositories/{owner}/{repo}/webhooks)
+	ListRepositoryWebhooks(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryWebhooksParams)
+	// Create a repository webhook
+	// (POST /api/v1/repositories/{owner}/{repo}/webhooks)
+	CreateRepositoryWebhook(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug)
+	// Delete a repository webhook
+	// (DELETE /api/v1/repositories/{owner}/{repo}/webhooks/{webhook})
+	DeleteRepositoryWebhook(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, webhook openapi_types.UUID)
+	// Get a repository webhook
+	// (GET /api/v1/repositories/{owner}/{repo}/webhooks/{webhook})
+	GetRepositoryWebhook(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, webhook openapi_types.UUID)
+	// Replace a repository webhook configuration
+	// (PUT /api/v1/repositories/{owner}/{repo}/webhooks/{webhook})
+	UpdateRepositoryWebhook(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, webhook openapi_types.UUID)
+	// List webhook delivery attempts
+	// (GET /api/v1/repositories/{owner}/{repo}/webhooks/{webhook}/deliveries)
+	ListWebhookDeliveries(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, webhook openapi_types.UUID, params ListWebhookDeliveriesParams)
+	// Create a new delivery from an earlier payload
+	// (POST /api/v1/repositories/{owner}/{repo}/webhooks/{webhook}/deliveries)
+	CreateWebhookRedelivery(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, webhook openapi_types.UUID)
+	// Cancel deletion and restore the repository
+	// (DELETE /api/v1/repository-deletions/{deletion})
+	RestoreRepositoryDeletion(w http.ResponseWriter, r *http.Request, deletion openapi_types.UUID)
+	// Get a recoverable repository deletion
+	// (GET /api/v1/repository-deletions/{deletion})
+	GetRepositoryDeletion(w http.ResponseWriter, r *http.Request, deletion openapi_types.UUID)
 	// Search profiles in the local network index
 	// (GET /api/v1/search/profiles)
 	SearchProfiles(w http.ResponseWriter, r *http.Request, params SearchProfilesParams)
@@ -4997,6 +5378,141 @@ func (siw *ServerInterfaceWrapper) ListNetworkRepositories(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListNetworkRepositories(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListNotifications operation middleware
+func (siw *ServerInterfaceWrapper) ListNotifications(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListNotificationsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "unread" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "unread", r.URL.Query(), &params.Unread, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "unread"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "unread", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListNotifications(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteNotification operation middleware
+func (siw *ServerInterfaceWrapper) DeleteNotification(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "notification" -------------
+	var notification openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "notification", r.PathValue("notification"), &notification, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "notification", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteNotification(w, r, notification)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateNotification operation middleware
+func (siw *ServerInterfaceWrapper) UpdateNotification(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "notification" -------------
+	var notification openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "notification", r.PathValue("notification"), &notification, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "notification", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateNotification(w, r, notification)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -7105,6 +7621,49 @@ func (siw *ServerInterfaceWrapper) CreateRepository(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteRepository operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepository(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepository(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetRepository operation middleware
 func (siw *ServerInterfaceWrapper) GetRepository(w http.ResponseWriter, r *http.Request) {
 
@@ -7139,6 +7698,49 @@ func (siw *ServerInterfaceWrapper) GetRepository(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepository(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateRepository operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRepository(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateRepository(w, r, owner, repo)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -7191,6 +7793,277 @@ func (siw *ServerInterfaceWrapper) GetRepositoryBlob(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepositoryBlob(w, r, owner, repo, sha)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListBranchProtections operation middleware
+func (siw *ServerInterfaceWrapper) ListBranchProtections(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListBranchProtectionsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListBranchProtections(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateBranchProtection operation middleware
+func (siw *ServerInterfaceWrapper) CreateBranchProtection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBranchProtection(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteBranchProtection operation middleware
+func (siw *ServerInterfaceWrapper) DeleteBranchProtection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "protection" -------------
+	var protection openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "protection", r.PathValue("protection"), &protection, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "protection", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteBranchProtection(w, r, owner, repo, protection)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetBranchProtection operation middleware
+func (siw *ServerInterfaceWrapper) GetBranchProtection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "protection" -------------
+	var protection openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "protection", r.PathValue("protection"), &protection, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "protection", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBranchProtection(w, r, owner, repo, protection)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateBranchProtection operation middleware
+func (siw *ServerInterfaceWrapper) UpdateBranchProtection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "protection" -------------
+	var protection openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "protection", r.PathValue("protection"), &protection, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "protection", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateBranchProtection(w, r, owner, repo, protection)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -7864,6 +8737,478 @@ func (siw *ServerInterfaceWrapper) GetRepositoryTree(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepositoryTree(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRepositoryWebhooks operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryWebhooks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryWebhooksParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryWebhooks(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryWebhook operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryWebhook(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryWebhook(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRepositoryWebhook operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepositoryWebhook(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhook" -------------
+	var webhook openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhook", r.PathValue("webhook"), &webhook, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhook", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepositoryWebhook(w, r, owner, repo, webhook)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryWebhook operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryWebhook(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhook" -------------
+	var webhook openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhook", r.PathValue("webhook"), &webhook, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhook", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryWebhook(w, r, owner, repo, webhook)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateRepositoryWebhook operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRepositoryWebhook(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhook" -------------
+	var webhook openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhook", r.PathValue("webhook"), &webhook, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhook", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateRepositoryWebhook(w, r, owner, repo, webhook)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWebhookDeliveries operation middleware
+func (siw *ServerInterfaceWrapper) ListWebhookDeliveries(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhook" -------------
+	var webhook openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhook", r.PathValue("webhook"), &webhook, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhook", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListWebhookDeliveriesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWebhookDeliveries(w, r, owner, repo, webhook, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateWebhookRedelivery operation middleware
+func (siw *ServerInterfaceWrapper) CreateWebhookRedelivery(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "webhook" -------------
+	var webhook openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "webhook", r.PathValue("webhook"), &webhook, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "webhook", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWebhookRedelivery(w, r, owner, repo, webhook)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RestoreRepositoryDeletion operation middleware
+func (siw *ServerInterfaceWrapper) RestoreRepositoryDeletion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "deletion" -------------
+	var deletion openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deletion", r.PathValue("deletion"), &deletion, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deletion", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RestoreRepositoryDeletion(w, r, deletion)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryDeletion operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryDeletion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "deletion" -------------
+	var deletion openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "deletion", r.PathValue("deletion"), &deletion, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "deletion", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryDeletion(w, r, deletion)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -10343,6 +11688,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/moderation/hidden-records", wrapper.DeleteHiddenRecord)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/moderation/hidden-records", wrapper.PutHiddenRecord)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/network/repositories", wrapper.ListNetworkRepositories)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/notifications", wrapper.ListNotifications)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/notifications/{notification}", wrapper.DeleteNotification)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/notifications/{notification}", wrapper.UpdateNotification)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organization-invitations", wrapper.ListOrganizationInvitationsForCurrentUser)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/organization-invitations/{invitation}/accept", wrapper.AcceptOrganizationInvitation)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations", wrapper.ListOrganizations)
@@ -10388,8 +11736,15 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/pull-requests/reviews", wrapper.CreatePullRequestReview)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/pull-requests/status", wrapper.PutPullRequestStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories", wrapper.CreateRepository)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}", wrapper.DeleteRepository)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}", wrapper.GetRepository)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}", wrapper.UpdateRepository)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/blobs/{sha}", wrapper.GetRepositoryBlob)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branch-protections", wrapper.ListBranchProtections)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branch-protections", wrapper.CreateBranchProtection)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}", wrapper.DeleteBranchProtection)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}", wrapper.GetBranchProtection)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}", wrapper.UpdateBranchProtection)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branches", wrapper.ListRepositoryBranches)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits", wrapper.ListRepositoryCommits)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{revision}", wrapper.GetRepositoryCommit)
@@ -10400,6 +11755,15 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/sync-fork", wrapper.SyncRepositoryFork)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tags", wrapper.ListRepositoryTags)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tree", wrapper.GetRepositoryTree)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks", wrapper.ListRepositoryWebhooks)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks", wrapper.CreateRepositoryWebhook)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}", wrapper.DeleteRepositoryWebhook)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}", wrapper.GetRepositoryWebhook)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}", wrapper.UpdateRepositoryWebhook)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}/deliveries", wrapper.ListWebhookDeliveries)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}/deliveries", wrapper.CreateWebhookRedelivery)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repository-deletions/{deletion}", wrapper.RestoreRepositoryDeletion)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repository-deletions/{deletion}", wrapper.GetRepositoryDeletion)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/search/profiles", wrapper.SearchProfiles)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/search/repositories", wrapper.SearchRepositories)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/ssh-keys", wrapper.ListSSHKeys)

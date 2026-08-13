@@ -15,6 +15,7 @@ import {
   History,
   Lock,
   Star,
+  Settings,
 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
@@ -261,6 +262,14 @@ export function RepositoryLayout({
               params={params}
               to="/$owner/$repo/activity"
             />
+            {repository.viewer_can_admin ? (
+              <RepositoryNavLink
+                icon={Settings}
+                label="Settings"
+                params={params}
+                to="/$owner/$repo/settings"
+              />
+            ) : null}
           </nav>
         </div>
       </section>
@@ -383,6 +392,7 @@ function RepositoryNavLink({
     | '/$owner/$repo/issues'
     | '/$owner/$repo/pulls'
     | '/$owner/$repo/activity'
+    | '/$owner/$repo/settings'
 }) {
   return (
     <Link

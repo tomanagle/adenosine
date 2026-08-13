@@ -283,6 +283,7 @@ describe('OrganizationPage', () => {
           visibility: 'private',
           state: 'active',
           default_branch: 'main',
+          archived: false,
           viewer_can_admin: true,
           owner: { did: 'did:plc:alice', kind: 'organization', organization_slug: 'adenosine' },
           hosting: {

@@ -114,6 +114,24 @@ type CoreAccount struct {
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 }
 
+type CoreBranchProtection struct {
+	ID            pgtype.UUID        `json:"id"`
+	RepositoryID  pgtype.UUID        `json:"repository_id"`
+	Pattern       string             `json:"pattern"`
+	DenyForcePush bool               `json:"deny_force_push"`
+	DenyDeletion  bool               `json:"deny_deletion"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+}
+
+type CoreNotificationState struct {
+	AccountDid      string             `json:"account_did"`
+	NotificationKey pgtype.UUID        `json:"notification_key"`
+	ReadAt          pgtype.Timestamptz `json:"read_at"`
+	DismissedAt     pgtype.Timestamptz `json:"dismissed_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
 type CoreOrganization struct {
 	ID                           pgtype.UUID        `json:"id"`
 	Slug                         string             `json:"slug"`
@@ -217,6 +235,7 @@ type CoreRepository struct {
 	ForkedFromCid               pgtype.Text        `json:"forked_from_cid"`
 	ForkedFromLocalRepositoryID pgtype.UUID        `json:"forked_from_local_repository_id"`
 	ForkCount                   int64              `json:"fork_count"`
+	ArchivedAt                  pgtype.Timestamptz `json:"archived_at"`
 }
 
 type CoreRepositoryAlias struct {
@@ -233,6 +252,28 @@ type CoreRepositoryCollaborator struct {
 	Role         string             `json:"role"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
+type CoreRepositoryDeletion struct {
+	ID             pgtype.UUID        `json:"id"`
+	RepositoryID   pgtype.UUID        `json:"repository_id"`
+	RequestedByDid string             `json:"requested_by_did"`
+	RequestedAt    pgtype.Timestamptz `json:"requested_at"`
+	PurgeAfter     pgtype.Timestamptz `json:"purge_after"`
+	RestoredAt     pgtype.Timestamptz `json:"restored_at"`
+	PurgedAt       pgtype.Timestamptz `json:"purged_at"`
+}
+
+type CoreRepositoryWebhook struct {
+	ID               pgtype.UUID        `json:"id"`
+	RepositoryID     pgtype.UUID        `json:"repository_id"`
+	Url              string             `json:"url"`
+	SecretCiphertext []byte             `json:"secret_ciphertext"`
+	Events           []string           `json:"events"`
+	Enabled          bool               `json:"enabled"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt        pgtype.Timestamptz `json:"deleted_at"`
 }
 
 type ModerationBlockedDid struct {
@@ -561,4 +602,22 @@ type OpsOutboxEvent struct {
 	LastErrorCode pgtype.Text        `json:"last_error_code"`
 	Traceparent   pgtype.Text        `json:"traceparent"`
 	Tracestate    pgtype.Text        `json:"tracestate"`
+}
+
+type OpsWebhookDelivery struct {
+	ID             pgtype.UUID        `json:"id"`
+	WebhookID      pgtype.UUID        `json:"webhook_id"`
+	EventType      string             `json:"event_type"`
+	EventID        pgtype.UUID        `json:"event_id"`
+	RequestBody    []byte             `json:"request_body"`
+	ResponseStatus pgtype.Int4        `json:"response_status"`
+	ResponseBody   pgtype.Text        `json:"response_body"`
+	Attempts       int32              `json:"attempts"`
+	AvailableAt    pgtype.Timestamptz `json:"available_at"`
+	ClaimedAt      pgtype.Timestamptz `json:"claimed_at"`
+	ClaimedBy      pgtype.Text        `json:"claimed_by"`
+	DeliveredAt    pgtype.Timestamptz `json:"delivered_at"`
+	FailedAt       pgtype.Timestamptz `json:"failed_at"`
+	LastErrorCode  pgtype.Text        `json:"last_error_code"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }

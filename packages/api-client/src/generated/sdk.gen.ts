@@ -4,8 +4,8 @@ import * as z from 'zod';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AcceptOrganizationInvitationData, AcceptOrganizationInvitationErrors, AcceptOrganizationInvitationResponses, BeginPasskeyLoginData, BeginPasskeyLoginErrors, BeginPasskeyLoginResponses, BeginPasskeyRegistrationData, BeginPasskeyRegistrationErrors, BeginPasskeyRegistrationResponses, CompleteAtProtoLoginData, CompleteAtProtoLoginErrors, CreateAccessTokenData, CreateAccessTokenErrors, CreateAccessTokenResponses, CreateIssueCommentData, CreateIssueCommentErrors, CreateIssueCommentResponses, CreateIssueData, CreateIssueErrors, CreateIssueResponses, CreateOrganizationData, CreateOrganizationErrors, CreateOrganizationResponses, CreateOrganizationTeamData, CreateOrganizationTeamErrors, CreateOrganizationTeamResponses, CreatePullRequestData, CreatePullRequestErrors, CreatePullRequestResponses, CreatePullRequestReviewData, CreatePullRequestReviewErrors, CreatePullRequestReviewResponses, CreateRepositoryData, CreateRepositoryErrors, CreateRepositoryForkData, CreateRepositoryForkErrors, CreateRepositoryForkResponses, CreateRepositoryResponses, CreateSshKeyData, CreateSshKeyErrors, CreateSshKeyResponses, DeleteBlockedDidData, DeleteBlockedDidErrors, DeleteBlockedDidResponses, DeleteHiddenRecordData, DeleteHiddenRecordErrors, DeleteHiddenRecordResponses, DeleteIssueCommentData, DeleteIssueCommentErrors, DeleteIssueCommentResponses, DeleteOrganizationTeamData, DeleteOrganizationTeamErrors, DeleteOrganizationTeamResponses, DeletePasskeyData, DeletePasskeyErrors, DeletePasskeyResponses, DeleteStarData, DeleteStarErrors, DeleteStarResponses, GetCurrentIdentityData, GetCurrentIdentityErrors, GetCurrentIdentityResponses, GetDeveloperProfileData, GetDeveloperProfileErrors, GetDeveloperProfileResponses, GetIssueCommentsData, GetIssueCommentsErrors, GetIssueCommentsResponses, GetIssueData, GetIssueErrors, GetIssueResponses, GetIssuesData, GetIssuesErrors, GetIssuesResponses, GetLivenessData, GetLivenessResponses, GetModerationData, GetModerationErrors, GetModerationResponses, GetOAuthClientMetadataData, GetOAuthClientMetadataResponses, GetOrganizationData, GetOrganizationErrors, GetOrganizationResponses, GetOwnerData, GetOwnerErrors, GetOwnerResponses, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffErrors, GetPullRequestDiffResponses, GetPullRequestErrors, GetPullRequestResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRepositoryBlobData, GetRepositoryBlobErrors, GetRepositoryBlobResponses, GetRepositoryCommitData, GetRepositoryCommitErrors, GetRepositoryCommitResponses, GetRepositoryData, GetRepositoryDiffData, GetRepositoryDiffErrors, GetRepositoryDiffResponses, GetRepositoryErrors, GetRepositoryMergeBaseData, GetRepositoryMergeBaseErrors, GetRepositoryMergeBaseResponses, GetRepositoryResponses, GetRepositoryTreeData, GetRepositoryTreeErrors, GetRepositoryTreeResponses, GetStarsData, GetStarsErrors, GetStarsResponses, GetSyncIssueCommentsData, GetSyncIssueCommentsErrors, GetSyncIssueCommentsResponses, GetSyncIssuesData, GetSyncIssuesErrors, GetSyncIssuesResponses, GetSyncProfilesData, GetSyncProfilesErrors, GetSyncProfilesResponses, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsErrors, GetSyncPullRequestReviewsResponses, GetSyncPullRequestsData, GetSyncPullRequestsErrors, GetSyncPullRequestsResponses, GetSyncRepositoriesData, GetSyncRepositoriesErrors, GetSyncRepositoriesResponses, GetSyncStarsData, GetSyncStarsErrors, GetSyncStarsResponses, InviteOrganizationMemberData, InviteOrganizationMemberErrors, InviteOrganizationMemberResponses, ListAccessTokensData, ListAccessTokensErrors, ListAccessTokensResponses, ListNetworkRepositoriesData, ListNetworkRepositoriesErrors, ListNetworkRepositoriesResponses, ListOrganizationAuditEventsData, ListOrganizationAuditEventsErrors, ListOrganizationAuditEventsResponses, ListOrganizationInvitationsData, ListOrganizationInvitationsErrors, ListOrganizationInvitationsForCurrentUserData, ListOrganizationInvitationsForCurrentUserErrors, ListOrganizationInvitationsForCurrentUserResponses, ListOrganizationInvitationsResponses, ListOrganizationMembersData, ListOrganizationMembersErrors, ListOrganizationMembersResponses, ListOrganizationRepositoriesData, ListOrganizationRepositoriesErrors, ListOrganizationRepositoriesResponses, ListOrganizationRepositoryCollaboratorsData, ListOrganizationRepositoryCollaboratorsErrors, ListOrganizationRepositoryCollaboratorsResponses, ListOrganizationsData, ListOrganizationsErrors, ListOrganizationsResponses, ListOrganizationTeamMembersData, ListOrganizationTeamMembersErrors, ListOrganizationTeamMembersResponses, ListOrganizationTeamRepositoriesData, ListOrganizationTeamRepositoriesErrors, ListOrganizationTeamRepositoriesResponses, ListOrganizationTeamsData, ListOrganizationTeamsErrors, ListOrganizationTeamsResponses, ListPasskeysData, ListPasskeysErrors, ListPasskeysResponses, ListPullRequestReviewsData, ListPullRequestReviewsErrors, ListPullRequestReviewsResponses, ListPullRequestsData, ListPullRequestsErrors, ListPullRequestsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListRepositoryCommitsData, ListRepositoryCommitsErrors, ListRepositoryCommitsResponses, ListRepositoryForksData, ListRepositoryForksErrors, ListRepositoryForksResponses, ListRepositoryTagsData, ListRepositoryTagsErrors, ListRepositoryTagsResponses, ListSshKeysData, ListSshKeysErrors, ListSshKeysResponses, LogoutData, LogoutErrors, LogoutResponses, MergePullRequestData, MergePullRequestErrors, MergePullRequestResponses, PostSyncIssueCommentsData, PostSyncIssueCommentsErrors, PostSyncIssueCommentsResponses, PostSyncIssuesData, PostSyncIssuesErrors, PostSyncIssuesResponses, PostSyncProfilesData, PostSyncProfilesErrors, PostSyncProfilesResponses, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsErrors, PostSyncPullRequestReviewsResponses, PostSyncPullRequestsData, PostSyncPullRequestsErrors, PostSyncPullRequestsResponses, PostSyncRepositoriesData, PostSyncRepositoriesErrors, PostSyncRepositoriesResponses, PostSyncStarsData, PostSyncStarsErrors, PostSyncStarsResponses, PutBlockedDidData, PutBlockedDidErrors, PutBlockedDidResponses, PutHiddenRecordData, PutHiddenRecordErrors, PutHiddenRecordResponses, PutIssueStatusData, PutIssueStatusErrors, PutIssueStatusResponses, PutOrganizationRepositoryCollaboratorData, PutOrganizationRepositoryCollaboratorErrors, PutOrganizationRepositoryCollaboratorResponses, PutOrganizationTeamMemberData, PutOrganizationTeamMemberErrors, PutOrganizationTeamMemberResponses, PutOrganizationTeamRepositoryData, PutOrganizationTeamRepositoryErrors, PutOrganizationTeamRepositoryResponses, PutPullRequestStatusData, PutPullRequestStatusErrors, PutPullRequestStatusResponses, PutStarData, PutStarErrors, PutStarResponses, RemoveOrganizationMemberData, RemoveOrganizationMemberErrors, RemoveOrganizationMemberResponses, RemoveOrganizationRepositoryCollaboratorData, RemoveOrganizationRepositoryCollaboratorErrors, RemoveOrganizationRepositoryCollaboratorResponses, RemoveOrganizationTeamMemberData, RemoveOrganizationTeamMemberErrors, RemoveOrganizationTeamMemberResponses, RemoveOrganizationTeamRepositoryData, RemoveOrganizationTeamRepositoryErrors, RemoveOrganizationTeamRepositoryResponses, RevokeAccessTokenData, RevokeAccessTokenErrors, RevokeAccessTokenResponses, RevokeOrganizationInvitationData, RevokeOrganizationInvitationErrors, RevokeOrganizationInvitationResponses, RevokeSshKeyData, RevokeSshKeyErrors, RevokeSshKeyResponses, SearchProfilesData, SearchProfilesErrors, SearchProfilesResponses, SearchRepositoriesData, SearchRepositoriesErrors, SearchRepositoriesResponses, StartAtProtoLoginData, StartAtProtoLoginErrors, StartAtProtoLoginResponses, SyncRepositoryForkData, SyncRepositoryForkErrors, SyncRepositoryForkResponses, UpdateDeveloperProfileData, UpdateDeveloperProfileErrors, UpdateDeveloperProfileResponses, UpdateOrganizationData, UpdateOrganizationErrors, UpdateOrganizationMemberData, UpdateOrganizationMemberErrors, UpdateOrganizationMemberResponses, UpdateOrganizationResponses, UpdateOrganizationTeamData, UpdateOrganizationTeamErrors, UpdateOrganizationTeamResponses, VerifyPasskeyLoginData, VerifyPasskeyLoginErrors, VerifyPasskeyLoginResponses, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationErrors, VerifyPasskeyRegistrationResponses } from './types.gen';
-import { zAcceptOrganizationInvitationPath, zAcceptOrganizationInvitationResponse, zBeginPasskeyLoginHeaders, zBeginPasskeyLoginResponse, zBeginPasskeyRegistrationBody, zBeginPasskeyRegistrationHeaders, zBeginPasskeyRegistrationResponse, zCompleteAtProtoLoginQuery, zCreateAccessTokenBody, zCreateAccessTokenResponse, zCreateIssueBody, zCreateIssueCommentBody, zCreateIssueCommentHeaders, zCreateIssueCommentResponse, zCreateIssueHeaders, zCreateIssueResponse, zCreateOrganizationBody, zCreateOrganizationResponse, zCreateOrganizationTeamBody, zCreateOrganizationTeamPath, zCreateOrganizationTeamResponse, zCreatePullRequestBody, zCreatePullRequestHeaders, zCreatePullRequestResponse, zCreatePullRequestReviewBody, zCreatePullRequestReviewHeaders, zCreatePullRequestReviewResponse, zCreateRepositoryBody, zCreateRepositoryForkBody, zCreateRepositoryForkHeaders, zCreateRepositoryForkPath, zCreateRepositoryForkResponse, zCreateRepositoryHeaders, zCreateRepositoryResponse, zCreateSshKeyBody, zCreateSshKeyResponse, zDeleteBlockedDidHeaders, zDeleteBlockedDidQuery, zDeleteBlockedDidResponse, zDeleteHiddenRecordHeaders, zDeleteHiddenRecordQuery, zDeleteHiddenRecordResponse, zDeleteIssueCommentHeaders, zDeleteIssueCommentQuery, zDeleteOrganizationTeamPath, zDeleteOrganizationTeamResponse, zDeletePasskeyHeaders, zDeletePasskeyPath, zDeletePasskeyResponse, zDeleteStarHeaders, zDeleteStarQuery, zGetCurrentIdentityResponse, zGetDeveloperProfilePath, zGetDeveloperProfileResponse, zGetIssueCommentsQuery, zGetIssueCommentsResponse, zGetIssueQuery, zGetIssueResponse, zGetIssuesQuery, zGetIssuesResponse, zGetLivenessResponse, zGetModerationResponse, zGetOAuthClientMetadataResponse, zGetOrganizationPath, zGetOrganizationResponse, zGetOwnerPath, zGetOwnerResponse, zGetPullRequestDiffQuery, zGetPullRequestDiffResponse, zGetPullRequestQuery, zGetPullRequestResponse, zGetReadinessResponse, zGetRepositoryBlobPath, zGetRepositoryBlobResponse, zGetRepositoryCommitPath, zGetRepositoryCommitResponse, zGetRepositoryDiffPath, zGetRepositoryDiffQuery, zGetRepositoryDiffResponse, zGetRepositoryMergeBasePath, zGetRepositoryMergeBaseQuery, zGetRepositoryMergeBaseResponse, zGetRepositoryPath, zGetRepositoryResponse, zGetRepositoryTreePath, zGetRepositoryTreeQuery, zGetRepositoryTreeResponse, zGetStarsQuery, zGetStarsResponse, zGetSyncIssueCommentsQuery, zGetSyncIssueCommentsResponse, zGetSyncIssuesQuery, zGetSyncIssuesResponse, zGetSyncProfilesQuery, zGetSyncProfilesResponse, zGetSyncPullRequestReviewsQuery, zGetSyncPullRequestReviewsResponse, zGetSyncPullRequestsQuery, zGetSyncPullRequestsResponse, zGetSyncRepositoriesQuery, zGetSyncRepositoriesResponse, zGetSyncStarsQuery, zGetSyncStarsResponse, zInviteOrganizationMemberBody, zInviteOrganizationMemberPath, zInviteOrganizationMemberResponse, zListAccessTokensQuery, zListAccessTokensResponse, zListNetworkRepositoriesQuery, zListNetworkRepositoriesResponse, zListOrganizationAuditEventsPath, zListOrganizationAuditEventsQuery, zListOrganizationAuditEventsResponse, zListOrganizationInvitationsForCurrentUserQuery, zListOrganizationInvitationsForCurrentUserResponse, zListOrganizationInvitationsPath, zListOrganizationInvitationsQuery, zListOrganizationInvitationsResponse, zListOrganizationMembersPath, zListOrganizationMembersQuery, zListOrganizationMembersResponse, zListOrganizationRepositoriesPath, zListOrganizationRepositoriesQuery, zListOrganizationRepositoriesResponse, zListOrganizationRepositoryCollaboratorsPath, zListOrganizationRepositoryCollaboratorsQuery, zListOrganizationRepositoryCollaboratorsResponse, zListOrganizationsQuery, zListOrganizationsResponse, zListOrganizationTeamMembersPath, zListOrganizationTeamMembersQuery, zListOrganizationTeamMembersResponse, zListOrganizationTeamRepositoriesPath, zListOrganizationTeamRepositoriesQuery, zListOrganizationTeamRepositoriesResponse, zListOrganizationTeamsPath, zListOrganizationTeamsQuery, zListOrganizationTeamsResponse, zListPasskeysQuery, zListPasskeysResponse, zListPullRequestReviewsQuery, zListPullRequestReviewsResponse, zListPullRequestsQuery, zListPullRequestsResponse, zListRepositoryBranchesPath, zListRepositoryBranchesQuery, zListRepositoryBranchesResponse, zListRepositoryCommitsPath, zListRepositoryCommitsQuery, zListRepositoryCommitsResponse, zListRepositoryForksPath, zListRepositoryForksQuery, zListRepositoryForksResponse, zListRepositoryTagsPath, zListRepositoryTagsQuery, zListRepositoryTagsResponse, zListSshKeysQuery, zListSshKeysResponse, zLogoutResponse, zMergePullRequestBody, zMergePullRequestHeaders, zMergePullRequestResponse, zPostSyncIssueCommentsBody, zPostSyncIssueCommentsQuery, zPostSyncIssueCommentsResponse, zPostSyncIssuesBody, zPostSyncIssuesQuery, zPostSyncIssuesResponse, zPostSyncProfilesBody, zPostSyncProfilesQuery, zPostSyncProfilesResponse, zPostSyncPullRequestReviewsBody, zPostSyncPullRequestReviewsQuery, zPostSyncPullRequestReviewsResponse, zPostSyncPullRequestsBody, zPostSyncPullRequestsQuery, zPostSyncPullRequestsResponse, zPostSyncRepositoriesBody, zPostSyncRepositoriesQuery, zPostSyncRepositoriesResponse, zPostSyncStarsBody, zPostSyncStarsQuery, zPostSyncStarsResponse, zPutBlockedDidBody, zPutBlockedDidHeaders, zPutBlockedDidResponse, zPutHiddenRecordBody, zPutHiddenRecordHeaders, zPutHiddenRecordResponse, zPutIssueStatusBody, zPutIssueStatusHeaders, zPutIssueStatusResponse, zPutOrganizationRepositoryCollaboratorBody, zPutOrganizationRepositoryCollaboratorPath, zPutOrganizationRepositoryCollaboratorResponse, zPutOrganizationTeamMemberBody, zPutOrganizationTeamMemberPath, zPutOrganizationTeamMemberResponse, zPutOrganizationTeamRepositoryBody, zPutOrganizationTeamRepositoryPath, zPutOrganizationTeamRepositoryResponse, zPutPullRequestStatusBody, zPutPullRequestStatusHeaders, zPutPullRequestStatusResponse, zPutStarHeaders, zPutStarQuery, zPutStarResponse, zRemoveOrganizationMemberPath, zRemoveOrganizationMemberResponse, zRemoveOrganizationRepositoryCollaboratorPath, zRemoveOrganizationRepositoryCollaboratorResponse, zRemoveOrganizationTeamMemberPath, zRemoveOrganizationTeamMemberResponse, zRemoveOrganizationTeamRepositoryPath, zRemoveOrganizationTeamRepositoryResponse, zRevokeAccessTokenPath, zRevokeAccessTokenResponse, zRevokeOrganizationInvitationPath, zRevokeOrganizationInvitationResponse, zRevokeSshKeyPath, zRevokeSshKeyResponse, zSearchProfilesQuery, zSearchProfilesResponse, zSearchRepositoriesQuery, zSearchRepositoriesResponse, zStartAtProtoLoginBody, zStartAtProtoLoginResponse2, zSyncRepositoryForkPath, zSyncRepositoryForkResponse, zUpdateDeveloperProfileBody, zUpdateDeveloperProfileResponse, zUpdateOrganizationBody, zUpdateOrganizationMemberBody, zUpdateOrganizationMemberPath, zUpdateOrganizationMemberResponse, zUpdateOrganizationPath, zUpdateOrganizationResponse, zUpdateOrganizationTeamBody, zUpdateOrganizationTeamPath, zUpdateOrganizationTeamResponse, zVerifyPasskeyLoginBody, zVerifyPasskeyLoginHeaders, zVerifyPasskeyLoginResponse, zVerifyPasskeyRegistrationBody, zVerifyPasskeyRegistrationHeaders, zVerifyPasskeyRegistrationResponse } from './zod.gen';
+import type { AcceptOrganizationInvitationData, AcceptOrganizationInvitationErrors, AcceptOrganizationInvitationResponses, BeginPasskeyLoginData, BeginPasskeyLoginErrors, BeginPasskeyLoginResponses, BeginPasskeyRegistrationData, BeginPasskeyRegistrationErrors, BeginPasskeyRegistrationResponses, CompleteAtProtoLoginData, CompleteAtProtoLoginErrors, CreateAccessTokenData, CreateAccessTokenErrors, CreateAccessTokenResponses, CreateBranchProtectionData, CreateBranchProtectionErrors, CreateBranchProtectionResponses, CreateIssueCommentData, CreateIssueCommentErrors, CreateIssueCommentResponses, CreateIssueData, CreateIssueErrors, CreateIssueResponses, CreateOrganizationData, CreateOrganizationErrors, CreateOrganizationResponses, CreateOrganizationTeamData, CreateOrganizationTeamErrors, CreateOrganizationTeamResponses, CreatePullRequestData, CreatePullRequestErrors, CreatePullRequestResponses, CreatePullRequestReviewData, CreatePullRequestReviewErrors, CreatePullRequestReviewResponses, CreateRepositoryData, CreateRepositoryErrors, CreateRepositoryForkData, CreateRepositoryForkErrors, CreateRepositoryForkResponses, CreateRepositoryResponses, CreateRepositoryWebhookData, CreateRepositoryWebhookErrors, CreateRepositoryWebhookResponses, CreateSshKeyData, CreateSshKeyErrors, CreateSshKeyResponses, CreateWebhookRedeliveryData, CreateWebhookRedeliveryErrors, CreateWebhookRedeliveryResponses, DeleteBlockedDidData, DeleteBlockedDidErrors, DeleteBlockedDidResponses, DeleteBranchProtectionData, DeleteBranchProtectionErrors, DeleteBranchProtectionResponses, DeleteHiddenRecordData, DeleteHiddenRecordErrors, DeleteHiddenRecordResponses, DeleteIssueCommentData, DeleteIssueCommentErrors, DeleteIssueCommentResponses, DeleteNotificationData, DeleteNotificationErrors, DeleteNotificationResponses, DeleteOrganizationTeamData, DeleteOrganizationTeamErrors, DeleteOrganizationTeamResponses, DeletePasskeyData, DeletePasskeyErrors, DeletePasskeyResponses, DeleteRepositoryData, DeleteRepositoryErrors, DeleteRepositoryResponses, DeleteRepositoryWebhookData, DeleteRepositoryWebhookErrors, DeleteRepositoryWebhookResponses, DeleteStarData, DeleteStarErrors, DeleteStarResponses, GetBranchProtectionData, GetBranchProtectionErrors, GetBranchProtectionResponses, GetCurrentIdentityData, GetCurrentIdentityErrors, GetCurrentIdentityResponses, GetDeveloperProfileData, GetDeveloperProfileErrors, GetDeveloperProfileResponses, GetIssueCommentsData, GetIssueCommentsErrors, GetIssueCommentsResponses, GetIssueData, GetIssueErrors, GetIssueResponses, GetIssuesData, GetIssuesErrors, GetIssuesResponses, GetLivenessData, GetLivenessResponses, GetModerationData, GetModerationErrors, GetModerationResponses, GetOAuthClientMetadataData, GetOAuthClientMetadataResponses, GetOrganizationData, GetOrganizationErrors, GetOrganizationResponses, GetOwnerData, GetOwnerErrors, GetOwnerResponses, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffErrors, GetPullRequestDiffResponses, GetPullRequestErrors, GetPullRequestResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetRepositoryBlobData, GetRepositoryBlobErrors, GetRepositoryBlobResponses, GetRepositoryCommitData, GetRepositoryCommitErrors, GetRepositoryCommitResponses, GetRepositoryData, GetRepositoryDeletionData, GetRepositoryDeletionErrors, GetRepositoryDeletionResponses, GetRepositoryDiffData, GetRepositoryDiffErrors, GetRepositoryDiffResponses, GetRepositoryErrors, GetRepositoryMergeBaseData, GetRepositoryMergeBaseErrors, GetRepositoryMergeBaseResponses, GetRepositoryResponses, GetRepositoryTreeData, GetRepositoryTreeErrors, GetRepositoryTreeResponses, GetRepositoryWebhookData, GetRepositoryWebhookErrors, GetRepositoryWebhookResponses, GetStarsData, GetStarsErrors, GetStarsResponses, GetSyncIssueCommentsData, GetSyncIssueCommentsErrors, GetSyncIssueCommentsResponses, GetSyncIssuesData, GetSyncIssuesErrors, GetSyncIssuesResponses, GetSyncProfilesData, GetSyncProfilesErrors, GetSyncProfilesResponses, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsErrors, GetSyncPullRequestReviewsResponses, GetSyncPullRequestsData, GetSyncPullRequestsErrors, GetSyncPullRequestsResponses, GetSyncRepositoriesData, GetSyncRepositoriesErrors, GetSyncRepositoriesResponses, GetSyncStarsData, GetSyncStarsErrors, GetSyncStarsResponses, InviteOrganizationMemberData, InviteOrganizationMemberErrors, InviteOrganizationMemberResponses, ListAccessTokensData, ListAccessTokensErrors, ListAccessTokensResponses, ListBranchProtectionsData, ListBranchProtectionsErrors, ListBranchProtectionsResponses, ListNetworkRepositoriesData, ListNetworkRepositoriesErrors, ListNetworkRepositoriesResponses, ListNotificationsData, ListNotificationsErrors, ListNotificationsResponses, ListOrganizationAuditEventsData, ListOrganizationAuditEventsErrors, ListOrganizationAuditEventsResponses, ListOrganizationInvitationsData, ListOrganizationInvitationsErrors, ListOrganizationInvitationsForCurrentUserData, ListOrganizationInvitationsForCurrentUserErrors, ListOrganizationInvitationsForCurrentUserResponses, ListOrganizationInvitationsResponses, ListOrganizationMembersData, ListOrganizationMembersErrors, ListOrganizationMembersResponses, ListOrganizationRepositoriesData, ListOrganizationRepositoriesErrors, ListOrganizationRepositoriesResponses, ListOrganizationRepositoryCollaboratorsData, ListOrganizationRepositoryCollaboratorsErrors, ListOrganizationRepositoryCollaboratorsResponses, ListOrganizationsData, ListOrganizationsErrors, ListOrganizationsResponses, ListOrganizationTeamMembersData, ListOrganizationTeamMembersErrors, ListOrganizationTeamMembersResponses, ListOrganizationTeamRepositoriesData, ListOrganizationTeamRepositoriesErrors, ListOrganizationTeamRepositoriesResponses, ListOrganizationTeamsData, ListOrganizationTeamsErrors, ListOrganizationTeamsResponses, ListPasskeysData, ListPasskeysErrors, ListPasskeysResponses, ListPullRequestReviewsData, ListPullRequestReviewsErrors, ListPullRequestReviewsResponses, ListPullRequestsData, ListPullRequestsErrors, ListPullRequestsResponses, ListRepositoryBranchesData, ListRepositoryBranchesErrors, ListRepositoryBranchesResponses, ListRepositoryCommitsData, ListRepositoryCommitsErrors, ListRepositoryCommitsResponses, ListRepositoryForksData, ListRepositoryForksErrors, ListRepositoryForksResponses, ListRepositoryTagsData, ListRepositoryTagsErrors, ListRepositoryTagsResponses, ListRepositoryWebhooksData, ListRepositoryWebhooksErrors, ListRepositoryWebhooksResponses, ListSshKeysData, ListSshKeysErrors, ListSshKeysResponses, ListWebhookDeliveriesData, ListWebhookDeliveriesErrors, ListWebhookDeliveriesResponses, LogoutData, LogoutErrors, LogoutResponses, MergePullRequestData, MergePullRequestErrors, MergePullRequestResponses, PostSyncIssueCommentsData, PostSyncIssueCommentsErrors, PostSyncIssueCommentsResponses, PostSyncIssuesData, PostSyncIssuesErrors, PostSyncIssuesResponses, PostSyncProfilesData, PostSyncProfilesErrors, PostSyncProfilesResponses, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsErrors, PostSyncPullRequestReviewsResponses, PostSyncPullRequestsData, PostSyncPullRequestsErrors, PostSyncPullRequestsResponses, PostSyncRepositoriesData, PostSyncRepositoriesErrors, PostSyncRepositoriesResponses, PostSyncStarsData, PostSyncStarsErrors, PostSyncStarsResponses, PutBlockedDidData, PutBlockedDidErrors, PutBlockedDidResponses, PutHiddenRecordData, PutHiddenRecordErrors, PutHiddenRecordResponses, PutIssueStatusData, PutIssueStatusErrors, PutIssueStatusResponses, PutOrganizationRepositoryCollaboratorData, PutOrganizationRepositoryCollaboratorErrors, PutOrganizationRepositoryCollaboratorResponses, PutOrganizationTeamMemberData, PutOrganizationTeamMemberErrors, PutOrganizationTeamMemberResponses, PutOrganizationTeamRepositoryData, PutOrganizationTeamRepositoryErrors, PutOrganizationTeamRepositoryResponses, PutPullRequestStatusData, PutPullRequestStatusErrors, PutPullRequestStatusResponses, PutStarData, PutStarErrors, PutStarResponses, RemoveOrganizationMemberData, RemoveOrganizationMemberErrors, RemoveOrganizationMemberResponses, RemoveOrganizationRepositoryCollaboratorData, RemoveOrganizationRepositoryCollaboratorErrors, RemoveOrganizationRepositoryCollaboratorResponses, RemoveOrganizationTeamMemberData, RemoveOrganizationTeamMemberErrors, RemoveOrganizationTeamMemberResponses, RemoveOrganizationTeamRepositoryData, RemoveOrganizationTeamRepositoryErrors, RemoveOrganizationTeamRepositoryResponses, RestoreRepositoryDeletionData, RestoreRepositoryDeletionErrors, RestoreRepositoryDeletionResponses, RevokeAccessTokenData, RevokeAccessTokenErrors, RevokeAccessTokenResponses, RevokeOrganizationInvitationData, RevokeOrganizationInvitationErrors, RevokeOrganizationInvitationResponses, RevokeSshKeyData, RevokeSshKeyErrors, RevokeSshKeyResponses, SearchProfilesData, SearchProfilesErrors, SearchProfilesResponses, SearchRepositoriesData, SearchRepositoriesErrors, SearchRepositoriesResponses, StartAtProtoLoginData, StartAtProtoLoginErrors, StartAtProtoLoginResponses, SyncRepositoryForkData, SyncRepositoryForkErrors, SyncRepositoryForkResponses, UpdateBranchProtectionData, UpdateBranchProtectionErrors, UpdateBranchProtectionResponses, UpdateDeveloperProfileData, UpdateDeveloperProfileErrors, UpdateDeveloperProfileResponses, UpdateNotificationData, UpdateNotificationErrors, UpdateNotificationResponses, UpdateOrganizationData, UpdateOrganizationErrors, UpdateOrganizationMemberData, UpdateOrganizationMemberErrors, UpdateOrganizationMemberResponses, UpdateOrganizationResponses, UpdateOrganizationTeamData, UpdateOrganizationTeamErrors, UpdateOrganizationTeamResponses, UpdateRepositoryData, UpdateRepositoryErrors, UpdateRepositoryResponses, UpdateRepositoryWebhookData, UpdateRepositoryWebhookErrors, UpdateRepositoryWebhookResponses, VerifyPasskeyLoginData, VerifyPasskeyLoginErrors, VerifyPasskeyLoginResponses, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationErrors, VerifyPasskeyRegistrationResponses } from './types.gen';
+import { zAcceptOrganizationInvitationPath, zAcceptOrganizationInvitationResponse, zBeginPasskeyLoginHeaders, zBeginPasskeyLoginResponse, zBeginPasskeyRegistrationBody, zBeginPasskeyRegistrationHeaders, zBeginPasskeyRegistrationResponse, zCompleteAtProtoLoginQuery, zCreateAccessTokenBody, zCreateAccessTokenResponse, zCreateBranchProtectionBody, zCreateBranchProtectionPath, zCreateBranchProtectionResponse, zCreateIssueBody, zCreateIssueCommentBody, zCreateIssueCommentHeaders, zCreateIssueCommentResponse, zCreateIssueHeaders, zCreateIssueResponse, zCreateOrganizationBody, zCreateOrganizationResponse, zCreateOrganizationTeamBody, zCreateOrganizationTeamPath, zCreateOrganizationTeamResponse, zCreatePullRequestBody, zCreatePullRequestHeaders, zCreatePullRequestResponse, zCreatePullRequestReviewBody, zCreatePullRequestReviewHeaders, zCreatePullRequestReviewResponse, zCreateRepositoryBody, zCreateRepositoryForkBody, zCreateRepositoryForkHeaders, zCreateRepositoryForkPath, zCreateRepositoryForkResponse, zCreateRepositoryHeaders, zCreateRepositoryResponse, zCreateRepositoryWebhookBody, zCreateRepositoryWebhookPath, zCreateRepositoryWebhookResponse, zCreateSshKeyBody, zCreateSshKeyResponse, zCreateWebhookRedeliveryBody, zCreateWebhookRedeliveryPath, zCreateWebhookRedeliveryResponse, zDeleteBlockedDidHeaders, zDeleteBlockedDidQuery, zDeleteBlockedDidResponse, zDeleteBranchProtectionPath, zDeleteBranchProtectionResponse, zDeleteHiddenRecordHeaders, zDeleteHiddenRecordQuery, zDeleteHiddenRecordResponse, zDeleteIssueCommentHeaders, zDeleteIssueCommentQuery, zDeleteNotificationPath, zDeleteNotificationResponse, zDeleteOrganizationTeamPath, zDeleteOrganizationTeamResponse, zDeletePasskeyHeaders, zDeletePasskeyPath, zDeletePasskeyResponse, zDeleteRepositoryPath, zDeleteRepositoryResponse, zDeleteRepositoryWebhookPath, zDeleteRepositoryWebhookResponse, zDeleteStarHeaders, zDeleteStarQuery, zGetBranchProtectionPath, zGetBranchProtectionResponse, zGetCurrentIdentityResponse, zGetDeveloperProfilePath, zGetDeveloperProfileResponse, zGetIssueCommentsQuery, zGetIssueCommentsResponse, zGetIssueQuery, zGetIssueResponse, zGetIssuesQuery, zGetIssuesResponse, zGetLivenessResponse, zGetModerationResponse, zGetOAuthClientMetadataResponse, zGetOrganizationPath, zGetOrganizationResponse, zGetOwnerPath, zGetOwnerResponse, zGetPullRequestDiffQuery, zGetPullRequestDiffResponse, zGetPullRequestQuery, zGetPullRequestResponse, zGetReadinessResponse, zGetRepositoryBlobPath, zGetRepositoryBlobResponse, zGetRepositoryCommitPath, zGetRepositoryCommitResponse, zGetRepositoryDeletionPath, zGetRepositoryDeletionResponse, zGetRepositoryDiffPath, zGetRepositoryDiffQuery, zGetRepositoryDiffResponse, zGetRepositoryMergeBasePath, zGetRepositoryMergeBaseQuery, zGetRepositoryMergeBaseResponse, zGetRepositoryPath, zGetRepositoryResponse, zGetRepositoryTreePath, zGetRepositoryTreeQuery, zGetRepositoryTreeResponse, zGetRepositoryWebhookPath, zGetRepositoryWebhookResponse, zGetStarsQuery, zGetStarsResponse, zGetSyncIssueCommentsQuery, zGetSyncIssueCommentsResponse, zGetSyncIssuesQuery, zGetSyncIssuesResponse, zGetSyncProfilesQuery, zGetSyncProfilesResponse, zGetSyncPullRequestReviewsQuery, zGetSyncPullRequestReviewsResponse, zGetSyncPullRequestsQuery, zGetSyncPullRequestsResponse, zGetSyncRepositoriesQuery, zGetSyncRepositoriesResponse, zGetSyncStarsQuery, zGetSyncStarsResponse, zInviteOrganizationMemberBody, zInviteOrganizationMemberPath, zInviteOrganizationMemberResponse, zListAccessTokensQuery, zListAccessTokensResponse, zListBranchProtectionsPath, zListBranchProtectionsQuery, zListBranchProtectionsResponse, zListNetworkRepositoriesQuery, zListNetworkRepositoriesResponse, zListNotificationsQuery, zListNotificationsResponse, zListOrganizationAuditEventsPath, zListOrganizationAuditEventsQuery, zListOrganizationAuditEventsResponse, zListOrganizationInvitationsForCurrentUserQuery, zListOrganizationInvitationsForCurrentUserResponse, zListOrganizationInvitationsPath, zListOrganizationInvitationsQuery, zListOrganizationInvitationsResponse, zListOrganizationMembersPath, zListOrganizationMembersQuery, zListOrganizationMembersResponse, zListOrganizationRepositoriesPath, zListOrganizationRepositoriesQuery, zListOrganizationRepositoriesResponse, zListOrganizationRepositoryCollaboratorsPath, zListOrganizationRepositoryCollaboratorsQuery, zListOrganizationRepositoryCollaboratorsResponse, zListOrganizationsQuery, zListOrganizationsResponse, zListOrganizationTeamMembersPath, zListOrganizationTeamMembersQuery, zListOrganizationTeamMembersResponse, zListOrganizationTeamRepositoriesPath, zListOrganizationTeamRepositoriesQuery, zListOrganizationTeamRepositoriesResponse, zListOrganizationTeamsPath, zListOrganizationTeamsQuery, zListOrganizationTeamsResponse, zListPasskeysQuery, zListPasskeysResponse, zListPullRequestReviewsQuery, zListPullRequestReviewsResponse, zListPullRequestsQuery, zListPullRequestsResponse, zListRepositoryBranchesPath, zListRepositoryBranchesQuery, zListRepositoryBranchesResponse, zListRepositoryCommitsPath, zListRepositoryCommitsQuery, zListRepositoryCommitsResponse, zListRepositoryForksPath, zListRepositoryForksQuery, zListRepositoryForksResponse, zListRepositoryTagsPath, zListRepositoryTagsQuery, zListRepositoryTagsResponse, zListRepositoryWebhooksPath, zListRepositoryWebhooksQuery, zListRepositoryWebhooksResponse, zListSshKeysQuery, zListSshKeysResponse, zListWebhookDeliveriesPath, zListWebhookDeliveriesQuery, zListWebhookDeliveriesResponse, zLogoutResponse, zMergePullRequestBody, zMergePullRequestHeaders, zMergePullRequestResponse, zPostSyncIssueCommentsBody, zPostSyncIssueCommentsQuery, zPostSyncIssueCommentsResponse, zPostSyncIssuesBody, zPostSyncIssuesQuery, zPostSyncIssuesResponse, zPostSyncProfilesBody, zPostSyncProfilesQuery, zPostSyncProfilesResponse, zPostSyncPullRequestReviewsBody, zPostSyncPullRequestReviewsQuery, zPostSyncPullRequestReviewsResponse, zPostSyncPullRequestsBody, zPostSyncPullRequestsQuery, zPostSyncPullRequestsResponse, zPostSyncRepositoriesBody, zPostSyncRepositoriesQuery, zPostSyncRepositoriesResponse, zPostSyncStarsBody, zPostSyncStarsQuery, zPostSyncStarsResponse, zPutBlockedDidBody, zPutBlockedDidHeaders, zPutBlockedDidResponse, zPutHiddenRecordBody, zPutHiddenRecordHeaders, zPutHiddenRecordResponse, zPutIssueStatusBody, zPutIssueStatusHeaders, zPutIssueStatusResponse, zPutOrganizationRepositoryCollaboratorBody, zPutOrganizationRepositoryCollaboratorPath, zPutOrganizationRepositoryCollaboratorResponse, zPutOrganizationTeamMemberBody, zPutOrganizationTeamMemberPath, zPutOrganizationTeamMemberResponse, zPutOrganizationTeamRepositoryBody, zPutOrganizationTeamRepositoryPath, zPutOrganizationTeamRepositoryResponse, zPutPullRequestStatusBody, zPutPullRequestStatusHeaders, zPutPullRequestStatusResponse, zPutStarHeaders, zPutStarQuery, zPutStarResponse, zRemoveOrganizationMemberPath, zRemoveOrganizationMemberResponse, zRemoveOrganizationRepositoryCollaboratorPath, zRemoveOrganizationRepositoryCollaboratorResponse, zRemoveOrganizationTeamMemberPath, zRemoveOrganizationTeamMemberResponse, zRemoveOrganizationTeamRepositoryPath, zRemoveOrganizationTeamRepositoryResponse, zRestoreRepositoryDeletionPath, zRestoreRepositoryDeletionResponse, zRevokeAccessTokenPath, zRevokeAccessTokenResponse, zRevokeOrganizationInvitationPath, zRevokeOrganizationInvitationResponse, zRevokeSshKeyPath, zRevokeSshKeyResponse, zSearchProfilesQuery, zSearchProfilesResponse, zSearchRepositoriesQuery, zSearchRepositoriesResponse, zStartAtProtoLoginBody, zStartAtProtoLoginResponse2, zSyncRepositoryForkPath, zSyncRepositoryForkResponse, zUpdateBranchProtectionBody, zUpdateBranchProtectionPath, zUpdateBranchProtectionResponse, zUpdateDeveloperProfileBody, zUpdateDeveloperProfileResponse, zUpdateNotificationBody, zUpdateNotificationPath, zUpdateNotificationResponse, zUpdateOrganizationBody, zUpdateOrganizationMemberBody, zUpdateOrganizationMemberPath, zUpdateOrganizationMemberResponse, zUpdateOrganizationPath, zUpdateOrganizationResponse, zUpdateOrganizationTeamBody, zUpdateOrganizationTeamPath, zUpdateOrganizationTeamResponse, zUpdateRepositoryBody, zUpdateRepositoryPath, zUpdateRepositoryResponse, zUpdateRepositoryWebhookBody, zUpdateRepositoryWebhookPath, zUpdateRepositoryWebhookResponse, zVerifyPasskeyLoginBody, zVerifyPasskeyLoginHeaders, zVerifyPasskeyLoginResponse, zVerifyPasskeyRegistrationBody, zVerifyPasskeyRegistrationHeaders, zVerifyPasskeyRegistrationResponse } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -66,6 +66,69 @@ export const getCurrentIdentity = <ThrowOnError extends boolean = false>(options
         }, { scheme: 'bearer', type: 'http' }],
     url: '/api/v1/me',
     ...options
+});
+
+/**
+ * List the authenticated account's notifications
+ *
+ * Returns a stable keyset page derived from indexed mentions, issue discussion, pull-request reviews, and merges. Results respect the account's moderation preferences.
+ */
+export const listNotifications = <ThrowOnError extends boolean = false>(options?: Options<ListNotificationsData, ThrowOnError>): RequestResult<ListNotificationsResponses, ListNotificationsErrors, ThrowOnError> => (options?.client ?? client).get<ListNotificationsResponses, ListNotificationsErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: zListNotificationsQuery.optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zListNotificationsResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/notifications',
+    ...options
+});
+
+/**
+ * Dismiss a notification from the inbox
+ */
+export const deleteNotification = <ThrowOnError extends boolean = false>(options: Options<DeleteNotificationData, ThrowOnError>): RequestResult<DeleteNotificationResponses, DeleteNotificationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteNotificationResponses, DeleteNotificationErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zDeleteNotificationPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zDeleteNotificationResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/notifications/{notification}',
+    ...options
+});
+
+/**
+ * Update notification read state
+ */
+export const updateNotification = <ThrowOnError extends boolean = false>(options: Options<UpdateNotificationData, ThrowOnError>): RequestResult<UpdateNotificationResponses, UpdateNotificationErrors, ThrowOnError> => (options.client ?? client).patch<UpdateNotificationResponses, UpdateNotificationErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zUpdateNotificationBody,
+        path: zUpdateNotificationPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zUpdateNotificationResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/notifications/{notification}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
@@ -1730,6 +1793,27 @@ export const postSyncPullRequestReviews = <ThrowOnError extends boolean = false>
 });
 
 /**
+ * Request recoverable repository deletion
+ *
+ * Immediately removes the repository from live routes and quarantines Git data. The returned deletion resource may be deleted to restore the repository until purge_after.
+ */
+export const deleteRepository = <ThrowOnError extends boolean = false>(options: Options<DeleteRepositoryData, ThrowOnError>): RequestResult<DeleteRepositoryResponses, DeleteRepositoryErrors, ThrowOnError> => (options.client ?? client).delete<DeleteRepositoryResponses, DeleteRepositoryErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zDeleteRepositoryPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zDeleteRepositoryResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}',
+    ...options
+});
+
+/**
  * Get a local or federated repository
  */
 export const getRepository = <ThrowOnError extends boolean = false>(options: Options<GetRepositoryData, ThrowOnError>): RequestResult<GetRepositoryResponses, GetRepositoryErrors, ThrowOnError> => (options.client ?? client).get<GetRepositoryResponses, GetRepositoryErrors, ThrowOnError>({
@@ -1746,6 +1830,321 @@ export const getRepository = <ThrowOnError extends boolean = false>(options: Opt
         }, { scheme: 'bearer', type: 'http' }],
     url: '/api/v1/repositories/{owner}/{repo}',
     ...options
+});
+
+/**
+ * Update repository settings
+ *
+ * Updates mutable repository metadata. Renaming preserves the old owner/slug route as an alias. Archiving makes the repository read-only. Changing visibility updates the portable AT Protocol record.
+ */
+export const updateRepository = <ThrowOnError extends boolean = false>(options: Options<UpdateRepositoryData, ThrowOnError>): RequestResult<UpdateRepositoryResponses, UpdateRepositoryErrors, ThrowOnError> => (options.client ?? client).patch<UpdateRepositoryResponses, UpdateRepositoryErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zUpdateRepositoryBody,
+        path: zUpdateRepositoryPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zUpdateRepositoryResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Cancel deletion and restore the repository
+ */
+export const restoreRepositoryDeletion = <ThrowOnError extends boolean = false>(options: Options<RestoreRepositoryDeletionData, ThrowOnError>): RequestResult<RestoreRepositoryDeletionResponses, RestoreRepositoryDeletionErrors, ThrowOnError> => (options.client ?? client).delete<RestoreRepositoryDeletionResponses, RestoreRepositoryDeletionErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zRestoreRepositoryDeletionPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zRestoreRepositoryDeletionResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repository-deletions/{deletion}',
+    ...options
+});
+
+/**
+ * Get a recoverable repository deletion
+ */
+export const getRepositoryDeletion = <ThrowOnError extends boolean = false>(options: Options<GetRepositoryDeletionData, ThrowOnError>): RequestResult<GetRepositoryDeletionResponses, GetRepositoryDeletionErrors, ThrowOnError> => (options.client ?? client).get<GetRepositoryDeletionResponses, GetRepositoryDeletionErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zGetRepositoryDeletionPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetRepositoryDeletionResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repository-deletions/{deletion}',
+    ...options
+});
+
+/**
+ * List repository webhooks
+ */
+export const listRepositoryWebhooks = <ThrowOnError extends boolean = false>(options: Options<ListRepositoryWebhooksData, ThrowOnError>): RequestResult<ListRepositoryWebhooksResponses, ListRepositoryWebhooksErrors, ThrowOnError> => (options.client ?? client).get<ListRepositoryWebhooksResponses, ListRepositoryWebhooksErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zListRepositoryWebhooksPath,
+        query: zListRepositoryWebhooksQuery.optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zListRepositoryWebhooksResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks',
+    ...options
+});
+
+/**
+ * Create a repository webhook
+ *
+ * Secrets are encrypted at rest and never returned. Destinations must be public HTTPS endpoints. Deliveries use X-Adenosine-Signature-256 with an HMAC-SHA256 of the exact request body.
+ */
+export const createRepositoryWebhook = <ThrowOnError extends boolean = false>(options: Options<CreateRepositoryWebhookData, ThrowOnError>): RequestResult<CreateRepositoryWebhookResponses, CreateRepositoryWebhookErrors, ThrowOnError> => (options.client ?? client).post<CreateRepositoryWebhookResponses, CreateRepositoryWebhookErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zCreateRepositoryWebhookBody,
+        path: zCreateRepositoryWebhookPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zCreateRepositoryWebhookResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List repository branch protections
+ */
+export const listBranchProtections = <ThrowOnError extends boolean = false>(options: Options<ListBranchProtectionsData, ThrowOnError>): RequestResult<ListBranchProtectionsResponses, ListBranchProtectionsErrors, ThrowOnError> => (options.client ?? client).get<ListBranchProtectionsResponses, ListBranchProtectionsErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zListBranchProtectionsPath,
+        query: zListBranchProtectionsQuery.optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zListBranchProtectionsResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/branch-protections',
+    ...options
+});
+
+/**
+ * Create a repository-wide branch protection
+ *
+ * The basic protection release supports the * pattern. Git itself rejects non-fast-forward updates and branch deletion before ref mutation.
+ */
+export const createBranchProtection = <ThrowOnError extends boolean = false>(options: Options<CreateBranchProtectionData, ThrowOnError>): RequestResult<CreateBranchProtectionResponses, CreateBranchProtectionErrors, ThrowOnError> => (options.client ?? client).post<CreateBranchProtectionResponses, CreateBranchProtectionErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zCreateBranchProtectionBody,
+        path: zCreateBranchProtectionPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zCreateBranchProtectionResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/branch-protections',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a branch protection
+ */
+export const deleteBranchProtection = <ThrowOnError extends boolean = false>(options: Options<DeleteBranchProtectionData, ThrowOnError>): RequestResult<DeleteBranchProtectionResponses, DeleteBranchProtectionErrors, ThrowOnError> => (options.client ?? client).delete<DeleteBranchProtectionResponses, DeleteBranchProtectionErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zDeleteBranchProtectionPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zDeleteBranchProtectionResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}',
+    ...options
+});
+
+/**
+ * Get a branch protection
+ */
+export const getBranchProtection = <ThrowOnError extends boolean = false>(options: Options<GetBranchProtectionData, ThrowOnError>): RequestResult<GetBranchProtectionResponses, GetBranchProtectionErrors, ThrowOnError> => (options.client ?? client).get<GetBranchProtectionResponses, GetBranchProtectionErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zGetBranchProtectionPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetBranchProtectionResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}',
+    ...options
+});
+
+/**
+ * Replace a branch protection
+ */
+export const updateBranchProtection = <ThrowOnError extends boolean = false>(options: Options<UpdateBranchProtectionData, ThrowOnError>): RequestResult<UpdateBranchProtectionResponses, UpdateBranchProtectionErrors, ThrowOnError> => (options.client ?? client).put<UpdateBranchProtectionResponses, UpdateBranchProtectionErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zUpdateBranchProtectionBody,
+        path: zUpdateBranchProtectionPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zUpdateBranchProtectionResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a repository webhook
+ */
+export const deleteRepositoryWebhook = <ThrowOnError extends boolean = false>(options: Options<DeleteRepositoryWebhookData, ThrowOnError>): RequestResult<DeleteRepositoryWebhookResponses, DeleteRepositoryWebhookErrors, ThrowOnError> => (options.client ?? client).delete<DeleteRepositoryWebhookResponses, DeleteRepositoryWebhookErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zDeleteRepositoryWebhookPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zDeleteRepositoryWebhookResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}',
+    ...options
+});
+
+/**
+ * Get a repository webhook
+ */
+export const getRepositoryWebhook = <ThrowOnError extends boolean = false>(options: Options<GetRepositoryWebhookData, ThrowOnError>): RequestResult<GetRepositoryWebhookResponses, GetRepositoryWebhookErrors, ThrowOnError> => (options.client ?? client).get<GetRepositoryWebhookResponses, GetRepositoryWebhookErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zGetRepositoryWebhookPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetRepositoryWebhookResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}',
+    ...options
+});
+
+/**
+ * Replace a repository webhook configuration
+ */
+export const updateRepositoryWebhook = <ThrowOnError extends boolean = false>(options: Options<UpdateRepositoryWebhookData, ThrowOnError>): RequestResult<UpdateRepositoryWebhookResponses, UpdateRepositoryWebhookErrors, ThrowOnError> => (options.client ?? client).put<UpdateRepositoryWebhookResponses, UpdateRepositoryWebhookErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zUpdateRepositoryWebhookBody,
+        path: zUpdateRepositoryWebhookPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zUpdateRepositoryWebhookResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List webhook delivery attempts
+ */
+export const listWebhookDeliveries = <ThrowOnError extends boolean = false>(options: Options<ListWebhookDeliveriesData, ThrowOnError>): RequestResult<ListWebhookDeliveriesResponses, ListWebhookDeliveriesErrors, ThrowOnError> => (options.client ?? client).get<ListWebhookDeliveriesResponses, ListWebhookDeliveriesErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zListWebhookDeliveriesPath,
+        query: zListWebhookDeliveriesQuery.optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zListWebhookDeliveriesResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}/deliveries',
+    ...options
+});
+
+/**
+ * Create a new delivery from an earlier payload
+ */
+export const createWebhookRedelivery = <ThrowOnError extends boolean = false>(options: Options<CreateWebhookRedeliveryData, ThrowOnError>): RequestResult<CreateWebhookRedeliveryResponses, CreateWebhookRedeliveryErrors, ThrowOnError> => (options.client ?? client).post<CreateWebhookRedeliveryResponses, CreateWebhookRedeliveryErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zCreateWebhookRedeliveryBody,
+        path: zCreateWebhookRedeliveryPath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zCreateWebhookRedeliveryResponse.parseAsync(data),
+    security: [{
+            in: 'cookie',
+            name: 'adenosine_session',
+            type: 'apiKey'
+        }, { scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}/deliveries',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

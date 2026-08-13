@@ -8,6 +8,7 @@ const repository = {
   visibility: 'public',
   state: 'active',
   default_branch: 'main',
+  archived: false,
   owner: { did: 'did:plc:alice', handle: 'alice.example' },
   hosting: {
     local: true,

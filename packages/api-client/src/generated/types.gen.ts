@@ -352,6 +352,121 @@ export type CreateRepositoryRequest = {
     organization?: OrganizationSlug;
 };
 
+export type UpdateRepositoryRequest = {
+    slug?: RepositorySlug;
+    display_name?: string | null;
+    description?: string | null;
+    visibility?: 'public' | 'private';
+    default_branch?: string;
+    archived?: boolean;
+};
+
+export type RepositoryDeletion = {
+    id: string;
+    repository_id: string;
+    requested_at: string;
+    purge_after: string;
+};
+
+export type Notification = {
+    id: string;
+    kind: 'mention' | 'issue_comment' | 'pull_request_review' | 'pull_request_merged';
+    actor_did: string;
+    repository_uri: string;
+    owner: string;
+    repository_slug: RepositorySlug;
+    subject_uri: string;
+    subject_kind: 'issue' | 'pull_request';
+    title: string;
+    occurred_at: string;
+    read: boolean;
+};
+
+export type NotificationList = {
+    items: Array<Notification>;
+    page: Page;
+};
+
+export type UpdateNotificationRequest = {
+    read: boolean;
+};
+
+export type WebhookEvent = 'push' | 'issue' | 'pull_request' | 'review';
+
+export type RepositoryWebhook = {
+    id: string;
+    url: string;
+    events: Array<WebhookEvent>;
+    enabled: boolean;
+    has_secret: true;
+    created_at: string;
+    updated_at: string;
+};
+
+export type RepositoryWebhookList = {
+    items: Array<RepositoryWebhook>;
+    page: Page;
+};
+
+export type CreateRepositoryWebhookRequest = {
+    url: string;
+    secret: string;
+    events: Array<WebhookEvent>;
+    enabled?: boolean;
+};
+
+export type UpdateRepositoryWebhookRequest = {
+    url: string;
+    /**
+     * Omit to retain the current encrypted secret.
+     */
+    secret?: string;
+    events: Array<WebhookEvent>;
+    enabled: boolean;
+};
+
+export type WebhookDelivery = {
+    id: string;
+    webhook_id: string;
+    event: WebhookEvent;
+    attempts: number;
+    response_status?: number | null;
+    response_body?: string | null;
+    delivered_at?: string | null;
+    failed_at?: string | null;
+    last_error_code?: string | null;
+    created_at: string;
+};
+
+export type WebhookDeliveryList = {
+    items: Array<WebhookDelivery>;
+    page: Page;
+};
+
+export type CreateWebhookRedeliveryRequest = {
+    delivery_id: string;
+};
+
+export type BranchProtection = {
+    id: string;
+    pattern: '*';
+    deny_force_push: boolean;
+    deny_deletion: boolean;
+    created_at: string;
+    updated_at: string;
+};
+
+export type BranchProtectionInput = {
+    pattern: '*';
+    deny_force_push: boolean;
+    deny_deletion: boolean;
+};
+
+export type BranchProtectionList = {
+    items: Array<BranchProtection>;
+    page: Page;
+};
+
 export type CreateRepositoryForkRequest = {
     slug?: RepositorySlug;
     organization?: OrganizationSlug;
@@ -399,6 +514,7 @@ export type Repository = {
     visibility: 'public' | 'private';
     state: 'creating' | 'active' | 'failed' | 'deleting' | 'deleted';
     default_branch: string;
+    archived: boolean;
     owner: RepositoryOwner;
     hosting: RepositoryHosting;
     /**
@@ -1186,6 +1302,105 @@ export type GetCurrentIdentityResponses = {
 };
 
 export type GetCurrentIdentityResponse = GetCurrentIdentityResponses[keyof GetCurrentIdentityResponses];
+
+export type ListNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+        cursor?: string;
+        unread?: boolean;
+    };
+    url: '/api/v1/notifications';
+};
+
+export type ListNotificationsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+};
+
+export type ListNotificationsError = ListNotificationsErrors[keyof ListNotificationsErrors];
+
+export type ListNotificationsResponses = {
+    /**
+     * Notification page
+     */
+    200: NotificationList;
+};
+
+export type ListNotificationsResponse = ListNotificationsResponses[keyof ListNotificationsResponses];
+
+export type DeleteNotificationData = {
+    body?: never;
+    path: {
+        notification: string;
+    };
+    query?: never;
+    url: '/api/v1/notifications/{notification}';
+};
+
+export type DeleteNotificationErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+};
+
+export type DeleteNotificationError = DeleteNotificationErrors[keyof DeleteNotificationErrors];
+
+export type DeleteNotificationResponses = {
+    /**
+     * Notification dismissed
+     */
+    204: void;
+};
+
+export type DeleteNotificationResponse = DeleteNotificationResponses[keyof DeleteNotificationResponses];
+
+export type UpdateNotificationData = {
+    body: UpdateNotificationRequest;
+    path: {
+        notification: string;
+    };
+    query?: never;
+    url: '/api/v1/notifications/{notification}';
+};
+
+export type UpdateNotificationErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+};
+
+export type UpdateNotificationError = UpdateNotificationErrors[keyof UpdateNotificationErrors];
+
+export type UpdateNotificationResponses = {
+    /**
+     * Read state updated
+     */
+    204: void;
+};
+
+export type UpdateNotificationResponse = UpdateNotificationResponses[keyof UpdateNotificationResponses];
 
 export type StartAtProtoLoginData = {
     body: StartAtProtoLoginRequest;
@@ -5038,6 +5253,50 @@ export type PostSyncPullRequestReviewsResponses = {
 
 export type PostSyncPullRequestReviewsResponse = PostSyncPullRequestReviewsResponses[keyof PostSyncPullRequestReviewsResponses];
 
+export type DeleteRepositoryData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}';
+};
+
+export type DeleteRepositoryErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type DeleteRepositoryError = DeleteRepositoryErrors[keyof DeleteRepositoryErrors];
+
+export type DeleteRepositoryResponses = {
+    /**
+     * Deletion accepted and repository quarantined
+     */
+    202: RepositoryDeletion;
+};
+
+export type DeleteRepositoryResponse = DeleteRepositoryResponses[keyof DeleteRepositoryResponses];
+
 export type GetRepositoryData = {
     body?: never;
     path: {
@@ -5069,6 +5328,637 @@ export type GetRepositoryResponses = {
 };
 
 export type GetRepositoryResponse = GetRepositoryResponses[keyof GetRepositoryResponses];
+
+export type UpdateRepositoryData = {
+    body: UpdateRepositoryRequest;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}';
+};
+
+export type UpdateRepositoryErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type UpdateRepositoryError = UpdateRepositoryErrors[keyof UpdateRepositoryErrors];
+
+export type UpdateRepositoryResponses = {
+    /**
+     * Updated repository
+     */
+    200: Repository;
+};
+
+export type UpdateRepositoryResponse = UpdateRepositoryResponses[keyof UpdateRepositoryResponses];
+
+export type RestoreRepositoryDeletionData = {
+    body?: never;
+    path: {
+        deletion: string;
+    };
+    query?: never;
+    url: '/api/v1/repository-deletions/{deletion}';
+};
+
+export type RestoreRepositoryDeletionErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+};
+
+export type RestoreRepositoryDeletionError = RestoreRepositoryDeletionErrors[keyof RestoreRepositoryDeletionErrors];
+
+export type RestoreRepositoryDeletionResponses = {
+    /**
+     * Repository restored
+     */
+    200: Repository;
+};
+
+export type RestoreRepositoryDeletionResponse = RestoreRepositoryDeletionResponses[keyof RestoreRepositoryDeletionResponses];
+
+export type GetRepositoryDeletionData = {
+    body?: never;
+    path: {
+        deletion: string;
+    };
+    query?: never;
+    url: '/api/v1/repository-deletions/{deletion}';
+};
+
+export type GetRepositoryDeletionErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetRepositoryDeletionError = GetRepositoryDeletionErrors[keyof GetRepositoryDeletionErrors];
+
+export type GetRepositoryDeletionResponses = {
+    /**
+     * Active deletion request
+     */
+    200: RepositoryDeletion;
+};
+
+export type GetRepositoryDeletionResponse = GetRepositoryDeletionResponses[keyof GetRepositoryDeletionResponses];
+
+export type ListRepositoryWebhooksData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks';
+};
+
+export type ListRepositoryWebhooksErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListRepositoryWebhooksError = ListRepositoryWebhooksErrors[keyof ListRepositoryWebhooksErrors];
+
+export type ListRepositoryWebhooksResponses = {
+    /**
+     * Webhook page
+     */
+    200: RepositoryWebhookList;
+};
+
+export type ListRepositoryWebhooksResponse = ListRepositoryWebhooksResponses[keyof ListRepositoryWebhooksResponses];
+
+export type CreateRepositoryWebhookData = {
+    body: CreateRepositoryWebhookRequest;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks';
+};
+
+export type CreateRepositoryWebhookErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type CreateRepositoryWebhookError = CreateRepositoryWebhookErrors[keyof CreateRepositoryWebhookErrors];
+
+export type CreateRepositoryWebhookResponses = {
+    /**
+     * Webhook created
+     */
+    201: RepositoryWebhook;
+};
+
+export type CreateRepositoryWebhookResponse = CreateRepositoryWebhookResponses[keyof CreateRepositoryWebhookResponses];
+
+export type ListBranchProtectionsData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/branch-protections';
+};
+
+export type ListBranchProtectionsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListBranchProtectionsError = ListBranchProtectionsErrors[keyof ListBranchProtectionsErrors];
+
+export type ListBranchProtectionsResponses = {
+    /**
+     * Branch protection page
+     */
+    200: BranchProtectionList;
+};
+
+export type ListBranchProtectionsResponse = ListBranchProtectionsResponses[keyof ListBranchProtectionsResponses];
+
+export type CreateBranchProtectionData = {
+    body: BranchProtectionInput;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/branch-protections';
+};
+
+export type CreateBranchProtectionErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type CreateBranchProtectionError = CreateBranchProtectionErrors[keyof CreateBranchProtectionErrors];
+
+export type CreateBranchProtectionResponses = {
+    /**
+     * Branch protection created
+     */
+    201: BranchProtection;
+};
+
+export type CreateBranchProtectionResponse = CreateBranchProtectionResponses[keyof CreateBranchProtectionResponses];
+
+export type DeleteBranchProtectionData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        protection: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}';
+};
+
+export type DeleteBranchProtectionErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type DeleteBranchProtectionError = DeleteBranchProtectionErrors[keyof DeleteBranchProtectionErrors];
+
+export type DeleteBranchProtectionResponses = {
+    /**
+     * Branch protection deleted
+     */
+    204: void;
+};
+
+export type DeleteBranchProtectionResponse = DeleteBranchProtectionResponses[keyof DeleteBranchProtectionResponses];
+
+export type GetBranchProtectionData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        protection: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}';
+};
+
+export type GetBranchProtectionErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetBranchProtectionError = GetBranchProtectionErrors[keyof GetBranchProtectionErrors];
+
+export type GetBranchProtectionResponses = {
+    /**
+     * Branch protection
+     */
+    200: BranchProtection;
+};
+
+export type GetBranchProtectionResponse = GetBranchProtectionResponses[keyof GetBranchProtectionResponses];
+
+export type UpdateBranchProtectionData = {
+    body: BranchProtectionInput;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        protection: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}';
+};
+
+export type UpdateBranchProtectionErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateBranchProtectionError = UpdateBranchProtectionErrors[keyof UpdateBranchProtectionErrors];
+
+export type UpdateBranchProtectionResponses = {
+    /**
+     * Branch protection updated
+     */
+    200: BranchProtection;
+};
+
+export type UpdateBranchProtectionResponse = UpdateBranchProtectionResponses[keyof UpdateBranchProtectionResponses];
+
+export type DeleteRepositoryWebhookData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        webhook: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}';
+};
+
+export type DeleteRepositoryWebhookErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type DeleteRepositoryWebhookError = DeleteRepositoryWebhookErrors[keyof DeleteRepositoryWebhookErrors];
+
+export type DeleteRepositoryWebhookResponses = {
+    /**
+     * Webhook deleted
+     */
+    204: void;
+};
+
+export type DeleteRepositoryWebhookResponse = DeleteRepositoryWebhookResponses[keyof DeleteRepositoryWebhookResponses];
+
+export type GetRepositoryWebhookData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        webhook: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}';
+};
+
+export type GetRepositoryWebhookErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetRepositoryWebhookError = GetRepositoryWebhookErrors[keyof GetRepositoryWebhookErrors];
+
+export type GetRepositoryWebhookResponses = {
+    /**
+     * Webhook configuration
+     */
+    200: RepositoryWebhook;
+};
+
+export type GetRepositoryWebhookResponse = GetRepositoryWebhookResponses[keyof GetRepositoryWebhookResponses];
+
+export type UpdateRepositoryWebhookData = {
+    body: UpdateRepositoryWebhookRequest;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        webhook: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}';
+};
+
+export type UpdateRepositoryWebhookErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateRepositoryWebhookError = UpdateRepositoryWebhookErrors[keyof UpdateRepositoryWebhookErrors];
+
+export type UpdateRepositoryWebhookResponses = {
+    /**
+     * Webhook updated
+     */
+    200: RepositoryWebhook;
+};
+
+export type UpdateRepositoryWebhookResponse = UpdateRepositoryWebhookResponses[keyof UpdateRepositoryWebhookResponses];
+
+export type ListWebhookDeliveriesData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        webhook: string;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}/deliveries';
+};
+
+export type ListWebhookDeliveriesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListWebhookDeliveriesError = ListWebhookDeliveriesErrors[keyof ListWebhookDeliveriesErrors];
+
+export type ListWebhookDeliveriesResponses = {
+    /**
+     * Delivery page
+     */
+    200: WebhookDeliveryList;
+};
+
+export type ListWebhookDeliveriesResponse = ListWebhookDeliveriesResponses[keyof ListWebhookDeliveriesResponses];
+
+export type CreateWebhookRedeliveryData = {
+    body: CreateWebhookRedeliveryRequest;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        webhook: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}/deliveries';
+};
+
+export type CreateWebhookRedeliveryErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type CreateWebhookRedeliveryError = CreateWebhookRedeliveryErrors[keyof CreateWebhookRedeliveryErrors];
+
+export type CreateWebhookRedeliveryResponses = {
+    /**
+     * Redelivery queued
+     */
+    201: WebhookDelivery;
+};
+
+export type CreateWebhookRedeliveryResponse = CreateWebhookRedeliveryResponses[keyof CreateWebhookRedeliveryResponses];
 
 export type ListRepositoryBranchesData = {
     body?: never;

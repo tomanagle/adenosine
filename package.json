@@ -8,12 +8,14 @@
   "scripts": {
     "format": "oxfmt --write \"**/*.{ts,tsx,json,jsonc,css}\"",
     "format:check": "oxfmt --check \"**/*.{ts,tsx,json,jsonc,css}\"",
+    "hooks:install": "lefthook install",
     "lint": "oxlint . --deny-warnings --report-unused-disable-directives",
     "lint:fix": "oxlint . --fix --deny-warnings --report-unused-disable-directives",
     "test:tooling": "bun test test/tooling"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "0.99.0",
+    "lefthook": "2.1.10",
     "oxfmt": "0.63.0",
     "oxlint": "1.78.0",
     "typescript": "6.0.3"

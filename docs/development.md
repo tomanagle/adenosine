@@ -8,7 +8,8 @@ This split keeps normal feedback fast while making stateful environments reprodu
 
 Required host tools are the Go version in [`../go.mod`](../go.mod), Bun 1.3.13, Make, Git,
 Docker with Compose, and curl. Install workspace dependencies with
-`bun install --frozen-lockfile`, then start services with `make dev-detached`. The single
+`bun install --frozen-lockfile`, install the formatter-only pre-commit hook with
+`bun run hooks:install`, then start services with `make dev-detached`. The single
 development topology is [`../dev/docker-compose.yml`](../dev/docker-compose.yml); startup
 preparation belongs in `dev/entrypoint.sh`.
 

@@ -268,6 +268,17 @@ func (store *PostgresStore) CanWriteRepository(ctx context.Context, accountDID s
 	return allowed, nil
 }
 
+// CanAdminRepository checks repository owner and explicit admin permissions.
+func (store *PostgresStore) CanAdminRepository(ctx context.Context, accountDID string, repositoryID repository.ID) (bool, error) {
+	allowed, err := store.queries.CanAdminRepository(ctx, dbgen.CanAdminRepositoryParams{
+		AccountDid: accountDID, RepositoryID: pgtype.UUID{Bytes: [16]byte(repositoryID), Valid: true},
+	})
+	if err != nil {
+		return false, fmt.Errorf("check repository admin permission: %w", err)
+	}
+	return allowed, nil
+}
+
 // CanTriageRepository checks issue and pull-request management permissions.
 func (store *PostgresStore) CanTriageRepository(ctx context.Context, accountDID string, repositoryID repository.ID) (bool, error) {
 	allowed, err := store.queries.CanTriageRepository(ctx, dbgen.CanTriageRepositoryParams{

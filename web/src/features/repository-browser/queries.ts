@@ -14,6 +14,15 @@ import {
   listRepositoryTagsOptions,
   putStarMutation,
   syncRepositoryForkMutation,
+  updateRepositoryMutation,
+  deleteRepositoryMutation,
+  restoreRepositoryDeletionMutation,
+  listRepositoryWebhooksOptions,
+  createRepositoryWebhookMutation,
+  deleteRepositoryWebhookMutation,
+  listBranchProtectionsOptions,
+  createBranchProtectionMutation,
+  deleteBranchProtectionMutation,
 } from '@adenosine/api-client/query'
 
 import { browserApiClient } from '@/api/browser-client'
@@ -40,6 +49,33 @@ export const createRepositoryForkMutationOptions = () =>
 
 export const syncRepositoryForkMutationOptions = () =>
   syncRepositoryForkMutation({ client: browserApiClient })
+
+export const updateRepositoryMutationOptions = () =>
+  updateRepositoryMutation({ client: browserApiClient })
+export const deleteRepositoryMutationOptions = () =>
+  deleteRepositoryMutation({ client: browserApiClient })
+export const restoreRepositoryDeletionMutationOptions = () =>
+  restoreRepositoryDeletionMutation({ client: browserApiClient })
+export const repositoryWebhooksQueryOptions = (params: RepositoryRouteParams) =>
+  listRepositoryWebhooksOptions({
+    client: browserApiClient,
+    path: path(params),
+    query: { limit: 100 },
+  })
+export const createRepositoryWebhookMutationOptions = () =>
+  createRepositoryWebhookMutation({ client: browserApiClient })
+export const deleteRepositoryWebhookMutationOptions = () =>
+  deleteRepositoryWebhookMutation({ client: browserApiClient })
+export const branchProtectionsQueryOptions = (params: RepositoryRouteParams) =>
+  listBranchProtectionsOptions({
+    client: browserApiClient,
+    path: path(params),
+    query: { limit: 100 },
+  })
+export const createBranchProtectionMutationOptions = () =>
+  createBranchProtectionMutation({ client: browserApiClient })
+export const deleteBranchProtectionMutationOptions = () =>
+  deleteBranchProtectionMutation({ client: browserApiClient })
 
 export const branchesQueryOptions = (params: RepositoryRouteParams) => ({
   ...listRepositoryBranchesOptions({ client: browserApiClient, path: path(params) }),

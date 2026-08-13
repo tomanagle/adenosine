@@ -1,7 +1,8 @@
 import type { CurrentIdentity } from '@adenosine/api-client'
 import { logout } from '@adenosine/api-client'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowUpRight, LogOut, Search } from 'lucide-react'
+import { ArrowUpRight, Bell, LogOut, Search } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { useState, type FormEvent, type ReactNode } from 'react'
 
 import { browserApiClient } from '@/api/browser-client'
@@ -10,6 +11,7 @@ import adenosineMarkLight from '@/assets/adenosine-mark-light.svg?url'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { notificationsQueryOptions } from '@/features/notifications/queries'
 
 export function AppShell({
   children,
@@ -31,6 +33,7 @@ function SiteHeader({ identity }: { identity?: CurrentIdentity | null }) {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [signingOut, setSigningOut] = useState(false)
+  const unread = useQuery({ ...notificationsQueryOptions(true), enabled: Boolean(identity) })
 
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -88,6 +91,18 @@ function SiteHeader({ identity }: { identity?: CurrentIdentity | null }) {
 
         {identity ? (
           <div className="ml-auto flex min-w-0 items-center gap-1.5 lg:ml-0">
+            <Link
+              className={cn(buttonVariants({ size: 'sm', variant: 'ghost' }), 'relative')}
+              aria-label="Notifications"
+              to="/notifications"
+            >
+              <Bell aria-hidden="true" className="size-4" />
+              {(unread.data?.items.length ?? 0) > 0 ? (
+                <span className="absolute right-0.5 top-0.5 size-2 rounded-full bg-primary">
+                  <span className="sr-only">Unread notifications</span>
+                </span>
+              ) : null}
+            </Link>
             <Link
               className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               params={identity.handle ? { owner: identity.handle } : { identity: identity.did }}

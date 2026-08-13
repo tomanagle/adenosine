@@ -325,6 +325,108 @@ export const zCreateRepositoryRequest = z.object({
     organization: zOrganizationSlug.optional()
 });
 
+export const zUpdateRepositoryRequest = z.object({
+    slug: zRepositorySlug.optional(),
+    display_name: z.string().max(255).nullish(),
+    description: z.string().max(2000).nullish(),
+    visibility: z.enum(['public', 'private']).optional(),
+    default_branch: z.string().min(1).max(255).optional(),
+    archived: z.boolean().optional()
+});
+
+export const zRepositoryDeletion = z.object({
+    id: z.uuid(),
+    repository_id: z.uuid(),
+    requested_at: z.iso.datetime({ offset: true }),
+    purge_after: z.iso.datetime({ offset: true })
+});
+
+export const zNotification = z.object({
+    id: z.uuid(),
+    kind: z.enum([
+        'mention',
+        'issue_comment',
+        'pull_request_review',
+        'pull_request_merged'
+    ]),
+    actor_did: z.string(),
+    repository_uri: z.string(),
+    owner: z.string(),
+    repository_slug: zRepositorySlug,
+    subject_uri: z.string(),
+    subject_kind: z.enum(['issue', 'pull_request']),
+    title: z.string(),
+    occurred_at: z.iso.datetime({ offset: true }),
+    read: z.boolean()
+});
+
+export const zUpdateNotificationRequest = z.object({
+    read: z.boolean()
+});
+
+export const zWebhookEvent = z.enum([
+    'push',
+    'issue',
+    'pull_request',
+    'review'
+]);
+
+export const zRepositoryWebhook = z.object({
+    id: z.uuid(),
+    url: z.url(),
+    events: z.array(zWebhookEvent).min(1),
+    enabled: z.boolean(),
+    has_secret: z.literal(true),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true })
+});
+
+export const zCreateRepositoryWebhookRequest = z.object({
+    url: z.url().max(2048),
+    secret: z.string().min(16).max(256),
+    events: z.array(zWebhookEvent).min(1),
+    enabled: z.boolean().optional().default(true)
+});
+
+export const zUpdateRepositoryWebhookRequest = z.object({
+    url: z.url().max(2048),
+    secret: z.string().min(16).max(256).optional(),
+    events: z.array(zWebhookEvent).min(1),
+    enabled: z.boolean()
+});
+
+export const zWebhookDelivery = z.object({
+    id: z.uuid(),
+    webhook_id: z.uuid(),
+    event: zWebhookEvent,
+    attempts: z.int().gte(0),
+    response_status: z.int().nullish(),
+    response_body: z.string().nullish(),
+    delivered_at: z.iso.datetime({ offset: true }).nullish(),
+    failed_at: z.iso.datetime({ offset: true }).nullish(),
+    last_error_code: z.string().nullish(),
+    created_at: z.iso.datetime({ offset: true })
+});
+
+export const zCreateWebhookRedeliveryRequest = z.object({
+    delivery_id: z.uuid()
+});
+
+export const zBranchProtection = z.object({
+    id: z.uuid(),
+    pattern: z.enum(['*']),
+    deny_force_push: z.boolean(),
+    deny_deletion: z.boolean(),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true })
+});
+
+export const zBranchProtectionInput = z.object({
+    pattern: z.enum(['*']),
+    deny_force_push: z.boolean(),
+    deny_deletion: z.boolean()
+});
+
 export const zCreateRepositoryForkRequest = z.object({
     slug: zRepositorySlug.optional(),
     organization: zOrganizationSlug.optional()
@@ -375,6 +477,7 @@ export const zRepository = z.object({
         'deleted'
     ]),
     default_branch: z.string(),
+    archived: z.boolean(),
     owner: zRepositoryOwner,
     hosting: zRepositoryHosting,
     viewer_can_admin: z.boolean().optional(),
@@ -1013,6 +1116,26 @@ export const zSshKeyList = z.object({
     page: zPage
 });
 
+export const zNotificationList = z.object({
+    items: z.array(zNotification),
+    page: zPage
+});
+
+export const zRepositoryWebhookList = z.object({
+    items: z.array(zRepositoryWebhook),
+    page: zPage
+});
+
+export const zWebhookDeliveryList = z.object({
+    items: z.array(zWebhookDelivery),
+    page: zPage
+});
+
+export const zBranchProtectionList = z.object({
+    items: z.array(zBranchProtection),
+    page: zPage
+});
+
 export const zRepositoryList = z.object({
     items: z.array(zRepository),
     page: zPage
@@ -1191,6 +1314,37 @@ export const zGetReadinessResponse = zHealth;
  * Current DID-based identity
  */
 export const zGetCurrentIdentityResponse = zCurrentIdentity;
+
+export const zListNotificationsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional(),
+    unread: z.boolean().optional().default(false)
+});
+
+/**
+ * Notification page
+ */
+export const zListNotificationsResponse = zNotificationList;
+
+export const zDeleteNotificationPath = z.object({
+    notification: z.uuid()
+});
+
+/**
+ * Notification dismissed
+ */
+export const zDeleteNotificationResponse = z.void();
+
+export const zUpdateNotificationBody = zUpdateNotificationRequest;
+
+export const zUpdateNotificationPath = z.object({
+    notification: z.uuid()
+});
+
+/**
+ * Read state updated
+ */
+export const zUpdateNotificationResponse = z.void();
 
 export const zStartAtProtoLoginBody = zStartAtProtoLoginRequest;
 
@@ -2228,6 +2382,16 @@ export const zPostSyncPullRequestReviewsResponse = z.union([
     zElectricSubsetResponse
 ]);
 
+export const zDeleteRepositoryPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+/**
+ * Deletion accepted and repository quarantined
+ */
+export const zDeleteRepositoryResponse = zRepositoryDeletion;
+
 export const zGetRepositoryPath = z.object({
     owner: z.string().min(1),
     repo: zRepositorySlug
@@ -2237,6 +2401,189 @@ export const zGetRepositoryPath = z.object({
  * Repository metadata
  */
 export const zGetRepositoryResponse = zRepository;
+
+export const zUpdateRepositoryBody = zUpdateRepositoryRequest;
+
+export const zUpdateRepositoryPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+/**
+ * Updated repository
+ */
+export const zUpdateRepositoryResponse = zRepository;
+
+export const zRestoreRepositoryDeletionPath = z.object({
+    deletion: z.uuid()
+});
+
+/**
+ * Repository restored
+ */
+export const zRestoreRepositoryDeletionResponse = zRepository;
+
+export const zGetRepositoryDeletionPath = z.object({
+    deletion: z.uuid()
+});
+
+/**
+ * Active deletion request
+ */
+export const zGetRepositoryDeletionResponse = zRepositoryDeletion;
+
+export const zListRepositoryWebhooksPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug
+});
+
+export const zListRepositoryWebhooksQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Webhook page
+ */
+export const zListRepositoryWebhooksResponse = zRepositoryWebhookList;
+
+export const zCreateRepositoryWebhookBody = zCreateRepositoryWebhookRequest;
+
+export const zCreateRepositoryWebhookPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug
+});
+
+/**
+ * Webhook created
+ */
+export const zCreateRepositoryWebhookResponse = zRepositoryWebhook;
+
+export const zListBranchProtectionsPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug
+});
+
+export const zListBranchProtectionsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Branch protection page
+ */
+export const zListBranchProtectionsResponse = zBranchProtectionList;
+
+export const zCreateBranchProtectionBody = zBranchProtectionInput;
+
+export const zCreateBranchProtectionPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug
+});
+
+/**
+ * Branch protection created
+ */
+export const zCreateBranchProtectionResponse = zBranchProtection;
+
+export const zDeleteBranchProtectionPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    protection: z.uuid()
+});
+
+/**
+ * Branch protection deleted
+ */
+export const zDeleteBranchProtectionResponse = z.void();
+
+export const zGetBranchProtectionPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    protection: z.uuid()
+});
+
+/**
+ * Branch protection
+ */
+export const zGetBranchProtectionResponse = zBranchProtection;
+
+export const zUpdateBranchProtectionBody = zBranchProtectionInput;
+
+export const zUpdateBranchProtectionPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    protection: z.uuid()
+});
+
+/**
+ * Branch protection updated
+ */
+export const zUpdateBranchProtectionResponse = zBranchProtection;
+
+export const zDeleteRepositoryWebhookPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    webhook: z.uuid()
+});
+
+/**
+ * Webhook deleted
+ */
+export const zDeleteRepositoryWebhookResponse = z.void();
+
+export const zGetRepositoryWebhookPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    webhook: z.uuid()
+});
+
+/**
+ * Webhook configuration
+ */
+export const zGetRepositoryWebhookResponse = zRepositoryWebhook;
+
+export const zUpdateRepositoryWebhookBody = zUpdateRepositoryWebhookRequest;
+
+export const zUpdateRepositoryWebhookPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    webhook: z.uuid()
+});
+
+/**
+ * Webhook updated
+ */
+export const zUpdateRepositoryWebhookResponse = zRepositoryWebhook;
+
+export const zListWebhookDeliveriesPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    webhook: z.uuid()
+});
+
+export const zListWebhookDeliveriesQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Delivery page
+ */
+export const zListWebhookDeliveriesResponse = zWebhookDeliveryList;
+
+export const zCreateWebhookRedeliveryBody = zCreateWebhookRedeliveryRequest;
+
+export const zCreateWebhookRedeliveryPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    webhook: z.uuid()
+});
+
+/**
+ * Redelivery queued
+ */
+export const zCreateWebhookRedeliveryResponse = zWebhookDelivery;
 
 export const zListRepositoryBranchesPath = z.object({
     owner: z.string().min(1),

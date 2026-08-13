@@ -55,6 +55,7 @@ const upstream: Repository = {
   visibility: 'public',
   state: 'active',
   default_branch: 'main',
+  archived: false,
   owner: { did: 'did:plc:alice', handle: 'alice.test', kind: 'account' },
   hosting: {
     local: true,

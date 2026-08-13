@@ -107,6 +107,24 @@ func (writer *Writer) GitRefsUpdated(ctx context.Context, input GitRefsUpdated) 
 	return nil
 }
 
+// RepositoryActivity records a portable collaboration action for local webhook delivery.
+func (writer *Writer) RepositoryActivity(ctx context.Context, eventType, subjectURI string, value any) error {
+	id, err := uuid.NewV7()
+	if err != nil {
+		return fmt.Errorf("generate repository activity event ID: %w", err)
+	}
+	payload, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("encode repository activity event: %w", err)
+	}
+	now := time.Now().UTC()
+	traceparent, tracestate := traceContext(ctx)
+	if err := writer.queries.CreateRepositoryActivityEvent(ctx, dbgen.CreateRepositoryActivityEventParams{SubjectUri: subjectURI, ID: pgtype.UUID{Bytes: id, Valid: true}, Type: eventType, Payload: payload, CreatedAt: pgtype.Timestamptz{Time: now, Valid: true}, Traceparent: traceparent, Tracestate: tracestate}); err != nil {
+		return fmt.Errorf("create repository activity event: %w", err)
+	}
+	return nil
+}
+
 // ContextFromOutbox attaches a valid persisted remote parent to the worker
 // context. Missing or malformed fields deliberately leave ctx unchanged.
 func ContextFromOutbox(ctx context.Context, outboxEvent dbgen.OpsOutboxEvent) context.Context {

@@ -72,6 +72,54 @@ func (q *Queries) CanAdminOrganizationRepository(ctx context.Context, arg CanAdm
 	return exists, err
 }
 
+const canAdminRepository = `-- name: CanAdminRepository :one
+WITH RECURSIVE team_lineage AS (
+  SELECT team.id, team.parent_team_id
+  FROM core.organization_team_members AS team_member
+  JOIN core.organization_teams AS team ON team.id = team_member.team_id
+  WHERE team_member.account_did = $1 AND team.deleted_at IS NULL
+  UNION
+  SELECT parent.id, parent.parent_team_id
+  FROM core.organization_teams AS parent
+  JOIN team_lineage AS child ON child.parent_team_id = parent.id
+  WHERE parent.deleted_at IS NULL
+)
+SELECT EXISTS (
+  SELECT 1
+  FROM core.repositories AS repository
+  LEFT JOIN core.repository_collaborators AS collaborator
+    ON collaborator.repository_id = repository.id
+   AND collaborator.account_did = $1
+  LEFT JOIN core.organization_members AS organization_member
+    ON organization_member.organization_id = repository.organization_id
+   AND organization_member.account_did = $1
+  WHERE repository.id = $2
+    AND repository.deleted_at IS NULL
+    AND (
+      (repository.organization_id IS NULL AND repository.owner_did = $1)
+      OR organization_member.role = 'owner'
+      OR EXISTS (
+        SELECT 1 FROM team_lineage
+        JOIN core.organization_team_repositories AS team_repository ON team_repository.team_id = team_lineage.id
+        WHERE team_repository.repository_id = repository.id AND team_repository.role = 'admin'
+      )
+      OR collaborator.role = 'admin'
+    )
+)
+`
+
+type CanAdminRepositoryParams struct {
+	AccountDid   string      `json:"account_did"`
+	RepositoryID pgtype.UUID `json:"repository_id"`
+}
+
+func (q *Queries) CanAdminRepository(ctx context.Context, arg CanAdminRepositoryParams) (bool, error) {
+	row := q.db.QueryRow(ctx, canAdminRepository, arg.AccountDid, arg.RepositoryID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const canReadRepository = `-- name: CanReadRepository :one
 WITH RECURSIVE team_lineage AS (
   SELECT team.id, team.parent_team_id

@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as OwnerRouteImport } from './routes/$owner'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as OrganizationsRouteImport } from './routes/organizations'
 import { Route as OwnerIndexRouteImport } from './routes/$owner.index'
 import { Route as OwnerRepoRouteImport } from './routes/$owner.$repo'
@@ -24,6 +25,7 @@ import { Route as OwnerRepoCommitsRouteImport } from './routes/$owner.$repo.comm
 import { Route as OwnerRepoCompareRouteImport } from './routes/$owner.$repo.compare'
 import { Route as OwnerRepoIssuesRouteImport } from './routes/$owner.$repo.issues'
 import { Route as OwnerRepoPullsRouteImport } from './routes/$owner.$repo.pulls'
+import { Route as OwnerRepoSettingsRouteImport } from './routes/$owner.$repo.settings'
 import { Route as OwnerRepoBlobSplatRouteImport } from './routes/$owner.$repo.blob.$'
 import { Route as OwnerRepoCommitRevisionRouteImport } from './routes/$owner.$repo.commit.$revision'
 import { Route as OwnerRepoIssuesIssueRouteImport } from './routes/$owner.$repo.issues.$issue'
@@ -48,6 +50,11 @@ const ExploreRoute = ExploreRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrganizationsRoute = OrganizationsRouteImport.update({
@@ -106,6 +113,11 @@ const OwnerRepoPullsRoute = OwnerRepoPullsRouteImport.update({
   path: '/pulls',
   getParentRoute: () => OwnerRepoRoute,
 } as any)
+const OwnerRepoSettingsRoute = OwnerRepoSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
 const OwnerRepoBlobSplatRoute = OwnerRepoBlobSplatRouteImport.update({
   id: '/blob/$',
   path: '/blob/$',
@@ -137,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/$owner': typeof OwnerRouteWithChildren
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/organizations': typeof OrganizationsRouteWithChildren
   '/$owner/$repo': typeof OwnerRepoRouteWithChildren
   '/organizations/$organization': typeof OrganizationsOrganizationRoute
@@ -147,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
   '/$owner/$repo/issues': typeof OwnerRepoIssuesRouteWithChildren
   '/$owner/$repo/pulls': typeof OwnerRepoPullsRouteWithChildren
+  '/$owner/$repo/settings': typeof OwnerRepoSettingsRoute
   '/$owner/$repo/': typeof OwnerRepoIndexRoute
   '/$owner/$repo/blob/$': typeof OwnerRepoBlobSplatRoute
   '/$owner/$repo/commit/$revision': typeof OwnerRepoCommitRevisionRoute
@@ -158,6 +172,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/organizations': typeof OrganizationsRouteWithChildren
   '/organizations/$organization': typeof OrganizationsOrganizationRoute
   '/profiles/$identity': typeof ProfilesIdentityRoute
@@ -167,6 +182,7 @@ export interface FileRoutesByTo {
   '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
   '/$owner/$repo/issues': typeof OwnerRepoIssuesRouteWithChildren
   '/$owner/$repo/pulls': typeof OwnerRepoPullsRouteWithChildren
+  '/$owner/$repo/settings': typeof OwnerRepoSettingsRoute
   '/$owner/$repo': typeof OwnerRepoIndexRoute
   '/$owner/$repo/blob/$': typeof OwnerRepoBlobSplatRoute
   '/$owner/$repo/commit/$revision': typeof OwnerRepoCommitRevisionRoute
@@ -180,6 +196,7 @@ export interface FileRoutesById {
   '/$owner': typeof OwnerRouteWithChildren
   '/explore': typeof ExploreRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/organizations': typeof OrganizationsRouteWithChildren
   '/$owner/$repo': typeof OwnerRepoRouteWithChildren
   '/organizations/$organization': typeof OrganizationsOrganizationRoute
@@ -190,6 +207,7 @@ export interface FileRoutesById {
   '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
   '/$owner/$repo/issues': typeof OwnerRepoIssuesRouteWithChildren
   '/$owner/$repo/pulls': typeof OwnerRepoPullsRouteWithChildren
+  '/$owner/$repo/settings': typeof OwnerRepoSettingsRoute
   '/$owner/$repo/': typeof OwnerRepoIndexRoute
   '/$owner/$repo/blob/$': typeof OwnerRepoBlobSplatRoute
   '/$owner/$repo/commit/$revision': typeof OwnerRepoCommitRevisionRoute
@@ -204,6 +222,7 @@ export interface FileRouteTypes {
     | '/$owner'
     | '/explore'
     | '/login'
+    | '/notifications'
     | '/organizations'
     | '/$owner/$repo'
     | '/organizations/$organization'
@@ -214,6 +233,7 @@ export interface FileRouteTypes {
     | '/$owner/$repo/compare'
     | '/$owner/$repo/issues'
     | '/$owner/$repo/pulls'
+    | '/$owner/$repo/settings'
     | '/$owner/$repo/'
     | '/$owner/$repo/blob/$'
     | '/$owner/$repo/commit/$revision'
@@ -225,6 +245,7 @@ export interface FileRouteTypes {
     | '/'
     | '/explore'
     | '/login'
+    | '/notifications'
     | '/organizations'
     | '/organizations/$organization'
     | '/profiles/$identity'
@@ -234,6 +255,7 @@ export interface FileRouteTypes {
     | '/$owner/$repo/compare'
     | '/$owner/$repo/issues'
     | '/$owner/$repo/pulls'
+    | '/$owner/$repo/settings'
     | '/$owner/$repo'
     | '/$owner/$repo/blob/$'
     | '/$owner/$repo/commit/$revision'
@@ -246,6 +268,7 @@ export interface FileRouteTypes {
     | '/$owner'
     | '/explore'
     | '/login'
+    | '/notifications'
     | '/organizations'
     | '/$owner/$repo'
     | '/organizations/$organization'
@@ -256,6 +279,7 @@ export interface FileRouteTypes {
     | '/$owner/$repo/compare'
     | '/$owner/$repo/issues'
     | '/$owner/$repo/pulls'
+    | '/$owner/$repo/settings'
     | '/$owner/$repo/'
     | '/$owner/$repo/blob/$'
     | '/$owner/$repo/commit/$revision'
@@ -269,6 +293,7 @@ export interface RootRouteChildren {
   OwnerRoute: typeof OwnerRouteWithChildren
   ExploreRoute: typeof ExploreRoute
   LoginRoute: typeof LoginRoute
+  NotificationsRoute: typeof NotificationsRoute
   OrganizationsRoute: typeof OrganizationsRouteWithChildren
   ProfilesIdentityRoute: typeof ProfilesIdentityRoute
 }
@@ -301,6 +326,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/organizations': {
@@ -380,6 +412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerRepoPullsRouteImport
       parentRoute: typeof OwnerRepoRoute
     }
+    '/$owner/$repo/settings': {
+      id: '/$owner/$repo/settings'
+      path: '/settings'
+      fullPath: '/$owner/$repo/settings'
+      preLoaderRoute: typeof OwnerRepoSettingsRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
     '/$owner/$repo/blob/$': {
       id: '/$owner/$repo/blob/$'
       path: '/blob/$'
@@ -448,6 +487,7 @@ interface OwnerRepoRouteChildren {
   OwnerRepoCompareRoute: typeof OwnerRepoCompareRoute
   OwnerRepoIssuesRoute: typeof OwnerRepoIssuesRouteWithChildren
   OwnerRepoPullsRoute: typeof OwnerRepoPullsRouteWithChildren
+  OwnerRepoSettingsRoute: typeof OwnerRepoSettingsRoute
   OwnerRepoIndexRoute: typeof OwnerRepoIndexRoute
   OwnerRepoBlobSplatRoute: typeof OwnerRepoBlobSplatRoute
   OwnerRepoCommitRevisionRoute: typeof OwnerRepoCommitRevisionRoute
@@ -460,6 +500,7 @@ const OwnerRepoRouteChildren: OwnerRepoRouteChildren = {
   OwnerRepoCompareRoute: OwnerRepoCompareRoute,
   OwnerRepoIssuesRoute: OwnerRepoIssuesRouteWithChildren,
   OwnerRepoPullsRoute: OwnerRepoPullsRouteWithChildren,
+  OwnerRepoSettingsRoute: OwnerRepoSettingsRoute,
   OwnerRepoIndexRoute: OwnerRepoIndexRoute,
   OwnerRepoBlobSplatRoute: OwnerRepoBlobSplatRoute,
   OwnerRepoCommitRevisionRoute: OwnerRepoCommitRevisionRoute,
@@ -499,6 +540,7 @@ const rootRouteChildren: RootRouteChildren = {
   OwnerRoute: OwnerRouteWithChildren,
   ExploreRoute: ExploreRoute,
   LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
   OrganizationsRoute: OrganizationsRouteWithChildren,
   ProfilesIdentityRoute: ProfilesIdentityRoute,
 }

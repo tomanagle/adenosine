@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AppShell } from './app-shell'
+import { notificationsQueryOptions } from '@/features/notifications/queries'
 
 vi.mock('@adenosine/api-client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@adenosine/api-client')>()),
@@ -38,10 +40,17 @@ describe('AppShell', () => {
 
   for (const testCase of testCases) {
     it(testCase.name, () => {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      client.setQueryData(notificationsQueryOptions(true).queryKey, {
+        items: [],
+        page: { next_cursor: null },
+      })
       const { container } = render(
-        <AppShell identity={testCase.identity}>
-          <main>Page content</main>
-        </AppShell>,
+        <QueryClientProvider client={client}>
+          <AppShell identity={testCase.identity}>
+            <main>Page content</main>
+          </AppShell>
+        </QueryClientProvider>,
       )
 
       const brandMarks = container.querySelectorAll('picture img')

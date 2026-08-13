@@ -18,6 +18,9 @@
     { "name": "Issues" },
     { "name": "Pull Requests" },
     { "name": "Comments" },
+    { "name": "Notifications", "description": "Private, host-derived inbox activity. Notification state is local and is not federated." },
+    { "name": "Webhooks", "description": "Repository event subscriptions with signed, durable HTTPS delivery." },
+    { "name": "Branch Protection", "description": "Repository receive-pack safety rules enforced by native Git." },
     { "name": "Moderation" },
     { "name": "Sync", "description": "Optional Electric shape streams over eventually consistent public network projections. Anonymous requests and PATs receive the public shape. A valid adenosine_session cookie applies that account's blocked-DID and hidden-record policy to the server-owned base shape; an invalid presented session is rejected rather than downgraded. Moderated responses are private and must not be shared. Continue with Electric's handle and offset headers, restarting from offset=-1 after moderation preferences change or a must-refetch control message. REST remains the complete read fallback and canonical write API when Electric is unavailable. Clients compose activity from these documented projections; network.records and moderation tables are never exposed." }
   ],
@@ -69,6 +72,28 @@
           },
           "401": { "$ref": "#/components/responses/Unauthorized" }
         }
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "operationId": "listNotifications", "tags": ["Notifications"], "summary": "List the authenticated account's notifications",
+        "description": "Returns a stable keyset page derived from indexed mentions, issue discussion, pull-request reviews, and merges. Results respect the account's moderation preferences.",
+        "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }, { "name": "unread", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } }],
+        "responses": { "200": { "description": "Notification page", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationList" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" } }
+      }
+    },
+    "/api/v1/notifications/{notification}": {
+      "patch": {
+        "operationId": "updateNotification", "tags": ["Notifications"], "summary": "Update notification read state", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "notification", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateNotificationRequest" } } } },
+        "responses": { "204": { "description": "Read state updated", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" } }
+      },
+      "delete": {
+        "operationId": "deleteNotification", "tags": ["Notifications"], "summary": "Dismiss a notification from the inbox", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "notification", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "204": { "description": "Notification dismissed", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" } }
       }
     },
     "/api/v1/auth/atproto/start": {
@@ -946,6 +971,126 @@
           "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }
         }
+      },
+      "patch": {
+        "operationId": "updateRepository",
+        "tags": ["Repositories"],
+        "summary": "Update repository settings",
+        "description": "Updates mutable repository metadata. Renaming preserves the old owner/slug route as an alias. Archiving makes the repository read-only. Changing visibility updates the portable AT Protocol record.",
+        "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [
+          { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateRepositoryRequest" } } } },
+        "responses": {
+          "200": { "description": "Updated repository", "headers": { "Content-Location": { "description": "Canonical API URL after a rename", "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Repository" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "$ref": "#/components/responses/BadGateway" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteRepository",
+        "tags": ["Repositories"],
+        "summary": "Request recoverable repository deletion",
+        "description": "Immediately removes the repository from live routes and quarantines Git data. The returned deletion resource may be deleted to restore the repository until purge_after.",
+        "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [
+          { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+          { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }
+        ],
+        "responses": {
+          "202": { "description": "Deletion accepted and repository quarantined", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryDeletion" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" },
+          "502": { "$ref": "#/components/responses/BadGateway" }
+        }
+      }
+    },
+    "/api/v1/repository-deletions/{deletion}": {
+      "get": {
+        "operationId": "getRepositoryDeletion", "tags": ["Repositories"], "summary": "Get a recoverable repository deletion", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "deletion", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Active deletion request", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryDeletion" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "delete": {
+        "operationId": "restoreRepositoryDeletion", "tags": ["Repositories"], "summary": "Cancel deletion and restore the repository", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "deletion", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Repository restored", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Repository" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/webhooks": {
+      "get": {
+        "operationId": "listRepositoryWebhooks", "tags": ["Webhooks"], "summary": "List repository webhooks", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "Webhook page", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryWebhookList" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "post": {
+        "operationId": "createRepositoryWebhook", "tags": ["Webhooks"], "summary": "Create a repository webhook", "description": "Secrets are encrypted at rest and never returned. Destinations must be public HTTPS endpoints. Deliveries use X-Adenosine-Signature-256 with an HMAC-SHA256 of the exact request body.", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateRepositoryWebhookRequest" } } } },
+        "responses": { "201": { "description": "Webhook created", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryWebhook" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/branch-protections": {
+      "get": {
+        "operationId": "listBranchProtections", "tags": ["Branch Protection"], "summary": "List repository branch protections", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "Branch protection page", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchProtectionList" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "post": {
+        "operationId": "createBranchProtection", "tags": ["Branch Protection"], "summary": "Create a repository-wide branch protection", "description": "The basic protection release supports the * pattern. Git itself rejects non-fast-forward updates and branch deletion before ref mutation.", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchProtectionInput" } } } },
+        "responses": { "201": { "description": "Branch protection created", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchProtection" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}": {
+      "get": {
+        "operationId": "getBranchProtection", "tags": ["Branch Protection"], "summary": "Get a branch protection", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "name": "protection", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Branch protection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchProtection" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "put": {
+        "operationId": "updateBranchProtection", "tags": ["Branch Protection"], "summary": "Replace a branch protection", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "name": "protection", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchProtectionInput" } } } },
+        "responses": { "200": { "description": "Branch protection updated", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchProtection" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      },
+      "delete": {
+        "operationId": "deleteBranchProtection", "tags": ["Branch Protection"], "summary": "Delete a branch protection", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "name": "protection", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "204": { "description": "Branch protection deleted", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}": {
+      "get": {
+        "operationId": "getRepositoryWebhook", "tags": ["Webhooks"], "summary": "Get a repository webhook", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "name": "webhook", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Webhook configuration", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryWebhook" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "put": {
+        "operationId": "updateRepositoryWebhook", "tags": ["Webhooks"], "summary": "Replace a repository webhook configuration", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "name": "webhook", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateRepositoryWebhookRequest" } } } },
+        "responses": { "200": { "description": "Webhook updated", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryWebhook" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      },
+      "delete": {
+        "operationId": "deleteRepositoryWebhook", "tags": ["Webhooks"], "summary": "Delete a repository webhook", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "name": "webhook", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "204": { "description": "Webhook deleted", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}/deliveries": {
+      "get": {
+        "operationId": "listWebhookDeliveries", "tags": ["Webhooks"], "summary": "List webhook delivery attempts", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "name": "webhook", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "Delivery page", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WebhookDeliveryList" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "post": {
+        "operationId": "createWebhookRedelivery", "tags": ["Webhooks"], "summary": "Create a new delivery from an earlier payload", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "name": "webhook", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateWebhookRedeliveryRequest" } } } },
+        "responses": { "201": { "description": "Redelivery queued", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WebhookDelivery" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
       }
     },
     "/api/v1/repositories/{owner}/{repo}/branches": {
@@ -1580,6 +1725,63 @@
           ,"organization": { "$ref": "#/components/schemas/OrganizationSlug", "description": "Create the repository in this organization instead of the current account." }
         }
       },
+      "UpdateRepositoryRequest": {
+        "type": "object", "additionalProperties": false, "minProperties": 1,
+        "properties": {
+          "slug": { "$ref": "#/components/schemas/RepositorySlug" },
+          "display_name": { "type": "string", "maxLength": 255, "nullable": true },
+          "description": { "type": "string", "maxLength": 2000, "nullable": true },
+          "visibility": { "type": "string", "enum": ["public", "private"] },
+          "default_branch": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "archived": { "type": "boolean" }
+        }
+      },
+      "RepositoryDeletion": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "repository_id", "requested_at", "purge_after"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "repository_id": { "type": "string", "format": "uuid" },
+          "requested_at": { "type": "string", "format": "date-time" },
+          "purge_after": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Notification": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "kind", "actor_did", "repository_uri", "owner", "repository_slug", "subject_uri", "subject_kind", "title", "occurred_at", "read"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "kind": { "type": "string", "enum": ["mention", "issue_comment", "pull_request_review", "pull_request_merged"] },
+          "actor_did": { "type": "string" },
+          "repository_uri": { "type": "string" },
+          "owner": { "type": "string" },
+          "repository_slug": { "$ref": "#/components/schemas/RepositorySlug" },
+          "subject_uri": { "type": "string" },
+          "subject_kind": { "type": "string", "enum": ["issue", "pull_request"] },
+          "title": { "type": "string" },
+          "occurred_at": { "type": "string", "format": "date-time" },
+          "read": { "type": "boolean" }
+        }
+      },
+      "NotificationList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Notification" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "UpdateNotificationRequest": { "type": "object", "additionalProperties": false, "required": ["read"], "properties": { "read": { "type": "boolean" } } },
+      "WebhookEvent": { "type": "string", "enum": ["push", "issue", "pull_request", "review"] },
+      "RepositoryWebhook": {
+        "type": "object", "additionalProperties": false, "required": ["id", "url", "events", "enabled", "has_secret", "created_at", "updated_at"],
+        "properties": { "id": { "type": "string", "format": "uuid" }, "url": { "type": "string", "format": "uri" }, "events": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/components/schemas/WebhookEvent" } }, "enabled": { "type": "boolean" }, "has_secret": { "type": "boolean", "enum": [true] }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } }
+      },
+      "RepositoryWebhookList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/RepositoryWebhook" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "CreateRepositoryWebhookRequest": { "type": "object", "additionalProperties": false, "required": ["url", "secret", "events"], "properties": { "url": { "type": "string", "format": "uri", "maxLength": 2048 }, "secret": { "type": "string", "minLength": 16, "maxLength": 256 }, "events": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/components/schemas/WebhookEvent" } }, "enabled": { "type": "boolean", "default": true } } },
+      "UpdateRepositoryWebhookRequest": { "type": "object", "additionalProperties": false, "required": ["url", "events", "enabled"], "properties": { "url": { "type": "string", "format": "uri", "maxLength": 2048 }, "secret": { "type": "string", "minLength": 16, "maxLength": 256, "description": "Omit to retain the current encrypted secret." }, "events": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/components/schemas/WebhookEvent" } }, "enabled": { "type": "boolean" } } },
+      "WebhookDelivery": {
+        "type": "object", "additionalProperties": false, "required": ["id", "webhook_id", "event", "attempts", "created_at"],
+        "properties": { "id": { "type": "string", "format": "uuid" }, "webhook_id": { "type": "string", "format": "uuid" }, "event": { "$ref": "#/components/schemas/WebhookEvent" }, "attempts": { "type": "integer", "minimum": 0 }, "response_status": { "type": "integer", "nullable": true }, "response_body": { "type": "string", "nullable": true }, "delivered_at": { "type": "string", "format": "date-time", "nullable": true }, "failed_at": { "type": "string", "format": "date-time", "nullable": true }, "last_error_code": { "type": "string", "nullable": true }, "created_at": { "type": "string", "format": "date-time" } }
+      },
+      "WebhookDeliveryList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/WebhookDelivery" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "CreateWebhookRedeliveryRequest": { "type": "object", "additionalProperties": false, "required": ["delivery_id"], "properties": { "delivery_id": { "type": "string", "format": "uuid" } } },
+      "BranchProtection": { "type": "object", "additionalProperties": false, "required": ["id", "pattern", "deny_force_push", "deny_deletion", "created_at", "updated_at"], "properties": { "id": { "type": "string", "format": "uuid" }, "pattern": { "type": "string", "enum": ["*"] }, "deny_force_push": { "type": "boolean" }, "deny_deletion": { "type": "boolean" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } } },
+      "BranchProtectionInput": { "type": "object", "additionalProperties": false, "required": ["pattern", "deny_force_push", "deny_deletion"], "properties": { "pattern": { "type": "string", "enum": ["*"] }, "deny_force_push": { "type": "boolean" }, "deny_deletion": { "type": "boolean" } } },
+      "BranchProtectionList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/BranchProtection" } }, "page": { "$ref": "#/components/schemas/Page" } } },
       "CreateRepositoryForkRequest": {
         "type": "object", "additionalProperties": false,
         "properties": {
@@ -1624,7 +1826,7 @@
       },
       "Repository": {
         "type": "object",
-        "required": ["slug", "visibility", "state", "default_branch", "owner", "hosting", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "fork_count", "created_at", "updated_at"],
+        "required": ["slug", "visibility", "state", "default_branch", "archived", "owner", "hosting", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "fork_count", "created_at", "updated_at"],
         "properties": {
           "id": { "type": "string", "format": "uuid", "nullable": true },
           "uri": { "type": "string", "nullable": true },
@@ -1635,6 +1837,7 @@
           "visibility": { "type": "string", "enum": ["public", "private"] },
           "state": { "type": "string", "enum": ["creating", "active", "failed", "deleting", "deleted"] },
           "default_branch": { "type": "string" },
+          "archived": { "type": "boolean" },
           "owner": { "$ref": "#/components/schemas/RepositoryOwner" },
           "hosting": { "$ref": "#/components/schemas/RepositoryHosting" },
           "viewer_can_admin": { "type": "boolean", "description": "Whether the current viewer has the repository admin role and may manage direct collaborators." },

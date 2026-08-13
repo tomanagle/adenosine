@@ -178,3 +178,70 @@ func (q *Queries) CreateOutboxEventIfAbsent(ctx context.Context, arg CreateOutbo
 	)
 	return err
 }
+
+const createRepositoryActivityEvent = `-- name: CreateRepositoryActivityEvent :exec
+WITH target AS (
+  SELECT repository.local_repository_id AS repository_id
+  FROM network.repositories AS repository
+  WHERE repository.uri = $7
+  UNION ALL
+  SELECT repository.local_repository_id
+  FROM network.issues AS issue
+  JOIN network.repositories AS repository ON repository.uri = issue.repository_uri
+  WHERE issue.uri = $7
+  UNION ALL
+  SELECT repository.local_repository_id
+  FROM network.pull_requests AS pull
+  JOIN network.repositories AS repository ON repository.uri = pull.target_repository_uri
+  WHERE pull.uri = $7
+  LIMIT 1
+)
+INSERT INTO ops.outbox_events (
+  id, type, aggregate_type, aggregate_id, payload, created_at, available_at, traceparent, tracestate
+)
+SELECT $1, $2, 'repository', target.repository_id::text,
+       $3, $4, $4, $5, $6
+FROM target
+WHERE target.repository_id IS NOT NULL
+`
+
+type CreateRepositoryActivityEventParams struct {
+	ID          pgtype.UUID        `json:"id"`
+	Type        string             `json:"type"`
+	Payload     []byte             `json:"payload"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	Traceparent pgtype.Text        `json:"traceparent"`
+	Tracestate  pgtype.Text        `json:"tracestate"`
+	SubjectUri  string             `json:"subject_uri"`
+}
+
+func (q *Queries) CreateRepositoryActivityEvent(ctx context.Context, arg CreateRepositoryActivityEventParams) error {
+	_, err := q.db.Exec(ctx, createRepositoryActivityEvent,
+		arg.ID,
+		arg.Type,
+		arg.Payload,
+		arg.CreatedAt,
+		arg.Traceparent,
+		arg.Tracestate,
+		arg.SubjectUri,
+	)
+	return err
+}
+
+const retryOutboxEvent = `-- name: RetryOutboxEvent :exec
+UPDATE ops.outbox_events
+SET available_at = $1, claimed_at = NULL, claimed_by = NULL,
+    last_error_code = $2
+WHERE id = $3 AND completed_at IS NULL
+`
+
+type RetryOutboxEventParams struct {
+	AvailableAt   pgtype.Timestamptz `json:"available_at"`
+	LastErrorCode pgtype.Text        `json:"last_error_code"`
+	ID            pgtype.UUID        `json:"id"`
+}
+
+func (q *Queries) RetryOutboxEvent(ctx context.Context, arg RetryOutboxEventParams) error {
+	_, err := q.db.Exec(ctx, retryOutboxEvent, arg.AvailableAt, arg.LastErrorCode, arg.ID)
+	return err
+}

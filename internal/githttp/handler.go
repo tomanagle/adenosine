@@ -154,7 +154,12 @@ func (handler *Handler) logFailure(ctx context.Context, span trace.Span, repo re
 func (handler *Handler) authorizeWrite(w http.ResponseWriter, r *http.Request, repo repository.Repository) bool {
 	ctx, span := otel.Tracer("github.com/adenosine-dev/adenosine/internal/githttp").Start(r.Context(), "githttp.authorize",
 		trace.WithAttributes(attribute.String("git.operation", "receive-pack"), attribute.String("git.transport", "http")))
-	err := handler.authorizer.AuthorizeWrite(ctx, r.WithContext(ctx), repo)
+	var err error
+	if repo.ArchivedAt != nil {
+		err = auth.ErrForbidden
+	} else {
+		err = handler.authorizer.AuthorizeWrite(ctx, r.WithContext(ctx), repo)
+	}
 	span.SetAttributes(attribute.Bool("authorization.allowed", err == nil))
 	if err != nil {
 		span.SetStatus(codes.Error, "authorization denied")

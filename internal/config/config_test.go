@@ -173,6 +173,43 @@ func TestLoadElectricConfiguration(t *testing.T) {
 	}
 }
 
+func TestLoadRepositoryDeletionRetention(t *testing.T) {
+	key := base64.StdEncoding.EncodeToString(make([]byte, 32))
+	t.Setenv("DATABASE_URL", "postgres://localhost/adenosine")
+	t.Setenv("ADENOSINE_OAUTH_STATE_KEY", key)
+	t.Setenv("ADENOSINE_OAUTH_CREDENTIAL_KEY", key)
+
+	testCases := []struct {
+		name      string
+		value     string
+		want      time.Duration
+		wantError string
+	}{
+		{name: "default", want: 7 * 24 * time.Hour},
+		{name: "configured", value: "48h", want: 48 * time.Hour},
+		{name: "malformed", value: "next week", wantError: "ADENOSINE_REPOSITORY_DELETION_RETENTION"},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Setenv("ADENOSINE_REPOSITORY_DELETION_RETENTION", testCase.value)
+			cfg, err := load()
+			if testCase.wantError != "" {
+				if err == nil || !strings.Contains(err.Error(), testCase.wantError) {
+					t.Fatalf("error = %v, want containing %q", err, testCase.wantError)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("load(): %v", err)
+			}
+			if cfg.RepositoryDeletionRetention != testCase.want {
+				t.Fatalf("RepositoryDeletionRetention = %s, want %s", cfg.RepositoryDeletionRetention, testCase.want)
+			}
+		})
+	}
+}
+
 func TestLoadOAuthEncryptionKeys(t *testing.T) {
 	testCases := []struct{ name string }{{name: "valid then invalid credential key"}}
 	for _, testCase := range testCases {

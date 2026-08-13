@@ -15,7 +15,7 @@ const activateRepository = `-- name: ActivateRepository :one
 UPDATE core.repositories
 SET state = 'active', at_uri = $1, at_cid = $2, updated_at = $3
 WHERE id = $4 AND deleted_at IS NULL
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at
 `
 
 type ActivateRepositoryParams struct {
@@ -53,6 +53,7 @@ func (q *Queries) ActivateRepository(ctx context.Context, arg ActivateRepository
 		&i.ForkedFromCid,
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
+		&i.ArchivedAt,
 	)
 	return i, err
 }
@@ -64,7 +65,7 @@ INSERT INTO core.repositories (
     forked_from_local_repository_id, created_at, updated_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at
 `
 
 type CreateRepositoryParams struct {
@@ -128,6 +129,7 @@ func (q *Queries) CreateRepository(ctx context.Context, arg CreateRepositoryPara
 		&i.ForkedFromCid,
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
+		&i.ArchivedAt,
 	)
 	return i, err
 }
@@ -166,7 +168,7 @@ func (q *Queries) GetForkSourceByURI(ctx context.Context, uri string) (GetForkSo
 }
 
 const getRepository = `-- name: GetRepository :one
-SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count FROM core.repositories WHERE id = $1 AND deleted_at IS NULL
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at FROM core.repositories WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetRepository(ctx context.Context, id pgtype.UUID) (CoreRepository, error) {
@@ -192,22 +194,33 @@ func (q *Queries) GetRepository(ctx context.Context, id pgtype.UUID) (CoreReposi
 		&i.ForkedFromCid,
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
+		&i.ArchivedAt,
 	)
 	return i, err
 }
 
 const getRepositoryByOwnerSlug = `-- name: GetRepositoryByOwnerSlug :one
-SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count
+SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at
 FROM core.repositories AS repository
 LEFT JOIN core.owner_routes AS owner_route ON (
     (repository.organization_id IS NULL AND owner_route.account_did = repository.owner_did)
     OR owner_route.organization_id = repository.organization_id
 )
+LEFT JOIN core.repository_aliases AS repository_alias
+  ON repository_alias.repository_id = repository.id
 WHERE (
-    lower(owner_route.alias) = lower($1)
-    OR (repository.organization_id IS NULL AND repository.owner_did = $1)
+    (
+      (
+        lower(owner_route.alias) = lower($1)
+        OR (repository.organization_id IS NULL AND repository.owner_did = $1)
+      )
+      AND lower(repository.slug) = lower($2)
+    )
+    OR (
+      lower(repository_alias.owner_alias) = lower($1)
+      AND lower(repository_alias.slug_alias) = lower($2)
+    )
   )
-  AND lower(repository.slug) = lower($2)
   AND repository.deleted_at IS NULL
 `
 
@@ -239,12 +252,89 @@ func (q *Queries) GetRepositoryByOwnerSlug(ctx context.Context, arg GetRepositor
 		&i.ForkedFromCid,
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
+		&i.ArchivedAt,
 	)
 	return i, err
 }
 
+const getRepositoryDeletion = `-- name: GetRepositoryDeletion :one
+SELECT deletion.id, deletion.repository_id, deletion.requested_by_did, deletion.requested_at, deletion.purge_after, deletion.restored_at, deletion.purged_at
+FROM core.repository_deletions AS deletion
+JOIN core.repositories AS repository ON repository.id = deletion.repository_id
+WHERE deletion.id = $1
+  AND deletion.restored_at IS NULL
+  AND deletion.purged_at IS NULL
+`
+
+func (q *Queries) GetRepositoryDeletion(ctx context.Context, id pgtype.UUID) (CoreRepositoryDeletion, error) {
+	row := q.db.QueryRow(ctx, getRepositoryDeletion, id)
+	var i CoreRepositoryDeletion
+	err := row.Scan(
+		&i.ID,
+		&i.RepositoryID,
+		&i.RequestedByDid,
+		&i.RequestedAt,
+		&i.PurgeAfter,
+		&i.RestoredAt,
+		&i.PurgedAt,
+	)
+	return i, err
+}
+
+const listDueRepositoryDeletions = `-- name: ListDueRepositoryDeletions :many
+SELECT deletion.id, deletion.repository_id, deletion.requested_by_did, deletion.requested_at, deletion.purge_after, deletion.restored_at, deletion.purged_at
+FROM core.repository_deletions AS deletion
+WHERE deletion.restored_at IS NULL
+  AND deletion.purged_at IS NULL
+  AND deletion.purge_after <= $1
+  AND (
+    $2::uuid IS NULL
+    OR (deletion.purge_after, deletion.id) > (
+      SELECT cursor.purge_after, cursor.id
+      FROM core.repository_deletions AS cursor
+      WHERE cursor.id = $2::uuid
+    )
+  )
+ORDER BY deletion.purge_after, deletion.id
+LIMIT $3
+`
+
+type ListDueRepositoryDeletionsParams struct {
+	Now       pgtype.Timestamptz `json:"now"`
+	AfterID   pgtype.UUID        `json:"after_id"`
+	PageLimit int32              `json:"page_limit"`
+}
+
+func (q *Queries) ListDueRepositoryDeletions(ctx context.Context, arg ListDueRepositoryDeletionsParams) ([]CoreRepositoryDeletion, error) {
+	rows, err := q.db.Query(ctx, listDueRepositoryDeletions, arg.Now, arg.AfterID, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CoreRepositoryDeletion{}
+	for rows.Next() {
+		var i CoreRepositoryDeletion
+		if err := rows.Scan(
+			&i.ID,
+			&i.RepositoryID,
+			&i.RequestedByDid,
+			&i.RequestedAt,
+			&i.PurgeAfter,
+			&i.RestoredAt,
+			&i.PurgedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRepositoriesByOrganization = `-- name: ListRepositoriesByOrganization :many
-SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at
 FROM core.repositories
 WHERE organization_id = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC, id DESC
@@ -279,6 +369,7 @@ func (q *Queries) ListRepositoriesByOrganization(ctx context.Context, organizati
 			&i.ForkedFromCid,
 			&i.ForkedFromLocalRepositoryID,
 			&i.ForkCount,
+			&i.ArchivedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -291,7 +382,7 @@ func (q *Queries) ListRepositoriesByOrganization(ctx context.Context, organizati
 }
 
 const listRepositoriesByOwner = `-- name: ListRepositoriesByOwner :many
-SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at
 FROM core.repositories
 WHERE owner_did = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC, id DESC
@@ -332,6 +423,7 @@ func (q *Queries) ListRepositoriesByOwner(ctx context.Context, arg ListRepositor
 			&i.ForkedFromCid,
 			&i.ForkedFromLocalRepositoryID,
 			&i.ForkCount,
+			&i.ArchivedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -341,6 +433,31 @@ func (q *Queries) ListRepositoriesByOwner(ctx context.Context, arg ListRepositor
 		return nil, err
 	}
 	return items, nil
+}
+
+const markRepositoryPurged = `-- name: MarkRepositoryPurged :exec
+WITH purged AS (
+  UPDATE core.repository_deletions AS deletion
+  SET purged_at = $1
+  WHERE deletion.id = $2
+    AND deletion.restored_at IS NULL
+    AND deletion.purged_at IS NULL
+  RETURNING deletion.repository_id
+)
+UPDATE core.repositories AS repository
+SET state = 'deleted', deleted_at = $1, updated_at = $1
+FROM purged
+WHERE repository.id = purged.repository_id
+`
+
+type MarkRepositoryPurgedParams struct {
+	PurgedAt pgtype.Timestamptz `json:"purged_at"`
+	ID       pgtype.UUID        `json:"id"`
+}
+
+func (q *Queries) MarkRepositoryPurged(ctx context.Context, arg MarkRepositoryPurgedParams) error {
+	_, err := q.db.Exec(ctx, markRepositoryPurged, arg.PurgedAt, arg.ID)
+	return err
 }
 
 const pageRepositoriesByOrganization = `-- name: PageRepositoriesByOrganization :many
@@ -358,7 +475,7 @@ WITH RECURSIVE team_lineage AS (
   WHERE parent.organization_id = $2
     AND parent.deleted_at IS NULL
 )
-SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count,
+SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at,
   (
     EXISTS (
       SELECT 1 FROM core.organization_members AS member
@@ -424,6 +541,7 @@ type PageRepositoriesByOrganizationRow struct {
 	ForkedFromCid               pgtype.Text        `json:"forked_from_cid"`
 	ForkedFromLocalRepositoryID pgtype.UUID        `json:"forked_from_local_repository_id"`
 	ForkCount                   int64              `json:"fork_count"`
+	ArchivedAt                  pgtype.Timestamptz `json:"archived_at"`
 	ViewerCanAdmin              pgtype.Bool        `json:"viewer_can_admin"`
 }
 
@@ -461,6 +579,7 @@ func (q *Queries) PageRepositoriesByOrganization(ctx context.Context, arg PageRe
 			&i.ForkedFromCid,
 			&i.ForkedFromLocalRepositoryID,
 			&i.ForkCount,
+			&i.ArchivedAt,
 			&i.ViewerCanAdmin,
 		); err != nil {
 			return nil, err
@@ -473,11 +592,192 @@ func (q *Queries) PageRepositoriesByOrganization(ctx context.Context, arg PageRe
 	return items, nil
 }
 
+const requestRepositoryDeletion = `-- name: RequestRepositoryDeletion :one
+WITH changed AS (
+  UPDATE core.repositories AS repository
+  SET state = 'deleting', updated_at = $3
+  WHERE repository.id = $5
+    AND repository.state = 'active'
+    AND repository.deleted_at IS NULL
+  RETURNING repository.id
+)
+INSERT INTO core.repository_deletions (
+  id, repository_id, requested_by_did, requested_at, purge_after
+)
+SELECT $1, changed.id, $2, $3, $4
+FROM changed
+RETURNING id, repository_id, requested_by_did, requested_at, purge_after, restored_at, purged_at
+`
+
+type RequestRepositoryDeletionParams struct {
+	ID             pgtype.UUID        `json:"id"`
+	RequestedByDid string             `json:"requested_by_did"`
+	RequestedAt    pgtype.Timestamptz `json:"requested_at"`
+	PurgeAfter     pgtype.Timestamptz `json:"purge_after"`
+	RepositoryID   pgtype.UUID        `json:"repository_id"`
+}
+
+func (q *Queries) RequestRepositoryDeletion(ctx context.Context, arg RequestRepositoryDeletionParams) (CoreRepositoryDeletion, error) {
+	row := q.db.QueryRow(ctx, requestRepositoryDeletion,
+		arg.ID,
+		arg.RequestedByDid,
+		arg.RequestedAt,
+		arg.PurgeAfter,
+		arg.RepositoryID,
+	)
+	var i CoreRepositoryDeletion
+	err := row.Scan(
+		&i.ID,
+		&i.RepositoryID,
+		&i.RequestedByDid,
+		&i.RequestedAt,
+		&i.PurgeAfter,
+		&i.RestoredAt,
+		&i.PurgedAt,
+	)
+	return i, err
+}
+
+const restoreRepositoryDeletion = `-- name: RestoreRepositoryDeletion :one
+WITH restored AS (
+  UPDATE core.repository_deletions AS deletion
+  SET restored_at = $1
+  WHERE deletion.id = $2
+    AND deletion.restored_at IS NULL
+    AND deletion.purged_at IS NULL
+    AND deletion.purge_after > $1
+  RETURNING deletion.repository_id
+)
+UPDATE core.repositories AS repository
+SET state = 'active', updated_at = $1
+FROM restored
+WHERE repository.id = restored.repository_id
+RETURNING repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at
+`
+
+type RestoreRepositoryDeletionParams struct {
+	RestoredAt pgtype.Timestamptz `json:"restored_at"`
+	ID         pgtype.UUID        `json:"id"`
+}
+
+func (q *Queries) RestoreRepositoryDeletion(ctx context.Context, arg RestoreRepositoryDeletionParams) (CoreRepository, error) {
+	row := q.db.QueryRow(ctx, restoreRepositoryDeletion, arg.RestoredAt, arg.ID)
+	var i CoreRepository
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerDid,
+		&i.Slug,
+		&i.DisplayName,
+		&i.Description,
+		&i.Visibility,
+		&i.State,
+		&i.DefaultBranch,
+		&i.StorageKey,
+		&i.AtUri,
+		&i.AtCid,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.OrganizationID,
+		&i.ForkedFromUri,
+		&i.ForkedFromCid,
+		&i.ForkedFromLocalRepositoryID,
+		&i.ForkCount,
+		&i.ArchivedAt,
+	)
+	return i, err
+}
+
+const updateRepositorySettings = `-- name: UpdateRepositorySettings :one
+WITH previous AS (
+  SELECT repository.id, repository.slug
+  FROM core.repositories AS repository
+  WHERE repository.id = $10
+    AND repository.deleted_at IS NULL
+    AND repository.state = 'active'
+), alias AS (
+  INSERT INTO core.repository_aliases (id, repository_id, owner_alias, slug_alias, created_at)
+  SELECT $11, previous.id, $12, previous.slug, $9
+  FROM previous
+  WHERE lower(previous.slug) <> lower($1)
+  ON CONFLICT (lower(owner_alias), lower(slug_alias)) DO NOTHING
+)
+UPDATE core.repositories AS repository
+SET slug = $1,
+    display_name = $2,
+    description = $3,
+    visibility = $4,
+    default_branch = $5,
+    archived_at = $6,
+    at_uri = $7,
+    at_cid = $8,
+    updated_at = $9
+FROM previous
+WHERE repository.id = previous.id
+RETURNING repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at
+`
+
+type UpdateRepositorySettingsParams struct {
+	Slug          string             `json:"slug"`
+	DisplayName   pgtype.Text        `json:"display_name"`
+	Description   pgtype.Text        `json:"description"`
+	Visibility    string             `json:"visibility"`
+	DefaultBranch string             `json:"default_branch"`
+	ArchivedAt    pgtype.Timestamptz `json:"archived_at"`
+	AtUri         pgtype.Text        `json:"at_uri"`
+	AtCid         pgtype.Text        `json:"at_cid"`
+	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+	ID            pgtype.UUID        `json:"id"`
+	AliasID       pgtype.UUID        `json:"alias_id"`
+	OwnerAlias    string             `json:"owner_alias"`
+}
+
+func (q *Queries) UpdateRepositorySettings(ctx context.Context, arg UpdateRepositorySettingsParams) (CoreRepository, error) {
+	row := q.db.QueryRow(ctx, updateRepositorySettings,
+		arg.Slug,
+		arg.DisplayName,
+		arg.Description,
+		arg.Visibility,
+		arg.DefaultBranch,
+		arg.ArchivedAt,
+		arg.AtUri,
+		arg.AtCid,
+		arg.UpdatedAt,
+		arg.ID,
+		arg.AliasID,
+		arg.OwnerAlias,
+	)
+	var i CoreRepository
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerDid,
+		&i.Slug,
+		&i.DisplayName,
+		&i.Description,
+		&i.Visibility,
+		&i.State,
+		&i.DefaultBranch,
+		&i.StorageKey,
+		&i.AtUri,
+		&i.AtCid,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.OrganizationID,
+		&i.ForkedFromUri,
+		&i.ForkedFromCid,
+		&i.ForkedFromLocalRepositoryID,
+		&i.ForkCount,
+		&i.ArchivedAt,
+	)
+	return i, err
+}
+
 const updateRepositoryState = `-- name: UpdateRepositoryState :one
 UPDATE core.repositories
 SET state = $2, updated_at = $3
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at
 `
 
 type UpdateRepositoryStateParams struct {
@@ -509,6 +809,7 @@ func (q *Queries) UpdateRepositoryState(ctx context.Context, arg UpdateRepositor
 		&i.ForkedFromCid,
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
+		&i.ArchivedAt,
 	)
 	return i, err
 }

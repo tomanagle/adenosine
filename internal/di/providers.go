@@ -9,6 +9,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/app"
 	"github.com/adenosine-dev/adenosine/internal/atproto"
 	"github.com/adenosine-dev/adenosine/internal/auth"
+	"github.com/adenosine-dev/adenosine/internal/branchprotection"
 	"github.com/adenosine-dev/adenosine/internal/comment"
 	"github.com/adenosine-dev/adenosine/internal/config"
 	"github.com/adenosine-dev/adenosine/internal/database"
@@ -20,6 +21,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/identity"
 	"github.com/adenosine-dev/adenosine/internal/issue"
 	"github.com/adenosine-dev/adenosine/internal/moderation"
+	"github.com/adenosine-dev/adenosine/internal/notification"
 	"github.com/adenosine-dev/adenosine/internal/observability"
 	"github.com/adenosine-dev/adenosine/internal/organization"
 	"github.com/adenosine-dev/adenosine/internal/owner"
@@ -32,6 +34,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/storage"
 	"github.com/adenosine-dev/adenosine/internal/syncproxy"
+	"github.com/adenosine-dev/adenosine/internal/webhook"
 )
 
 // Must constructs the application or panics during startup.
@@ -61,8 +64,9 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	git := gitservice.NewService(gitservice.NewRunner(cfg.GitBinary), repositoryStorage)
 	oauthClient := atproto.Must(cfg.BaseURL, db.Queries(), cfg.OAuthStateKey, cfg.OAuthCredentialKey, atproto.SystemClock{})
 	repositoryEndpoints := repository.Must(cfg.BaseURL, cfg.SSHHost, cfg.SSHPort)
+	repositoryStore := repository.NewPostgresStore(db.Queries())
 	repositories := repository.NewService(
-		repository.NewPostgresStore(db.Queries()),
+		repositoryStore,
 		git,
 		repository.SystemClock{},
 		repository.UUIDv7Generator{},
@@ -83,6 +87,16 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	eventWriter := event.NewWriter(db.Queries())
 	pullRequests := pullrequest.NewApplicationService(pullrequest.NewPostgresStore(db.Queries()), git, oauthClient, atproto.SystemClock{}, authStore, eventWriter)
 	moderationService := moderation.NewService(moderation.NewPostgresStore(db.Queries()), atproto.SystemClock{})
+	notifications := notification.NewStore(db.Queries())
+	webhooks, err := webhook.NewService(db.Queries(), cfg.OAuthCredentialKey)
+	if err != nil {
+		db.Close()
+		_ = shutdownTelemetry(ctx)
+		return nil, fmt.Errorf("create webhook service: %w", err)
+	}
+	webhookWorker := webhook.NewWorker(db.Queries(), webhooks)
+	repositoryPurgeWorker := repository.NewPurgeWorker(repositoryStore, git)
+	branchProtections := branchprotection.NewService(db.Queries(), git)
 	organizations := organization.NewService(
 		organization.NewPostgresStore(db, db.Queries()),
 		organization.SystemClock{},
@@ -113,33 +127,38 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	)
 
 	server, err := restapi.NewServer(cfg.ListenAddr, cfg.BaseURL, db, logger, restapi.Dependencies{
-		Sessions:      auth.NewSessionAuthenticator(authStore, clock),
-		Login:         loginService,
-		LocalSessions: sessionService,
-		Passkeys:      passkeys,
-		Accounts:      authStore,
-		OAuthMetadata: oauthClient,
-		TokenAuth:     auth.NewTokenAuthenticator(authStore, clock),
-		Tokens:        auth.NewTokenService(authStore, clock, auth.UUIDv7Generator{}, auth.RandomSecretGenerator{}),
-		SSHKeys:       auth.NewSSHKeyService(authStore, clock, auth.UUIDv7Generator{}),
-		Profiles:      profiles,
-		Owners:        owner.NewPostgresResolver(db.Queries()),
-		Organizations: organizations,
-		Teams:         organizationTeams,
-		Collaborators: organizationCollaborators,
-		Federation:    federationDependencies,
-		Repositories:  repositories,
-		Endpoints:     repositoryEndpoints,
-		Discovery:     discovery,
-		Search:        searchService,
-		Stars:         stars,
-		Issues:        issues,
-		Comments:      comments,
-		PullRequests:  pullRequests,
-		Moderation:    moderationService,
-		Authorization: authStore,
-		Git:           git,
-		Sync:          syncProxy,
+		Sessions:                    auth.NewSessionAuthenticator(authStore, clock),
+		Login:                       loginService,
+		LocalSessions:               sessionService,
+		Passkeys:                    passkeys,
+		Accounts:                    authStore,
+		OAuthMetadata:               oauthClient,
+		TokenAuth:                   auth.NewTokenAuthenticator(authStore, clock),
+		Tokens:                      auth.NewTokenService(authStore, clock, auth.UUIDv7Generator{}, auth.RandomSecretGenerator{}),
+		SSHKeys:                     auth.NewSSHKeyService(authStore, clock, auth.UUIDv7Generator{}),
+		Profiles:                    profiles,
+		Owners:                      owner.NewPostgresResolver(db.Queries()),
+		Organizations:               organizations,
+		Teams:                       organizationTeams,
+		Collaborators:               organizationCollaborators,
+		Federation:                  federationDependencies,
+		Repositories:                repositories,
+		Endpoints:                   repositoryEndpoints,
+		Discovery:                   discovery,
+		Search:                      searchService,
+		Stars:                       stars,
+		Issues:                      issues,
+		Comments:                    comments,
+		PullRequests:                pullRequests,
+		Moderation:                  moderationService,
+		Notifications:               notifications,
+		Webhooks:                    webhooks,
+		BranchProtections:           branchProtections,
+		Activity:                    eventWriter,
+		Authorization:               authStore,
+		Git:                         git,
+		Sync:                        syncProxy,
+		RepositoryDeletionRetention: cfg.RepositoryDeletionRetention,
 	}, gitHTTP)
 	if err != nil {
 		db.Close()
@@ -147,7 +166,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		return nil, fmt.Errorf("create REST server: %w", err)
 	}
 
-	return app.New(server, sshServer, logger, cfg.ShutdownTimeout,
+	return app.NewWithWorkers(server, sshServer, logger, cfg.ShutdownTimeout, []app.Worker{webhookWorker, repositoryPurgeWorker},
 		shutdownTelemetry,
 		func(context.Context) error {
 			db.Close()

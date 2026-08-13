@@ -67,6 +67,7 @@ type Repository struct {
 	ForkedFrom       *ForkSource
 	ForkCount        int64
 	ViewerCanAdmin   bool
+	ArchivedAt       *time.Time
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 }
@@ -127,6 +128,37 @@ type CreateInput struct {
 	Description      string
 	Visibility       Visibility
 	DefaultBranch    string
+}
+
+// SettingsInput is the complete mutable repository settings document.
+type SettingsInput struct {
+	OwnerAlias    string
+	Slug          string
+	DisplayName   string
+	Description   string
+	Visibility    Visibility
+	DefaultBranch string
+	Archived      bool
+}
+
+// Validate checks repository settings at the domain boundary.
+func (input SettingsInput) Validate() error {
+	if strings.TrimSpace(input.OwnerAlias) == "" {
+		return fmt.Errorf("owner route must not be empty")
+	}
+	return CreateInput{
+		OwnerDID: "did:placeholder:settings", Slug: input.Slug, DisplayName: input.DisplayName,
+		Description: input.Description, Visibility: input.Visibility, DefaultBranch: input.DefaultBranch,
+	}.Validate()
+}
+
+// Deletion describes a recoverable repository deletion request.
+type Deletion struct {
+	ID             uuid.UUID
+	RepositoryID   ID
+	RequestedByDID string
+	RequestedAt    time.Time
+	PurgeAfter     time.Time
 }
 
 // Validate checks repository input at the domain boundary.

@@ -16,6 +16,12 @@ type repositoryPaths interface {
 	Path(context.Context, repository.ID) (string, error)
 }
 
+type repositoryLifecyclePaths interface {
+	Quarantine(context.Context, repository.ID) error
+	Restore(context.Context, repository.ID) error
+	Purge(context.Context, repository.ID) error
+}
+
 // Service performs repository operations using native Git.
 type Service struct {
 	runner         *Runner
@@ -53,6 +59,82 @@ func (service *Service) Init(ctx context.Context, id repository.ID, defaultBranc
 	}
 	if err := service.runner.run(ctx, []string{"init", "--bare", "--initial-branch=" + defaultBranch, path}, nil, nil); err != nil {
 		return fmt.Errorf("initialize repository: %w", err)
+	}
+	return nil
+}
+
+// SetDefaultBranch validates an existing branch (or an unborn branch in an empty repository) and updates HEAD.
+func (service *Service) SetDefaultBranch(ctx context.Context, id repository.ID, branch string) error {
+	if err := service.runner.run(ctx, []string{"check-ref-format", "--branch", branch}, nil, nil); err != nil {
+		return fmt.Errorf("validate default branch: %w", err)
+	}
+	refs, err := service.Refs(ctx, id)
+	if err != nil {
+		return err
+	}
+	hasBranches, found := false, false
+	for _, ref := range refs {
+		if strings.HasPrefix(ref.Name, "refs/heads/") {
+			hasBranches = true
+			if ref.Name == "refs/heads/"+branch {
+				found = true
+			}
+		}
+	}
+	if hasBranches && !found {
+		return fmt.Errorf("branch %q does not exist", branch)
+	}
+	path, err := service.paths.Path(ctx, id)
+	if err != nil {
+		return fmt.Errorf("resolve repository path: %w", err)
+	}
+	if err := service.runner.run(ctx, []string{"--git-dir=" + path, "symbolic-ref", "HEAD", "refs/heads/" + branch}, nil, nil); err != nil {
+		return fmt.Errorf("update repository HEAD: %w", err)
+	}
+	return nil
+}
+
+// Quarantine removes a repository from live Git routing without deleting it.
+func (service *Service) Quarantine(ctx context.Context, id repository.ID) error {
+	paths, ok := service.paths.(repositoryLifecyclePaths)
+	if !ok {
+		return fmt.Errorf("repository storage does not support quarantine")
+	}
+	return paths.Quarantine(ctx, id)
+}
+
+// Restore returns a quarantined repository to live Git routing.
+func (service *Service) Restore(ctx context.Context, id repository.ID) error {
+	paths, ok := service.paths.(repositoryLifecyclePaths)
+	if !ok {
+		return fmt.Errorf("repository storage does not support restoration")
+	}
+	return paths.Restore(ctx, id)
+}
+
+// Purge permanently deletes a validated quarantined repository.
+func (service *Service) Purge(ctx context.Context, id repository.ID) error {
+	paths, ok := service.paths.(repositoryLifecyclePaths)
+	if !ok {
+		return fmt.Errorf("repository storage does not support purge")
+	}
+	return paths.Purge(ctx, id)
+}
+
+// SetReceiveProtection configures native receive-pack force-push and deletion guards.
+func (service *Service) SetReceiveProtection(ctx context.Context, id repository.ID, denyForcePush, denyDeletes bool) error {
+	path, err := service.paths.Path(ctx, id)
+	if err != nil {
+		return fmt.Errorf("resolve repository path: %w", err)
+	}
+	settings := []struct {
+		key   string
+		value bool
+	}{{"receive.denyNonFastForwards", denyForcePush}, {"receive.denyDeletes", denyDeletes}}
+	for _, setting := range settings {
+		if err := service.runner.run(ctx, []string{"--git-dir=" + path, "config", "--bool", setting.key, fmt.Sprintf("%t", setting.value)}, nil, nil); err != nil {
+			return fmt.Errorf("configure %s: %w", setting.key, err)
+		}
 	}
 	return nil
 }

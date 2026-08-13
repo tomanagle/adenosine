@@ -74,3 +74,93 @@ func (storage *Filesystem) Exists(ctx context.Context, id repository.ID) (bool, 
 	}
 	return true, nil
 }
+
+// Quarantine atomically moves a repository out of the live Git namespace.
+func (storage *Filesystem) Quarantine(ctx context.Context, id repository.ID) error {
+	live, quarantined, err := storage.lifecyclePaths(ctx, id)
+	if err != nil {
+		return err
+	}
+	if err := requireDirectory(live); err != nil {
+		return fmt.Errorf("inspect live repository: %w", err)
+	}
+	if _, err := os.Lstat(quarantined); err == nil {
+		return fmt.Errorf("quarantine repository target already exists")
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("inspect quarantine target: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(quarantined), 0o750); err != nil {
+		return fmt.Errorf("create quarantine shard: %w", err)
+	}
+	if err := os.Rename(live, quarantined); err != nil {
+		return fmt.Errorf("move repository to quarantine: %w", err)
+	}
+	return nil
+}
+
+// Restore atomically returns a quarantined repository to its live path.
+func (storage *Filesystem) Restore(ctx context.Context, id repository.ID) error {
+	live, quarantined, err := storage.lifecyclePaths(ctx, id)
+	if err != nil {
+		return err
+	}
+	if err := requireDirectory(quarantined); err != nil {
+		return fmt.Errorf("inspect quarantined repository: %w", err)
+	}
+	if _, err := os.Lstat(live); err == nil {
+		return fmt.Errorf("live repository target already exists")
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("inspect live repository target: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(live), 0o750); err != nil {
+		return fmt.Errorf("create live repository shard: %w", err)
+	}
+	if err := os.Rename(quarantined, live); err != nil {
+		return fmt.Errorf("restore repository from quarantine: %w", err)
+	}
+	return nil
+}
+
+// Purge removes one validated quarantined repository after its retention deadline.
+func (storage *Filesystem) Purge(ctx context.Context, id repository.ID) error {
+	_, quarantined, err := storage.lifecyclePaths(ctx, id)
+	if err != nil {
+		return err
+	}
+	if err := requireDirectory(quarantined); os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("inspect quarantined repository: %w", err)
+	}
+	if err := os.RemoveAll(quarantined); err != nil {
+		return fmt.Errorf("purge quarantined repository: %w", err)
+	}
+	return nil
+}
+
+func (storage *Filesystem) lifecyclePaths(ctx context.Context, id repository.ID) (string, string, error) {
+	live, err := storage.Path(ctx, id)
+	if err != nil {
+		return "", "", err
+	}
+	compact := strings.ReplaceAll(id.String(), "-", "")
+	quarantined := filepath.Join(storage.root, ".quarantine", compact[:2], compact[2:4], id.String()+".git")
+	for _, candidate := range []string{live, quarantined} {
+		relative, relErr := filepath.Rel(storage.root, candidate)
+		if relErr != nil || relative == "." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) || filepath.IsAbs(relative) {
+			return "", "", fmt.Errorf("repository lifecycle path escapes storage root")
+		}
+	}
+	return live, quarantined, nil
+}
+
+func requireDirectory(path string) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+		return fmt.Errorf("path is not a physical directory")
+	}
+	return nil
+}

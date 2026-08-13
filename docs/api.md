@@ -35,6 +35,16 @@ Use the OpenAPI operation rather than guessing behavior. The current conventions
   same identifier appears in `X-Request-ID`.
 - `409` represents a state/ref/CID conflict; validation uses `400` or `422` as declared;
   bounded Git output may return `413`; unavailable upstreams use declared `502`/`503` errors.
+- Repository lifecycle uses `PATCH /api/v1/repositories/{owner}/{repo}` and recoverable
+  deletion resources. `DELETE` returns `202` plus a `/api/v1/repository-deletions/{deletion}`
+  resource; deleting that resource restores the quarantined repository before `purge_after`.
+- Notification reads are private, AppView-derived, cursor-paginated resources. Read and
+  dismissal state is local to the host and is never federated.
+- Webhook secrets are write-only and encrypted at rest. Deliveries are public-HTTPS-only,
+  do not follow redirects, and carry `X-Adenosine-Signature-256: sha256=<hex>` over the exact
+  body. Delivery history and explicit redelivery are repository-scoped resources.
+- Basic branch protection currently supports the repository-wide `*` pattern and delegates
+  non-fast-forward and deletion rejection to native Git receive-pack configuration.
 
 `Idempotency-Key` is currently declared only on repository creation but is reserved: the
 handler does not yet persist or replay keys. Clients must not assume retry deduplication.

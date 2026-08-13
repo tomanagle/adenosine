@@ -1,0 +1,6 @@
+pre-commit:
+  jobs:
+    - name: Format staged web files with Oxfmt
+      glob: "*.{ts,tsx,json,jsonc,css}"
+      run: bunx oxfmt --write {staged_files}
+      stage_fixed: true

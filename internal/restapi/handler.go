@@ -18,12 +18,14 @@ import (
 	generated "github.com/adenosine-dev/adenosine/api/generated/go"
 	localatproto "github.com/adenosine-dev/adenosine/internal/atproto"
 	"github.com/adenosine-dev/adenosine/internal/auth"
+	"github.com/adenosine-dev/adenosine/internal/branchprotection"
 	"github.com/adenosine-dev/adenosine/internal/comment"
 	"github.com/adenosine-dev/adenosine/internal/federation"
 	gitservice "github.com/adenosine-dev/adenosine/internal/git"
 	localidentity "github.com/adenosine-dev/adenosine/internal/identity"
 	"github.com/adenosine-dev/adenosine/internal/issue"
 	"github.com/adenosine-dev/adenosine/internal/moderation"
+	"github.com/adenosine-dev/adenosine/internal/notification"
 	"github.com/adenosine-dev/adenosine/internal/organization"
 	"github.com/adenosine-dev/adenosine/internal/owner"
 	"github.com/adenosine-dev/adenosine/internal/passkey"
@@ -33,6 +35,7 @@ import (
 	searchservice "github.com/adenosine-dev/adenosine/internal/search"
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/syncproxy"
+	webhookservice "github.com/adenosine-dev/adenosine/internal/webhook"
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 	"go.opentelemetry.io/otel/trace"
@@ -101,6 +104,13 @@ type RepositoryManager interface {
 
 type repositoryForkManager interface {
 	SyncFork(context.Context, repository.Repository) (repository.ForkSync, error)
+}
+
+type repositoryLifecycleManager interface {
+	Update(context.Context, repository.Repository, repository.SettingsInput) (repository.Repository, error)
+	Delete(context.Context, repository.Repository, string, time.Duration) (repository.Deletion, error)
+	GetDeletion(context.Context, uuid.UUID) (repository.Deletion, error)
+	RestoreDeletion(context.Context, uuid.UUID) (repository.Repository, error)
 }
 
 type OrganizationRepositoryPageManager interface {
@@ -175,6 +185,75 @@ func (handler *apiHandler) GetOwner(w http.ResponseWriter, r *http.Request, name
 	writeJSON(w, http.StatusOK, response)
 }
 
+func (handler *apiHandler) ListNotifications(w http.ResponseWriter, r *http.Request, params generated.ListNotificationsParams) {
+	identity, err := handler.notificationIdentity(r, false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, cursor := collectionParameters(params.Limit, params.Cursor)
+	unread := params.Unread != nil && *params.Unread
+	page, err := handler.deps.Notifications.Page(r.Context(), identity.accountDID, unread, cursor, limit)
+	if err != nil {
+		if errors.Is(err, notification.ErrValidation) {
+			handler.writeMalformed(w, r, err)
+		} else {
+			handler.writeError(w, r, err)
+		}
+		return
+	}
+	items := make([]generated.Notification, len(page.Items))
+	for index, value := range page.Items {
+		items[index] = notificationResponse(value)
+	}
+	writeJSON(w, http.StatusOK, generated.NotificationList{Items: items, Page: generated.Page{NextCursor: pointerUnlessEmpty(page.NextCursor)}})
+}
+
+func (handler *apiHandler) UpdateNotification(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	identity, err := handler.notificationIdentity(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.UpdateNotificationRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	if err := handler.deps.Notifications.SetRead(r.Context(), identity.accountDID, uuid.UUID(id), request.Read, time.Now().UTC()); err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (handler *apiHandler) DeleteNotification(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	identity, err := handler.notificationIdentity(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	if err := handler.deps.Notifications.Dismiss(r.Context(), identity.accountDID, uuid.UUID(id), time.Now().UTC()); err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (handler *apiHandler) notificationIdentity(r *http.Request, mutation bool) (principal, error) {
+	identity, err := handler.authenticate(r)
+	if err != nil {
+		return principal{}, err
+	}
+	if mutation && identity.session && !handler.validOrigin(r) {
+		return principal{}, auth.ErrForbidden
+	}
+	if !identity.session && (identity.repositoryID != nil || (!slices.Contains(identity.scopes, auth.ScopeRepositoryRead) && !slices.Contains(identity.scopes, auth.ScopeRepositoryWrite))) {
+		return principal{}, auth.ErrForbidden
+	}
+	return identity, nil
+}
+
 type StarManager interface {
 	Get(context.Context, string) (star.Projection, error)
 	Create(context.Context, string, string) (star.Star, error)
@@ -215,6 +294,34 @@ type ModerationManager interface {
 	Hide(context.Context, string, string) error
 	Unhide(context.Context, string, string) error
 	ListHidden(context.Context, string) ([]moderation.HiddenRecord, error)
+}
+
+type NotificationManager interface {
+	Page(context.Context, string, bool, string, int) (notification.Page, error)
+	SetRead(context.Context, string, uuid.UUID, bool, time.Time) error
+	Dismiss(context.Context, string, uuid.UUID, time.Time) error
+}
+
+type WebhookManager interface {
+	Create(context.Context, repository.ID, webhookservice.CreateInput, time.Time) (webhookservice.Webhook, error)
+	Get(context.Context, repository.ID, uuid.UUID) (webhookservice.Webhook, error)
+	Page(context.Context, repository.ID, *uuid.UUID, int) (webhookservice.Page[webhookservice.Webhook], error)
+	Update(context.Context, repository.ID, uuid.UUID, webhookservice.UpdateInput, time.Time) (webhookservice.Webhook, error)
+	Delete(context.Context, repository.ID, uuid.UUID, time.Time) error
+	Deliveries(context.Context, repository.ID, uuid.UUID, *uuid.UUID, int) (webhookservice.Page[webhookservice.Delivery], error)
+	Redeliver(context.Context, repository.ID, uuid.UUID, uuid.UUID, time.Time) (webhookservice.Delivery, error)
+}
+
+type BranchProtectionManager interface {
+	Create(context.Context, repository.ID, branchprotection.Input, time.Time) (branchprotection.Protection, error)
+	Get(context.Context, repository.ID, uuid.UUID) (branchprotection.Protection, error)
+	Page(context.Context, repository.ID, *uuid.UUID, int) (branchprotection.Page, error)
+	Update(context.Context, repository.ID, uuid.UUID, branchprotection.Input, time.Time) (branchprotection.Protection, error)
+	Delete(context.Context, repository.ID, uuid.UUID) error
+}
+
+type RepositoryActivityWriter interface {
+	RepositoryActivity(context.Context, string, string, any) error
 }
 
 type ProfileManager interface {
@@ -280,6 +387,10 @@ type repositoryWriteAuthorizer interface {
 	CanWriteRepository(context.Context, string, repository.ID) (bool, error)
 }
 
+type repositoryAdminAuthorizer interface {
+	CanAdminRepository(context.Context, string, repository.ID) (bool, error)
+}
+
 type GitReader interface {
 	Branches(context.Context, repository.ID, string) ([]gitservice.Branch, error)
 	Tags(context.Context, repository.ID) ([]gitservice.Tag, error)
@@ -309,33 +420,38 @@ type FederationDependencies struct {
 
 // Dependencies contains the application capabilities exposed by REST.
 type Dependencies struct {
-	Sessions      SessionAuthenticator
-	Login         LoginService
-	LocalSessions LocalSessionManager
-	Passkeys      PasskeyManager
-	Accounts      AccountReader
-	OAuthMetadata OAuthMetadataProvider
-	TokenAuth     TokenAuthenticator
-	Tokens        TokenManager
-	SSHKeys       SSHKeyManager
-	Profiles      ProfileManager
-	Owners        OwnerResolver
-	Organizations OrganizationManager
-	Teams         OrganizationTeamManager
-	Collaborators OrganizationCollaboratorManager
-	Repositories  RepositoryManager
-	Endpoints     RepositoryEndpointBuilder
-	Discovery     NetworkRepositoryDiscovery
-	Search        SearchManager
-	Stars         StarManager
-	Issues        IssueManager
-	PullRequests  PullRequestManager
-	Comments      CommentManager
-	Moderation    ModerationManager
-	Authorization RepositoryAuthorizer
-	Git           GitReader
-	Sync          SyncProxy
-	Federation    *FederationDependencies
+	Sessions                    SessionAuthenticator
+	Login                       LoginService
+	LocalSessions               LocalSessionManager
+	Passkeys                    PasskeyManager
+	Accounts                    AccountReader
+	OAuthMetadata               OAuthMetadataProvider
+	TokenAuth                   TokenAuthenticator
+	Tokens                      TokenManager
+	SSHKeys                     SSHKeyManager
+	Profiles                    ProfileManager
+	Owners                      OwnerResolver
+	Organizations               OrganizationManager
+	Teams                       OrganizationTeamManager
+	Collaborators               OrganizationCollaboratorManager
+	Repositories                RepositoryManager
+	Endpoints                   RepositoryEndpointBuilder
+	Discovery                   NetworkRepositoryDiscovery
+	Search                      SearchManager
+	Stars                       StarManager
+	Issues                      IssueManager
+	PullRequests                PullRequestManager
+	Comments                    CommentManager
+	Moderation                  ModerationManager
+	Notifications               NotificationManager
+	Webhooks                    WebhookManager
+	BranchProtections           BranchProtectionManager
+	Activity                    RepositoryActivityWriter
+	Authorization               RepositoryAuthorizer
+	Git                         GitReader
+	Sync                        SyncProxy
+	Federation                  *FederationDependencies
+	RepositoryDeletionRetention time.Duration
 }
 
 type principal struct {
@@ -1900,6 +2016,11 @@ func (handler *apiHandler) repositoryOrganization(r *http.Request, actorDID stri
 func (handler *apiHandler) GetRepository(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
 	repo, err := handler.readableRepository(r, owner, slug)
 	if err == nil {
+		if viewerDID, viewerErr := handler.optionalSessionViewer(r); viewerErr == nil && viewerDID != "" {
+			if authorizer, ok := handler.deps.Authorization.(repositoryAdminAuthorizer); ok {
+				repo.ViewerCanAdmin, _ = authorizer.CanAdminRepository(r.Context(), viewerDID, repo.ID)
+			}
+		}
 		writeJSON(w, http.StatusOK, handler.repositoryResponse(repo))
 		return
 	}
@@ -1927,6 +2048,426 @@ func (handler *apiHandler) GetRepository(w http.ResponseWriter, r *http.Request,
 	}
 	w.Header().Set("Vary", "Cookie")
 	writeJSON(w, http.StatusOK, networkRepositoryResponse(networkRepository))
+}
+
+func (handler *apiHandler) UpdateRepository(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
+	identity, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.UpdateRepositoryRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	input := repository.SettingsInput{
+		OwnerAlias: owner, Slug: repo.Slug, DisplayName: repo.DisplayName, Description: repo.Description,
+		Visibility: repo.Visibility, DefaultBranch: repo.DefaultBranch, Archived: repo.ArchivedAt != nil,
+	}
+	if request.Slug != nil {
+		input.Slug = string(*request.Slug)
+	}
+	if request.DisplayName != nil {
+		input.DisplayName = *request.DisplayName
+	}
+	if request.Description != nil {
+		input.Description = *request.Description
+	}
+	if request.Visibility != nil {
+		input.Visibility = repository.Visibility(*request.Visibility)
+	}
+	if request.DefaultBranch != nil {
+		input.DefaultBranch = *request.DefaultBranch
+	}
+	if request.Archived != nil {
+		input.Archived = *request.Archived
+	}
+	manager, ok := handler.deps.Repositories.(repositoryLifecycleManager)
+	if !ok {
+		handler.writeError(w, r, repository.ErrValidation)
+		return
+	}
+	updated, err := manager.Update(r.Context(), repo, input)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	updated.ViewerCanAdmin = true
+	canonical := "/api/v1/repositories/" + repositoryRouteOwner(updated) + "/" + updated.Slug
+	w.Header().Set("Content-Location", canonical)
+	_ = identity
+	writeJSON(w, http.StatusOK, handler.repositoryResponse(updated))
+}
+
+func (handler *apiHandler) DeleteRepository(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
+	identity, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	manager, ok := handler.deps.Repositories.(repositoryLifecycleManager)
+	if !ok {
+		handler.writeError(w, r, repository.ErrValidation)
+		return
+	}
+	retention := handler.deps.RepositoryDeletionRetention
+	if retention <= 0 {
+		retention = 7 * 24 * time.Hour
+	}
+	deletion, err := manager.Delete(r.Context(), repo, identity.accountDID, retention)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	location := "/api/v1/repository-deletions/" + deletion.ID.String()
+	w.Header().Set("Location", location)
+	writeJSON(w, http.StatusAccepted, repositoryDeletionResponse(deletion))
+}
+
+func (handler *apiHandler) ListRepositoryWebhooks(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, params generated.ListRepositoryWebhooksParams) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	after, err := decodeUUIDCollectionCursor(encoded, "repository-webhooks:"+repo.ID.String())
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	page, err := handler.deps.Webhooks.Page(r.Context(), repo.ID, after, limit)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.RepositoryWebhook, len(page.Items))
+	for index, value := range page.Items {
+		items[index] = repositoryWebhookResponse(value)
+	}
+	var next *string
+	if page.NextCursor != nil {
+		next, err = encodeCollectionCursor("repository-webhooks:"+repo.ID.String(), page.NextCursor.String())
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.RepositoryWebhookList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) CreateRepositoryWebhook(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.CreateRepositoryWebhookRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	enabled := true
+	if request.Enabled != nil {
+		enabled = *request.Enabled
+	}
+	value, err := handler.deps.Webhooks.Create(r.Context(), repo.ID, webhookservice.CreateInput{URL: request.Url, Secret: request.Secret, Events: webhookEventStrings(request.Events), Enabled: enabled}, time.Now().UTC())
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	location := "/api/v1/repositories/" + owner + "/" + string(slug) + "/webhooks/" + value.ID.String()
+	w.Header().Set("Location", location)
+	writeJSON(w, http.StatusCreated, repositoryWebhookResponse(value))
+}
+
+func (handler *apiHandler) GetRepositoryWebhook(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, id openapi_types.UUID) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.Webhooks.Get(r.Context(), repo.ID, uuid.UUID(id))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, repositoryWebhookResponse(value))
+}
+
+func (handler *apiHandler) UpdateRepositoryWebhook(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, id openapi_types.UUID) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.UpdateRepositoryWebhookRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	value, err := handler.deps.Webhooks.Update(r.Context(), repo.ID, uuid.UUID(id), webhookservice.UpdateInput{URL: request.Url, Secret: request.Secret, Events: webhookEventStrings(request.Events), Enabled: request.Enabled}, time.Now().UTC())
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, repositoryWebhookResponse(value))
+}
+
+func (handler *apiHandler) DeleteRepositoryWebhook(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, id openapi_types.UUID) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), true)
+	if err == nil {
+		err = handler.deps.Webhooks.Delete(r.Context(), repo.ID, uuid.UUID(id), time.Now().UTC())
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (handler *apiHandler) ListWebhookDeliveries(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, webhookID openapi_types.UUID, params generated.ListWebhookDeliveriesParams) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "webhook-deliveries:" + uuid.UUID(webhookID).String()
+	after, err := decodeUUIDCollectionCursor(encoded, scope)
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	page, err := handler.deps.Webhooks.Deliveries(r.Context(), repo.ID, uuid.UUID(webhookID), after, limit)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.WebhookDelivery, len(page.Items))
+	for index, value := range page.Items {
+		items[index] = webhookDeliveryResponse(value)
+	}
+	var next *string
+	if page.NextCursor != nil {
+		next, err = encodeCollectionCursor(scope, page.NextCursor.String())
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.WebhookDeliveryList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) CreateWebhookRedelivery(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, webhookID openapi_types.UUID) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.CreateWebhookRedeliveryRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	value, err := handler.deps.Webhooks.Redeliver(r.Context(), repo.ID, uuid.UUID(webhookID), uuid.UUID(request.DeliveryId), time.Now().UTC())
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	location := "/api/v1/repositories/" + owner + "/" + string(slug) + "/webhooks/" + uuid.UUID(webhookID).String() + "/deliveries"
+	w.Header().Set("Location", location)
+	writeJSON(w, http.StatusCreated, webhookDeliveryResponse(value))
+}
+
+func (handler *apiHandler) ListBranchProtections(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, params generated.ListBranchProtectionsParams) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "branch-protections:" + repo.ID.String()
+	after, err := decodeUUIDCollectionCursor(encoded, scope)
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	page, err := handler.deps.BranchProtections.Page(r.Context(), repo.ID, after, limit)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.BranchProtection, len(page.Items))
+	for index, value := range page.Items {
+		items[index] = branchProtectionResponse(value)
+	}
+	var next *string
+	if page.NextCursor != nil {
+		next, err = encodeCollectionCursor(scope, page.NextCursor.String())
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.BranchProtectionList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) CreateBranchProtection(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.BranchProtectionInput
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	value, err := handler.deps.BranchProtections.Create(r.Context(), repo.ID, branchProtectionInput(request), time.Now().UTC())
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.Header().Set("Location", "/api/v1/repositories/"+owner+"/"+string(slug)+"/branch-protections/"+value.ID.String())
+	writeJSON(w, http.StatusCreated, branchProtectionResponse(value))
+}
+
+func (handler *apiHandler) GetBranchProtection(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, id openapi_types.UUID) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), false)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.BranchProtections.Get(r.Context(), repo.ID, uuid.UUID(id))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, branchProtectionResponse(value))
+}
+
+func (handler *apiHandler) UpdateBranchProtection(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, id openapi_types.UUID) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.BranchProtectionInput
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	value, err := handler.deps.BranchProtections.Update(r.Context(), repo.ID, uuid.UUID(id), branchProtectionInput(request), time.Now().UTC())
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, branchProtectionResponse(value))
+}
+
+func (handler *apiHandler) DeleteBranchProtection(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, id openapi_types.UUID) {
+	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), true)
+	if err == nil {
+		err = handler.deps.BranchProtections.Delete(r.Context(), repo.ID, uuid.UUID(id))
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (handler *apiHandler) GetRepositoryDeletion(w http.ResponseWriter, r *http.Request, deletion openapi_types.UUID) {
+	identity, err := handler.authenticate(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	manager, ok := handler.deps.Repositories.(repositoryLifecycleManager)
+	if !ok {
+		handler.writeError(w, r, repository.ErrNotFound)
+		return
+	}
+	value, err := manager.GetDeletion(r.Context(), uuid.UUID(deletion))
+	if err == nil {
+		err = handler.authorizeRepositoryAdmin(r.Context(), identity, value.RepositoryID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, repositoryDeletionResponse(value))
+}
+
+func (handler *apiHandler) RestoreRepositoryDeletion(w http.ResponseWriter, r *http.Request, deletion openapi_types.UUID) {
+	identity, err := handler.authenticate(r)
+	if err == nil && identity.session && !handler.validOrigin(r) {
+		err = auth.ErrForbidden
+	}
+	manager, ok := handler.deps.Repositories.(repositoryLifecycleManager)
+	if !ok && err == nil {
+		err = repository.ErrNotFound
+	}
+	var value repository.Deletion
+	if err == nil {
+		value, err = manager.GetDeletion(r.Context(), uuid.UUID(deletion))
+	}
+	if err == nil {
+		err = handler.authorizeRepositoryAdmin(r.Context(), identity, value.RepositoryID)
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	restored, err := manager.RestoreDeletion(r.Context(), uuid.UUID(deletion))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	restored.ViewerCanAdmin = true
+	location := "/api/v1/repositories/" + repositoryRouteOwner(restored) + "/" + restored.Slug
+	w.Header().Set("Location", location)
+	writeJSON(w, http.StatusOK, handler.repositoryResponse(restored))
+}
+
+func (handler *apiHandler) requireRepositoryAdmin(r *http.Request, owner, slug string, mutation bool) (principal, repository.Repository, error) {
+	identity, err := handler.authenticate(r)
+	if err != nil {
+		return principal{}, repository.Repository{}, err
+	}
+	if mutation && identity.session && !handler.validOrigin(r) {
+		return principal{}, repository.Repository{}, auth.ErrForbidden
+	}
+	repo, err := handler.deps.Repositories.GetByOwnerSlug(r.Context(), owner, slug)
+	if err != nil || repo.State != repository.StateActive {
+		return principal{}, repository.Repository{}, repository.ErrNotFound
+	}
+	if err := handler.authorizeRepositoryAdmin(r.Context(), identity, repo.ID); err != nil {
+		return principal{}, repository.Repository{}, err
+	}
+	return identity, repo, nil
+}
+
+func (handler *apiHandler) authorizeRepositoryAdmin(ctx context.Context, identity principal, repositoryID repository.ID) error {
+	if !identity.session {
+		if !slices.Contains(identity.scopes, auth.ScopeRepositoryWrite) || (identity.repositoryID != nil && *identity.repositoryID != repositoryID) {
+			return auth.ErrForbidden
+		}
+	}
+	authorizer, ok := handler.deps.Authorization.(repositoryAdminAuthorizer)
+	if !ok {
+		return auth.ErrForbidden
+	}
+	allowed, err := authorizer.CanAdminRepository(ctx, identity.accountDID, repositoryID)
+	if err != nil {
+		return fmt.Errorf("authorize repository administration: %w", err)
+	}
+	if !allowed {
+		return auth.ErrForbidden
+	}
+	return nil
 }
 
 func (handler *apiHandler) ListNetworkRepositories(w http.ResponseWriter, r *http.Request, params generated.ListNetworkRepositoriesParams) {
@@ -2295,6 +2836,7 @@ func (handler *apiHandler) CreateIssue(w http.ResponseWriter, r *http.Request, _
 		handler.writeError(w, r, err)
 		return
 	}
+	handler.recordRepositoryActivity(r, "issue.created", request.RepositoryUri, map[string]any{"issue_uri": value.URI, "actor_did": identity.accountDID})
 	writeJSON(w, http.StatusAccepted, generated.IssueMutation{Issue: issueEnvelopeResponse(value), Projected: false})
 }
 
@@ -2314,6 +2856,7 @@ func (handler *apiHandler) PutIssueStatus(w http.ResponseWriter, r *http.Request
 		handler.writeError(w, r, err)
 		return
 	}
+	handler.recordRepositoryActivity(r, "issue.status_changed", request.IssueUri, map[string]any{"issue_uri": request.IssueUri, "state": request.State, "actor_did": identity.accountDID})
 	writeJSON(w, http.StatusAccepted, generated.IssueStatusMutation{Status: issueStatusEnvelopeResponse(value), Projected: false})
 }
 
@@ -2398,6 +2941,7 @@ func (handler *apiHandler) CreatePullRequest(w http.ResponseWriter, r *http.Requ
 		handler.writeError(w, r, err)
 		return
 	}
+	handler.recordRepositoryActivity(r, "pull_request.created", request.TargetRepositoryUri, map[string]any{"pull_request_uri": value.URI, "actor_did": identity.accountDID})
 	writeJSON(w, http.StatusAccepted, generated.PullRequestMutation{PullRequest: pullRequestEnvelopeResponse(value), Projected: false})
 }
 
@@ -2480,6 +3024,7 @@ func (handler *apiHandler) CreatePullRequestReview(w http.ResponseWriter, r *htt
 		handler.writeError(w, r, err)
 		return
 	}
+	handler.recordRepositoryActivity(r, "review.created", request.PullRequestUri, map[string]any{"review_uri": value.URI, "pull_request_uri": request.PullRequestUri, "verdict": request.Verdict, "actor_did": identity.accountDID})
 	writeJSON(w, http.StatusAccepted, generated.PullRequestReviewMutation{Review: pullRequestReviewEnvelopeResponse(value), Projected: false})
 }
 
@@ -2503,6 +3048,7 @@ func (handler *apiHandler) PutPullRequestStatus(w http.ResponseWriter, r *http.R
 		handler.writeError(w, r, err)
 		return
 	}
+	handler.recordRepositoryActivity(r, "pull_request.status_changed", request.PullRequestUri, map[string]any{"pull_request_uri": request.PullRequestUri, "state": request.State, "actor_did": identity.accountDID})
 	writeJSON(w, http.StatusAccepted, generated.PullRequestStatusMutation{Status: pullRequestStatusEnvelopeResponse(value), Projected: false})
 }
 
@@ -2608,7 +3154,19 @@ func (handler *apiHandler) CreateIssueComment(w http.ResponseWriter, r *http.Req
 		handler.writeError(w, r, err)
 		return
 	}
+	handler.recordRepositoryActivity(r, "issue.comment_created", request.IssueUri, map[string]any{"comment_uri": value.URI, "issue_uri": request.IssueUri, "actor_did": identity.accountDID})
 	writeJSON(w, http.StatusAccepted, generated.CommentMutation{Comment: commentEnvelopeResponse(value), Projected: false})
+}
+
+func (handler *apiHandler) recordRepositoryActivity(r *http.Request, eventType, subjectURI string, payload any) {
+	if handler.deps.Activity == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), 2*time.Second)
+	defer cancel()
+	if err := handler.deps.Activity.RepositoryActivity(ctx, eventType, subjectURI, payload); err != nil {
+		handler.logger.ErrorContext(ctx, "record repository activity", "event_type", eventType, "request_id", requestIDFromContext(ctx), "error", err)
+	}
 }
 
 func (handler *apiHandler) DeleteIssueComment(w http.ResponseWriter, r *http.Request, params generated.DeleteIssueCommentParams) {
@@ -3060,6 +3618,16 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusConflict, "conflict", "The request conflicts with existing state", err)
 	case errors.Is(err, auth.ErrValidation), errors.Is(err, repository.ErrValidation):
 		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The request is invalid", err)
+	case errors.Is(err, webhookservice.ErrNotFound):
+		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested webhook resource was not found", err)
+	case errors.Is(err, webhookservice.ErrValidation):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The webhook request is invalid", err)
+	case errors.Is(err, branchprotection.ErrNotFound):
+		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested branch protection was not found", err)
+	case errors.Is(err, branchprotection.ErrConflict):
+		handler.writeAPIError(w, r, http.StatusConflict, "branch_protection_conflict", "The branch protection already exists", err)
+	case errors.Is(err, branchprotection.ErrValidation):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The branch protection request is invalid", err)
 	case errors.Is(err, organization.ErrNotFound):
 		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested organization resource was not found", err)
 	case errors.Is(err, organization.ErrAlreadyExists):
@@ -3309,11 +3877,53 @@ func (handler *apiHandler) repositoryResponse(repo repository.Repository) genera
 		Id: &id, Uri: pointerUnlessEmpty(repo.ATURI), Cid: pointerUnlessEmpty(repo.ATCID), Slug: repo.Slug, DisplayName: pointerUnlessEmpty(repo.DisplayName),
 		Description: pointerUnlessEmpty(repo.Description), Visibility: generated.RepositoryVisibility(repo.Visibility),
 		State: generated.RepositoryState(repo.State), DefaultBranch: repo.DefaultBranch,
+		Archived:       repo.ArchivedAt != nil,
 		ViewerCanAdmin: &viewerCanAdmin,
 		ForkedFrom:     forkedFrom, ForkCount: repo.ForkCount,
 		Owner: repositoryOwnerResponse(repo), CreatedAt: repo.CreatedAt, UpdatedAt: repo.UpdatedAt,
 		Hosting: generated.RepositoryHosting{Local: true, WebUrl: webURL, GitHttpsUrl: gitHTTPSURL, GitSshUrl: pointerUnlessEmpty(gitSSHURL), SourceBrowsing: generated.Local},
 	}
+}
+
+func repositoryDeletionResponse(value repository.Deletion) generated.RepositoryDeletion {
+	return generated.RepositoryDeletion{Id: openapi_types.UUID(value.ID), RepositoryId: openapi_types.UUID(value.RepositoryID), RequestedAt: value.RequestedAt, PurgeAfter: value.PurgeAfter}
+}
+
+func notificationResponse(value notification.Notification) generated.Notification {
+	return generated.Notification{
+		Id: openapi_types.UUID(value.ID), Kind: generated.NotificationKind(value.Kind), ActorDid: value.ActorDID,
+		RepositoryUri: value.RepositoryURI, Owner: value.Owner, RepositorySlug: value.RepositorySlug,
+		SubjectUri: value.SubjectURI, SubjectKind: generated.NotificationSubjectKind(value.SubjectKind),
+		Title: value.Title, OccurredAt: value.OccurredAt, Read: value.Read,
+	}
+}
+
+func repositoryWebhookResponse(value webhookservice.Webhook) generated.RepositoryWebhook {
+	events := make([]generated.WebhookEvent, len(value.Events))
+	for index, event := range value.Events {
+		events[index] = generated.WebhookEvent(event)
+	}
+	return generated.RepositoryWebhook{Id: openapi_types.UUID(value.ID), Url: value.URL, Events: events, Enabled: value.Enabled, HasSecret: generated.RepositoryWebhookHasSecret(true), CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
+}
+
+func webhookDeliveryResponse(value webhookservice.Delivery) generated.WebhookDelivery {
+	return generated.WebhookDelivery{Id: openapi_types.UUID(value.ID), WebhookId: openapi_types.UUID(value.WebhookID), Event: generated.WebhookEvent(value.EventType), Attempts: value.Attempts, ResponseStatus: value.ResponseStatus, ResponseBody: pointerUnlessEmpty(value.ResponseBody), DeliveredAt: value.DeliveredAt, FailedAt: value.FailedAt, LastErrorCode: pointerUnlessEmpty(value.LastErrorCode), CreatedAt: value.CreatedAt}
+}
+
+func webhookEventStrings(values []generated.WebhookEvent) []string {
+	result := make([]string, len(values))
+	for index, value := range values {
+		result[index] = string(value)
+	}
+	return result
+}
+
+func branchProtectionInput(value generated.BranchProtectionInput) branchprotection.Input {
+	return branchprotection.Input{Pattern: string(value.Pattern), DenyForcePush: value.DenyForcePush, DenyDeletion: value.DenyDeletion}
+}
+
+func branchProtectionResponse(value branchprotection.Protection) generated.BranchProtection {
+	return generated.BranchProtection{Id: openapi_types.UUID(value.ID), Pattern: generated.BranchProtectionPattern(value.Pattern), DenyForcePush: value.DenyForcePush, DenyDeletion: value.DenyDeletion, CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
 }
 
 func networkRepositoryResponse(repo federation.DiscoveryRepository) generated.Repository {
@@ -3333,7 +3943,7 @@ func networkRepositoryResponse(repo federation.DiscoveryRepository) generated.Re
 		forkedFrom = &generated.RepositoryStrongRef{Uri: repo.ForkedFrom.URI, Cid: repo.ForkedFrom.CID}
 	}
 	return generated.Repository{
-		Id: id, Uri: &repo.URI, Cid: pointerUnlessEmpty(repo.CID), Slug: repo.Slug, DisplayName: pointerUnlessEmpty(repo.Name),
+		Id: id, Uri: &repo.URI, Cid: pointerUnlessEmpty(repo.CID), Slug: repo.Slug, DisplayName: pointerUnlessEmpty(repo.Name), Archived: false,
 		Description: pointerUnlessEmpty(repo.Description), Visibility: generated.RepositoryVisibilityPublic,
 		State: generated.RepositoryStateActive, DefaultBranch: repo.DefaultBranch,
 		Owner:      owner,

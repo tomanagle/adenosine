@@ -105,7 +105,9 @@ case "$task" in
       test -n "$application_pid"
       printf '%s:application-pid=%s\n' "$container_identity" "$application_pid"
     }
-    "${compose[@]}" up --build --detach --wait postgres otel-lgtm adenosine electric web gateway
+    # Recreate the reusable development containers so Vite and Air cannot retain
+    # module or binary caches from a previous generated API contract.
+    "${compose[@]}" up --build --detach --force-recreate --wait postgres otel-lgtm adenosine electric web gateway
     public_url="$(grep '^ADENOSINE_BASE_URL=' .env.local | cut -d= -f2-)"
     wait_for_status /health/live 200
     wait_for_status /health/ready 200

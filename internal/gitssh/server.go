@@ -322,6 +322,9 @@ func (server *Server) execute(ctx context.Context, accountDID string, parsed com
 	if !allowed {
 		return auth.ErrForbidden
 	}
+	if parsed.operation == "receive-pack" && repo.ArchivedAt != nil {
+		return auth.ErrForbidden
+	}
 	if parsed.operation == "upload-pack" {
 		return server.git.UploadPackSession(ctx, repo.ID, channel, channel, protocol)
 	}

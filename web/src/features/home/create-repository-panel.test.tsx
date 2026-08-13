@@ -33,6 +33,7 @@ const created: Repository = {
   visibility: 'public',
   state: 'active',
   default_branch: 'main',
+  archived: false,
   owner: { did: 'did:plc:viewer', handle: 'viewer.example' },
   hosting: {
     local: true,

@@ -11,6 +11,8 @@ It combines a Go API and Git server, PostgreSQL projections, AT Protocol federat
 - Public and private repositories with owner and collaborator authorization
 - First-class public forks with portable ancestry, direct fork counts, and safe upstream sync
 - Repository tree, blob, branch, tag, commit, history, merge-base, and bounded diff APIs
+- Repository rename aliases, archive mode, and recoverable quarantine deletion
+- Derived notifications, encrypted signed webhooks, delivery history, and basic branch protection
 - Federated profiles, repositories, stars, issues, comments, moderation, and pull requests
 - Secure cross-instance pull request fetches, reviews, merge commits, and squash merges
 - PostgreSQL outbox events, Tap ingestion, Electric repository sync, and OpenTelemetry export

@@ -66,6 +66,18 @@ func (store *PostgresStore) GetForkSourceByURI(ctx context.Context, uri string) 
 	return source, nil
 }
 
+// GetOrganizationIdentity returns the strong reference required by organization repository records.
+func (store *PostgresStore) GetOrganizationIdentity(ctx context.Context, id uuid.UUID) (ATIdentity, error) {
+	row, err := store.queries.GetOrganizationByID(ctx, pgtype.UUID{Bytes: id, Valid: true})
+	if err != nil {
+		return ATIdentity{}, mapStoreError(err)
+	}
+	if !row.AtUri.Valid || !row.AtCid.Valid {
+		return ATIdentity{}, fmt.Errorf("repository query: organization is not published")
+	}
+	return ATIdentity{URI: row.AtUri.String, CID: row.AtCid.String}, nil
+}
+
 // GetByOwnerSlug loads an active repository route by owner DID and slug.
 func (store *PostgresStore) GetByOwnerSlug(ctx context.Context, ownerDID, slug string) (Repository, error) {
 	row, err := store.queries.GetRepositoryByOwnerSlug(ctx, dbgen.GetRepositoryByOwnerSlugParams{
@@ -144,6 +156,79 @@ func (store *PostgresStore) Activate(ctx context.Context, id ID, identity *ATIde
 	return repositoryFromRow(row), nil
 }
 
+// UpdateSettings atomically preserves an old slug alias and replaces mutable metadata.
+func (store *PostgresStore) UpdateSettings(ctx context.Context, id ID, input SettingsInput, aliasID uuid.UUID, archivedAt *time.Time, identity *ATIdentity, updatedAt time.Time) (Repository, error) {
+	var archived pgtype.Timestamptz
+	if archivedAt != nil {
+		archived = pgTime(*archivedAt)
+	}
+	var uri, cid string
+	if identity != nil {
+		uri, cid = identity.URI, identity.CID
+	}
+	row, err := store.queries.UpdateRepositorySettings(ctx, dbgen.UpdateRepositorySettingsParams{
+		ID: pgUUID(id), AliasID: pgtype.UUID{Bytes: aliasID, Valid: true}, OwnerAlias: input.OwnerAlias,
+		Slug: input.Slug, DisplayName: pgText(input.DisplayName), Description: pgText(input.Description),
+		Visibility: string(input.Visibility), DefaultBranch: input.DefaultBranch, ArchivedAt: archived,
+		AtUri: pgText(uri), AtCid: pgText(cid), UpdatedAt: pgTime(updatedAt),
+	})
+	if err != nil {
+		return Repository{}, mapStoreError(err)
+	}
+	value := repositoryFromRow(row)
+	return store.withOrganizationSlug(ctx, value)
+}
+
+func (store *PostgresStore) RequestDeletion(ctx context.Context, deletion Deletion) (Deletion, error) {
+	row, err := store.queries.RequestRepositoryDeletion(ctx, dbgen.RequestRepositoryDeletionParams{
+		ID: pgtype.UUID{Bytes: deletion.ID, Valid: true}, RepositoryID: pgUUID(deletion.RepositoryID),
+		RequestedByDid: deletion.RequestedByDID, RequestedAt: pgTime(deletion.RequestedAt), PurgeAfter: pgTime(deletion.PurgeAfter),
+	})
+	if err != nil {
+		return Deletion{}, mapStoreError(err)
+	}
+	return deletionFromRow(row), nil
+}
+
+func (store *PostgresStore) GetDeletion(ctx context.Context, id uuid.UUID) (Deletion, error) {
+	row, err := store.queries.GetRepositoryDeletion(ctx, pgtype.UUID{Bytes: id, Valid: true})
+	if err != nil {
+		return Deletion{}, mapStoreError(err)
+	}
+	return deletionFromRow(row), nil
+}
+
+func (store *PostgresStore) RestoreDeletion(ctx context.Context, id uuid.UUID, restoredAt time.Time) (Repository, error) {
+	row, err := store.queries.RestoreRepositoryDeletion(ctx, dbgen.RestoreRepositoryDeletionParams{ID: pgtype.UUID{Bytes: id, Valid: true}, RestoredAt: pgTime(restoredAt)})
+	if err != nil {
+		return Repository{}, mapStoreError(err)
+	}
+	return store.withOrganizationSlug(ctx, repositoryFromRow(row))
+}
+
+func (store *PostgresStore) ListDueDeletions(ctx context.Context, now time.Time, after *uuid.UUID, limit int32) ([]Deletion, error) {
+	rows, err := store.queries.ListDueRepositoryDeletions(ctx, dbgen.ListDueRepositoryDeletionsParams{Now: pgTime(now), AfterID: pgOptionalRawUUID(after), PageLimit: limit})
+	if err != nil {
+		return nil, fmt.Errorf("repository query: list due deletions: %w", err)
+	}
+	result := make([]Deletion, len(rows))
+	for index, row := range rows {
+		result[index] = deletionFromRow(row)
+	}
+	return result, nil
+}
+
+func (store *PostgresStore) MarkPurged(ctx context.Context, id uuid.UUID, purgedAt time.Time) error {
+	if err := store.queries.MarkRepositoryPurged(ctx, dbgen.MarkRepositoryPurgedParams{PurgedAt: pgTime(purgedAt), ID: pgtype.UUID{Bytes: id, Valid: true}}); err != nil {
+		return fmt.Errorf("repository query: mark purged: %w", err)
+	}
+	return nil
+}
+
+func deletionFromRow(row dbgen.CoreRepositoryDeletion) Deletion {
+	return Deletion{ID: uuid.UUID(row.ID.Bytes), RepositoryID: ID(row.RepositoryID.Bytes), RequestedByDID: row.RequestedByDid, RequestedAt: row.RequestedAt.Time, PurgeAfter: row.PurgeAfter.Time}
+}
+
 func repositoryFromRow(row dbgen.CoreRepository) Repository {
 	value := Repository{
 		ID:            ID(row.ID.Bytes),
@@ -161,6 +246,10 @@ func repositoryFromRow(row dbgen.CoreRepository) Repository {
 		CreatedAt:     row.CreatedAt.Time,
 		UpdatedAt:     row.UpdatedAt.Time,
 	}
+	if row.ArchivedAt.Valid {
+		archivedAt := row.ArchivedAt.Time
+		value.ArchivedAt = &archivedAt
+	}
 	if row.ForkedFromUri.Valid && row.ForkedFromCid.Valid {
 		value.ForkedFrom = &ForkSource{URI: row.ForkedFromUri.String, CID: row.ForkedFromCid.String}
 		if row.ForkedFromLocalRepositoryID.Valid {
@@ -173,6 +262,18 @@ func repositoryFromRow(row dbgen.CoreRepository) Repository {
 		value.OrganizationID = &id
 	}
 	return value
+}
+
+func (store *PostgresStore) withOrganizationSlug(ctx context.Context, value Repository) (Repository, error) {
+	if value.OrganizationID == nil {
+		return value, nil
+	}
+	organization, err := store.queries.GetOrganizationByID(ctx, pgtype.UUID{Bytes: *value.OrganizationID, Valid: true})
+	if err != nil {
+		return Repository{}, mapStoreError(err)
+	}
+	value.OrganizationSlug = organization.Slug
+	return value, nil
 }
 
 func forkSourceURI(source *ForkSource) string {
@@ -212,6 +313,13 @@ func repositoryFromPageRow(row dbgen.PageRepositoriesByOrganizationRow) Reposito
 }
 
 func pgOptionalUUID(id *uuid.UUID) pgtype.UUID {
+	if id == nil {
+		return pgtype.UUID{}
+	}
+	return pgtype.UUID{Bytes: *id, Valid: true}
+}
+
+func pgOptionalRawUUID(id *uuid.UUID) pgtype.UUID {
 	if id == nil {
 		return pgtype.UUID{}
 	}

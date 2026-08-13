@@ -19,11 +19,14 @@ type Querier interface {
 	AuthenticateSession(ctx context.Context, arg AuthenticateSessionParams) (AuthSession, error)
 	BlockDID(ctx context.Context, arg BlockDIDParams) error
 	CanAdminOrganizationRepository(ctx context.Context, arg CanAdminOrganizationRepositoryParams) (bool, error)
+	CanAdminRepository(ctx context.Context, arg CanAdminRepositoryParams) (bool, error)
 	CanReadRepository(ctx context.Context, arg CanReadRepositoryParams) (bool, error)
 	CanTriageRepository(ctx context.Context, arg CanTriageRepositoryParams) (bool, error)
 	CanWriteRepository(ctx context.Context, arg CanWriteRepositoryParams) (bool, error)
 	ClaimOutboxEvents(ctx context.Context, arg ClaimOutboxEventsParams) ([]OpsOutboxEvent, error)
+	ClaimWebhookDeliveries(ctx context.Context, arg ClaimWebhookDeliveriesParams) ([]ClaimWebhookDeliveriesRow, error)
 	CompleteOutboxEvent(ctx context.Context, arg CompleteOutboxEventParams) error
+	CompleteWebhookDelivery(ctx context.Context, arg CompleteWebhookDeliveryParams) error
 	ConsumeOAuthState(ctx context.Context, arg ConsumeOAuthStateParams) ([]byte, error)
 	ConsumePasskeyCeremony(ctx context.Context, arg ConsumePasskeyCeremonyParams) (ConsumePasskeyCeremonyRow, error)
 	CountSearchIssues(ctx context.Context, arg CountSearchIssuesParams) (CountSearchIssuesRow, error)
@@ -31,6 +34,7 @@ type Querier interface {
 	CountSearchRepositoryForks(ctx context.Context, arg CountSearchRepositoryForksParams) (int64, error)
 	CountSearchStars(ctx context.Context, arg CountSearchStarsParams) (int64, error)
 	CreateAccessToken(ctx context.Context, arg CreateAccessTokenParams) (AuthAccessToken, error)
+	CreateBranchProtection(ctx context.Context, arg CreateBranchProtectionParams) (CoreBranchProtection, error)
 	CreateOAuthState(ctx context.Context, arg CreateOAuthStateParams) error
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (CoreOrganization, error)
 	CreateOrganizationInvitation(ctx context.Context, arg CreateOrganizationInvitationParams) (CoreOrganizationInvitation, error)
@@ -43,9 +47,13 @@ type Querier interface {
 	CreatePasskeyCeremony(ctx context.Context, arg CreatePasskeyCeremonyParams) (CreatePasskeyCeremonyRow, error)
 	CreatePasskeyCredential(ctx context.Context, arg CreatePasskeyCredentialParams) (AuthPasskeyCredential, error)
 	CreateRepository(ctx context.Context, arg CreateRepositoryParams) (CoreRepository, error)
+	CreateRepositoryActivityEvent(ctx context.Context, arg CreateRepositoryActivityEventParams) error
+	CreateRepositoryWebhook(ctx context.Context, arg CreateRepositoryWebhookParams) (CoreRepositoryWebhook, error)
 	CreateSSHKey(ctx context.Context, arg CreateSSHKeyParams) (AuthSshKey, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (AuthSession, error)
 	CreateWebAuthnUser(ctx context.Context, arg CreateWebAuthnUserParams) (AuthWebauthnUser, error)
+	CreateWebhookDeliveriesForEvent(ctx context.Context, arg CreateWebhookDeliveriesForEventParams) error
+	DeleteBranchProtection(ctx context.Context, arg DeleteBranchProtectionParams) (int64, error)
 	DeleteOAuthCredential(ctx context.Context, arg DeleteOAuthCredentialParams) error
 	DeleteOAuthState(ctx context.Context, stateHash []byte) error
 	DeleteOrganizationMember(ctx context.Context, arg DeleteOrganizationMemberParams) (CoreOrganizationMember, error)
@@ -53,12 +61,17 @@ type Querier interface {
 	DeleteOrganizationTeamHierarchy(ctx context.Context, arg DeleteOrganizationTeamHierarchyParams) (int64, error)
 	DeleteOrganizationTeamMember(ctx context.Context, arg DeleteOrganizationTeamMemberParams) (int64, error)
 	DeleteOrganizationTeamRepository(ctx context.Context, arg DeleteOrganizationTeamRepositoryParams) (int64, error)
+	DeleteRepositoryWebhook(ctx context.Context, arg DeleteRepositoryWebhookParams) (int64, error)
+	DismissNotification(ctx context.Context, arg DismissNotificationParams) error
 	EnsureAccount(ctx context.Context, arg EnsureAccountParams) error
 	FailOrganization(ctx context.Context, arg FailOrganizationParams) (CoreOrganization, error)
+	FailWebhookDelivery(ctx context.Context, arg FailWebhookDeliveryParams) error
 	GetAccount(ctx context.Context, did string) (CoreAccount, error)
 	GetActiveAccessTokenByHash(ctx context.Context, tokenHash []byte) (AuthAccessToken, error)
 	GetActivePasskeyCredentialByCredentialID(ctx context.Context, arg GetActivePasskeyCredentialByCredentialIDParams) (AuthPasskeyCredential, error)
 	GetActiveSSHKeyByFingerprint(ctx context.Context, fingerprint string) (AuthSshKey, error)
+	GetBranchProtection(ctx context.Context, arg GetBranchProtectionParams) (CoreBranchProtection, error)
+	GetEffectiveReceiveProtection(ctx context.Context, repositoryID pgtype.UUID) (GetEffectiveReceiveProtectionRow, error)
 	GetFederationIssueCommentIssueURI(ctx context.Context, uri string) (string, error)
 	GetFederationIssueRepositoryForComment(ctx context.Context, uri string) (string, error)
 	GetFederationIssueRepositoryURI(ctx context.Context, uri string) (string, error)
@@ -96,6 +109,8 @@ type Querier interface {
 	GetRepository(ctx context.Context, id pgtype.UUID) (CoreRepository, error)
 	GetRepositoryByOwnerSlug(ctx context.Context, arg GetRepositoryByOwnerSlugParams) (CoreRepository, error)
 	GetRepositoryCollaborator(ctx context.Context, arg GetRepositoryCollaboratorParams) (CoreRepositoryCollaborator, error)
+	GetRepositoryDeletion(ctx context.Context, id pgtype.UUID) (CoreRepositoryDeletion, error)
+	GetRepositoryWebhook(ctx context.Context, arg GetRepositoryWebhookParams) (CoreRepositoryWebhook, error)
 	GetWebAuthnUser(ctx context.Context, arg GetWebAuthnUserParams) (AuthWebauthnUser, error)
 	HasFederationReceipt(ctx context.Context, arg HasFederationReceiptParams) (bool, error)
 	HideRecord(ctx context.Context, arg HideRecordParams) error
@@ -107,6 +122,7 @@ type Querier interface {
 	ListActivePasskeyCredentials(ctx context.Context, arg ListActivePasskeyCredentialsParams) ([]AuthPasskeyCredential, error)
 	ListActiveSSHKeysByAccountDID(ctx context.Context, accountDid string) ([]AuthSshKey, error)
 	ListBlockedDIDs(ctx context.Context, accountDid string) ([]ListBlockedDIDsRow, error)
+	ListDueRepositoryDeletions(ctx context.Context, arg ListDueRepositoryDeletionsParams) ([]CoreRepositoryDeletion, error)
 	ListFederationCommentChildIssueURIs(ctx context.Context, parentUri pgtype.Text) ([]string, error)
 	ListFederationRepositoryPullRequestURIs(ctx context.Context, targetRepositoryUri string) ([]string, error)
 	ListHiddenRecords(ctx context.Context, accountDid string) ([]ListHiddenRecordsRow, error)
@@ -139,7 +155,10 @@ type Querier interface {
 	LockFederationRepositoryStars(ctx context.Context, repositoryUri string) error
 	LockOrganizationInvitation(ctx context.Context, id pgtype.UUID) (CoreOrganizationInvitation, error)
 	LockOrganizationOwners(ctx context.Context, organizationID pgtype.UUID) ([]string, error)
+	MarkRepositoryPurged(ctx context.Context, arg MarkRepositoryPurgedParams) error
 	OrganizationTeamHasChildren(ctx context.Context, arg OrganizationTeamHasChildrenParams) (bool, error)
+	PageBranchProtections(ctx context.Context, arg PageBranchProtectionsParams) ([]CoreBranchProtection, error)
+	PageNotifications(ctx context.Context, arg PageNotificationsParams) ([]PageNotificationsRow, error)
 	PageOrganizationInvitations(ctx context.Context, arg PageOrganizationInvitationsParams) ([]CoreOrganizationInvitation, error)
 	PageOrganizationMembers(ctx context.Context, arg PageOrganizationMembersParams) ([]PageOrganizationMembersRow, error)
 	PageOrganizationTeamMembers(ctx context.Context, arg PageOrganizationTeamMembersParams) ([]PageOrganizationTeamMembersRow, error)
@@ -148,8 +167,11 @@ type Querier interface {
 	PageOrganizationsForAccount(ctx context.Context, arg PageOrganizationsForAccountParams) ([]CoreOrganization, error)
 	PagePendingOrganizationInvitationsForAccount(ctx context.Context, arg PagePendingOrganizationInvitationsForAccountParams) ([]PagePendingOrganizationInvitationsForAccountRow, error)
 	PageRepositoriesByOrganization(ctx context.Context, arg PageRepositoriesByOrganizationParams) ([]PageRepositoriesByOrganizationRow, error)
+	PageRepositoryWebhooks(ctx context.Context, arg PageRepositoryWebhooksParams) ([]CoreRepositoryWebhook, error)
+	PageWebhookDeliveries(ctx context.Context, arg PageWebhookDeliveriesParams) ([]OpsWebhookDelivery, error)
 	ProjectIdentityHandle(ctx context.Context, arg ProjectIdentityHandleParams) error
 	PurgeExpiredPasskeyCeremonies(ctx context.Context, expiresAt pgtype.Timestamptz) (int64, error)
+	PutNotificationReadState(ctx context.Context, arg PutNotificationReadStateParams) error
 	PutOrganizationRepositoryCollaborator(ctx context.Context, arg PutOrganizationRepositoryCollaboratorParams) (CoreRepositoryCollaborator, error)
 	PutOrganizationTeamRepository(ctx context.Context, arg PutOrganizationTeamRepositoryParams) (CoreOrganizationTeamRepository, error)
 	RecomputeFederationForkCount(ctx context.Context, repositoryUri string) error
@@ -162,11 +184,16 @@ type Querier interface {
 	RecomputeFederationRepositoryCommentCount(ctx context.Context, repositoryUri string) error
 	RecomputeFederationRepositoryCount(ctx context.Context, ownerDid string) error
 	RecomputeFederationStarCount(ctx context.Context, repositoryUri string) error
+	RedeliverWebhookDelivery(ctx context.Context, arg RedeliverWebhookDeliveryParams) (OpsWebhookDelivery, error)
+	RequestRepositoryDeletion(ctx context.Context, arg RequestRepositoryDeletionParams) (CoreRepositoryDeletion, error)
 	ResolveOwner(ctx context.Context, owner string) (ResolveOwnerRow, error)
 	ResolveSearchIssue(ctx context.Context, arg ResolveSearchIssueParams) (ResolveSearchIssueRow, error)
 	ResolveSearchProfile(ctx context.Context, arg ResolveSearchProfileParams) (ResolveSearchProfileRow, error)
 	ResolveSearchPullRequest(ctx context.Context, arg ResolveSearchPullRequestParams) (ResolveSearchPullRequestRow, error)
 	ResolveSearchRepository(ctx context.Context, arg ResolveSearchRepositoryParams) (ResolveSearchRepositoryRow, error)
+	RestoreRepositoryDeletion(ctx context.Context, arg RestoreRepositoryDeletionParams) (CoreRepository, error)
+	RetryOutboxEvent(ctx context.Context, arg RetryOutboxEventParams) error
+	RetryWebhookDelivery(ctx context.Context, arg RetryWebhookDeliveryParams) error
 	RevokeAccessToken(ctx context.Context, arg RevokeAccessTokenParams) (AuthAccessToken, error)
 	RevokeOrganizationInvitation(ctx context.Context, arg RevokeOrganizationInvitationParams) (CoreOrganizationInvitation, error)
 	RevokePasskeyCredential(ctx context.Context, arg RevokePasskeyCredentialParams) (AuthPasskeyCredential, error)
@@ -194,12 +221,15 @@ type Querier interface {
 	TouchSSHKey(ctx context.Context, arg TouchSSHKeyParams) error
 	UnblockDID(ctx context.Context, arg UnblockDIDParams) error
 	UnhideRecord(ctx context.Context, arg UnhideRecordParams) error
+	UpdateBranchProtection(ctx context.Context, arg UpdateBranchProtectionParams) (CoreBranchProtection, error)
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (CoreOrganization, error)
 	UpdateOrganizationMemberRole(ctx context.Context, arg UpdateOrganizationMemberRoleParams) (CoreOrganizationMember, error)
 	UpdateOrganizationMembershipVisibility(ctx context.Context, arg UpdateOrganizationMembershipVisibilityParams) (CoreOrganizationMember, error)
 	UpdateOrganizationTeam(ctx context.Context, arg UpdateOrganizationTeamParams) (CoreOrganizationTeam, error)
 	UpdatePasskeyCredential(ctx context.Context, arg UpdatePasskeyCredentialParams) (AuthPasskeyCredential, error)
+	UpdateRepositorySettings(ctx context.Context, arg UpdateRepositorySettingsParams) (CoreRepository, error)
 	UpdateRepositoryState(ctx context.Context, arg UpdateRepositoryStateParams) (CoreRepository, error)
+	UpdateRepositoryWebhook(ctx context.Context, arg UpdateRepositoryWebhookParams) (CoreRepositoryWebhook, error)
 	UpsertAccount(ctx context.Context, arg UpsertAccountParams) (UpsertAccountRow, error)
 	UpsertFederationIdentity(ctx context.Context, arg UpsertFederationIdentityParams) error
 	UpsertFederationIssue(ctx context.Context, arg UpsertFederationIssueParams) (string, error)
