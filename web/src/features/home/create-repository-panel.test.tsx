@@ -47,6 +47,7 @@ const created: Repository = {
   comment_count: 0,
   pull_request_count: 0,
   open_pull_request_count: 0,
+  fork_count: 0,
   created_at: '2026-08-12T00:00:00Z',
   updated_at: '2026-08-12T00:00:00Z',
 }

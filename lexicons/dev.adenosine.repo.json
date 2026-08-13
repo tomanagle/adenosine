@@ -28,6 +28,11 @@
             "type": "ref",
             "ref": "com.atproto.repo.strongRef"
           },
+          "forkedFrom": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The repository record this repository was originally forked from."
+          },
           "defaultBranch": {
             "type": "string",
             "maxLength": 255,

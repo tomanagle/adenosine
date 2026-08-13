@@ -25,6 +25,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/issue"
 	"github.com/adenosine-dev/adenosine/internal/moderation"
 	"github.com/adenosine-dev/adenosine/internal/organization"
+	"github.com/adenosine-dev/adenosine/internal/owner"
 	"github.com/adenosine-dev/adenosine/internal/passkey"
 	"github.com/adenosine-dev/adenosine/internal/profile"
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
@@ -68,6 +69,10 @@ type AccountReader interface {
 	GetAccount(context.Context, string) (auth.Account, error)
 }
 
+type OwnerResolver interface {
+	Resolve(context.Context, string) (owner.Owner, error)
+}
+
 type OAuthMetadataProvider interface {
 	ClientMetadata() localatproto.ClientMetadata
 }
@@ -94,6 +99,10 @@ type RepositoryManager interface {
 	ListByOrganization(context.Context, uuid.UUID) ([]repository.Repository, error)
 }
 
+type repositoryForkManager interface {
+	SyncFork(context.Context, repository.Repository) (repository.ForkSync, error)
+}
+
 type OrganizationRepositoryPageManager interface {
 	PageByOrganization(context.Context, uuid.UUID, string, *uuid.UUID, int) (repository.Page, error)
 }
@@ -113,6 +122,10 @@ type SearchManager interface {
 
 type networkRepositoryResolver interface {
 	ResolveRepository(context.Context, string, string, string) (federation.DiscoveryRepository, error)
+}
+
+type repositoryForkPager interface {
+	PageForks(context.Context, string, string, int, string) (searchservice.ForkPage, error)
 }
 
 type issueDetailResolver interface {
@@ -140,6 +153,26 @@ func profileReadError(err error) error {
 		return profile.ErrNotFound
 	}
 	return err
+}
+
+func (handler *apiHandler) GetOwner(w http.ResponseWriter, r *http.Request, name generated.OwnerNamePath) {
+	value, err := handler.deps.Owners.Resolve(r.Context(), name)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	response := generated.Owner{CanonicalName: value.CanonicalName, Kind: generated.OwnerKind(value.Kind)}
+	switch value.Kind {
+	case owner.KindAccount:
+		response.AccountDid = &value.AccountDID
+	case owner.KindOrganization:
+		slug := generated.NullableOrganizationSlug(value.OrganizationSlug)
+		response.OrganizationSlug = &slug
+	default:
+		handler.writeError(w, r, fmt.Errorf("unknown owner kind %q", value.Kind))
+		return
+	}
+	writeJSON(w, http.StatusOK, response)
 }
 
 type StarManager interface {
@@ -243,6 +276,10 @@ type RepositoryAuthorizer interface {
 	CanReadRepository(context.Context, string, repository.ID) (bool, error)
 }
 
+type repositoryWriteAuthorizer interface {
+	CanWriteRepository(context.Context, string, repository.ID) (bool, error)
+}
+
 type GitReader interface {
 	Branches(context.Context, repository.ID, string) ([]gitservice.Branch, error)
 	Tags(context.Context, repository.ID) ([]gitservice.Tag, error)
@@ -282,6 +319,7 @@ type Dependencies struct {
 	Tokens        TokenManager
 	SSHKeys       SSHKeyManager
 	Profiles      ProfileManager
+	Owners        OwnerResolver
 	Organizations OrganizationManager
 	Teams         OrganizationTeamManager
 	Collaborators OrganizationCollaboratorManager
@@ -1697,6 +1735,168 @@ func (handler *apiHandler) CreateRepository(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, http.StatusCreated, handler.repositoryResponse(repo))
 }
 
+func (handler *apiHandler) ListRepositoryForks(w http.ResponseWriter, r *http.Request, owner generated.RepositoryOwnerPath, slug generated.RepositorySlugPath, params generated.ListRepositoryForksParams) {
+	viewerDID, err := handler.optionalSessionViewer(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	source, _, err := handler.resolveForkSource(r, string(owner), string(slug), viewerDID)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	pager, ok := handler.deps.Search.(repositoryForkPager)
+	if !ok {
+		handler.writeError(w, r, repository.ErrNotFound)
+		return
+	}
+	limit, cursor := collectionParameters(params.Limit, params.Cursor)
+	page, err := pager.PageForks(r.Context(), source.URI, viewerDID, limit, cursor)
+	if err != nil {
+		if searchRequestError(err) {
+			handler.writeMalformed(w, r, err)
+			return
+		}
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.Repository, len(page.Repositories))
+	for index, value := range page.Repositories {
+		items[index] = networkRepositoryResponse(value)
+	}
+	w.Header().Set("Vary", "Cookie")
+	writeJSON(w, http.StatusOK, generated.RepositoryForkList{Items: items, ForkCount: page.ForkCount, Page: generated.Page{NextCursor: page.NextCursor}})
+}
+
+func (handler *apiHandler) CreateRepositoryFork(w http.ResponseWriter, r *http.Request, owner generated.RepositoryOwnerPath, slug generated.RepositorySlugPath, _ generated.CreateRepositoryForkParams) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.CreateRepositoryForkRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	source, sourceRepository, err := handler.resolveForkSource(r, string(owner), string(slug), identity.accountDID)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	destinationSlug := sourceRepository.Slug
+	if request.Slug != nil {
+		destinationSlug = string(*request.Slug)
+	}
+	organizationID, organizationSlug, organizationAT, err := handler.repositoryOrganization(r, identity.accountDID, request.Organization)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	created, err := handler.deps.Repositories.Create(r.Context(), repository.CreateInput{
+		OwnerDID: identity.accountDID, OrganizationID: organizationID, OrganizationSlug: organizationSlug, OrganizationAT: organizationAT,
+		ForkedFrom: &source, Slug: destinationSlug, DisplayName: sourceRepository.DisplayName, Description: sourceRepository.Description,
+		Visibility: repository.VisibilityPublic, DefaultBranch: sourceRepository.DefaultBranch,
+	})
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.Header().Set("Location", "/api/v1/repositories/"+repositoryRouteOwner(created)+"/"+created.Slug)
+	writeJSON(w, http.StatusCreated, handler.repositoryResponse(created))
+}
+
+func (handler *apiHandler) SyncRepositoryFork(w http.ResponseWriter, r *http.Request, owner generated.RepositoryOwnerPath, slug generated.RepositorySlugPath) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	repo, err := handler.deps.Repositories.GetByOwnerSlug(r.Context(), string(owner), string(slug))
+	if err != nil || repo.State != repository.StateActive {
+		handler.writeError(w, r, repository.ErrNotFound)
+		return
+	}
+	authorizer, ok := handler.deps.Authorization.(repositoryWriteAuthorizer)
+	if !ok {
+		handler.writeError(w, r, auth.ErrForbidden)
+		return
+	}
+	allowed, err := authorizer.CanWriteRepository(r.Context(), identity.accountDID, repo.ID)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	if !allowed {
+		handler.writeError(w, r, auth.ErrForbidden)
+		return
+	}
+	manager, ok := handler.deps.Repositories.(repositoryForkManager)
+	if !ok {
+		handler.writeError(w, r, repository.ErrValidation)
+		return
+	}
+	result, err := manager.SyncFork(r.Context(), repo)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.RepositoryForkSync{BeforeSha: result.BeforeSHA, AfterSha: result.AfterSHA, Updated: result.Updated})
+}
+
+func (handler *apiHandler) resolveForkSource(r *http.Request, owner, slug, viewerDID string) (repository.ForkSource, repository.Repository, error) {
+	local, localErr := handler.deps.Repositories.GetByOwnerSlug(r.Context(), owner, slug)
+	if localErr == nil {
+		if local.State != repository.StateActive || local.Visibility != repository.VisibilityPublic || local.ATURI == "" || local.ATCID == "" {
+			return repository.ForkSource{}, repository.Repository{}, repository.ErrNotFound
+		}
+		id := local.ID
+		gitHTTPS := handler.baseURL + "/" + repositoryRouteOwner(local) + "/" + local.Slug + ".git"
+		if handler.deps.Endpoints != nil {
+			_, gitHTTPS, _ = handler.deps.Endpoints.For(local)
+		}
+		return repository.ForkSource{URI: local.ATURI, CID: local.ATCID, GitHTTPS: gitHTTPS, LocalRepositoryID: &id}, local, nil
+	}
+	if !errors.Is(localErr, repository.ErrNotFound) {
+		return repository.ForkSource{}, repository.Repository{}, localErr
+	}
+	resolver, ok := handler.deps.Search.(networkRepositoryResolver)
+	if !ok {
+		return repository.ForkSource{}, repository.Repository{}, repository.ErrNotFound
+	}
+	projected, err := resolver.ResolveRepository(r.Context(), owner, slug, viewerDID)
+	if errors.Is(err, searchservice.ErrNotFound) {
+		return repository.ForkSource{}, repository.Repository{}, repository.ErrNotFound
+	}
+	if err != nil {
+		return repository.ForkSource{}, repository.Repository{}, err
+	}
+	var localID *repository.ID
+	if projected.LocalRepositoryID != nil {
+		id := repository.ID(*projected.LocalRepositoryID)
+		localID = &id
+	}
+	metadata := repository.Repository{Slug: projected.Slug, DisplayName: projected.Name, Description: projected.Description, DefaultBranch: projected.DefaultBranch}
+	return repository.ForkSource{URI: projected.URI, CID: projected.CID, GitHTTPS: projected.GitHTTPS, LocalRepositoryID: localID}, metadata, nil
+}
+
+func (handler *apiHandler) repositoryOrganization(r *http.Request, actorDID string, slug *generated.OrganizationSlug) (*uuid.UUID, string, *repository.ATIdentity, error) {
+	if slug == nil {
+		return nil, "", nil, nil
+	}
+	value, err := handler.deps.Organizations.GetBySlug(r.Context(), string(*slug))
+	if err != nil {
+		return nil, "", nil, err
+	}
+	member, err := handler.deps.Organizations.GetMember(r.Context(), value.ID, actorDID)
+	if err != nil || (member.Role != organization.RoleOwner && !value.MembersCanCreateRepo) {
+		return nil, "", nil, organization.ErrForbidden
+	}
+	id := uuid.UUID(value.ID)
+	return &id, value.Slug, &repository.ATIdentity{URI: value.ATURI, CID: value.ATCID}, nil
+}
+
 func (handler *apiHandler) GetRepository(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
 	repo, err := handler.readableRepository(r, owner, slug)
 	if err == nil {
@@ -2854,7 +3054,7 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusUnauthorized, "authentication_required", "Authentication is required", err)
 	case errors.Is(err, auth.ErrForbidden):
 		handler.writeAPIError(w, r, http.StatusForbidden, "permission_denied", "Permission denied", err)
-	case errors.Is(err, auth.ErrNotFound), errors.Is(err, repository.ErrNotFound):
+	case errors.Is(err, auth.ErrNotFound), errors.Is(err, repository.ErrNotFound), errors.Is(err, owner.ErrNotFound):
 		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested resource was not found", err)
 	case errors.Is(err, auth.ErrConflict), errors.Is(err, repository.ErrAlreadyExists):
 		handler.writeAPIError(w, r, http.StatusConflict, "conflict", "The request conflicts with existing state", err)
@@ -2922,6 +3122,12 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "unsupported_git_object", "The Git object type is unsupported for this operation", err)
 	case errors.Is(err, gitservice.ErrOutputLimit):
 		handler.writeAPIError(w, r, http.StatusRequestEntityTooLarge, "git_output_too_large", "The repository output exceeds the supported limit", err)
+	case errors.Is(err, gitservice.ErrForkDiverged):
+		handler.writeAPIError(w, r, http.StatusConflict, "fork_diverged", "The fork has commits that are not in its upstream", err)
+	case errors.Is(err, gitservice.ErrRemoteInput):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "invalid_fork_source", "The fork source is not a safe canonical Git endpoint", err)
+	case errors.Is(err, gitservice.ErrRemoteAddress):
+		handler.writeAPIError(w, r, http.StatusBadGateway, "fork_upstream_unavailable", "The fork upstream is unavailable", err)
 	case errors.Is(err, searchservice.ErrNotFound):
 		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested resource was not found", err)
 	case errors.Is(err, localatproto.ErrInvalidIdentifier):
@@ -3095,12 +3301,17 @@ func (handler *apiHandler) repositoryResponse(repo repository.Repository) genera
 	}
 	id := openapi_types.UUID(repo.ID)
 	viewerCanAdmin := repo.ViewerCanAdmin
+	var forkedFrom *generated.RepositoryStrongRef
+	if repo.ForkedFrom != nil {
+		forkedFrom = &generated.RepositoryStrongRef{Uri: repo.ForkedFrom.URI, Cid: repo.ForkedFrom.CID}
+	}
 	return generated.Repository{
 		Id: &id, Uri: pointerUnlessEmpty(repo.ATURI), Cid: pointerUnlessEmpty(repo.ATCID), Slug: repo.Slug, DisplayName: pointerUnlessEmpty(repo.DisplayName),
 		Description: pointerUnlessEmpty(repo.Description), Visibility: generated.RepositoryVisibility(repo.Visibility),
 		State: generated.RepositoryState(repo.State), DefaultBranch: repo.DefaultBranch,
 		ViewerCanAdmin: &viewerCanAdmin,
-		Owner:          repositoryOwnerResponse(repo), CreatedAt: repo.CreatedAt, UpdatedAt: repo.UpdatedAt,
+		ForkedFrom:     forkedFrom, ForkCount: repo.ForkCount,
+		Owner: repositoryOwnerResponse(repo), CreatedAt: repo.CreatedAt, UpdatedAt: repo.UpdatedAt,
 		Hosting: generated.RepositoryHosting{Local: true, WebUrl: webURL, GitHttpsUrl: gitHTTPSURL, GitSshUrl: pointerUnlessEmpty(gitSSHURL), SourceBrowsing: generated.Local},
 	}
 }
@@ -3117,11 +3328,16 @@ func networkRepositoryResponse(repo federation.DiscoveryRepository) generated.Re
 		owner.Kind = repositoryOwnerKind(generated.RepositoryOwnerKindOrganization)
 		owner.OrganizationSlug = &slug
 	}
+	var forkedFrom *generated.RepositoryStrongRef
+	if repo.ForkedFrom != nil {
+		forkedFrom = &generated.RepositoryStrongRef{Uri: repo.ForkedFrom.URI, Cid: repo.ForkedFrom.CID}
+	}
 	return generated.Repository{
 		Id: id, Uri: &repo.URI, Cid: pointerUnlessEmpty(repo.CID), Slug: repo.Slug, DisplayName: pointerUnlessEmpty(repo.Name),
 		Description: pointerUnlessEmpty(repo.Description), Visibility: generated.RepositoryVisibilityPublic,
 		State: generated.RepositoryStateActive, DefaultBranch: repo.DefaultBranch,
-		Owner:     owner,
+		Owner:      owner,
+		ForkedFrom: forkedFrom, ForkCount: repo.ForkCount,
 		StarCount: repo.StarCount, IssueCount: repo.IssueCount, OpenIssueCount: repo.OpenIssueCount,
 		CommentCount: repo.CommentCount, PullRequestCount: repo.PullRequestCount, OpenPullRequestCount: repo.OpenPullRequestCount,
 		Hosting: generated.RepositoryHosting{Local: repo.LocalRepositoryID != nil, WebUrl: repo.Web,

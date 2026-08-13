@@ -189,22 +189,34 @@ type CoreOrganizationTeamRepository struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
-type CoreRepository struct {
-	ID             pgtype.UUID        `json:"id"`
-	OwnerDid       string             `json:"owner_did"`
-	Slug           string             `json:"slug"`
-	DisplayName    pgtype.Text        `json:"display_name"`
-	Description    pgtype.Text        `json:"description"`
-	Visibility     string             `json:"visibility"`
-	State          string             `json:"state"`
-	DefaultBranch  string             `json:"default_branch"`
-	StorageKey     string             `json:"storage_key"`
-	AtUri          pgtype.Text        `json:"at_uri"`
-	AtCid          pgtype.Text        `json:"at_cid"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
+type CoreOwnerRoute struct {
+	Alias          string             `json:"alias"`
+	Kind           string             `json:"kind"`
+	AccountDid     pgtype.Text        `json:"account_did"`
 	OrganizationID pgtype.UUID        `json:"organization_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+type CoreRepository struct {
+	ID                          pgtype.UUID        `json:"id"`
+	OwnerDid                    string             `json:"owner_did"`
+	Slug                        string             `json:"slug"`
+	DisplayName                 pgtype.Text        `json:"display_name"`
+	Description                 pgtype.Text        `json:"description"`
+	Visibility                  string             `json:"visibility"`
+	State                       string             `json:"state"`
+	DefaultBranch               string             `json:"default_branch"`
+	StorageKey                  string             `json:"storage_key"`
+	AtUri                       pgtype.Text        `json:"at_uri"`
+	AtCid                       pgtype.Text        `json:"at_cid"`
+	CreatedAt                   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                   pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt                   pgtype.Timestamptz `json:"deleted_at"`
+	OrganizationID              pgtype.UUID        `json:"organization_id"`
+	ForkedFromUri               pgtype.Text        `json:"forked_from_uri"`
+	ForkedFromCid               pgtype.Text        `json:"forked_from_cid"`
+	ForkedFromLocalRepositoryID pgtype.UUID        `json:"forked_from_local_repository_id"`
+	ForkCount                   int64              `json:"fork_count"`
 }
 
 type CoreRepositoryAlias struct {
@@ -490,6 +502,9 @@ type NetworkRepository struct {
 	OpenPullRequestCount int64              `json:"open_pull_request_count"`
 	OrganizationUri      pgtype.Text        `json:"organization_uri"`
 	OrganizationCid      pgtype.Text        `json:"organization_cid"`
+	ForkedFromUri        pgtype.Text        `json:"forked_from_uri"`
+	ForkedFromCid        pgtype.Text        `json:"forked_from_cid"`
+	ForkCount            int64              `json:"fork_count"`
 }
 
 type NetworkStar struct {

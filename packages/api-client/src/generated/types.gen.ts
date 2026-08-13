@@ -13,7 +13,21 @@ export type CurrentIdentity = {
     handle?: string | null;
 };
 
+export type OwnerName = string;
+
+/**
+ * A discriminated reference into the shared public owner namespace. account_did is present for accounts; organization_slug is present for organizations.
+ */
+export type Owner = {
+    kind: 'account' | 'organization';
+    canonical_name: OwnerName;
+    account_did?: string | null;
+    organization_slug?: NullableOrganizationSlug;
+};
+
 export type OrganizationSlug = string;
+
+export type NullableOrganizationSlug = string | null;
 
 export type Organization = {
     id: string;
@@ -338,6 +352,25 @@ export type CreateRepositoryRequest = {
     organization?: OrganizationSlug;
 };
 
+export type CreateRepositoryForkRequest = {
+    slug?: RepositorySlug;
+    organization?: OrganizationSlug;
+};
+
+export type RepositoryStrongRef = {
+    uri: string;
+    cid: string;
+};
+
+export type RepositoryForkSync = {
+    /**
+     * The fork default-branch head before synchronization; empty for an unborn branch.
+     */
+    before_sha: string;
+    after_sha: string;
+    updated: boolean;
+};
+
 export type RepositoryOwner = {
     did: string;
     handle?: string | null;
@@ -372,6 +405,8 @@ export type Repository = {
      * Whether the current viewer has the repository admin role and may manage direct collaborators.
      */
     viewer_can_admin?: boolean;
+    forked_from?: RepositoryStrongRef;
+    fork_count: number;
     star_count: number;
     issue_count: number;
     open_issue_count: number;
@@ -385,6 +420,12 @@ export type Repository = {
 export type RepositoryList = {
     items: Array<Repository>;
     page: Page;
+};
+
+export type RepositoryForkList = {
+    items: Array<Repository>;
+    page: Page;
+    fork_count: number;
 };
 
 export type NetworkRepositoryList = {
@@ -416,6 +457,8 @@ export type SyncRepository = {
     git_https?: string | null;
     git_ssh?: string | null;
     web?: string | null;
+    forked_from_uri?: string | null;
+    forked_from_cid?: string | null;
     record_created_at?: string | null;
     record_updated_at?: string | null;
     indexed_at: string;
@@ -425,6 +468,7 @@ export type SyncRepository = {
     comment_count: number;
     pull_request_count: number;
     open_pull_request_count: number;
+    fork_count: number;
 };
 
 /**
@@ -985,7 +1029,16 @@ export type Page = {
     next_cursor: string | null;
 };
 
+/**
+ * Case-insensitive account handle or organization slug.
+ */
+export type OwnerNamePath = OwnerName;
+
 export type OrganizationSlug2 = OrganizationSlug;
+
+export type RepositoryOwnerPath = string;
+
+export type RepositorySlugPath = RepositorySlug;
 
 export type RepositoryUri = string;
 
@@ -1483,6 +1536,36 @@ export type DeletePasskeyResponses = {
 };
 
 export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyResponses];
+
+export type GetOwnerData = {
+    body?: never;
+    path: {
+        /**
+         * Case-insensitive account handle or organization slug.
+         */
+        owner: OwnerName;
+    };
+    query?: never;
+    url: '/api/v1/owners/{owner}';
+};
+
+export type GetOwnerErrors = {
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetOwnerError = GetOwnerErrors[keyof GetOwnerErrors];
+
+export type GetOwnerResponses = {
+    /**
+     * Resolved owner
+     */
+    200: Owner;
+};
+
+export type GetOwnerResponse = GetOwnerResponses[keyof GetOwnerResponses];
 
 export type GetDeveloperProfileData = {
     body?: never;
@@ -2668,6 +2751,148 @@ export type CreateRepositoryResponses = {
 };
 
 export type CreateRepositoryResponse = CreateRepositoryResponses[keyof CreateRepositoryResponses];
+
+export type ListRepositoryForksData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/forks';
+};
+
+export type ListRepositoryForksErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListRepositoryForksError = ListRepositoryForksErrors[keyof ListRepositoryForksErrors];
+
+export type ListRepositoryForksResponses = {
+    /**
+     * A cursor page of direct forks
+     */
+    200: RepositoryForkList;
+};
+
+export type ListRepositoryForksResponse = ListRepositoryForksResponses[keyof ListRepositoryForksResponses];
+
+export type CreateRepositoryForkData = {
+    body: CreateRepositoryForkRequest;
+    headers?: {
+        'Idempotency-Key'?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/forks';
+};
+
+export type CreateRepositoryForkErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type CreateRepositoryForkError = CreateRepositoryForkErrors[keyof CreateRepositoryForkErrors];
+
+export type CreateRepositoryForkResponses = {
+    /**
+     * Fork created with its public branches and tags
+     */
+    201: Repository;
+};
+
+export type CreateRepositoryForkResponse = CreateRepositoryForkResponses[keyof CreateRepositoryForkResponses];
+
+export type SyncRepositoryForkData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/sync-fork';
+};
+
+export type SyncRepositoryForkErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type SyncRepositoryForkError = SyncRepositoryForkErrors[keyof SyncRepositoryForkErrors];
+
+export type SyncRepositoryForkResponses = {
+    /**
+     * Fork synchronization result
+     */
+    200: RepositoryForkSync;
+};
+
+export type SyncRepositoryForkResponse = SyncRepositoryForkResponses[keyof SyncRepositoryForkResponses];
 
 export type DeleteStarData = {
     body?: never;

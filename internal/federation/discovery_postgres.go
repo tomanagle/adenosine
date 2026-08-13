@@ -37,12 +37,20 @@ func (store *PostgresDiscoveryStore) ListNetworkRepositories(ctx context.Context
 			OwnerHandle: row.Handle.String, OrganizationSlug: row.OrganizationSlug.String, Slug: row.Slug.String, Name: row.Name.String,
 			Description: row.Description.String, DefaultBranch: row.DefaultBranch.String,
 			GitHTTPS: row.GitHttps.String, GitSSH: row.GitSsh.String, Web: row.Web.String,
+			ForkedFrom: optionalStrongRef(row.ForkedFromUri, row.ForkedFromCid), ForkCount: row.ForkCount,
 			CreatedAt: row.RecordCreatedAt.Time, UpdatedAt: row.RecordUpdatedAt.Time, IndexedAt: row.IndexedAt.Time,
 			StarCount: row.StarCount, IssueCount: row.IssueCount, OpenIssueCount: row.OpenIssueCount,
 			CommentCount: row.CommentCount, PullRequestCount: row.PullRequestCount, OpenPullRequestCount: row.OpenPullRequestCount,
 		}
 	}
 	return repositories, nil
+}
+
+func optionalStrongRef(uri, cid pgtype.Text) *StrongRef {
+	if !uri.Valid || !cid.Valid {
+		return nil
+	}
+	return &StrongRef{URI: uri.String, CID: cid.String}
 }
 
 func optionalUUID(value pgtype.UUID) *uuid.UUID {

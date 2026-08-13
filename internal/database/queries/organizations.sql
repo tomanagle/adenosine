@@ -7,6 +7,10 @@ INSERT INTO core.organizations (
 )
 RETURNING *;
 
+-- name: CreateOrganizationOwnerRoute :exec
+INSERT INTO core.owner_routes (alias, kind, organization_id, created_at)
+VALUES (lower(sqlc.arg(alias)), 'organization', sqlc.arg(organization_id), sqlc.arg(created_at));
+
 -- name: ActivateOrganization :one
 UPDATE core.organizations
 SET state = 'active', at_uri = $2, at_cid = $3, updated_at = $4

@@ -18,7 +18,9 @@ Use the OpenAPI operation rather than guessing behavior. The current conventions
 
 - Browser sessions or bearer PATs authenticate only where declared. See [authentication](api-authentication.md).
 - JSON request bodies reject malformed input; raw Git blob responses are byte streams.
-- List envelopes contain `data` and `page.next_cursor`. Network repository discovery uses
+- List envelopes contain `items` and `page.next_cursor`; ordinary REST resources never
+  return a top-level JSON array. Electric sync endpoints preserve Electric's protocol
+  frames and are the documented exception. Network repository discovery uses
   opaque cursor pagination with a bounded `limit`; do not inspect or construct cursors.
 - `GET /api/v1/search/repositories` and `GET /api/v1/search/profiles` are the canonical
   search reads. Their opaque cursors are bound to the operation, query, and sort. They read
@@ -27,6 +29,8 @@ Use the OpenAPI operation rather than guessing behavior. The current conventions
   anonymous.
 - Filters are operation-specific query parameters. Sync subset predicates may only narrow
   a server-owned shape; they cannot broaden visibility.
+- `GET /api/v1/owners/{owner}` is the canonical, non-probing resolver for the shared account
+  handle and organization slug namespace. See [owner routing](owner-routing.md).
 - Errors use `{"error":{"code":"...","message":"...","request_id":"..."}}` and the
   same identifier appears in `X-Request-ID`.
 - `409` represents a state/ref/CID conflict; validation uses `400` or `422` as declared;

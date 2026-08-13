@@ -30,7 +30,36 @@ func (store *PostgresStore) ResolveRepository(ctx context.Context, owner, slug, 
 	if err != nil {
 		return federation.DiscoveryRepository{}, fmt.Errorf("resolve repository: %w", err)
 	}
-	return federation.DiscoveryRepository{URI: row.Uri, CID: row.Cid.String, LocalRepositoryID: optionalUUID(row.LocalRepositoryID), OwnerDID: row.OwnerDid, OwnerHandle: row.OwnerHandle.String, OrganizationSlug: row.OrganizationSlug.String, Slug: row.Slug.String, Name: row.Name.String, Description: row.Description.String, DefaultBranch: row.DefaultBranch.String, GitHTTPS: row.GitHttps.String, GitSSH: row.GitSsh.String, Web: row.Web.String, CreatedAt: row.RecordCreatedAt.Time, UpdatedAt: row.RecordUpdatedAt.Time, IndexedAt: row.IndexedAt.Time, StarCount: row.StarCount, IssueCount: row.IssueCount, OpenIssueCount: row.OpenIssueCount, CommentCount: row.CommentCount, PullRequestCount: row.PullRequestCount, OpenPullRequestCount: row.OpenPullRequestCount}, nil
+	return federation.DiscoveryRepository{URI: row.Uri, CID: row.Cid.String, LocalRepositoryID: optionalUUID(row.LocalRepositoryID), OwnerDID: row.OwnerDid, OwnerHandle: row.OwnerHandle.String, OrganizationSlug: row.OrganizationSlug.String, Slug: row.Slug.String, Name: row.Name.String, Description: row.Description.String, DefaultBranch: row.DefaultBranch.String, GitHTTPS: row.GitHttps.String, GitSSH: row.GitSsh.String, Web: row.Web.String, ForkedFrom: searchStrongRef(row.ForkedFromUri, row.ForkedFromCid), ForkCount: row.ForkCount, CreatedAt: row.RecordCreatedAt.Time, UpdatedAt: row.RecordUpdatedAt.Time, IndexedAt: row.IndexedAt.Time, StarCount: row.StarCount, IssueCount: row.IssueCount, OpenIssueCount: row.OpenIssueCount, CommentCount: row.CommentCount, PullRequestCount: row.PullRequestCount, OpenPullRequestCount: row.OpenPullRequestCount}, nil
+}
+
+func (store *PostgresStore) ListForks(ctx context.Context, repositoryURI, viewerDID string, limit int, cursor *Cursor) ([]federation.DiscoveryRepository, int64, error) {
+	count, err := store.queries.CountSearchRepositoryForks(ctx, dbgen.CountSearchRepositoryForksParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID)})
+	if err != nil {
+		return nil, 0, fmt.Errorf("count repository forks: %w", err)
+	}
+	params := dbgen.ListSearchRepositoryForksParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit)}
+	if cursor != nil {
+		params.CursorUri = optionalText(cursor.Identity)
+		params.CursorIndexedAt = pgtype.Timestamptz{Time: cursor.IndexedAt, Valid: true}
+	}
+	rows, err := store.queries.ListSearchRepositoryForks(ctx, params)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list repository forks: %w", err)
+	}
+	result := make([]federation.DiscoveryRepository, len(rows))
+	for index, row := range rows {
+		result[index] = federation.DiscoveryRepository{
+			URI: row.Uri, CID: row.Cid.String, LocalRepositoryID: optionalUUID(row.LocalRepositoryID), OwnerDID: row.OwnerDid,
+			OwnerHandle: row.OwnerHandle.String, OrganizationSlug: row.OrganizationSlug.String, Slug: row.Slug.String, Name: row.Name.String,
+			Description: row.Description.String, DefaultBranch: row.DefaultBranch.String, GitHTTPS: row.GitHttps.String, GitSSH: row.GitSsh.String, Web: row.Web.String,
+			ForkedFrom: searchStrongRef(row.ForkedFromUri, row.ForkedFromCid), ForkCount: row.ForkCount,
+			StarCount: row.StarCount, IssueCount: row.IssueCount, OpenIssueCount: row.OpenIssueCount, CommentCount: row.CommentCount,
+			PullRequestCount: row.PullRequestCount, OpenPullRequestCount: row.OpenPullRequestCount,
+			CreatedAt: row.RecordCreatedAt.Time, UpdatedAt: row.RecordUpdatedAt.Time, IndexedAt: row.IndexedAt.Time,
+		}
+	}
+	return result, count, nil
 }
 
 func (store *PostgresStore) ResolveIssue(ctx context.Context, repositoryURI, issueURI, viewerDID string) (issue.ProjectedIssue, error) {
@@ -178,12 +207,20 @@ func (store *PostgresStore) SearchRepositories(ctx context.Context, query string
 		results[index] = RepositoryResult{Score: row.Score, Repository: federation.DiscoveryRepository{
 			URI: row.Uri, CID: row.Cid.String, LocalRepositoryID: localID, OwnerDID: row.OwnerDid, OwnerHandle: row.OwnerHandle.String, OrganizationSlug: row.OrganizationSlug.String,
 			Slug: row.Slug.String, Name: row.Name.String, Description: row.Description.String, DefaultBranch: row.DefaultBranch.String,
+			ForkedFrom: searchStrongRef(row.ForkedFromUri, row.ForkedFromCid), ForkCount: row.ForkCount,
 			GitHTTPS: row.GitHttps.String, GitSSH: row.GitSsh.String, Web: row.Web.String, CreatedAt: row.RecordCreatedAt.Time,
 			UpdatedAt: row.RecordUpdatedAt.Time, IndexedAt: row.IndexedAt.Time, StarCount: row.StarCount, IssueCount: row.IssueCount,
 			OpenIssueCount: row.OpenIssueCount, CommentCount: row.CommentCount, PullRequestCount: row.PullRequestCount, OpenPullRequestCount: row.OpenPullRequestCount,
 		}}
 	}
 	return results, nil
+}
+
+func searchStrongRef(uri, cid pgtype.Text) *federation.StrongRef {
+	if !uri.Valid || !cid.Valid {
+		return nil
+	}
+	return &federation.StrongRef{URI: uri.String, CID: cid.String}
 }
 
 func (store *PostgresStore) SearchProfiles(ctx context.Context, query string, sort Sort, limit int, viewerDID string, cursor *Cursor) ([]ProfileResult, error) {

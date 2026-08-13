@@ -69,6 +69,9 @@ func (client *Client) Publish(ctx context.Context, publication repository.Public
 	if publication.Organization != nil {
 		input.Record["organization"] = map[string]any{"uri": publication.Organization.URI, "cid": publication.Organization.CID}
 	}
+	if publication.ForkedFrom != nil {
+		input.Record["forkedFrom"] = map[string]any{"uri": publication.ForkedFrom.URI, "cid": publication.ForkedFrom.CID}
+	}
 	var output putRecordOutput
 	operationErr := client.apiFactory(host, session).Post(ctx, putRecordNSID, input, &output)
 	persistenceErr := client.sessionStore.SaveSession(ctx, *session.Data)

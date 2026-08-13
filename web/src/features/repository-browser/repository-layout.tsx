@@ -33,6 +33,7 @@ import {
 import type { RepositoryRouteParams } from './queries'
 import { addAcceptedStar, optimisticStarState, removeAcceptedStar } from './star-cache'
 import { hostingLabel, safeWebUrl } from './view-models'
+import { ForkActions, ForkNetwork } from './fork-controls'
 
 export function RepositoryLayout({
   identityDid,
@@ -145,6 +146,7 @@ export function RepositoryLayout({
             </div>
             <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
               <div className="flex flex-wrap gap-2">
+                <ForkActions identityDid={identityDid} params={params} repository={repository} />
                 {!identityDid ? (
                   <Link
                     className={cn(buttonVariants({ size: 'sm', variant: 'outline' }))}
@@ -328,6 +330,7 @@ export function RepositoryLayout({
               </details>
             ) : null}
           </div>
+          <ForkNetwork params={params} repository={repository} />
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Hosting

@@ -82,7 +82,11 @@ export function HomePage() {
         ) : null}
         {panel === 'pull-request' ? (
           <div className="mt-6">
-            <CreatePullRequestPanel onClose={() => setPanel(undefined)} repositories={proposable} />
+            <CreatePullRequestPanel
+              networkRepositories={snapshot.repositories}
+              onClose={() => setPanel(undefined)}
+              repositories={proposable}
+            />
           </div>
         ) : null}
 

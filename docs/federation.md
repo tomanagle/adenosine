@@ -12,6 +12,10 @@ Authenticated mutations call the account's PDS through ATProto repository operat
 The application validates values against the Lexicon and verifies returned URI/CID values.
 Repository records advertise public HTTPS/SSH/web endpoints; an AT URI identifies the
 repository record, while Git remains authoritative for its objects and refs.
+Fork records additionally carry an optional `forkedFrom` strong reference to the upstream
+repository record. The URI is durable ancestry; the CID records the upstream version seen
+when the fork was created. Consumers resolve the current upstream record by URI before a
+later sync, so endpoint rotation does not make ancestry stale.
 
 A successful publication means the PDS accepted the record. It does not mean this or any
 other Adenosine instance has indexed it. Responses return identity needed for client-side

@@ -102,11 +102,12 @@ WHERE network.profiles.source_event_id IS NULL OR network.profiles.source_event_
 -- name: UpsertFederationRepository :exec
 INSERT INTO network.repositories (
     uri, cid, owner_did, rkey, slug, name, description, default_branch,
-    git_https, git_ssh, web, organization_uri, organization_cid, local_repository_id, record_created_at,
+    git_https, git_ssh, web, organization_uri, organization_cid, forked_from_uri, forked_from_cid,
+    local_repository_id, record_created_at,
     record_updated_at, indexed_at, deleted_at, source_event_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-    (SELECT id FROM core.repositories WHERE at_uri = $1), $14, $15, $16, NULL, $17
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+    (SELECT id FROM core.repositories WHERE at_uri = $1), $16, $17, $18, NULL, $19
 )
 ON CONFLICT (uri) DO UPDATE SET
     cid = EXCLUDED.cid,
@@ -121,6 +122,8 @@ ON CONFLICT (uri) DO UPDATE SET
     web = EXCLUDED.web,
     organization_uri = EXCLUDED.organization_uri,
     organization_cid = EXCLUDED.organization_cid,
+    forked_from_uri = EXCLUDED.forked_from_uri,
+    forked_from_cid = EXCLUDED.forked_from_cid,
     local_repository_id = EXCLUDED.local_repository_id,
     record_created_at = EXCLUDED.record_created_at,
     record_updated_at = EXCLUDED.record_updated_at,
@@ -128,6 +131,33 @@ ON CONFLICT (uri) DO UPDATE SET
     deleted_at = NULL,
     source_event_id = EXCLUDED.source_event_id
 WHERE network.repositories.source_event_id < EXCLUDED.source_event_id;
+
+-- name: GetFederationRepositoryForkSource :one
+SELECT forked_from_uri
+FROM network.repositories
+WHERE uri = $1 AND deleted_at IS NULL;
+
+-- name: RecomputeFederationForkCount :exec
+WITH fork_total AS (
+    SELECT count(*)::bigint AS value
+    FROM network.repositories AS fork
+    WHERE fork.forked_from_uri = sqlc.arg(repository_uri)::text
+      AND fork.deleted_at IS NULL
+      AND fork.cid IS NOT NULL
+), network_update AS (
+    UPDATE network.repositories AS source
+    SET fork_count = fork_total.value
+    FROM fork_total
+    WHERE source.uri = sqlc.arg(repository_uri)::text
+    RETURNING source.uri
+)
+UPDATE core.repositories
+SET fork_count = fork_total.value
+FROM fork_total
+WHERE at_uri = sqlc.arg(repository_uri)::text;
+
+-- name: LockFederationRepositoryForks :exec
+SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(repository_uri), 1718579563));
 
 -- name: TombstoneFederationRepository :exec
 INSERT INTO network.repositories (uri, owner_did, rkey, indexed_at, deleted_at, source_event_id)
@@ -498,6 +528,7 @@ SELECT
 	repository.comment_count,
 	repository.pull_request_count,
 	repository.open_pull_request_count,
+	repository.fork_count,
     repository.local_repository_id,
     repository.owner_did,
     identity.handle,
@@ -509,6 +540,8 @@ SELECT
     repository.git_https,
     repository.git_ssh,
     repository.web,
+    repository.forked_from_uri,
+    repository.forked_from_cid,
     repository.record_created_at,
     repository.record_updated_at,
     repository.indexed_at

@@ -36,7 +36,8 @@ func TestNetworkRepositoryDiscoveryEndpoint(t *testing.T) {
 		Slug: "project", Name: "Project", Description: "Public project", DefaultBranch: "main",
 		GitHTTPS: "https://git.example/alice/project.git", GitSSH: "ssh://git@git.example/alice/project.git",
 		Web: "https://git.example/alice/project", CreatedAt: indexedAt.Add(-time.Hour), UpdatedAt: indexedAt, IndexedAt: indexedAt,
-		StarCount: 12, IssueCount: 9, OpenIssueCount: 5,
+		ForkedFrom: &federation.StrongRef{URI: "at://did:plc:upstream/dev.adenosine.repo/source", CID: "bafyupstream"},
+		ForkCount:  2, StarCount: 12, IssueCount: 9, OpenIssueCount: 5,
 	}
 	local := remote
 	local.URI = "at://did:plc:alice/dev.adenosine.repo/local"
@@ -63,6 +64,9 @@ func TestNetworkRepositoryDiscoveryEndpoint(t *testing.T) {
 				}
 				if body.Items[0].StarCount != 12 || body.Items[0].IssueCount != 9 || body.Items[0].OpenIssueCount != 5 {
 					t.Fatalf("remote repository counts = %d/%d/%d", body.Items[0].StarCount, body.Items[0].IssueCount, body.Items[0].OpenIssueCount)
+				}
+				if body.Items[0].ForkCount != 2 || body.Items[0].ForkedFrom == nil || body.Items[0].ForkedFrom.Uri != remote.ForkedFrom.URI {
+					t.Fatalf("remote fork network = %#v", body.Items[0])
 				}
 				if body.Items[1].Id == nil || uuid.UUID(*body.Items[1].Id) != localID || !body.Items[1].Hosting.Local || body.Items[1].Hosting.SourceBrowsing != generated.Local {
 					t.Fatalf("local repository identity/hosting = %#v", body.Items[1])
@@ -167,7 +171,7 @@ func TestLocalRepositoryResponseIdentity(t *testing.T) {
 		repo      repository.Repository
 		endpoints RepositoryEndpointBuilder
 	}{
-		{name: "pointer ID and AT identity", repo: repository.Repository{ID: id, OwnerDID: "did:plc:alice", Slug: "project", ATURI: "at://did:plc:alice/dev.adenosine.repo/project", ATCID: "bafyreiproject"}},
+		{name: "pointer ID and AT identity", repo: repository.Repository{ID: id, OwnerDID: "did:plc:alice", Slug: "project", ATURI: "at://did:plc:alice/dev.adenosine.repo/project", ATCID: "bafyreiproject", ForkCount: 3, ForkedFrom: &repository.ForkSource{URI: "at://did:plc:upstream/dev.adenosine.repo/source", CID: "bafyupstream"}}},
 		{name: "configured hosting endpoints", repo: repository.Repository{ID: id, OwnerDID: "did:plc:alice", Slug: "project"}, endpoints: fixedRESTEndpoints{}},
 	}
 	for _, testCase := range testCases {
@@ -177,6 +181,9 @@ func TestLocalRepositoryResponseIdentity(t *testing.T) {
 				if testCase.endpoints == nil {
 					t.Fatalf("repository identity = %#v", response)
 				}
+			}
+			if testCase.repo.ForkedFrom != nil && (response.ForkCount != 3 || response.ForkedFrom == nil || response.ForkedFrom.Uri != testCase.repo.ForkedFrom.URI) {
+				t.Fatalf("repository fork network = %#v", response)
 			}
 			if testCase.endpoints != nil && (response.Hosting.GitHttpsUrl != "https://host.example/project.git" || response.Hosting.GitSshUrl == nil || *response.Hosting.GitSshUrl != "ssh://git@host.example/project.git") {
 				t.Fatalf("repository hosting = %#v", response.Hosting)

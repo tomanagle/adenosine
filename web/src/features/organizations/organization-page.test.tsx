@@ -297,6 +297,7 @@ describe('OrganizationPage', () => {
           comment_count: 0,
           pull_request_count: 0,
           open_pull_request_count: 0,
+          fork_count: 0,
           created_at: now,
           updated_at: now,
         },

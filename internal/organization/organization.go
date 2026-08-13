@@ -30,7 +30,11 @@ var (
 	ErrInvitation    = errors.New("organization invitation is not active")
 	ErrValidation    = errors.New("organization validation failed")
 
-	slugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
+	slugPattern        = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
+	reservedOwnerSlugs = map[string]struct{}{
+		"api": {}, "docs": {}, "explore": {}, "health": {}, "login": {}, "oauth": {},
+		"organizations": {}, "profiles": {}, "settings": {},
+	}
 )
 
 // ID is an immutable local organization identifier.
@@ -453,6 +457,9 @@ func (input CreateInput) Validate() error {
 	}
 	if len(input.Slug) > 100 || !slugPattern.MatchString(input.Slug) {
 		return fmt.Errorf("%w: slug must match %s and contain at most 100 characters", ErrValidation, slugPattern)
+	}
+	if _, reserved := reservedOwnerSlugs[input.Slug]; reserved {
+		return fmt.Errorf("%w: slug is reserved by an application route", ErrValidation)
 	}
 	if strings.TrimSpace(input.Name) == "" || len(input.Name) > maxNameBytes {
 		return fmt.Errorf("%w: name must contain between 1 and %d bytes", ErrValidation, maxNameBytes)

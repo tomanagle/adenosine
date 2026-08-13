@@ -3,6 +3,7 @@ package federation
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/adenosine-dev/adenosine/internal/star"
@@ -186,6 +187,44 @@ func TestProcessorReplayCreateUpdateDeleteAndStaleGuards(t *testing.T) {
 			}
 			if store.cursor != 13 || len(store.receipts) != 5 {
 				t.Fatalf("cursor/receipts = %d/%d", store.cursor, len(store.receipts))
+			}
+		})
+	}
+}
+
+func TestDecodeRepositoryForkAncestry(t *testing.T) {
+	t.Parallel()
+	upstreamURI := "at://" + testBobDID + "/" + RepositoryCollection + "/upstream"
+	selfURI := "at://" + testDID + "/" + RepositoryCollection + "/project"
+	testCases := []struct {
+		name      string
+		forkURI   string
+		wantError bool
+	}{
+		{name: "accepts a repository strong reference", forkURI: upstreamURI},
+		{name: "rejects self ancestry", forkURI: selfURI, wantError: true},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			record := strings.Replace(
+				repositoryRecord("Project"),
+				`"defaultBranch"`,
+				`"forkedFrom":{"uri":"`+testCase.forkURI+`","cid":"`+testCID+`"},"defaultBranch"`,
+				1,
+			)
+			event, err := DecodeEvent([]byte(recordEnvelope(14, RepositoryCollection, "project", "create", record)))
+			if testCase.wantError {
+				if !errors.Is(err, ErrInvalidEvent) {
+					t.Fatalf("DecodeEvent() error = %v, want ErrInvalidEvent", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("DecodeEvent() error = %v", err)
+			}
+			if event.Record == nil || event.Record.Repository == nil || event.Record.Repository.ForkedFrom == nil || event.Record.Repository.ForkedFrom.URI != upstreamURI {
+				t.Fatalf("fork ancestry = %+v", event.Record)
 			}
 		})
 	}

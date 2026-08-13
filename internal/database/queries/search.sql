@@ -4,6 +4,7 @@ WITH candidates AS (
            repository.owner_did, coalesce(profile.handle, identity.handle) AS owner_handle, organization.slug AS organization_slug,
            repository.slug, repository.name, repository.description, repository.default_branch,
            repository.git_https, repository.git_ssh, repository.web,
+           repository.forked_from_uri, repository.forked_from_cid, repository.fork_count,
            repository.record_created_at, repository.record_updated_at, repository.indexed_at,
            (SELECT count(*) FROM network.stars star WHERE star.repository_uri = repository.uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = star.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = star.uri)) AS star_count,
            (SELECT count(*) FROM network.issues issue WHERE issue.repository_uri = repository.uri AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = issue.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = issue.uri)) AS issue_count,
@@ -61,6 +62,7 @@ LIMIT sqlc.arg(page_size);
 SELECT repository.uri, repository.cid, repository.local_repository_id, repository.owner_did,
        repository.slug, repository.name, repository.description, repository.default_branch,
        repository.git_https, repository.git_ssh, repository.web, repository.record_created_at,
+       repository.forked_from_uri, repository.forked_from_cid, repository.fork_count,
        repository.record_updated_at, repository.indexed_at,
        coalesce(profile.handle, identity.handle) AS owner_handle, organization.slug AS organization_slug,
        (SELECT count(*) FROM network.stars AS star WHERE star.repository_uri = repository.uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL
@@ -95,6 +97,41 @@ WHERE repository.deleted_at IS NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records AS hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = repository.uri)
 ORDER BY repository.indexed_at DESC, repository.uri DESC
 LIMIT 1;
+
+-- name: ListSearchRepositoryForks :many
+SELECT repository.uri, repository.cid, repository.local_repository_id, repository.owner_did,
+       coalesce(profile.handle, identity.handle) AS owner_handle, organization.slug AS organization_slug,
+       repository.slug, repository.name, repository.description, repository.default_branch,
+       repository.git_https, repository.git_ssh, repository.web,
+       repository.forked_from_uri, repository.forked_from_cid, repository.fork_count,
+       repository.star_count, repository.issue_count, repository.open_issue_count,
+       repository.comment_count, repository.pull_request_count, repository.open_pull_request_count,
+       repository.record_created_at, repository.record_updated_at, repository.indexed_at
+FROM network.repositories AS repository
+LEFT JOIN network.profiles AS profile ON profile.did = repository.owner_did AND profile.deleted_at IS NULL
+LEFT JOIN network.identities AS identity ON identity.did = repository.owner_did AND identity.is_active
+LEFT JOIN network.organizations AS organization ON organization.uri = repository.organization_uri AND organization.deleted_at IS NULL
+LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
+WHERE repository.forked_from_uri = sqlc.arg(repository_uri)::text
+  AND repository.deleted_at IS NULL
+  AND repository.cid IS NOT NULL
+  AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = repository.owner_did)
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = repository.uri)
+  AND (sqlc.narg(cursor_uri)::text IS NULL OR (repository.indexed_at, repository.uri) < (sqlc.narg(cursor_indexed_at)::timestamptz, sqlc.narg(cursor_uri)::text))
+ORDER BY repository.indexed_at DESC, repository.uri DESC
+LIMIT sqlc.arg(result_limit);
+
+-- name: CountSearchRepositoryForks :one
+SELECT count(*)
+FROM network.repositories AS repository
+LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
+WHERE repository.forked_from_uri = sqlc.arg(repository_uri)::text
+  AND repository.deleted_at IS NULL
+  AND repository.cid IS NOT NULL
+  AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = repository.owner_did)
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = repository.uri);
 
 -- name: ResolveSearchIssue :one
 SELECT issue.*,

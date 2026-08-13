@@ -11,7 +11,21 @@ export const zCurrentIdentity = z.object({
     handle: z.string().nullish()
 });
 
+export const zOwnerName = z.string().max(253).regex(/^[A-Za-z0-9][A-Za-z0-9.-]*$/);
+
 export const zOrganizationSlug = z.string().max(100).regex(/^[a-z0-9][a-z0-9-]*$/);
+
+export const zNullableOrganizationSlug = z.string().max(100).regex(/^[a-z0-9][a-z0-9-]*$/).nullable();
+
+/**
+ * A discriminated reference into the shared public owner namespace. account_did is present for accounts; organization_slug is present for organizations.
+ */
+export const zOwner = z.object({
+    kind: z.enum(['account', 'organization']),
+    canonical_name: zOwnerName,
+    account_did: z.string().nullish(),
+    organization_slug: zNullableOrganizationSlug.optional()
+});
 
 export const zOrganization = z.object({
     id: z.uuid(),
@@ -311,6 +325,22 @@ export const zCreateRepositoryRequest = z.object({
     organization: zOrganizationSlug.optional()
 });
 
+export const zCreateRepositoryForkRequest = z.object({
+    slug: zRepositorySlug.optional(),
+    organization: zOrganizationSlug.optional()
+});
+
+export const zRepositoryStrongRef = z.object({
+    uri: z.string(),
+    cid: z.string()
+});
+
+export const zRepositoryForkSync = z.object({
+    before_sha: z.string(),
+    after_sha: z.string(),
+    updated: z.boolean()
+});
+
 export const zRepositoryOwner = z.object({
     did: z.string(),
     handle: z.string().nullish(),
@@ -348,6 +378,8 @@ export const zRepository = z.object({
     owner: zRepositoryOwner,
     hosting: zRepositoryHosting,
     viewer_can_admin: z.boolean().optional(),
+    forked_from: zRepositoryStrongRef.optional(),
+    fork_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     star_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     issue_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     open_issue_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
@@ -372,6 +404,8 @@ export const zSyncRepository = z.object({
     git_https: z.string().nullish(),
     git_ssh: z.string().nullish(),
     web: z.string().nullish(),
+    forked_from_uri: z.string().nullish(),
+    forked_from_cid: z.string().nullish(),
     record_created_at: z.iso.datetime({ offset: true }).nullish(),
     record_updated_at: z.iso.datetime({ offset: true }).nullish(),
     indexed_at: z.iso.datetime({ offset: true }),
@@ -380,7 +414,8 @@ export const zSyncRepository = z.object({
     open_issue_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     comment_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     pull_request_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
-    open_pull_request_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
+    open_pull_request_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    fork_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
 });
 
 /**
@@ -983,6 +1018,12 @@ export const zRepositoryList = z.object({
     page: zPage
 });
 
+export const zRepositoryForkList = z.object({
+    items: z.array(zRepository),
+    page: zPage,
+    fork_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
+});
+
 export const zNetworkRepositoryList = z.object({
     items: z.array(zRepository),
     page: zPage
@@ -1044,7 +1085,16 @@ export const zCommitList = z.object({
     page: zPage
 });
 
+/**
+ * Case-insensitive account handle or organization slug.
+ */
+export const zOwnerNamePath = zOwnerName;
+
 export const zOrganizationSlug2 = zOrganizationSlug;
+
+export const zRepositoryOwnerPath = z.string().min(1);
+
+export const zRepositorySlugPath = zRepositorySlug;
 
 export const zRepositoryUri = z.string().min(1);
 
@@ -1232,6 +1282,15 @@ export const zDeletePasskeyPath = z.object({
  * Passkey revoked
  */
 export const zDeletePasskeyResponse = z.void();
+
+export const zGetOwnerPath = z.object({
+    owner: zOwnerName
+});
+
+/**
+ * Resolved owner
+ */
+export const zGetOwnerResponse = zOwner;
 
 export const zGetDeveloperProfilePath = z.object({
     did: z.string().min(1)
@@ -1578,6 +1637,47 @@ export const zCreateRepositoryHeaders = z.object({
  * Repository created
  */
 export const zCreateRepositoryResponse = zRepository;
+
+export const zListRepositoryForksPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+export const zListRepositoryForksQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * A cursor page of direct forks
+ */
+export const zListRepositoryForksResponse = zRepositoryForkList;
+
+export const zCreateRepositoryForkBody = zCreateRepositoryForkRequest;
+
+export const zCreateRepositoryForkHeaders = z.object({
+    'Idempotency-Key': z.string().min(1).max(255).optional()
+});
+
+export const zCreateRepositoryForkPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+/**
+ * Fork created with its public branches and tags
+ */
+export const zCreateRepositoryForkResponse = zRepository;
+
+export const zSyncRepositoryForkPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+/**
+ * Fork synchronization result
+ */
+export const zSyncRepositoryForkResponse = zRepositoryForkSync;
 
 export const zDeleteStarHeaders = z.object({
     Origin: z.url().optional()

@@ -111,6 +111,7 @@ type RepositoryRecord struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	Organization  *StrongRef
+	ForkedFrom    *StrongRef
 }
 
 // StarRecord is the decoded subset needed by the federation projection.
@@ -317,6 +318,9 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 		value, err := decodeRepositoryRecord(wire.Record)
 		if err != nil {
 			return RecordEvent{}, err
+		}
+		if value.ForkedFrom != nil && value.ForkedFrom.URI == result.URI {
+			return RecordEvent{}, invalid("repository cannot be forked from itself")
 		}
 		result.Repository = &value
 	} else if wire.Collection == StarCollection {
@@ -839,6 +843,7 @@ func decodeRepositoryRecord(raw []byte) (RepositoryRecord, error) {
 		Name          string     `json:"name"`
 		Description   string     `json:"description,omitempty"`
 		Organization  *StrongRef `json:"organization,omitempty"`
+		ForkedFrom    *StrongRef `json:"forkedFrom,omitempty"`
 		DefaultBranch string     `json:"defaultBranch"`
 		Git           struct {
 			HTTPS string `json:"https"`
@@ -879,6 +884,11 @@ func decodeRepositoryRecord(raw []byte) (RepositoryRecord, error) {
 			return RepositoryRecord{}, err
 		}
 	}
+	if wire.ForkedFrom != nil {
+		if err := validateStrongRef(*wire.ForkedFrom, RepositoryCollection); err != nil {
+			return RepositoryRecord{}, err
+		}
+	}
 	createdAt, err := canonicalDatetime(wire.CreatedAt)
 	if err != nil {
 		return RepositoryRecord{}, err
@@ -892,7 +902,7 @@ func decodeRepositoryRecord(raw []byte) (RepositoryRecord, error) {
 	}
 	return RepositoryRecord{
 		Slug: wire.Slug, Name: wire.Name, Description: wire.Description, DefaultBranch: wire.DefaultBranch,
-		GitHTTPS: wire.Git.HTTPS, GitSSH: wire.Git.SSH, Web: wire.Web, CreatedAt: createdAt, UpdatedAt: updatedAt, Organization: wire.Organization,
+		GitHTTPS: wire.Git.HTTPS, GitSSH: wire.Git.SSH, Web: wire.Web, CreatedAt: createdAt, UpdatedAt: updatedAt, Organization: wire.Organization, ForkedFrom: wire.ForkedFrom,
 	}, nil
 }
 

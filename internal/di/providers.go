@@ -22,6 +22,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/moderation"
 	"github.com/adenosine-dev/adenosine/internal/observability"
 	"github.com/adenosine-dev/adenosine/internal/organization"
+	"github.com/adenosine-dev/adenosine/internal/owner"
 	"github.com/adenosine-dev/adenosine/internal/passkey"
 	"github.com/adenosine-dev/adenosine/internal/profile"
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
@@ -122,6 +123,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		Tokens:        auth.NewTokenService(authStore, clock, auth.UUIDv7Generator{}, auth.RandomSecretGenerator{}),
 		SSHKeys:       auth.NewSSHKeyService(authStore, clock, auth.UUIDv7Generator{}),
 		Profiles:      profiles,
+		Owners:        owner.NewPostgresResolver(db.Queries()),
 		Organizations: organizations,
 		Teams:         organizationTeams,
 		Collaborators: organizationCollaborators,

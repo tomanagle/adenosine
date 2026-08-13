@@ -1,5 +1,6 @@
 import {
   deleteStarMutation,
+  createRepositoryForkMutation,
   getRepositoryBlobOptions,
   getRepositoryCommitOptions,
   getRepositoryDiffOptions,
@@ -7,10 +8,12 @@ import {
   getRepositoryOptions,
   getRepositoryTreeOptions,
   getStarsOptions,
+  listRepositoryForksOptions,
   listRepositoryBranchesOptions,
   listRepositoryCommitsOptions,
   listRepositoryTagsOptions,
   putStarMutation,
+  syncRepositoryForkMutation,
 } from '@adenosine/api-client/query'
 
 import { browserApiClient } from '@/api/browser-client'
@@ -28,6 +31,15 @@ export const starsQueryOptions = (repositoryUri: string) =>
 export const putStarMutationOptions = () => putStarMutation({ client: browserApiClient })
 
 export const deleteStarMutationOptions = () => deleteStarMutation({ client: browserApiClient })
+
+export const repositoryForksQueryOptions = (params: RepositoryRouteParams) =>
+  listRepositoryForksOptions({ client: browserApiClient, path: path(params) })
+
+export const createRepositoryForkMutationOptions = () =>
+  createRepositoryForkMutation({ client: browserApiClient })
+
+export const syncRepositoryForkMutationOptions = () =>
+  syncRepositoryForkMutation({ client: browserApiClient })
 
 export const branchesQueryOptions = (params: RepositoryRouteParams) => ({
   ...listRepositoryBranchesOptions({ client: browserApiClient, path: path(params) }),

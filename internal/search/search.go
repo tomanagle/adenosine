@@ -64,6 +64,12 @@ type RepositoryPage struct {
 	NextCursor   *string
 }
 
+type ForkPage struct {
+	Repositories []federation.DiscoveryRepository
+	ForkCount    int64
+	NextCursor   *string
+}
+
 type ProfilePage struct {
 	Profiles   []profile.Profile
 	NextCursor *string
@@ -98,6 +104,10 @@ type repositoryResolverStore interface {
 	ResolveRepository(context.Context, string, string, string) (federation.DiscoveryRepository, error)
 }
 
+type forkStore interface {
+	ListForks(context.Context, string, string, int, *Cursor) ([]federation.DiscoveryRepository, int64, error)
+}
+
 type issueResolverStore interface {
 	ResolveIssue(context.Context, string, string, string) (issue.ProjectedIssue, error)
 }
@@ -122,6 +132,33 @@ func (service *Service) ResolveRepository(ctx context.Context, owner, slug, view
 		return federation.DiscoveryRepository{}, ErrNotFound
 	}
 	return resolver.ResolveRepository(ctx, owner, slug, viewerDID)
+}
+
+// PageForks lists direct public forks from the moderated local AppView.
+func (service *Service) PageForks(ctx context.Context, repositoryURI, viewerDID string, limit int, encodedCursor string) (ForkPage, error) {
+	store, ok := service.store.(forkStore)
+	if !ok {
+		return ForkPage{}, ErrNotFound
+	}
+	cursor, err := validateCollectionCursor(encodedCursor, "fork", repositoryURI, limit)
+	if err != nil {
+		return ForkPage{}, err
+	}
+	repositories, count, err := store.ListForks(ctx, repositoryURI, viewerDID, limit+1, cursor)
+	if err != nil {
+		return ForkPage{}, err
+	}
+	page := ForkPage{Repositories: repositories, ForkCount: count}
+	if page.Repositories == nil {
+		page.Repositories = []federation.DiscoveryRepository{}
+	}
+	if len(page.Repositories) > limit {
+		last := page.Repositories[limit-1]
+		page.Repositories = page.Repositories[:limit]
+		next := encodeCursor("fork", repositoryURI, SortRecent, Cursor{IndexedAt: last.IndexedAt, Identity: last.URI})
+		page.NextCursor = &next
+	}
+	return page, nil
 }
 
 // ResolveIssue resolves one exact issue identity from the moderated local AppView.

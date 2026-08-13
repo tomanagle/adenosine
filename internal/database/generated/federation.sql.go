@@ -128,6 +128,19 @@ func (q *Queries) GetFederationPullRequestTargetRepositoryURI(ctx context.Contex
 	return target_repository_uri, err
 }
 
+const getFederationRepositoryForkSource = `-- name: GetFederationRepositoryForkSource :one
+SELECT forked_from_uri
+FROM network.repositories
+WHERE uri = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetFederationRepositoryForkSource(ctx context.Context, uri string) (pgtype.Text, error) {
+	row := q.db.QueryRow(ctx, getFederationRepositoryForkSource, uri)
+	var forked_from_uri pgtype.Text
+	err := row.Scan(&forked_from_uri)
+	return forked_from_uri, err
+}
+
 const getFederationStarRepositoryURI = `-- name: GetFederationStarRepositoryURI :one
 SELECT repository_uri
 FROM network.stars
@@ -1001,6 +1014,7 @@ SELECT
 	repository.comment_count,
 	repository.pull_request_count,
 	repository.open_pull_request_count,
+	repository.fork_count,
     repository.local_repository_id,
     repository.owner_did,
     identity.handle,
@@ -1012,6 +1026,8 @@ SELECT
     repository.git_https,
     repository.git_ssh,
     repository.web,
+    repository.forked_from_uri,
+    repository.forked_from_cid,
     repository.record_created_at,
     repository.record_updated_at,
     repository.indexed_at
@@ -1046,6 +1062,7 @@ type ListNetworkRepositoriesRow struct {
 	CommentCount         int64              `json:"comment_count"`
 	PullRequestCount     int64              `json:"pull_request_count"`
 	OpenPullRequestCount int64              `json:"open_pull_request_count"`
+	ForkCount            int64              `json:"fork_count"`
 	LocalRepositoryID    pgtype.UUID        `json:"local_repository_id"`
 	OwnerDid             string             `json:"owner_did"`
 	Handle               pgtype.Text        `json:"handle"`
@@ -1057,6 +1074,8 @@ type ListNetworkRepositoriesRow struct {
 	GitHttps             pgtype.Text        `json:"git_https"`
 	GitSsh               pgtype.Text        `json:"git_ssh"`
 	Web                  pgtype.Text        `json:"web"`
+	ForkedFromUri        pgtype.Text        `json:"forked_from_uri"`
+	ForkedFromCid        pgtype.Text        `json:"forked_from_cid"`
 	RecordCreatedAt      pgtype.Timestamptz `json:"record_created_at"`
 	RecordUpdatedAt      pgtype.Timestamptz `json:"record_updated_at"`
 	IndexedAt            pgtype.Timestamptz `json:"indexed_at"`
@@ -1080,6 +1099,7 @@ func (q *Queries) ListNetworkRepositories(ctx context.Context, arg ListNetworkRe
 			&i.CommentCount,
 			&i.PullRequestCount,
 			&i.OpenPullRequestCount,
+			&i.ForkCount,
 			&i.LocalRepositoryID,
 			&i.OwnerDid,
 			&i.Handle,
@@ -1091,6 +1111,8 @@ func (q *Queries) ListNetworkRepositories(ctx context.Context, arg ListNetworkRe
 			&i.GitHttps,
 			&i.GitSsh,
 			&i.Web,
+			&i.ForkedFromUri,
+			&i.ForkedFromCid,
 			&i.RecordCreatedAt,
 			&i.RecordUpdatedAt,
 			&i.IndexedAt,
@@ -1277,6 +1299,15 @@ func (q *Queries) LockFederationPullRequest(ctx context.Context, pullRequestUri 
 	return err
 }
 
+const lockFederationRepositoryForks = `-- name: LockFederationRepositoryForks :exec
+SELECT pg_advisory_xact_lock(hashtextextended($1, 1718579563))
+`
+
+func (q *Queries) LockFederationRepositoryForks(ctx context.Context, repositoryUri string) error {
+	_, err := q.db.Exec(ctx, lockFederationRepositoryForks, repositoryUri)
+	return err
+}
+
 const lockFederationRepositoryIssues = `-- name: LockFederationRepositoryIssues :exec
 SELECT pg_advisory_xact_lock(hashtextextended($1, 1769173093))
 `
@@ -1323,6 +1354,31 @@ func (q *Queries) ProjectIdentityHandle(ctx context.Context, arg ProjectIdentity
 		arg.IndexedAt,
 		arg.HandleSourceEventID,
 	)
+	return err
+}
+
+const recomputeFederationForkCount = `-- name: RecomputeFederationForkCount :exec
+WITH fork_total AS (
+    SELECT count(*)::bigint AS value
+    FROM network.repositories AS fork
+    WHERE fork.forked_from_uri = $1::text
+      AND fork.deleted_at IS NULL
+      AND fork.cid IS NOT NULL
+), network_update AS (
+    UPDATE network.repositories AS source
+    SET fork_count = fork_total.value
+    FROM fork_total
+    WHERE source.uri = $1::text
+    RETURNING source.uri
+)
+UPDATE core.repositories
+SET fork_count = fork_total.value
+FROM fork_total
+WHERE at_uri = $1::text
+`
+
+func (q *Queries) RecomputeFederationForkCount(ctx context.Context, repositoryUri string) error {
+	_, err := q.db.Exec(ctx, recomputeFederationForkCount, repositoryUri)
 	return err
 }
 
@@ -2431,11 +2487,12 @@ func (q *Queries) UpsertFederationRecord(ctx context.Context, arg UpsertFederati
 const upsertFederationRepository = `-- name: UpsertFederationRepository :exec
 INSERT INTO network.repositories (
     uri, cid, owner_did, rkey, slug, name, description, default_branch,
-    git_https, git_ssh, web, organization_uri, organization_cid, local_repository_id, record_created_at,
+    git_https, git_ssh, web, organization_uri, organization_cid, forked_from_uri, forked_from_cid,
+    local_repository_id, record_created_at,
     record_updated_at, indexed_at, deleted_at, source_event_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-    (SELECT id FROM core.repositories WHERE at_uri = $1), $14, $15, $16, NULL, $17
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+    (SELECT id FROM core.repositories WHERE at_uri = $1), $16, $17, $18, NULL, $19
 )
 ON CONFLICT (uri) DO UPDATE SET
     cid = EXCLUDED.cid,
@@ -2450,6 +2507,8 @@ ON CONFLICT (uri) DO UPDATE SET
     web = EXCLUDED.web,
     organization_uri = EXCLUDED.organization_uri,
     organization_cid = EXCLUDED.organization_cid,
+    forked_from_uri = EXCLUDED.forked_from_uri,
+    forked_from_cid = EXCLUDED.forked_from_cid,
     local_repository_id = EXCLUDED.local_repository_id,
     record_created_at = EXCLUDED.record_created_at,
     record_updated_at = EXCLUDED.record_updated_at,
@@ -2473,6 +2532,8 @@ type UpsertFederationRepositoryParams struct {
 	Web             pgtype.Text        `json:"web"`
 	OrganizationUri pgtype.Text        `json:"organization_uri"`
 	OrganizationCid pgtype.Text        `json:"organization_cid"`
+	ForkedFromUri   pgtype.Text        `json:"forked_from_uri"`
+	ForkedFromCid   pgtype.Text        `json:"forked_from_cid"`
 	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
 	RecordUpdatedAt pgtype.Timestamptz `json:"record_updated_at"`
 	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
@@ -2494,6 +2555,8 @@ func (q *Queries) UpsertFederationRepository(ctx context.Context, arg UpsertFede
 		arg.Web,
 		arg.OrganizationUri,
 		arg.OrganizationCid,
+		arg.ForkedFromUri,
+		arg.ForkedFromCid,
 		arg.RecordCreatedAt,
 		arg.RecordUpdatedAt,
 		arg.IndexedAt,

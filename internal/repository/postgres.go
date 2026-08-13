@@ -26,20 +26,23 @@ func NewPostgresStore(queries *dbgen.Queries) *PostgresStore {
 // Create inserts repository metadata.
 func (store *PostgresStore) Create(ctx context.Context, repository Repository) (Repository, error) {
 	row, err := store.queries.CreateRepository(ctx, dbgen.CreateRepositoryParams{
-		ID:             pgUUID(repository.ID),
-		OwnerDid:       repository.OwnerDID,
-		OrganizationID: pgOptionalUUID(repository.OrganizationID),
-		Slug:           repository.Slug,
-		DisplayName:    pgText(repository.DisplayName),
-		Description:    pgText(repository.Description),
-		Visibility:     string(repository.Visibility),
-		State:          string(repository.State),
-		DefaultBranch:  repository.DefaultBranch,
-		StorageKey:     repository.StorageKey,
-		AtUri:          pgText(repository.ATURI),
-		AtCid:          pgText(repository.ATCID),
-		CreatedAt:      pgTime(repository.CreatedAt),
-		UpdatedAt:      pgTime(repository.UpdatedAt),
+		ID:                          pgUUID(repository.ID),
+		OwnerDid:                    repository.OwnerDID,
+		OrganizationID:              pgOptionalUUID(repository.OrganizationID),
+		Slug:                        repository.Slug,
+		DisplayName:                 pgText(repository.DisplayName),
+		Description:                 pgText(repository.Description),
+		Visibility:                  string(repository.Visibility),
+		State:                       string(repository.State),
+		DefaultBranch:               repository.DefaultBranch,
+		StorageKey:                  repository.StorageKey,
+		AtUri:                       pgText(repository.ATURI),
+		AtCid:                       pgText(repository.ATCID),
+		ForkedFromUri:               pgText(forkSourceURI(repository.ForkedFrom)),
+		ForkedFromCid:               pgText(forkSourceCID(repository.ForkedFrom)),
+		ForkedFromLocalRepositoryID: pgForkRepositoryID(repository.ForkedFrom),
+		CreatedAt:                   pgTime(repository.CreatedAt),
+		UpdatedAt:                   pgTime(repository.UpdatedAt),
 	})
 	if err != nil {
 		return Repository{}, mapStoreError(err)
@@ -49,11 +52,25 @@ func (store *PostgresStore) Create(ctx context.Context, repository Repository) (
 	return created, nil
 }
 
+// GetForkSourceByURI resolves the current safe Git endpoint for a public upstream.
+func (store *PostgresStore) GetForkSourceByURI(ctx context.Context, uri string) (ForkSource, error) {
+	row, err := store.queries.GetForkSourceByURI(ctx, uri)
+	if err != nil {
+		return ForkSource{}, mapStoreError(err)
+	}
+	source := ForkSource{URI: row.Uri, CID: row.Cid.String, GitHTTPS: row.GitHttps.String}
+	if row.LocalRepositoryID.Valid {
+		id := ID(row.LocalRepositoryID.Bytes)
+		source.LocalRepositoryID = &id
+	}
+	return source, nil
+}
+
 // GetByOwnerSlug loads an active repository route by owner DID and slug.
 func (store *PostgresStore) GetByOwnerSlug(ctx context.Context, ownerDID, slug string) (Repository, error) {
 	row, err := store.queries.GetRepositoryByOwnerSlug(ctx, dbgen.GetRepositoryByOwnerSlugParams{
-		OwnerDid: ownerDID,
-		Lower:    slug,
+		Owner: ownerDID,
+		Slug:  slug,
 	})
 	if err != nil {
 		return Repository{}, mapStoreError(err)
@@ -140,14 +157,43 @@ func repositoryFromRow(row dbgen.CoreRepository) Repository {
 		StorageKey:    row.StorageKey,
 		ATURI:         row.AtUri.String,
 		ATCID:         row.AtCid.String,
+		ForkCount:     row.ForkCount,
 		CreatedAt:     row.CreatedAt.Time,
 		UpdatedAt:     row.UpdatedAt.Time,
+	}
+	if row.ForkedFromUri.Valid && row.ForkedFromCid.Valid {
+		value.ForkedFrom = &ForkSource{URI: row.ForkedFromUri.String, CID: row.ForkedFromCid.String}
+		if row.ForkedFromLocalRepositoryID.Valid {
+			id := ID(row.ForkedFromLocalRepositoryID.Bytes)
+			value.ForkedFrom.LocalRepositoryID = &id
+		}
 	}
 	if row.OrganizationID.Valid {
 		id := uuid.UUID(row.OrganizationID.Bytes)
 		value.OrganizationID = &id
 	}
 	return value
+}
+
+func forkSourceURI(source *ForkSource) string {
+	if source == nil {
+		return ""
+	}
+	return source.URI
+}
+
+func forkSourceCID(source *ForkSource) string {
+	if source == nil {
+		return ""
+	}
+	return source.CID
+}
+
+func pgForkRepositoryID(source *ForkSource) pgtype.UUID {
+	if source == nil || source.LocalRepositoryID == nil {
+		return pgtype.UUID{}
+	}
+	return pgUUID(*source.LocalRepositoryID)
 }
 
 func repositoryFromPageRow(row dbgen.PageRepositoriesByOrganizationRow) Repository {
@@ -157,6 +203,9 @@ func repositoryFromPageRow(row dbgen.PageRepositoriesByOrganizationRow) Reposito
 		DefaultBranch: row.DefaultBranch, StorageKey: row.StorageKey, AtUri: row.AtUri,
 		AtCid: row.AtCid, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		DeletedAt: row.DeletedAt, OrganizationID: row.OrganizationID,
+		ForkedFromUri: row.ForkedFromUri, ForkedFromCid: row.ForkedFromCid,
+		ForkedFromLocalRepositoryID: row.ForkedFromLocalRepositoryID,
+		ForkCount:                   row.ForkCount,
 	})
 	value.ViewerCanAdmin = row.ViewerCanAdmin.Bool
 	return value

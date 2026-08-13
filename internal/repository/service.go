@@ -59,6 +59,15 @@ type gitInitializer interface {
 	Init(context.Context, ID, string) error
 }
 
+type gitForker interface {
+	Fork(context.Context, ID, ForkSource, string) error
+	SyncFork(context.Context, ID, ForkSource, string) (ForkSync, error)
+}
+
+type forkSourceStore interface {
+	GetForkSourceByURI(context.Context, string) (ForkSource, error)
+}
+
 type clock interface {
 	Now() time.Time
 }
@@ -112,6 +121,7 @@ func (service *Service) Create(ctx context.Context, input CreateInput) (Reposito
 		State:            StateCreating,
 		DefaultBranch:    input.DefaultBranch,
 		StorageKey:       id.String(),
+		ForkedFrom:       input.ForkedFrom,
 		CreatedAt:        now,
 		UpdatedAt:        now,
 	})
@@ -119,8 +129,19 @@ func (service *Service) Create(ctx context.Context, input CreateInput) (Reposito
 		return Repository{}, fmt.Errorf("create repository metadata: %w", err)
 	}
 
-	if err := service.git.Init(ctx, repository.ID, repository.DefaultBranch); err != nil {
-		return Repository{}, service.fail(ctx, repository.ID, fmt.Errorf("initialize bare repository: %w", err))
+	var gitErr error
+	if input.ForkedFrom == nil {
+		gitErr = service.git.Init(ctx, repository.ID, repository.DefaultBranch)
+	} else {
+		forker, ok := service.git.(gitForker)
+		if !ok {
+			gitErr = errors.New("Git fork support is unavailable")
+		} else {
+			gitErr = forker.Fork(ctx, repository.ID, *input.ForkedFrom, repository.DefaultBranch)
+		}
+	}
+	if gitErr != nil {
+		return Repository{}, service.fail(ctx, repository.ID, fmt.Errorf("initialize bare repository: %w", gitErr))
 	}
 
 	var identity *ATIdentity
@@ -133,6 +154,7 @@ func (service *Service) Create(ctx context.Context, input CreateInput) (Reposito
 		published, publishErr := service.publisher.Publish(ctx, Publication{
 			ID: repository.ID, OwnerDID: repository.OwnerDID, Slug: repository.Slug, Name: name,
 			Organization: input.OrganizationAT,
+			ForkedFrom:   forkPublicationReference(input.ForkedFrom),
 			Description:  repository.Description, DefaultBranch: repository.DefaultBranch,
 			GitHTTPS: gitHTTPS, GitSSH: gitSSH, Web: web,
 			CreatedAt: repository.CreatedAt, UpdatedAt: repository.UpdatedAt,
@@ -148,6 +170,41 @@ func (service *Service) Create(ctx context.Context, input CreateInput) (Reposito
 		return Repository{}, service.fail(ctx, repository.ID, fmt.Errorf("activate repository: %w", err))
 	}
 	return repository, nil
+}
+
+// SyncFork fast-forwards a fork's default branch to its current upstream head.
+func (service *Service) SyncFork(ctx context.Context, repository Repository) (ForkSync, error) {
+	if repository.ForkedFrom == nil {
+		return ForkSync{}, fmt.Errorf("%w: repository is not a fork", ErrValidation)
+	}
+	source := *repository.ForkedFrom
+	if source.LocalRepositoryID == nil {
+		store, ok := service.repositories.(forkSourceStore)
+		if !ok {
+			return ForkSync{}, fmt.Errorf("%w: fork source lookup is unavailable", ErrValidation)
+		}
+		var err error
+		source, err = store.GetForkSourceByURI(ctx, repository.ForkedFrom.URI)
+		if err != nil {
+			return ForkSync{}, fmt.Errorf("resolve fork source: %w", err)
+		}
+	}
+	forker, ok := service.git.(gitForker)
+	if !ok {
+		return ForkSync{}, fmt.Errorf("%w: Git fork support is unavailable", ErrValidation)
+	}
+	result, err := forker.SyncFork(ctx, repository.ID, source, repository.DefaultBranch)
+	if err != nil {
+		return ForkSync{}, fmt.Errorf("sync fork: %w", err)
+	}
+	return result, nil
+}
+
+func forkPublicationReference(source *ForkSource) *ATIdentity {
+	if source == nil {
+		return nil
+	}
+	return &ATIdentity{URI: source.URI, CID: source.CID}
 }
 
 func (service *Service) fail(ctx context.Context, id ID, cause error) error {

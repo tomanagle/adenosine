@@ -44,7 +44,7 @@ func (store *PostgresStore) UpsertLogin(ctx context.Context, did, verifiedHandle
 	if err != nil {
 		return Account{}, fmt.Errorf("upsert login account: %w", err)
 	}
-	return accountFromRow(row), nil
+	return accountFromUpsertRow(row), nil
 }
 
 // GetAccount returns the locally cached identity for a DID.
@@ -390,6 +390,15 @@ func sessionFromRow(row dbgen.AuthSession) Session {
 }
 
 func accountFromRow(row dbgen.CoreAccount) Account {
+	account := Account{DID: row.Did}
+	if row.HandleCache.Valid {
+		handle := row.HandleCache.String
+		account.Handle = &handle
+	}
+	return account
+}
+
+func accountFromUpsertRow(row dbgen.UpsertAccountRow) Account {
 	account := Account{DID: row.Did}
 	if row.HandleCache.Valid {
 		handle := row.HandleCache.String

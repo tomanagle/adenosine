@@ -64,6 +64,8 @@ type Repository struct {
 	StorageKey       string
 	ATURI            string
 	ATCID            string
+	ForkedFrom       *ForkSource
+	ForkCount        int64
 	ViewerCanAdmin   bool
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
@@ -81,11 +83,27 @@ type ATIdentity struct {
 	CID string
 }
 
+// ForkSource identifies the portable upstream and, when hosted here, its local Git storage.
+type ForkSource struct {
+	URI               string
+	CID               string
+	GitHTTPS          string
+	LocalRepositoryID *ID
+}
+
+// ForkSync reports a safe upstream default-branch synchronization.
+type ForkSync struct {
+	BeforeSHA string
+	AfterSHA  string
+	Updated   bool
+}
+
 // Publication is the portable public repository record to publish for an owner.
 type Publication struct {
 	ID            ID
 	OwnerDID      string
 	Organization  *ATIdentity
+	ForkedFrom    *ATIdentity
 	Slug          string
 	Name          string
 	Description   string
@@ -103,6 +121,7 @@ type CreateInput struct {
 	OrganizationID   *uuid.UUID
 	OrganizationSlug string
 	OrganizationAT   *ATIdentity
+	ForkedFrom       *ForkSource
 	Slug             string
 	DisplayName      string
 	Description      string
@@ -120,6 +139,17 @@ func (input CreateInput) Validate() error {
 	}
 	if input.OrganizationID != nil && (input.OrganizationAT == nil || input.OrganizationAT.URI == "" || input.OrganizationAT.CID == "") {
 		return fmt.Errorf("organization AT identity must be provided for an organization repository")
+	}
+	if input.ForkedFrom != nil {
+		if strings.TrimSpace(input.ForkedFrom.URI) == "" || strings.TrimSpace(input.ForkedFrom.CID) == "" {
+			return fmt.Errorf("fork source must include a strong reference")
+		}
+		if input.ForkedFrom.LocalRepositoryID == nil && strings.TrimSpace(input.ForkedFrom.GitHTTPS) == "" {
+			return fmt.Errorf("fork source must include a local repository or HTTPS endpoint")
+		}
+		if input.Visibility != VisibilityPublic {
+			return fmt.Errorf("public fork sources must remain public")
+		}
 	}
 	if len(input.Slug) > 100 || !slugPattern.MatchString(input.Slug) {
 		return fmt.Errorf("slug must match %s and contain at most 100 characters", slugPattern)

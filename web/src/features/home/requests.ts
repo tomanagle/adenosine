@@ -59,17 +59,27 @@ export function repositoryRequest(values: RepositoryFormValues): CreateRepositor
 
 export const proposalFormSchema = zCreatePullRequestRequest
   .pick({ source_branch: true, target_branch: true, title: true, body: true })
-  .extend({ repository_uri: zRepositoryUri })
-  .refine((values) => values.source_branch !== values.target_branch, {
-    error: 'Pick a source branch that differs from the target branch.',
-    path: ['source_branch'],
-  })
+  .extend({ repository_uri: zRepositoryUri, target_repository_uri: zRepositoryUri })
+  .refine(
+    (values) =>
+      values.repository_uri !== values.target_repository_uri ||
+      values.source_branch !== values.target_branch,
+    {
+      error: 'Pick a source branch that differs from the target branch.',
+      path: ['source_branch'],
+    },
+  )
 
 export type ProposalFormValues = z.input<typeof proposalFormSchema>
 
-export function emptyProposalForm(repositoryUri = '', targetBranch = ''): ProposalFormValues {
+export function emptyProposalForm(
+  repositoryUri = '',
+  targetBranch = '',
+  targetRepositoryUri = repositoryUri,
+): ProposalFormValues {
   return {
     repository_uri: repositoryUri,
+    target_repository_uri: targetRepositoryUri,
     source_branch: '',
     target_branch: targetBranch,
     title: '',
@@ -88,7 +98,7 @@ export function proposalRequest(
 ): CreatePullRequestRequest {
   return zCreatePullRequestRequest.parse({
     source_repository_uri: values.repository_uri,
-    target_repository_uri: values.repository_uri,
+    target_repository_uri: values.target_repository_uri,
     source_branch: values.source_branch,
     target_branch: values.target_branch,
     head_sha: headSha,

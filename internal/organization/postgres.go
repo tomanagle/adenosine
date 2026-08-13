@@ -44,6 +44,11 @@ func (store *PostgresStore) Create(ctx context.Context, value Organization) (Org
 	if err != nil {
 		return Organization{}, mapStoreError(err)
 	}
+	if err := queries.CreateOrganizationOwnerRoute(ctx, dbgen.CreateOrganizationOwnerRouteParams{
+		Alias: value.Slug, OrganizationID: pgUUID(value.ID), CreatedAt: pgTime(value.CreatedAt),
+	}); err != nil {
+		return Organization{}, mapStoreError(err)
+	}
 	if _, err := queries.CreateOrganizationOwner(ctx, dbgen.CreateOrganizationOwnerParams{
 		OrganizationID: pgUUID(value.ID), AccountDid: value.CreatorDID, JoinedAt: pgTime(value.CreatedAt),
 	}); err != nil {

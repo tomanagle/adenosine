@@ -106,8 +106,8 @@ function OrganizationCard({ organization }: { organization: Organization }) {
         <div className="min-w-0 flex-1">
           <Link
             className="font-serif text-xl underline-offset-4 group-hover:underline"
-            params={{ organization: organization.slug }}
-            to="/organizations/$organization"
+            params={{ owner: organization.slug }}
+            to="/$owner"
           >
             {organization.name}
           </Link>

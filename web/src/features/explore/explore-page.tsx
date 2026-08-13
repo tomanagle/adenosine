@@ -239,8 +239,8 @@ function ProfileResults({ search }: { search: ExploreSearch }) {
                 <h2 className="truncate font-serif text-xl">
                   <Link
                     className="underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    params={{ identity: profile.did }}
-                    to="/profiles/$identity"
+                    params={profile.handle ? { owner: profile.handle } : { identity: profile.did }}
+                    to={profile.handle ? '/$owner' : '/profiles/$identity'}
                   >
                     {profile.display_name ?? profile.handle ?? 'Unnamed developer'}
                   </Link>

@@ -7,8 +7,10 @@ const safeString = (maxLength: number) =>
     .max(maxLength)
     .refine((value) => !hasControlCharacters(value), 'Control characters are not allowed')
 
+export const ownerPathSchema = safeString(255)
+
 export const repositoryParamsSchema = z.object({
-  owner: safeString(255),
+  owner: ownerPathSchema,
   repo: z.string().regex(/^[a-z0-9][a-z0-9._-]{0,99}$/),
 })
 

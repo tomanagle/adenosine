@@ -60,6 +60,7 @@ function repository(overrides: Partial<Repository> = {}): Repository {
     comment_count: 0,
     pull_request_count: 1,
     open_pull_request_count: 1,
+    fork_count: 0,
     created_at: '2026-08-01T00:00:00Z',
     updated_at: '2026-08-10T00:00:00Z',
     ...overrides,

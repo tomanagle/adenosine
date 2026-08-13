@@ -41,6 +41,8 @@ type DiscoveryRepository struct {
 	GitHTTPS             string
 	GitSSH               string
 	Web                  string
+	ForkedFrom           *StrongRef
+	ForkCount            int64
 	CreatedAt            time.Time
 	UpdatedAt            time.Time
 	IndexedAt            time.Time

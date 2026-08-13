@@ -15,7 +15,7 @@ const activateRepository = `-- name: ActivateRepository :one
 UPDATE core.repositories
 SET state = 'active', at_uri = $1, at_cid = $2, updated_at = $3
 WHERE id = $4 AND deleted_at IS NULL
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count
 `
 
 type ActivateRepositoryParams struct {
@@ -49,6 +49,10 @@ func (q *Queries) ActivateRepository(ctx context.Context, arg ActivateRepository
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.OrganizationID,
+		&i.ForkedFromUri,
+		&i.ForkedFromCid,
+		&i.ForkedFromLocalRepositoryID,
+		&i.ForkCount,
 	)
 	return i, err
 }
@@ -56,27 +60,31 @@ func (q *Queries) ActivateRepository(ctx context.Context, arg ActivateRepository
 const createRepository = `-- name: CreateRepository :one
 INSERT INTO core.repositories (
     id, owner_did, organization_id, slug, display_name, description, visibility, state,
-    default_branch, storage_key, at_uri, at_cid, created_at, updated_at
+    default_branch, storage_key, at_uri, at_cid, forked_from_uri, forked_from_cid,
+    forked_from_local_repository_id, created_at, updated_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count
 `
 
 type CreateRepositoryParams struct {
-	ID             pgtype.UUID        `json:"id"`
-	OwnerDid       string             `json:"owner_did"`
-	OrganizationID pgtype.UUID        `json:"organization_id"`
-	Slug           string             `json:"slug"`
-	DisplayName    pgtype.Text        `json:"display_name"`
-	Description    pgtype.Text        `json:"description"`
-	Visibility     string             `json:"visibility"`
-	State          string             `json:"state"`
-	DefaultBranch  string             `json:"default_branch"`
-	StorageKey     string             `json:"storage_key"`
-	AtUri          pgtype.Text        `json:"at_uri"`
-	AtCid          pgtype.Text        `json:"at_cid"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	ID                          pgtype.UUID        `json:"id"`
+	OwnerDid                    string             `json:"owner_did"`
+	OrganizationID              pgtype.UUID        `json:"organization_id"`
+	Slug                        string             `json:"slug"`
+	DisplayName                 pgtype.Text        `json:"display_name"`
+	Description                 pgtype.Text        `json:"description"`
+	Visibility                  string             `json:"visibility"`
+	State                       string             `json:"state"`
+	DefaultBranch               string             `json:"default_branch"`
+	StorageKey                  string             `json:"storage_key"`
+	AtUri                       pgtype.Text        `json:"at_uri"`
+	AtCid                       pgtype.Text        `json:"at_cid"`
+	ForkedFromUri               pgtype.Text        `json:"forked_from_uri"`
+	ForkedFromCid               pgtype.Text        `json:"forked_from_cid"`
+	ForkedFromLocalRepositoryID pgtype.UUID        `json:"forked_from_local_repository_id"`
+	CreatedAt                   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                   pgtype.Timestamptz `json:"updated_at"`
 }
 
 func (q *Queries) CreateRepository(ctx context.Context, arg CreateRepositoryParams) (CoreRepository, error) {
@@ -93,6 +101,9 @@ func (q *Queries) CreateRepository(ctx context.Context, arg CreateRepositoryPara
 		arg.StorageKey,
 		arg.AtUri,
 		arg.AtCid,
+		arg.ForkedFromUri,
+		arg.ForkedFromCid,
+		arg.ForkedFromLocalRepositoryID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -113,12 +124,49 @@ func (q *Queries) CreateRepository(ctx context.Context, arg CreateRepositoryPara
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.OrganizationID,
+		&i.ForkedFromUri,
+		&i.ForkedFromCid,
+		&i.ForkedFromLocalRepositoryID,
+		&i.ForkCount,
+	)
+	return i, err
+}
+
+const getForkSourceByURI = `-- name: GetForkSourceByURI :one
+SELECT repository.uri, repository.cid, repository.git_https, repository.local_repository_id
+FROM network.repositories AS repository
+LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
+WHERE repository.uri = $1
+  AND repository.cid IS NOT NULL
+  AND repository.deleted_at IS NULL
+  AND (local_repository.id IS NULL OR (
+      local_repository.visibility = 'public'
+      AND local_repository.state = 'active'
+      AND local_repository.deleted_at IS NULL
+  ))
+`
+
+type GetForkSourceByURIRow struct {
+	Uri               string      `json:"uri"`
+	Cid               pgtype.Text `json:"cid"`
+	GitHttps          pgtype.Text `json:"git_https"`
+	LocalRepositoryID pgtype.UUID `json:"local_repository_id"`
+}
+
+func (q *Queries) GetForkSourceByURI(ctx context.Context, uri string) (GetForkSourceByURIRow, error) {
+	row := q.db.QueryRow(ctx, getForkSourceByURI, uri)
+	var i GetForkSourceByURIRow
+	err := row.Scan(
+		&i.Uri,
+		&i.Cid,
+		&i.GitHttps,
+		&i.LocalRepositoryID,
 	)
 	return i, err
 }
 
 const getRepository = `-- name: GetRepository :one
-SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id FROM core.repositories WHERE id = $1 AND deleted_at IS NULL
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count FROM core.repositories WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetRepository(ctx context.Context, id pgtype.UUID) (CoreRepository, error) {
@@ -140,30 +188,36 @@ func (q *Queries) GetRepository(ctx context.Context, id pgtype.UUID) (CoreReposi
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.OrganizationID,
+		&i.ForkedFromUri,
+		&i.ForkedFromCid,
+		&i.ForkedFromLocalRepositoryID,
+		&i.ForkCount,
 	)
 	return i, err
 }
 
 const getRepositoryByOwnerSlug = `-- name: GetRepositoryByOwnerSlug :one
-SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id
+SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count
 FROM core.repositories AS repository
-JOIN core.accounts AS owner ON owner.did = repository.owner_did
-LEFT JOIN core.organizations AS organization ON organization.id = repository.organization_id AND organization.deleted_at IS NULL
+LEFT JOIN core.owner_routes AS owner_route ON (
+    (repository.organization_id IS NULL AND owner_route.account_did = repository.owner_did)
+    OR owner_route.organization_id = repository.organization_id
+)
 WHERE (
-    (repository.organization_id IS NULL AND (repository.owner_did = $1 OR lower(owner.handle_cache) = lower($1)))
-    OR lower(organization.slug) = lower($1)
+    lower(owner_route.alias) = lower($1)
+    OR (repository.organization_id IS NULL AND repository.owner_did = $1)
   )
   AND lower(repository.slug) = lower($2)
   AND repository.deleted_at IS NULL
 `
 
 type GetRepositoryByOwnerSlugParams struct {
-	OwnerDid string `json:"owner_did"`
-	Lower    string `json:"lower"`
+	Owner string `json:"owner"`
+	Slug  string `json:"slug"`
 }
 
 func (q *Queries) GetRepositoryByOwnerSlug(ctx context.Context, arg GetRepositoryByOwnerSlugParams) (CoreRepository, error) {
-	row := q.db.QueryRow(ctx, getRepositoryByOwnerSlug, arg.OwnerDid, arg.Lower)
+	row := q.db.QueryRow(ctx, getRepositoryByOwnerSlug, arg.Owner, arg.Slug)
 	var i CoreRepository
 	err := row.Scan(
 		&i.ID,
@@ -181,12 +235,16 @@ func (q *Queries) GetRepositoryByOwnerSlug(ctx context.Context, arg GetRepositor
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.OrganizationID,
+		&i.ForkedFromUri,
+		&i.ForkedFromCid,
+		&i.ForkedFromLocalRepositoryID,
+		&i.ForkCount,
 	)
 	return i, err
 }
 
 const listRepositoriesByOrganization = `-- name: ListRepositoriesByOrganization :many
-SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count
 FROM core.repositories
 WHERE organization_id = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC, id DESC
@@ -217,6 +275,10 @@ func (q *Queries) ListRepositoriesByOrganization(ctx context.Context, organizati
 			&i.UpdatedAt,
 			&i.DeletedAt,
 			&i.OrganizationID,
+			&i.ForkedFromUri,
+			&i.ForkedFromCid,
+			&i.ForkedFromLocalRepositoryID,
+			&i.ForkCount,
 		); err != nil {
 			return nil, err
 		}
@@ -229,7 +291,7 @@ func (q *Queries) ListRepositoriesByOrganization(ctx context.Context, organizati
 }
 
 const listRepositoriesByOwner = `-- name: ListRepositoriesByOwner :many
-SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count
 FROM core.repositories
 WHERE owner_did = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC, id DESC
@@ -266,6 +328,10 @@ func (q *Queries) ListRepositoriesByOwner(ctx context.Context, arg ListRepositor
 			&i.UpdatedAt,
 			&i.DeletedAt,
 			&i.OrganizationID,
+			&i.ForkedFromUri,
+			&i.ForkedFromCid,
+			&i.ForkedFromLocalRepositoryID,
+			&i.ForkCount,
 		); err != nil {
 			return nil, err
 		}
@@ -292,7 +358,7 @@ WITH RECURSIVE team_lineage AS (
   WHERE parent.organization_id = $2
     AND parent.deleted_at IS NULL
 )
-SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id,
+SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count,
   (
     EXISTS (
       SELECT 1 FROM core.organization_members AS member
@@ -339,22 +405,26 @@ type PageRepositoriesByOrganizationParams struct {
 }
 
 type PageRepositoriesByOrganizationRow struct {
-	ID             pgtype.UUID        `json:"id"`
-	OwnerDid       string             `json:"owner_did"`
-	Slug           string             `json:"slug"`
-	DisplayName    pgtype.Text        `json:"display_name"`
-	Description    pgtype.Text        `json:"description"`
-	Visibility     string             `json:"visibility"`
-	State          string             `json:"state"`
-	DefaultBranch  string             `json:"default_branch"`
-	StorageKey     string             `json:"storage_key"`
-	AtUri          pgtype.Text        `json:"at_uri"`
-	AtCid          pgtype.Text        `json:"at_cid"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
-	OrganizationID pgtype.UUID        `json:"organization_id"`
-	ViewerCanAdmin pgtype.Bool        `json:"viewer_can_admin"`
+	ID                          pgtype.UUID        `json:"id"`
+	OwnerDid                    string             `json:"owner_did"`
+	Slug                        string             `json:"slug"`
+	DisplayName                 pgtype.Text        `json:"display_name"`
+	Description                 pgtype.Text        `json:"description"`
+	Visibility                  string             `json:"visibility"`
+	State                       string             `json:"state"`
+	DefaultBranch               string             `json:"default_branch"`
+	StorageKey                  string             `json:"storage_key"`
+	AtUri                       pgtype.Text        `json:"at_uri"`
+	AtCid                       pgtype.Text        `json:"at_cid"`
+	CreatedAt                   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                   pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt                   pgtype.Timestamptz `json:"deleted_at"`
+	OrganizationID              pgtype.UUID        `json:"organization_id"`
+	ForkedFromUri               pgtype.Text        `json:"forked_from_uri"`
+	ForkedFromCid               pgtype.Text        `json:"forked_from_cid"`
+	ForkedFromLocalRepositoryID pgtype.UUID        `json:"forked_from_local_repository_id"`
+	ForkCount                   int64              `json:"fork_count"`
+	ViewerCanAdmin              pgtype.Bool        `json:"viewer_can_admin"`
 }
 
 func (q *Queries) PageRepositoriesByOrganization(ctx context.Context, arg PageRepositoriesByOrganizationParams) ([]PageRepositoriesByOrganizationRow, error) {
@@ -387,6 +457,10 @@ func (q *Queries) PageRepositoriesByOrganization(ctx context.Context, arg PageRe
 			&i.UpdatedAt,
 			&i.DeletedAt,
 			&i.OrganizationID,
+			&i.ForkedFromUri,
+			&i.ForkedFromCid,
+			&i.ForkedFromLocalRepositoryID,
+			&i.ForkCount,
 			&i.ViewerCanAdmin,
 		); err != nil {
 			return nil, err
@@ -403,7 +477,7 @@ const updateRepositoryState = `-- name: UpdateRepositoryState :one
 UPDATE core.repositories
 SET state = $2, updated_at = $3
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count
 `
 
 type UpdateRepositoryStateParams struct {
@@ -431,6 +505,10 @@ func (q *Queries) UpdateRepositoryState(ctx context.Context, arg UpdateRepositor
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.OrganizationID,
+		&i.ForkedFromUri,
+		&i.ForkedFromCid,
+		&i.ForkedFromLocalRepositoryID,
+		&i.ForkCount,
 	)
 	return i, err
 }

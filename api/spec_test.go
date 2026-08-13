@@ -33,7 +33,7 @@ func TestSyncOpenAPIContract(t *testing.T) {
 		name, path, schema string
 		wantColumns        []string
 	}{
-		{name: "repositories", path: "/api/v1/sync/repositories", schema: "SyncRepository", wantColumns: []string{"uri", "cid", "owner_did", "slug", "name", "description", "default_branch", "git_https", "git_ssh", "web", "record_created_at", "record_updated_at", "indexed_at", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count"}},
+		{name: "repositories", path: "/api/v1/sync/repositories", schema: "SyncRepository", wantColumns: []string{"uri", "cid", "owner_did", "slug", "name", "description", "default_branch", "git_https", "git_ssh", "web", "forked_from_uri", "forked_from_cid", "record_created_at", "record_updated_at", "indexed_at", "fork_count", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count"}},
 		{name: "profiles", path: "/api/v1/sync/profiles", schema: "SyncProfile", wantColumns: []string{"did", "profile_uri", "profile_cid", "handle", "display_name", "bio", "avatar_ref", "website", "location", "repository_count", "contribution_count", "record_created_at", "indexed_at"}},
 		{name: "stars", path: "/api/v1/sync/stars", schema: "SyncStar", wantColumns: []string{"uri", "cid", "author_did", "repository_uri", "repository_cid", "record_created_at", "indexed_at"}},
 		{name: "issues", path: "/api/v1/sync/issues", schema: "SyncIssue", wantColumns: []string{"uri", "cid", "author_did", "repository_uri", "repository_cid", "title", "body", "state", "status_uri", "status_cid", "status_updated_at", "comment_count", "record_created_at", "record_updated_at", "indexed_at"}},

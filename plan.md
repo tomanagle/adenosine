@@ -6742,7 +6742,13 @@ Do not pretend this is solved by changing one field.
 
 ## ADR-003 — forks
 
-Is fork ancestry a field in the child repository's record, an external relationship record, or both?
+**Decision:** fork ancestry is an optional `forkedFrom` strong reference in the child
+repository record. This keeps a fork self-describing and portable across instances without
+requiring an external relationship record for the initial implementation. The strong
+reference captures the source version at creation; later synchronization resolves the
+current source record by URI. Direct fork counts are derived projection data, not authored
+record state. An external relationship record remains a possible future extension if the
+product needs multiple upstreams or independently authored network metadata.
 
 ## ADR-004 — issues state
 

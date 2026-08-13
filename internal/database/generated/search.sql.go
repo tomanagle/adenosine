@@ -61,6 +61,30 @@ func (q *Queries) CountSearchPullRequests(ctx context.Context, arg CountSearchPu
 	return i, err
 }
 
+const countSearchRepositoryForks = `-- name: CountSearchRepositoryForks :one
+SELECT count(*)
+FROM network.repositories AS repository
+LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
+WHERE repository.forked_from_uri = $1::text
+  AND repository.deleted_at IS NULL
+  AND repository.cid IS NOT NULL
+  AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did = repository.owner_did)
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri = repository.uri)
+`
+
+type CountSearchRepositoryForksParams struct {
+	RepositoryUri string      `json:"repository_uri"`
+	ViewerDid     pgtype.Text `json:"viewer_did"`
+}
+
+func (q *Queries) CountSearchRepositoryForks(ctx context.Context, arg CountSearchRepositoryForksParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countSearchRepositoryForks, arg.RepositoryUri, arg.ViewerDid)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countSearchStars = `-- name: CountSearchStars :one
 SELECT count(*) FROM network.stars star JOIN network.repositories repository ON repository.uri = star.repository_uri
 WHERE star.repository_uri = $1::text AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
@@ -322,6 +346,119 @@ func (q *Queries) ListSearchPullRequests(ctx context.Context, arg ListSearchPull
 			&i.MergedCommitSha,
 			&i.ReviewCount,
 			&i.VisibleReviewCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSearchRepositoryForks = `-- name: ListSearchRepositoryForks :many
+SELECT repository.uri, repository.cid, repository.local_repository_id, repository.owner_did,
+       coalesce(profile.handle, identity.handle) AS owner_handle, organization.slug AS organization_slug,
+       repository.slug, repository.name, repository.description, repository.default_branch,
+       repository.git_https, repository.git_ssh, repository.web,
+       repository.forked_from_uri, repository.forked_from_cid, repository.fork_count,
+       repository.star_count, repository.issue_count, repository.open_issue_count,
+       repository.comment_count, repository.pull_request_count, repository.open_pull_request_count,
+       repository.record_created_at, repository.record_updated_at, repository.indexed_at
+FROM network.repositories AS repository
+LEFT JOIN network.profiles AS profile ON profile.did = repository.owner_did AND profile.deleted_at IS NULL
+LEFT JOIN network.identities AS identity ON identity.did = repository.owner_did AND identity.is_active
+LEFT JOIN network.organizations AS organization ON organization.uri = repository.organization_uri AND organization.deleted_at IS NULL
+LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
+WHERE repository.forked_from_uri = $1::text
+  AND repository.deleted_at IS NULL
+  AND repository.cid IS NOT NULL
+  AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did = repository.owner_did)
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri = repository.uri)
+  AND ($3::text IS NULL OR (repository.indexed_at, repository.uri) < ($4::timestamptz, $3::text))
+ORDER BY repository.indexed_at DESC, repository.uri DESC
+LIMIT $5
+`
+
+type ListSearchRepositoryForksParams struct {
+	RepositoryUri   string             `json:"repository_uri"`
+	ViewerDid       pgtype.Text        `json:"viewer_did"`
+	CursorUri       pgtype.Text        `json:"cursor_uri"`
+	CursorIndexedAt pgtype.Timestamptz `json:"cursor_indexed_at"`
+	ResultLimit     int32              `json:"result_limit"`
+}
+
+type ListSearchRepositoryForksRow struct {
+	Uri                  string             `json:"uri"`
+	Cid                  pgtype.Text        `json:"cid"`
+	LocalRepositoryID    pgtype.UUID        `json:"local_repository_id"`
+	OwnerDid             string             `json:"owner_did"`
+	OwnerHandle          pgtype.Text        `json:"owner_handle"`
+	OrganizationSlug     pgtype.Text        `json:"organization_slug"`
+	Slug                 pgtype.Text        `json:"slug"`
+	Name                 pgtype.Text        `json:"name"`
+	Description          pgtype.Text        `json:"description"`
+	DefaultBranch        pgtype.Text        `json:"default_branch"`
+	GitHttps             pgtype.Text        `json:"git_https"`
+	GitSsh               pgtype.Text        `json:"git_ssh"`
+	Web                  pgtype.Text        `json:"web"`
+	ForkedFromUri        pgtype.Text        `json:"forked_from_uri"`
+	ForkedFromCid        pgtype.Text        `json:"forked_from_cid"`
+	ForkCount            int64              `json:"fork_count"`
+	StarCount            int64              `json:"star_count"`
+	IssueCount           int64              `json:"issue_count"`
+	OpenIssueCount       int64              `json:"open_issue_count"`
+	CommentCount         int64              `json:"comment_count"`
+	PullRequestCount     int64              `json:"pull_request_count"`
+	OpenPullRequestCount int64              `json:"open_pull_request_count"`
+	RecordCreatedAt      pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt      pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt            pgtype.Timestamptz `json:"indexed_at"`
+}
+
+func (q *Queries) ListSearchRepositoryForks(ctx context.Context, arg ListSearchRepositoryForksParams) ([]ListSearchRepositoryForksRow, error) {
+	rows, err := q.db.Query(ctx, listSearchRepositoryForks,
+		arg.RepositoryUri,
+		arg.ViewerDid,
+		arg.CursorUri,
+		arg.CursorIndexedAt,
+		arg.ResultLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSearchRepositoryForksRow{}
+	for rows.Next() {
+		var i ListSearchRepositoryForksRow
+		if err := rows.Scan(
+			&i.Uri,
+			&i.Cid,
+			&i.LocalRepositoryID,
+			&i.OwnerDid,
+			&i.OwnerHandle,
+			&i.OrganizationSlug,
+			&i.Slug,
+			&i.Name,
+			&i.Description,
+			&i.DefaultBranch,
+			&i.GitHttps,
+			&i.GitSsh,
+			&i.Web,
+			&i.ForkedFromUri,
+			&i.ForkedFromCid,
+			&i.ForkCount,
+			&i.StarCount,
+			&i.IssueCount,
+			&i.OpenIssueCount,
+			&i.CommentCount,
+			&i.PullRequestCount,
+			&i.OpenPullRequestCount,
+			&i.RecordCreatedAt,
+			&i.RecordUpdatedAt,
+			&i.IndexedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -613,6 +750,7 @@ const resolveSearchRepository = `-- name: ResolveSearchRepository :one
 SELECT repository.uri, repository.cid, repository.local_repository_id, repository.owner_did,
        repository.slug, repository.name, repository.description, repository.default_branch,
        repository.git_https, repository.git_ssh, repository.web, repository.record_created_at,
+       repository.forked_from_uri, repository.forked_from_cid, repository.fork_count,
        repository.record_updated_at, repository.indexed_at,
        coalesce(profile.handle, identity.handle) AS owner_handle, organization.slug AS organization_slug,
        (SELECT count(*) FROM network.stars AS star WHERE star.repository_uri = repository.uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL
@@ -668,6 +806,9 @@ type ResolveSearchRepositoryRow struct {
 	GitSsh               pgtype.Text        `json:"git_ssh"`
 	Web                  pgtype.Text        `json:"web"`
 	RecordCreatedAt      pgtype.Timestamptz `json:"record_created_at"`
+	ForkedFromUri        pgtype.Text        `json:"forked_from_uri"`
+	ForkedFromCid        pgtype.Text        `json:"forked_from_cid"`
+	ForkCount            int64              `json:"fork_count"`
 	RecordUpdatedAt      pgtype.Timestamptz `json:"record_updated_at"`
 	IndexedAt            pgtype.Timestamptz `json:"indexed_at"`
 	OwnerHandle          pgtype.Text        `json:"owner_handle"`
@@ -696,6 +837,9 @@ func (q *Queries) ResolveSearchRepository(ctx context.Context, arg ResolveSearch
 		&i.GitSsh,
 		&i.Web,
 		&i.RecordCreatedAt,
+		&i.ForkedFromUri,
+		&i.ForkedFromCid,
+		&i.ForkCount,
 		&i.RecordUpdatedAt,
 		&i.IndexedAt,
 		&i.OwnerHandle,
@@ -846,6 +990,7 @@ WITH candidates AS (
            repository.owner_did, coalesce(profile.handle, identity.handle) AS owner_handle, organization.slug AS organization_slug,
            repository.slug, repository.name, repository.description, repository.default_branch,
            repository.git_https, repository.git_ssh, repository.web,
+           repository.forked_from_uri, repository.forked_from_cid, repository.fork_count,
            repository.record_created_at, repository.record_updated_at, repository.indexed_at,
            (SELECT count(*) FROM network.stars star WHERE star.repository_uri = repository.uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = star.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = star.uri)) AS star_count,
            (SELECT count(*) FROM network.issues issue WHERE issue.repository_uri = repository.uri AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = issue.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = issue.uri)) AS issue_count,
@@ -887,7 +1032,7 @@ WITH candidates AS (
            OR lower(coalesce(profile.handle, identity.handle, '')) LIKE '%' || lower($8::text) || '%' ESCAPE '\'
       )
 )
-SELECT uri, cid, local_repository_id, owner_did, owner_handle, organization_slug, slug, name, description, default_branch, git_https, git_ssh, web, record_created_at, record_updated_at, indexed_at, star_count, issue_count, open_issue_count, comment_count, pull_request_count, open_pull_request_count, score FROM candidates
+SELECT uri, cid, local_repository_id, owner_did, owner_handle, organization_slug, slug, name, description, default_branch, git_https, git_ssh, web, forked_from_uri, forked_from_cid, fork_count, record_created_at, record_updated_at, indexed_at, star_count, issue_count, open_issue_count, comment_count, pull_request_count, open_pull_request_count, score FROM candidates
 WHERE $1::text IS NULL
    OR CASE WHEN $2::text = 'relevance'
        THEN (score, indexed_at, uri) < ($3::double precision, $4::timestamptz, $1::text)
@@ -925,6 +1070,9 @@ type SearchRepositoriesRow struct {
 	GitHttps             pgtype.Text        `json:"git_https"`
 	GitSsh               pgtype.Text        `json:"git_ssh"`
 	Web                  pgtype.Text        `json:"web"`
+	ForkedFromUri        pgtype.Text        `json:"forked_from_uri"`
+	ForkedFromCid        pgtype.Text        `json:"forked_from_cid"`
+	ForkCount            int64              `json:"fork_count"`
 	RecordCreatedAt      pgtype.Timestamptz `json:"record_created_at"`
 	RecordUpdatedAt      pgtype.Timestamptz `json:"record_updated_at"`
 	IndexedAt            pgtype.Timestamptz `json:"indexed_at"`
@@ -969,6 +1117,9 @@ func (q *Queries) SearchRepositories(ctx context.Context, arg SearchRepositories
 			&i.GitHttps,
 			&i.GitSsh,
 			&i.Web,
+			&i.ForkedFromUri,
+			&i.ForkedFromCid,
+			&i.ForkCount,
 			&i.RecordCreatedAt,
 			&i.RecordUpdatedAt,
 			&i.IndexedAt,

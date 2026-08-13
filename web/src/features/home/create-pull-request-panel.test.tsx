@@ -69,17 +69,25 @@ const repository: Repository = {
   comment_count: 0,
   pull_request_count: 0,
   open_pull_request_count: 0,
+  fork_count: 0,
   created_at: '2026-08-12T00:00:00Z',
   updated_at: '2026-08-12T00:00:00Z',
 }
 
-function renderPanel() {
+function renderPanel(
+  repositories: Repository[] = [repository],
+  networkRepositories: Repository[] = [repository],
+) {
   const client = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   })
   return render(
     <QueryClientProvider client={client}>
-      <CreatePullRequestPanel onClose={() => undefined} repositories={[repository]} />
+      <CreatePullRequestPanel
+        networkRepositories={networkRepositories}
+        onClose={() => undefined}
+        repositories={repositories}
+      />
     </QueryClientProvider>,
   )
 }
@@ -154,5 +162,47 @@ describe('CreatePullRequestPanel', () => {
 
     expect(await screen.findByText('Enter a title.')).toBeTruthy()
     expect(createPullRequest).not.toHaveBeenCalled()
+  })
+
+  it('targets a fork upstream and opens the upstream proposal list', async () => {
+    const upstream = {
+      ...repository,
+      uri: 'at://did:plc:upstream/sh.adenosine.repository/ledger',
+      cid: 'bafyupstream',
+      owner: { did: 'did:plc:upstream', handle: 'upstream.example' },
+    }
+    const fork = {
+      ...repository,
+      uri: 'at://did:plc:viewer/sh.adenosine.repository/ledger-fork',
+      cid: 'bafyfork',
+      slug: 'ledger-fork',
+      forked_from: { uri: upstream.uri, cid: upstream.cid },
+    }
+    createPullRequest.mockResolvedValue({ pull_request: pullRequest, projected: false })
+    renderPanel([fork], [fork, upstream])
+    await waitForBranches()
+
+    expect(screen.getByLabelText<HTMLInputElement>('Target repository').value).toBe(
+      'upstream.example/ledger',
+    )
+    fireEvent.change(screen.getByLabelText('Source branch'), { target: { value: 'main' } })
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Send upstream' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Open pull request' }))
+
+    await waitFor(() => expect(createPullRequest).toHaveBeenCalledTimes(1))
+    expect(createPullRequest.mock.calls[0]?.[0]).toMatchObject({
+      body: {
+        source_repository_uri: fork.uri,
+        target_repository_uri: upstream.uri,
+        source_branch: 'main',
+        target_branch: 'main',
+      },
+    })
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith({
+        params: { owner: 'upstream.example', repo: 'ledger' },
+        to: '/$owner/$repo/pulls',
+      }),
+    )
   })
 })

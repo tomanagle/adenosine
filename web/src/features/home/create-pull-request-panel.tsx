@@ -25,17 +25,15 @@ import {
 } from './requests'
 import { repositoryParams } from './viewer-repositories'
 
-/**
- * Home composes proposals inside one repository, which is the common branch to
- * default-branch case. Cross-repository proposals stay on the repository
- * compare page where both sides can be reviewed first.
- */
+/** Home composes branch proposals and sends fork work to its upstream by default. */
 export function CreatePullRequestPanel({
   onClose,
   repositories,
+  networkRepositories,
 }: {
   onClose: () => void
   repositories: Repository[]
+  networkRepositories: Repository[]
 }) {
   const first = repositories[0]
   const [selectedUri, setSelectedUri] = useState(first?.uri ?? '')
@@ -54,7 +52,11 @@ export function CreatePullRequestPanel({
   const [headError, setHeadError] = useState<string>()
 
   const form = useForm({
-    defaultValues: emptyProposalForm(first?.uri ?? '', first?.default_branch ?? ''),
+    defaultValues: emptyProposalForm(
+      first?.uri ?? '',
+      first?.default_branch ?? '',
+      first?.forked_from?.uri ?? first?.uri ?? '',
+    ),
     validators: { onChange: proposalFormSchema, onSubmit: proposalFormSchema },
     onSubmit: async ({ value }) => {
       const headSha = branchHeadSha(branches, value.source_branch)
@@ -68,7 +70,7 @@ export function CreatePullRequestPanel({
           (await mutation.mutateAsync({ body: proposalRequest(value, headSha) })).pull_request,
         async (reference) => {
           const projection = await queryClient.fetchQuery({
-            ...pullRequestsQueryOptions(value.repository_uri),
+            ...pullRequestsQueryOptions(value.target_repository_uri),
             staleTime: 0,
           })
           return projection.items.some(
@@ -77,9 +79,16 @@ export function CreatePullRequestPanel({
         },
       )
       await queryClient.invalidateQueries({
-        queryKey: pullRequestsQueryOptions(value.repository_uri).queryKey,
+        queryKey: pullRequestsQueryOptions(value.target_repository_uri).queryKey,
       })
-      await navigate({ params, to: '/$owner/$repo/pulls' })
+      const target = networkRepositories.find(
+        (repository) => repository.uri === value.target_repository_uri,
+      )
+      if (target) {
+        await navigate({ params: repositoryParams(target), to: '/$owner/$repo/pulls' })
+      } else if (value.target_repository_uri === value.repository_uri) {
+        await navigate({ params, to: '/$owner/$repo/pulls' })
+      }
     },
   })
 
@@ -94,8 +103,8 @@ export function CreatePullRequestPanel({
             New pull request
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Propose one branch onto another in a repository hosted here. The proposal records the
-            current branch head.
+            Propose a local branch to its repository or, for a fork, back to its portable upstream.
+            The proposal records the current branch head.
           </p>
         </div>
         <Button
@@ -133,6 +142,10 @@ export function CreatePullRequestPanel({
                   setSelectedUri(uri)
                   field.handleChange(uri)
                   form.setFieldValue('target_branch', repository?.default_branch ?? '')
+                  form.setFieldValue(
+                    'target_repository_uri',
+                    repository?.forked_from?.uri ?? repository?.uri ?? '',
+                  )
                   form.setFieldValue('source_branch', '')
                 }}
                 value={field.state.value}
@@ -145,6 +158,36 @@ export function CreatePullRequestPanel({
               </Select>
             </Field>
           )}
+        </form.Field>
+
+        <form.Field name="target_repository_uri">
+          {(field) => {
+            const target = networkRepositories.find(
+              (repository) => repository.uri === field.state.value,
+            )
+            return (
+              <Field
+                className="sm:col-span-2"
+                hint={
+                  selected?.forked_from
+                    ? 'Pull requests from forks target their upstream by default.'
+                    : 'This proposal stays within the repository.'
+                }
+                htmlFor="new-pull-target-repository"
+                label="Target repository"
+              >
+                <Input
+                  id="new-pull-target-repository"
+                  readOnly
+                  value={
+                    target
+                      ? `${target.owner.organization_slug ?? target.owner.handle ?? target.owner.did}/${target.slug}`
+                      : field.state.value
+                  }
+                />
+              </Field>
+            )
+          }}
         </form.Field>
 
         <form.Field

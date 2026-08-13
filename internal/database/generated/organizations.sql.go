@@ -303,6 +303,22 @@ func (q *Queries) CreateOrganizationOwner(ctx context.Context, arg CreateOrganiz
 	return i, err
 }
 
+const createOrganizationOwnerRoute = `-- name: CreateOrganizationOwnerRoute :exec
+INSERT INTO core.owner_routes (alias, kind, organization_id, created_at)
+VALUES (lower($1), 'organization', $2, $3)
+`
+
+type CreateOrganizationOwnerRouteParams struct {
+	Alias          string             `json:"alias"`
+	OrganizationID pgtype.UUID        `json:"organization_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CreateOrganizationOwnerRoute(ctx context.Context, arg CreateOrganizationOwnerRouteParams) error {
+	_, err := q.db.Exec(ctx, createOrganizationOwnerRoute, arg.Alias, arg.OrganizationID, arg.CreatedAt)
+	return err
+}
+
 const createOrganizationTeam = `-- name: CreateOrganizationTeam :one
 INSERT INTO core.organization_teams (
     id, organization_id, parent_team_id, slug, name, description, visibility, created_at, updated_at

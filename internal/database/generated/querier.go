@@ -28,6 +28,7 @@ type Querier interface {
 	ConsumePasskeyCeremony(ctx context.Context, arg ConsumePasskeyCeremonyParams) (ConsumePasskeyCeremonyRow, error)
 	CountSearchIssues(ctx context.Context, arg CountSearchIssuesParams) (CountSearchIssuesRow, error)
 	CountSearchPullRequests(ctx context.Context, arg CountSearchPullRequestsParams) (CountSearchPullRequestsRow, error)
+	CountSearchRepositoryForks(ctx context.Context, arg CountSearchRepositoryForksParams) (int64, error)
 	CountSearchStars(ctx context.Context, arg CountSearchStarsParams) (int64, error)
 	CreateAccessToken(ctx context.Context, arg CreateAccessTokenParams) (AuthAccessToken, error)
 	CreateOAuthState(ctx context.Context, arg CreateOAuthStateParams) error
@@ -35,6 +36,7 @@ type Querier interface {
 	CreateOrganizationInvitation(ctx context.Context, arg CreateOrganizationInvitationParams) (CoreOrganizationInvitation, error)
 	CreateOrganizationMemberFromInvitation(ctx context.Context, arg CreateOrganizationMemberFromInvitationParams) (CoreOrganizationMember, error)
 	CreateOrganizationOwner(ctx context.Context, arg CreateOrganizationOwnerParams) (CoreOrganizationMember, error)
+	CreateOrganizationOwnerRoute(ctx context.Context, arg CreateOrganizationOwnerRouteParams) error
 	CreateOrganizationTeam(ctx context.Context, arg CreateOrganizationTeamParams) (CoreOrganizationTeam, error)
 	CreateOutboxEvent(ctx context.Context, arg CreateOutboxEventParams) (OpsOutboxEvent, error)
 	CreateOutboxEventIfAbsent(ctx context.Context, arg CreateOutboxEventIfAbsentParams) error
@@ -64,7 +66,9 @@ type Querier interface {
 	GetFederationPullRequestReviewSubject(ctx context.Context, uri string) (string, error)
 	GetFederationPullRequestStatusTarget(ctx context.Context, uri string) (GetFederationPullRequestStatusTargetRow, error)
 	GetFederationPullRequestTargetRepositoryURI(ctx context.Context, uri string) (string, error)
+	GetFederationRepositoryForkSource(ctx context.Context, uri string) (pgtype.Text, error)
 	GetFederationStarRepositoryURI(ctx context.Context, uri string) (string, error)
+	GetForkSourceByURI(ctx context.Context, uri string) (GetForkSourceByURIRow, error)
 	GetLatestOAuthCredential(ctx context.Context, accountDid string) (GetLatestOAuthCredentialRow, error)
 	GetNetworkIssueCommentParentTarget(ctx context.Context, uri string) (GetNetworkIssueCommentParentTargetRow, error)
 	GetNetworkIssueCommentTarget(ctx context.Context, uri string) (GetNetworkIssueCommentTargetRow, error)
@@ -125,9 +129,11 @@ type Querier interface {
 	ListSearchIssues(ctx context.Context, arg ListSearchIssuesParams) ([]ListSearchIssuesRow, error)
 	ListSearchPullRequestReviews(ctx context.Context, arg ListSearchPullRequestReviewsParams) ([]NetworkPullRequestReview, error)
 	ListSearchPullRequests(ctx context.Context, arg ListSearchPullRequestsParams) ([]ListSearchPullRequestsRow, error)
+	ListSearchRepositoryForks(ctx context.Context, arg ListSearchRepositoryForksParams) ([]ListSearchRepositoryForksRow, error)
 	ListSearchStars(ctx context.Context, arg ListSearchStarsParams) ([]NetworkStar, error)
 	LockFederationIssueComments(ctx context.Context, issueUri string) error
 	LockFederationPullRequest(ctx context.Context, pullRequestUri string) error
+	LockFederationRepositoryForks(ctx context.Context, repositoryUri string) error
 	LockFederationRepositoryIssues(ctx context.Context, repositoryUri string) error
 	LockFederationRepositoryPullRequests(ctx context.Context, repositoryUri string) error
 	LockFederationRepositoryStars(ctx context.Context, repositoryUri string) error
@@ -146,6 +152,7 @@ type Querier interface {
 	PurgeExpiredPasskeyCeremonies(ctx context.Context, expiresAt pgtype.Timestamptz) (int64, error)
 	PutOrganizationRepositoryCollaborator(ctx context.Context, arg PutOrganizationRepositoryCollaboratorParams) (CoreRepositoryCollaborator, error)
 	PutOrganizationTeamRepository(ctx context.Context, arg PutOrganizationTeamRepositoryParams) (CoreOrganizationTeamRepository, error)
+	RecomputeFederationForkCount(ctx context.Context, repositoryUri string) error
 	RecomputeFederationIssueCommentCount(ctx context.Context, issueUri string) error
 	RecomputeFederationIssueCounts(ctx context.Context, repositoryUri string) error
 	RecomputeFederationIssueState(ctx context.Context, uri string) error
@@ -155,6 +162,7 @@ type Querier interface {
 	RecomputeFederationRepositoryCommentCount(ctx context.Context, repositoryUri string) error
 	RecomputeFederationRepositoryCount(ctx context.Context, ownerDid string) error
 	RecomputeFederationStarCount(ctx context.Context, repositoryUri string) error
+	ResolveOwner(ctx context.Context, owner string) (ResolveOwnerRow, error)
 	ResolveSearchIssue(ctx context.Context, arg ResolveSearchIssueParams) (ResolveSearchIssueRow, error)
 	ResolveSearchProfile(ctx context.Context, arg ResolveSearchProfileParams) (ResolveSearchProfileRow, error)
 	ResolveSearchPullRequest(ctx context.Context, arg ResolveSearchPullRequestParams) (ResolveSearchPullRequestRow, error)
@@ -192,7 +200,7 @@ type Querier interface {
 	UpdateOrganizationTeam(ctx context.Context, arg UpdateOrganizationTeamParams) (CoreOrganizationTeam, error)
 	UpdatePasskeyCredential(ctx context.Context, arg UpdatePasskeyCredentialParams) (AuthPasskeyCredential, error)
 	UpdateRepositoryState(ctx context.Context, arg UpdateRepositoryStateParams) (CoreRepository, error)
-	UpsertAccount(ctx context.Context, arg UpsertAccountParams) (CoreAccount, error)
+	UpsertAccount(ctx context.Context, arg UpsertAccountParams) (UpsertAccountRow, error)
 	UpsertFederationIdentity(ctx context.Context, arg UpsertFederationIdentityParams) error
 	UpsertFederationIssue(ctx context.Context, arg UpsertFederationIssueParams) (string, error)
 	UpsertFederationIssueComment(ctx context.Context, arg UpsertFederationIssueCommentParams) (string, error)

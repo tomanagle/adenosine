@@ -90,8 +90,8 @@ function SiteHeader({ identity }: { identity?: CurrentIdentity | null }) {
           <div className="ml-auto flex min-w-0 items-center gap-1.5 lg:ml-0">
             <Link
               className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              params={{ identity: identity.did }}
-              to="/profiles/$identity"
+              params={identity.handle ? { owner: identity.handle } : { identity: identity.did }}
+              to={identity.handle ? '/$owner' : '/profiles/$identity'}
             >
               <span
                 aria-hidden="true"

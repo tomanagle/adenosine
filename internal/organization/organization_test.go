@@ -23,6 +23,11 @@ func TestCreateInputValidate(t *testing.T) {
 			wantErr: ErrValidation,
 		},
 		{
+			name:    "reserved application route",
+			input:   CreateInput{CreatorDID: "did:plc:alice", Slug: "explore", Name: "Explore", BasePermission: BasePermissionRead},
+			wantErr: ErrValidation,
+		},
+		{
 			name:    "unsafe website",
 			input:   CreateInput{CreatorDID: "did:plc:alice", Slug: "adenosine", Name: "Adenosine", Website: "javascript:alert(1)", BasePermission: BasePermissionRead},
 			wantErr: ErrValidation,

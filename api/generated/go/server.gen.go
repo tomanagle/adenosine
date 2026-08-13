@@ -517,6 +517,24 @@ func (e OrganizationTeamRepositoryRole) Valid() bool {
 	}
 }
 
+// Defines values for OwnerKind.
+const (
+	OwnerKindAccount      OwnerKind = "account"
+	OwnerKindOrganization OwnerKind = "organization"
+)
+
+// Valid indicates whether the value is a known member of the OwnerKind enum.
+func (e OwnerKind) Valid() bool {
+	switch e {
+	case OwnerKindAccount:
+		return true
+	case OwnerKindOrganization:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PullRequestState.
 const (
 	PullRequestStateClosed PullRequestState = "closed"
@@ -1808,6 +1826,12 @@ type CreatePullRequestReviewRequest struct {
 // CreatePullRequestReviewRequestVerdict defines model for CreatePullRequestReviewRequest.Verdict.
 type CreatePullRequestReviewRequestVerdict string
 
+// CreateRepositoryForkRequest defines model for CreateRepositoryForkRequest.
+type CreateRepositoryForkRequest struct {
+	Organization *OrganizationSlug `json:"organization,omitempty"`
+	Slug         *RepositorySlug   `json:"slug,omitempty"`
+}
+
 // CreateRepositoryRequest defines model for CreateRepositoryRequest.
 type CreateRepositoryRequest struct {
 	DefaultBranch *string                            `json:"default_branch,omitempty"`
@@ -2039,6 +2063,9 @@ type NetworkRepositoryList struct {
 	Page  Page         `json:"page"`
 }
 
+// NullableOrganizationSlug defines model for NullableOrganizationSlug.
+type NullableOrganizationSlug = string
+
 // OAuthClientMetadata defines model for OAuthClientMetadata.
 type OAuthClientMetadata struct {
 	ApplicationType         *string  `json:"application_type,omitempty"`
@@ -2231,6 +2258,20 @@ type OrganizationTeamRepositoryList struct {
 	Items []OrganizationTeamRepository `json:"items"`
 	Page  Page                         `json:"page"`
 }
+
+// Owner A discriminated reference into the shared public owner namespace. account_did is present for accounts; organization_slug is present for organizations.
+type Owner struct {
+	AccountDid       *string                   `json:"account_did,omitempty"`
+	CanonicalName    OwnerName                 `json:"canonical_name"`
+	Kind             OwnerKind                 `json:"kind"`
+	OrganizationSlug *NullableOrganizationSlug `json:"organization_slug,omitempty"`
+}
+
+// OwnerKind defines model for Owner.Kind.
+type OwnerKind string
+
+// OwnerName defines model for OwnerName.
+type OwnerName = string
 
 // Page defines model for Page.
 type Page struct {
@@ -2474,12 +2515,14 @@ type PutPullRequestStatusRequestState string
 
 // Repository defines model for Repository.
 type Repository struct {
-	Cid           *string   `json:"cid,omitempty"`
-	CommentCount  int64     `json:"comment_count"`
-	CreatedAt     time.Time `json:"created_at"`
-	DefaultBranch string    `json:"default_branch"`
-	Description   *string   `json:"description,omitempty"`
-	DisplayName   *string   `json:"display_name,omitempty"`
+	Cid           *string              `json:"cid,omitempty"`
+	CommentCount  int64                `json:"comment_count"`
+	CreatedAt     time.Time            `json:"created_at"`
+	DefaultBranch string               `json:"default_branch"`
+	Description   *string              `json:"description,omitempty"`
+	DisplayName   *string              `json:"display_name,omitempty"`
+	ForkCount     int64                `json:"fork_count"`
+	ForkedFrom    *RepositoryStrongRef `json:"forked_from,omitempty"`
 
 	// Hosting Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.
 	Hosting              RepositoryHosting   `json:"hosting"`
@@ -2505,6 +2548,22 @@ type RepositoryState string
 
 // RepositoryVisibility defines model for Repository.Visibility.
 type RepositoryVisibility string
+
+// RepositoryForkList defines model for RepositoryForkList.
+type RepositoryForkList struct {
+	ForkCount int64        `json:"fork_count"`
+	Items     []Repository `json:"items"`
+	Page      Page         `json:"page"`
+}
+
+// RepositoryForkSync defines model for RepositoryForkSync.
+type RepositoryForkSync struct {
+	AfterSha string `json:"after_sha"`
+
+	// BeforeSha The fork default-branch head before synchronization; empty for an unborn branch.
+	BeforeSha string `json:"before_sha"`
+	Updated   bool   `json:"updated"`
+}
 
 // RepositoryHosting Canonical hosting metadata. source_browsing is local when this API can serve Git objects; canonical_host means clients must use web_url and must not infer or probe private source endpoints.
 type RepositoryHosting struct {
@@ -2543,6 +2602,12 @@ type RepositorySearchPage struct {
 
 // RepositorySlug defines model for RepositorySlug.
 type RepositorySlug = string
+
+// RepositoryStrongRef defines model for RepositoryStrongRef.
+type RepositoryStrongRef struct {
+	Cid string `json:"cid"`
+	Uri string `json:"uri"`
+}
 
 // SSHKey defines model for SSHKey.
 type SSHKey struct {
@@ -2713,6 +2778,9 @@ type SyncRepository struct {
 	CommentCount         int64      `json:"comment_count"`
 	DefaultBranch        *string    `json:"default_branch,omitempty"`
 	Description          *string    `json:"description,omitempty"`
+	ForkCount            int64      `json:"fork_count"`
+	ForkedFromCid        *string    `json:"forked_from_cid,omitempty"`
+	ForkedFromUri        *string    `json:"forked_from_uri,omitempty"`
 	GitHttps             *string    `json:"git_https,omitempty"`
 	GitSsh               *string    `json:"git_ssh,omitempty"`
 	IndexedAt            time.Time  `json:"indexed_at"`
@@ -2889,11 +2957,20 @@ type Limit = int
 // MutationOrigin defines model for MutationOrigin.
 type MutationOrigin = string
 
+// OwnerNamePath defines model for OwnerNamePath.
+type OwnerNamePath = OwnerName
+
 // PullRequestURI defines model for PullRequestURI.
 type PullRequestURI = string
 
 // RecordURI defines model for RecordURI.
 type RecordURI = string
+
+// RepositoryOwnerPath defines model for RepositoryOwnerPath.
+type RepositoryOwnerPath = string
+
+// RepositorySlugPath defines model for RepositorySlugPath.
+type RepositorySlugPath = RepositorySlug
 
 // RepositoryURI defines model for RepositoryURI.
 type RepositoryURI = string
@@ -2909,6 +2986,9 @@ type SearchQuery = string
 
 // SearchSort defines model for SearchSort.
 type SearchSort string
+
+// BadGateway defines model for BadGateway.
+type BadGateway = ErrorResponse
 
 // BadRequest defines model for BadRequest.
 type BadRequest = ErrorResponse
@@ -3191,6 +3271,17 @@ type ListRepositoryCommitsParams struct {
 type GetRepositoryDiffParams struct {
 	Base string `form:"base" json:"base"`
 	Head string `form:"head" json:"head"`
+}
+
+// ListRepositoryForksParams defines parameters for ListRepositoryForks.
+type ListRepositoryForksParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// CreateRepositoryForkParams defines parameters for CreateRepositoryFork.
+type CreateRepositoryForkParams struct {
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // GetRepositoryMergeBaseParams defines parameters for GetRepositoryMergeBase.
@@ -3783,6 +3874,9 @@ type PutPullRequestStatusJSONRequestBody = PutPullRequestStatusRequest
 // CreateRepositoryJSONRequestBody defines body for CreateRepository for application/json ContentType.
 type CreateRepositoryJSONRequestBody = CreateRepositoryRequest
 
+// CreateRepositoryForkJSONRequestBody defines body for CreateRepositoryFork for application/json ContentType.
+type CreateRepositoryForkJSONRequestBody = CreateRepositoryForkRequest
+
 // CreateSSHKeyJSONRequestBody defines body for CreateSSHKey for application/json ContentType.
 type CreateSSHKeyJSONRequestBody = CreateSSHKeyRequest
 
@@ -4003,6 +4097,9 @@ type ServerInterface interface {
 	// Assign a team role on an organization repository
 	// (PUT /api/v1/organizations/{organization}/teams/{team}/repositories/{repository})
 	PutOrganizationTeamRepository(w http.ResponseWriter, r *http.Request, organization OrganizationSlug, team openapi_types.UUID, repository openapi_types.UUID)
+	// Resolve a public owner name
+	// (GET /api/v1/owners/{owner})
+	GetOwner(w http.ResponseWriter, r *http.Request, owner OwnerNamePath)
 	// List passkey metadata for the current browser session
 	// (GET /api/v1/passkeys)
 	ListPasskeys(w http.ResponseWriter, r *http.Request, params ListPasskeysParams)
@@ -4072,9 +4169,18 @@ type ServerInterface interface {
 	// Get a bounded diff between two commits
 	// (GET /api/v1/repositories/{owner}/{repo}/diff)
 	GetRepositoryDiff(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryDiffParams)
+	// List direct public forks of a repository
+	// (GET /api/v1/repositories/{owner}/{repo}/forks)
+	ListRepositoryForks(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params ListRepositoryForksParams)
+	// Fork a public local or federated repository onto this server
+	// (POST /api/v1/repositories/{owner}/{repo}/forks)
+	CreateRepositoryFork(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params CreateRepositoryForkParams)
 	// Find a merge base for two commits
 	// (GET /api/v1/repositories/{owner}/{repo}/merge-base)
 	GetRepositoryMergeBase(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryMergeBaseParams)
+	// Fast-forward a local fork's default branch from its current upstream
+	// (POST /api/v1/repositories/{owner}/{repo}/sync-fork)
+	SyncRepositoryFork(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath)
 	// List repository tags
 	// (GET /api/v1/repositories/{owner}/{repo}/tags)
 	ListRepositoryTags(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryTagsParams)
@@ -6192,6 +6298,32 @@ func (siw *ServerInterfaceWrapper) PutOrganizationTeamRepository(w http.Response
 	handler.ServeHTTP(w, r)
 }
 
+// GetOwner operation middleware
+func (siw *ServerInterfaceWrapper) GetOwner(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner OwnerNamePath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetOwner(w, r, owner)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListPasskeys operation middleware
 func (siw *ServerInterfaceWrapper) ListPasskeys(w http.ResponseWriter, r *http.Request) {
 
@@ -7349,6 +7481,141 @@ func (siw *ServerInterfaceWrapper) GetRepositoryDiff(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ListRepositoryForks operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryForks(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryForksParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryForks(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryFork operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryFork(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRepositoryForkParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryFork(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetRepositoryMergeBase operation middleware
 func (siw *ServerInterfaceWrapper) GetRepositoryMergeBase(w http.ResponseWriter, r *http.Request) {
 
@@ -7412,6 +7679,47 @@ func (siw *ServerInterfaceWrapper) GetRepositoryMergeBase(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepositoryMergeBase(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SyncRepositoryFork operation middleware
+func (siw *ServerInterfaceWrapper) SyncRepositoryFork(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SyncRepositoryFork(w, r, owner, repo)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -10062,6 +10370,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams/{team}/repositories", wrapper.ListOrganizationTeamRepositories)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams/{team}/repositories/{repository}", wrapper.RemoveOrganizationTeamRepository)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/organizations/{organization}/teams/{team}/repositories/{repository}", wrapper.PutOrganizationTeamRepository)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/owners/{owner}", wrapper.GetOwner)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/passkeys", wrapper.ListPasskeys)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/passkeys/login/options", wrapper.BeginPasskeyLogin)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/passkeys/login/verify", wrapper.VerifyPasskeyLogin)
@@ -10085,7 +10394,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits", wrapper.ListRepositoryCommits)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{revision}", wrapper.GetRepositoryCommit)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/diff", wrapper.GetRepositoryDiff)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.ListRepositoryForks)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.CreateRepositoryFork)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/merge-base", wrapper.GetRepositoryMergeBase)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/sync-fork", wrapper.SyncRepositoryFork)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tags", wrapper.ListRepositoryTags)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tree", wrapper.GetRepositoryTree)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/search/profiles", wrapper.SearchProfiles)

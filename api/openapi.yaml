@@ -9,6 +9,7 @@
   "tags": [
     { "name": "Health" },
     { "name": "Identity" },
+    { "name": "Owners", "description": "Resolution for the shared public namespace used by account, organization, and repository URLs." },
     { "name": "Profiles" },
     { "name": "Organizations" },
     { "name": "Repositories" },
@@ -232,6 +233,20 @@
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/v1/owners/{owner}": {
+      "get": {
+        "operationId": "getOwner",
+        "tags": ["Owners"],
+        "summary": "Resolve a public owner name",
+        "description": "Returns the account or organization that owns a case-insensitive public name. Use this resource to route /{owner}; do not probe the profile and organization endpoints. Local names are authoritative, while active federated account handles are a read-only fallback.",
+        "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/OwnerNamePath" }],
+        "responses": {
+          "200": { "description": "Resolved owner", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Owner" } } } },
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
@@ -487,6 +502,35 @@
           "403": { "$ref": "#/components/responses/Forbidden" },
           "409": { "$ref": "#/components/responses/Conflict" },
           "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/forks": {
+      "get": {
+        "operationId": "listRepositoryForks", "tags": ["Repositories"], "summary": "List direct public forks of a repository", "security": [{}, { "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": {
+          "200": { "description": "A cursor page of direct forks", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryForkList" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "post": {
+        "operationId": "createRepositoryFork", "tags": ["Repositories"], "summary": "Fork a public local or federated repository onto this server", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/IdempotencyKey" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateRepositoryForkRequest" } } } },
+        "responses": {
+          "201": { "description": "Fork created with its public branches and tags", "headers": { "Location": { "description": "Canonical API URL for the fork", "schema": { "type": "string", "format": "uri-reference" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Repository" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" }
+        }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/sync-fork": {
+      "post": {
+        "operationId": "syncRepositoryFork", "tags": ["Repositories"], "summary": "Fast-forward a local fork's default branch from its current upstream", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }],
+        "responses": {
+          "200": { "description": "Fork synchronization result", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryForkSync" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" }
         }
       }
     },
@@ -1175,7 +1219,10 @@
       "RequestID": { "description": "Identifier for correlating a request with logs and traces", "schema": { "type": "string" } }
     },
     "parameters": {
+      "OwnerNamePath": { "name": "owner", "in": "path", "required": true, "description": "Case-insensitive account handle or organization slug.", "schema": { "$ref": "#/components/schemas/OwnerName" } },
       "OrganizationSlug": { "name": "organization", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/OrganizationSlug" } },
+      "RepositoryOwnerPath": { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
+      "RepositorySlugPath": { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } },
       "RepositoryURI": { "name": "repository_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "IssueURI": { "name": "issue_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "PullRequestURI": { "name": "pull_request_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
@@ -1208,6 +1255,7 @@
       "NotFound": { "description": "The requested resource was not found", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
       "Conflict": { "description": "The request conflicts with existing state", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
       "UnprocessableEntity": { "description": "The request is structurally valid but semantically invalid", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+      "BadGateway": { "description": "The canonical upstream or publication provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
       "ElectricShape": {
         "description": "Electric shape-log or subset-snapshot response over an eventually consistent projection. Protocol headers such as electric-handle, electric-offset, electric-cursor, electric-schema, cache-control, and etag are preserved. Responses selected by a valid browser session are private and no-store; anonymous and PAT requests use the public shape. REST remains available if sync is disabled or unavailable.",
         "headers": {
@@ -1245,7 +1293,21 @@
           "handle": { "type": "string", "nullable": true }
         }
       },
+      "OwnerName": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]*$", "maxLength": 253 },
+      "Owner": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "canonical_name"],
+        "description": "A discriminated reference into the shared public owner namespace. account_did is present for accounts; organization_slug is present for organizations.",
+        "properties": {
+          "kind": { "type": "string", "enum": ["account", "organization"] },
+          "canonical_name": { "$ref": "#/components/schemas/OwnerName" },
+          "account_did": { "type": "string", "nullable": true },
+          "organization_slug": { "$ref": "#/components/schemas/NullableOrganizationSlug" }
+        }
+      },
       "OrganizationSlug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "maxLength": 100 },
+      "NullableOrganizationSlug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "maxLength": 100, "nullable": true },
       "Organization": {
         "type": "object",
         "additionalProperties": false,
@@ -1518,6 +1580,25 @@
           ,"organization": { "$ref": "#/components/schemas/OrganizationSlug", "description": "Create the repository in this organization instead of the current account." }
         }
       },
+      "CreateRepositoryForkRequest": {
+        "type": "object", "additionalProperties": false,
+        "properties": {
+          "slug": { "$ref": "#/components/schemas/RepositorySlug", "description": "Defaults to the source repository slug." },
+          "organization": { "$ref": "#/components/schemas/OrganizationSlug", "description": "Create under this organization instead of the current account." }
+        }
+      },
+      "RepositoryStrongRef": {
+        "type": "object", "additionalProperties": false, "required": ["uri", "cid"],
+        "properties": { "uri": { "type": "string" }, "cid": { "type": "string" } }
+      },
+      "RepositoryForkSync": {
+        "type": "object", "additionalProperties": false, "required": ["before_sha", "after_sha", "updated"],
+        "properties": {
+          "before_sha": { "type": "string", "description": "The fork default-branch head before synchronization; empty for an unborn branch." },
+          "after_sha": { "type": "string" },
+          "updated": { "type": "boolean" }
+        }
+      },
       "RepositoryOwner": {
         "type": "object",
         "required": ["did"],
@@ -1543,7 +1624,7 @@
       },
       "Repository": {
         "type": "object",
-        "required": ["slug", "visibility", "state", "default_branch", "owner", "hosting", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "created_at", "updated_at"],
+        "required": ["slug", "visibility", "state", "default_branch", "owner", "hosting", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "fork_count", "created_at", "updated_at"],
         "properties": {
           "id": { "type": "string", "format": "uuid", "nullable": true },
           "uri": { "type": "string", "nullable": true },
@@ -1557,6 +1638,8 @@
           "owner": { "$ref": "#/components/schemas/RepositoryOwner" },
           "hosting": { "$ref": "#/components/schemas/RepositoryHosting" },
           "viewer_can_admin": { "type": "boolean", "description": "Whether the current viewer has the repository admin role and may manage direct collaborators." },
+          "forked_from": { "$ref": "#/components/schemas/RepositoryStrongRef" },
+          "fork_count": { "type": "integer", "format": "int64", "minimum": 0 },
           "star_count": { "type": "integer", "format": "int64", "minimum": 0 },
           "issue_count": { "type": "integer", "format": "int64", "minimum": 0 },
           "open_issue_count": { "type": "integer", "format": "int64", "minimum": 0 },
@@ -1568,6 +1651,7 @@
         }
       },
       "RepositoryList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "RepositoryForkList": { "type": "object", "additionalProperties": false, "required": ["items", "page", "fork_count"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }, "page": { "$ref": "#/components/schemas/Page" }, "fork_count": { "type": "integer", "format": "int64", "minimum": 0 } } },
       "NetworkRepositoryList": {
         "type": "object",
         "required": ["items", "page"],
@@ -1588,7 +1672,7 @@
         "type": "object",
         "additionalProperties": false,
         "description": "Flat approved network.repositories projection materialized from Electric insert rows. This is intentionally distinct from the nested REST Repository model.",
-        "required": ["uri", "cid", "owner_did", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "indexed_at"],
+        "required": ["uri", "cid", "owner_did", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "fork_count", "indexed_at"],
         "properties": {
           "uri": { "type": "string" },
           "cid": { "type": "string" },
@@ -1600,6 +1684,8 @@
           "git_https": { "type": "string", "nullable": true },
           "git_ssh": { "type": "string", "nullable": true },
           "web": { "type": "string", "nullable": true },
+          "forked_from_uri": { "type": "string", "nullable": true },
+          "forked_from_cid": { "type": "string", "nullable": true },
           "record_created_at": { "type": "string", "format": "date-time", "nullable": true },
           "record_updated_at": { "type": "string", "format": "date-time", "nullable": true },
           "indexed_at": { "type": "string", "format": "date-time" },
@@ -1609,6 +1695,7 @@
           "comment_count": { "type": "integer", "format": "int64", "minimum": 0 },
           "pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 },
           "open_pull_request_count": { "type": "integer", "format": "int64", "minimum": 0 }
+          ,"fork_count": { "type": "integer", "format": "int64", "minimum": 0 }
         }
       },
       "SyncProfile": {

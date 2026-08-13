@@ -1,13 +1,27 @@
 -- name: CreateRepository :one
 INSERT INTO core.repositories (
     id, owner_did, organization_id, slug, display_name, description, visibility, state,
-    default_branch, storage_key, at_uri, at_cid, created_at, updated_at
+    default_branch, storage_key, at_uri, at_cid, forked_from_uri, forked_from_cid,
+    forked_from_local_repository_id, created_at, updated_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 RETURNING *;
 
 -- name: GetRepository :one
 SELECT * FROM core.repositories WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: GetForkSourceByURI :one
+SELECT repository.uri, repository.cid, repository.git_https, repository.local_repository_id
+FROM network.repositories AS repository
+LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
+WHERE repository.uri = $1
+  AND repository.cid IS NOT NULL
+  AND repository.deleted_at IS NULL
+  AND (local_repository.id IS NULL OR (
+      local_repository.visibility = 'public'
+      AND local_repository.state = 'active'
+      AND local_repository.deleted_at IS NULL
+  ));
 
 -- name: UpdateRepositoryState :one
 UPDATE core.repositories
@@ -24,13 +38,15 @@ RETURNING *;
 -- name: GetRepositoryByOwnerSlug :one
 SELECT repository.*
 FROM core.repositories AS repository
-JOIN core.accounts AS owner ON owner.did = repository.owner_did
-LEFT JOIN core.organizations AS organization ON organization.id = repository.organization_id AND organization.deleted_at IS NULL
+LEFT JOIN core.owner_routes AS owner_route ON (
+    (repository.organization_id IS NULL AND owner_route.account_did = repository.owner_did)
+    OR owner_route.organization_id = repository.organization_id
+)
 WHERE (
-    (repository.organization_id IS NULL AND (repository.owner_did = $1 OR lower(owner.handle_cache) = lower($1)))
-    OR lower(organization.slug) = lower($1)
+    lower(owner_route.alias) = lower(sqlc.arg(owner))
+    OR (repository.organization_id IS NULL AND repository.owner_did = sqlc.arg(owner))
   )
-  AND lower(repository.slug) = lower($2)
+  AND lower(repository.slug) = lower(sqlc.arg(slug))
   AND repository.deleted_at IS NULL;
 
 -- name: ListRepositoriesByOwner :many

@@ -244,10 +244,26 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 			}
 			return recomputePullRequestReviewCount(ctx, queries, pullRequestURI)
 		}
+		previousForkSource, previousForkErr := queries.GetFederationRepositoryForkSource(ctx, record.URI)
+		if previousForkErr != nil && previousForkErr != pgx.ErrNoRows {
+			return fmt.Errorf("resolve deleted repository fork source: %w", previousForkErr)
+		}
+		previousForkURI := ""
+		if previousForkErr == nil && previousForkSource.Valid {
+			previousForkURI = previousForkSource.String
+		}
+		if err := lockForkProjection(ctx, queries, record.URI, previousForkURI); err != nil {
+			return err
+		}
 		if err := queries.TombstoneFederationRepository(ctx, dbgen.TombstoneFederationRepositoryParams{
 			Uri: record.URI, OwnerDid: record.DID, Rkey: record.RKey, IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
 		}); err != nil {
 			return fmt.Errorf("tombstone repository: %w", err)
+		}
+		if previousForkErr == nil && previousForkSource.Valid {
+			if err := queries.RecomputeFederationForkCount(ctx, previousForkSource.String); err != nil {
+				return fmt.Errorf("recompute upstream fork count: %w", err)
+			}
 		}
 		if err := queries.RecomputeFederationRepositoryCount(ctx, record.DID); err != nil {
 			return fmt.Errorf("recompute repository count: %w", err)
@@ -503,15 +519,44 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 	if value.Organization != nil {
 		organizationURI, organizationCID = value.Organization.URI, value.Organization.CID
 	}
+	forkedFromURI, forkedFromCID := "", ""
+	if value.ForkedFrom != nil {
+		forkedFromURI, forkedFromCID = value.ForkedFrom.URI, value.ForkedFrom.CID
+	}
+	previousForkSource, previousForkErr := queries.GetFederationRepositoryForkSource(ctx, record.URI)
+	if previousForkErr != nil && previousForkErr != pgx.ErrNoRows {
+		return fmt.Errorf("resolve previous repository fork source: %w", previousForkErr)
+	}
+	previousForkURI := ""
+	if previousForkErr == nil && previousForkSource.Valid {
+		previousForkURI = previousForkSource.String
+	}
+	if err := lockForkProjection(ctx, queries, record.URI, previousForkURI, forkedFromURI); err != nil {
+		return err
+	}
 	if err := queries.UpsertFederationRepository(ctx, dbgen.UpsertFederationRepositoryParams{
 		Uri: record.URI, Cid: pgText(record.CID), OwnerDid: record.DID, Rkey: record.RKey,
 		Slug: pgText(value.Slug), Name: pgText(value.Name), Description: pgText(value.Description),
 		DefaultBranch: pgText(value.DefaultBranch), GitHttps: pgText(value.GitHTTPS), GitSsh: pgText(value.GitSSH), Web: pgText(value.Web),
 		OrganizationUri: pgText(organizationURI), OrganizationCid: pgText(organizationCID),
+		ForkedFromUri: pgText(forkedFromURI), ForkedFromCid: pgText(forkedFromCID),
 		RecordCreatedAt: pgTime(value.CreatedAt), RecordUpdatedAt: pgTime(value.UpdatedAt),
 		IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
 	}); err != nil {
 		return fmt.Errorf("upsert repository: %w", err)
+	}
+	if previousForkErr == nil && previousForkSource.Valid && previousForkSource.String != forkedFromURI {
+		if err := queries.RecomputeFederationForkCount(ctx, previousForkSource.String); err != nil {
+			return fmt.Errorf("recompute previous upstream fork count: %w", err)
+		}
+	}
+	if forkedFromURI != "" {
+		if err := queries.RecomputeFederationForkCount(ctx, forkedFromURI); err != nil {
+			return fmt.Errorf("recompute upstream fork count: %w", err)
+		}
+	}
+	if err := queries.RecomputeFederationForkCount(ctx, record.URI); err != nil {
+		return fmt.Errorf("recompute repository fork count: %w", err)
 	}
 	if err := queries.RecomputeFederationRepositoryCount(ctx, record.DID); err != nil {
 		return fmt.Errorf("recompute repository count: %w", err)
@@ -539,6 +584,26 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 	}
 	if err := queries.RecomputeFederationPullRequestCounts(ctx, record.URI); err != nil {
 		return fmt.Errorf("recompute pull request counts: %w", err)
+	}
+	return nil
+}
+
+func lockForkProjection(ctx context.Context, queries *dbgen.Queries, repositoryURIs ...string) error {
+	unique := make(map[string]struct{}, len(repositoryURIs))
+	for _, uri := range repositoryURIs {
+		if uri != "" {
+			unique[uri] = struct{}{}
+		}
+	}
+	ordered := make([]string, 0, len(unique))
+	for uri := range unique {
+		ordered = append(ordered, uri)
+	}
+	sort.Strings(ordered)
+	for _, uri := range ordered {
+		if err := queries.LockFederationRepositoryForks(ctx, uri); err != nil {
+			return fmt.Errorf("lock repository fork projection: %w", err)
+		}
 	}
 	return nil
 }

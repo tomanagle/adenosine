@@ -9,6 +9,7 @@ It combines a Go API and Git server, PostgreSQL projections, AT Protocol federat
 - Native Git Smart HTTP and SSH clone, fetch, and push against sharded bare repositories
 - AT Protocol OAuth, browser sessions, passkeys, personal access tokens, and SSH keys
 - Public and private repositories with owner and collaborator authorization
+- First-class public forks with portable ancestry, direct fork counts, and safe upstream sync
 - Repository tree, blob, branch, tag, commit, history, merge-base, and bounded diff APIs
 - Federated profiles, repositories, stars, issues, comments, moderation, and pull requests
 - Secure cross-instance pull request fetches, reviews, merge commits, and squash merges
@@ -68,9 +69,10 @@ for architecture, protocols, operation status, and the contributor workflow. `pl
 Adenosine is pre-alpha and is not ready for production use. Core Git transports,
 DID-based authentication, ATProto publication/projection, collaboration APIs, secure pull
 request fetch/merge, and optional realtime projections are implemented. The first-party
-web client currently provides the anonymous or authenticated root experience and login;
-repository browsing, collaboration UI, production deployments, and backup/restore remain
-open work. See [self-hosting status](docs/self-hosting.md) for exact limitations.
+web client provides repository browsing and collaboration workflows, including forks,
+issues, pull requests, organizations, and repository administration. Production deployments
+and backup/restore remain open work. See [self-hosting status](docs/self-hosting.md) for exact
+limitations.
 
 ## License
 

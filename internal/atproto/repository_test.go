@@ -80,6 +80,7 @@ func TestRepositoryPublishUsesStableUUIDKeyAndPersistsRotatedSession(t *testing.
 			identity, err := client.Publish(context.Background(), repository.Publication{
 				ID: id, OwnerDID: canonicalDID, Slug: "project", Name: "project", DefaultBranch: "main",
 				Organization: &repository.ATIdentity{URI: "at://" + canonicalDID + "/dev.adenosine.organization/org", CID: profileCID},
+				ForkedFrom:   &repository.ATIdentity{URI: "at://did:plc:upstream/dev.adenosine.repo/project", CID: profileCID},
 				GitHTTPS:     "https://code.test/did:plc:owner/project.git", GitSSH: "ssh://git@code.test/did:plc:owner/project.git",
 				Web: "https://code.test/did:plc:owner/project", CreatedAt: createdAt, UpdatedAt: createdAt,
 			})
@@ -92,7 +93,8 @@ func TestRepositoryPublishUsesStableUUIDKeyAndPersistsRotatedSession(t *testing.
 			}
 			wantGit := map[string]any{"https": "https://code.test/did:plc:owner/project.git", "ssh": "ssh://git@code.test/did:plc:owner/project.git"}
 			wantOrganization := map[string]any{"uri": "at://" + canonicalDID + "/dev.adenosine.organization/org", "cid": profileCID}
-			if input.Record["slug"] != "project" || !reflect.DeepEqual(input.Record["git"], wantGit) || !reflect.DeepEqual(input.Record["organization"], wantOrganization) || store.calls != 1 || store.saved.DPoPHostNonce != "rotated" {
+			wantForkedFrom := map[string]any{"uri": "at://did:plc:upstream/dev.adenosine.repo/project", "cid": profileCID}
+			if input.Record["slug"] != "project" || !reflect.DeepEqual(input.Record["git"], wantGit) || !reflect.DeepEqual(input.Record["organization"], wantOrganization) || !reflect.DeepEqual(input.Record["forkedFrom"], wantForkedFrom) || store.calls != 1 || store.saved.DPoPHostNonce != "rotated" {
 				t.Fatalf("record/session = %#v / %#v", input.Record, store.saved)
 			}
 			if identity.URI != api.output.URI || identity.CID != profileCID {

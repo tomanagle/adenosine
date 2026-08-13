@@ -12,6 +12,8 @@ import (
 
 type memoryStore struct {
 	repositories []RepositoryResult
+	forks        []federation.DiscoveryRepository
+	forkCount    int64
 	profiles     []ProfileResult
 	query        string
 	sort         Sort
@@ -19,6 +21,12 @@ type memoryStore struct {
 	viewerDID    string
 	cursor       *Cursor
 	calls        int
+}
+
+func (store *memoryStore) ListForks(_ context.Context, _ string, viewerDID string, limit int, cursor *Cursor) ([]federation.DiscoveryRepository, int64, error) {
+	store.limit, store.viewerDID, store.cursor = limit, viewerDID, cursor
+	store.calls++
+	return store.forks, store.forkCount, nil
 }
 
 func (store *memoryStore) SearchRepositories(_ context.Context, query string, sort Sort, limit int, viewerDID string, cursor *Cursor) ([]RepositoryResult, error) {
@@ -101,6 +109,45 @@ func TestEscapeLike(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			if got := escapeLike(testCase.value); got != testCase.want {
 				t.Fatalf("escapeLike(%q) = %q, want %q", testCase.value, got, testCase.want)
+			}
+		})
+	}
+}
+
+func TestForkPagination(t *testing.T) {
+	t.Parallel()
+	indexedAt := time.Date(2026, 8, 13, 12, 0, 0, 0, time.UTC)
+	repositoryURI := "at://did:plc:alice/dev.adenosine.repo/project"
+	forks := []federation.DiscoveryRepository{
+		{URI: "at://did:plc:bob/dev.adenosine.repo/project", IndexedAt: indexedAt},
+		{URI: "at://did:plc:carol/dev.adenosine.repo/project", IndexedAt: indexedAt.Add(-time.Minute)},
+	}
+	testCases := []struct {
+		name       string
+		limit      int
+		cursor     string
+		wantErr    error
+		wantItems  int
+		wantNext   bool
+		wantCalls  int
+		storeLimit int
+	}{
+		{name: "returns a bounded keyset page", limit: 1, wantItems: 1, wantNext: true, wantCalls: 1, storeLimit: 2},
+		{name: "rejects invalid cursor", limit: 20, cursor: "invalid", wantErr: ErrInvalidCursor},
+		{name: "rejects invalid limit", limit: 101, wantErr: ErrInvalidLimit},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &memoryStore{forks: forks, forkCount: 2}
+			page, err := NewService(store).PageForks(context.Background(), repositoryURI, "did:plc:viewer", testCase.limit, testCase.cursor)
+			if !errors.Is(err, testCase.wantErr) {
+				t.Fatalf("PageForks() error = %v, want %v", err, testCase.wantErr)
+			}
+			if store.calls != testCase.wantCalls || store.limit != testCase.storeLimit {
+				t.Fatalf("store calls/limit = %d/%d, want %d/%d", store.calls, store.limit, testCase.wantCalls, testCase.storeLimit)
+			}
+			if err == nil && (len(page.Repositories) != testCase.wantItems || (page.NextCursor != nil) != testCase.wantNext || page.ForkCount != 2) {
+				t.Fatalf("page = %+v", page)
 			}
 		})
 	}

@@ -85,6 +85,16 @@ describe('proposalFormSchema', () => {
       wantPath: 'source_branch',
     },
     {
+      name: 'accepts the same branch across a fork boundary',
+      values: {
+        ...base,
+        source_branch: 'main',
+        target_repository_uri: 'at://did:plc:upstream/sh.adenosine.repository/alpha',
+      },
+      wantValid: true,
+      wantPath: undefined,
+    },
+    {
       name: 'rejects an empty title',
       values: { ...base, title: '' },
       wantValid: false,
@@ -129,22 +139,29 @@ describe('branchHeadSha', () => {
 describe('proposalRequest', () => {
   const values = {
     repository_uri: 'at://did:plc:viewer/sh.adenosine.repository/alpha',
+    target_repository_uri: 'at://did:plc:viewer/sh.adenosine.repository/alpha',
     source_branch: 'feature',
     target_branch: 'main',
     title: '  Add the ledger reconciler  ',
     body: 'Details',
   }
 
-  it('proposes within one repository at the branch head', () => {
+  it('proposes to the selected target repository at the branch head', () => {
+    const targetRepositoryURI = 'at://did:plc:upstream/sh.adenosine.repository/alpha'
     expect(proposalRequest(values, headSha)).toEqual({
       source_repository_uri: values.repository_uri,
-      target_repository_uri: values.repository_uri,
+      target_repository_uri: values.target_repository_uri,
       source_branch: 'feature',
       target_branch: 'main',
       head_sha: headSha,
       title: 'Add the ledger reconciler',
       body: 'Details',
     })
+
+    expect(
+      proposalRequest({ ...values, target_repository_uri: targetRepositoryURI }, headSha)
+        .target_repository_uri,
+    ).toBe(targetRepositoryURI)
   })
 
   it('refuses a head that is not a commit id', () => {
