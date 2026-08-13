@@ -125,6 +125,31 @@ func (writer *Writer) RepositoryActivity(ctx context.Context, eventType, subject
 	return nil
 }
 
+// RepositoryEvent records a local repository event for signed webhook delivery.
+func (writer *Writer) RepositoryEvent(ctx context.Context, repositoryID repository.ID, eventType string, value any) error {
+	if repositoryID == (repository.ID{}) || strings.TrimSpace(eventType) == "" {
+		return errors.New("create repository event: repository ID and event type are required")
+	}
+	id, err := uuid.NewV7()
+	if err != nil {
+		return fmt.Errorf("generate repository event ID: %w", err)
+	}
+	payload, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("encode repository event: %w", err)
+	}
+	now := time.Now().UTC()
+	traceparent, tracestate := traceContext(ctx)
+	if err := writer.queries.CreateOutboxEventIfAbsent(ctx, dbgen.CreateOutboxEventIfAbsentParams{
+		ID: pgtype.UUID{Bytes: id, Valid: true}, Type: eventType, AggregateType: "repository",
+		AggregateID: repositoryID.String(), Payload: payload, CreatedAt: pgtype.Timestamptz{Time: now, Valid: true},
+		AvailableAt: pgtype.Timestamptz{Time: now, Valid: true}, Traceparent: traceparent, Tracestate: tracestate,
+	}); err != nil {
+		return fmt.Errorf("create repository event: %w", err)
+	}
+	return nil
+}
+
 // ContextFromOutbox attaches a valid persisted remote parent to the worker
 // context. Missing or malformed fields deliberately leave ctx unchanged.
 func ContextFromOutbox(ctx context.Context, outboxEvent dbgen.OpsOutboxEvent) context.Context {

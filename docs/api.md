@@ -45,6 +45,14 @@ Use the OpenAPI operation rather than guessing behavior. The current conventions
   body. Delivery history and explicit redelivery are repository-scoped resources.
 - Basic branch protection currently supports the repository-wide `*` pattern and delegates
   non-fast-forward and deletion rejection to native Git receive-pack configuration.
+- External CI providers use personal access tokens with only `repository:status`; tokens with
+  that scope must set `repository_id` and cannot report results for any other repository.
+  Commit-status history and check runs are addressed under a full commit
+  SHA and collection reads use the standard `items` and `page.next_cursor` envelope.
+  `external_id` makes creates replay-safe; check-run updates use `expected_version` for
+  compare-and-swap lifecycle transitions. Signed `status` and `check_run` webhook events expose
+  changes without making Adenosine a CI runner. Status and completed-check history is retained
+  for 90 days; cleanup always preserves the latest result for each context or check name.
 
 `Idempotency-Key` is currently declared only on repository creation but is reserved: the
 handler does not yet persist or replay keys. Clients must not assume retry deduplication.

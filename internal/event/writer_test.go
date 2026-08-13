@@ -82,6 +82,23 @@ func TestGitRefsUpdatedPayloadAndIdempotentIdentity(t *testing.T) {
 	}
 }
 
+func TestRepositoryEventUsesRepositoryAggregate(t *testing.T) {
+	t.Parallel()
+	testCases := []struct{ name string }{{name: "status event"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			db := &eventDB{}
+			repositoryID := repository.ID(uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af1"))
+			if err := NewWriter(dbgen.New(db)).RepositoryEvent(context.Background(), repositoryID, "status.created", map[string]string{"context": "ci/test"}); err != nil {
+				t.Fatalf("RepositoryEvent() error = %v", err)
+			}
+			if len(db.args) != 1 || db.args[0][1] != "status.created" || db.args[0][2] != "repository" || db.args[0][3] != repositoryID.String() {
+				t.Fatalf("event metadata = %#v", db.args)
+			}
+		})
+	}
+}
+
 func TestGitRefsUpdatedValidationAndStoreErrors(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {

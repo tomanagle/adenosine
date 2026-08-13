@@ -214,6 +214,10 @@ func webhookEventType(value string) string {
 		return "issue"
 	case strings.HasPrefix(value, "review."):
 		return "review"
+	case strings.HasPrefix(value, "status."):
+		return "status"
+	case strings.HasPrefix(value, "check_run."):
+		return "check_run"
 	default:
 		return ""
 	}
