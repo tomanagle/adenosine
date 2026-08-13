@@ -75,3 +75,9 @@ func TestExample(t *testing.T) {
 Prefer concrete expectation fields such as `wantErr error` over generic booleans when error identity matters. Keep shared arrange/act/assert logic in the loop body; if cases need substantially different control flow, split the behavior into separate `Test*` functions and give each one its own `testCases` table.
 
 Keep small handwritten fakes and spies beside their consumer tests by default. Promote a test double into shared test support only when multiple files need the same stable behavior. Use generated mocks selectively for large interfaces or meaningful interaction ordering, not as the default replacement for state-based assertions.
+
+## Observability Timers
+
+Every HTTP route must remain behind `restapi.requestMiddleware`; do not mount application routes outside the shared server mux. The middleware records `http.server.request.duration` with a route template, status, method, and bounded `outcome`. Never use a raw path, URL, repository identifier, DID, or error text as a metric attribute.
+
+Every runtime PostgreSQL call must flow through `database.DB.Queries`, `database.DB.Begin`, or another wrapper owned by `internal/database`. Do not pass a raw pool or unwrapped transaction to sqlc. The shared wrapper records `db.client.operation.duration` through the consumer-owned `database.CallMetrics` interface, including row scanning/iteration and transaction completion. sqlc's generated `-- name:` comment supplies the bounded caller label automatically; raw SQL uses the fixed `Unmapped` caller. If a new database access mechanism cannot use this boundary, add an equivalent timer at that boundary and tests proving success and error outcomes before merging.

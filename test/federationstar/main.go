@@ -83,7 +83,7 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	db, err := database.Open(ctx, requiredEnv("DATABASE_URL"))
+	db, err := database.Open(ctx, requiredEnv("DATABASE_URL"), nil)
 	if err != nil {
 		return fmt.Errorf("open B database: %w", err)
 	}

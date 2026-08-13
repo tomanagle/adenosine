@@ -47,18 +47,19 @@ func Must(ctx context.Context, cfg config.Config) *app.Application {
 }
 
 func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
-	logger, shutdownTelemetry := observability.Must(ctx)
+	telemetry := observability.Must(ctx)
+	logger := telemetry.Logger
 
-	db, err := database.Open(ctx, cfg.DatabaseURL)
+	db, err := database.Open(ctx, cfg.DatabaseURL, telemetry.Metrics)
 	if err != nil {
-		_ = shutdownTelemetry(ctx)
+		_ = telemetry.Shutdown(ctx)
 		return nil, fmt.Errorf("open database: %w", err)
 	}
 
 	repositoryStorage, err := storage.NewFilesystem(cfg.RepositoryRoot)
 	if err != nil {
 		db.Close()
-		_ = shutdownTelemetry(ctx)
+		_ = telemetry.Shutdown(ctx)
 		return nil, fmt.Errorf("open repository storage: %w", err)
 	}
 	git := gitservice.NewService(gitservice.NewRunner(cfg.GitBinary), repositoryStorage)
@@ -91,7 +92,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	webhooks, err := webhook.NewService(db.Queries(), cfg.OAuthCredentialKey)
 	if err != nil {
 		db.Close()
-		_ = shutdownTelemetry(ctx)
+		_ = telemetry.Shutdown(ctx)
 		return nil, fmt.Errorf("create webhook service: %w", err)
 	}
 	webhookWorker := webhook.NewWorker(db.Queries(), webhooks)
@@ -126,7 +127,10 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		eventWriter,
 	)
 
-	server, err := restapi.NewServer(cfg.ListenAddr, cfg.BaseURL, db, logger, restapi.Dependencies{
+	server, err := restapi.NewServer(cfg.ListenAddr, cfg.BaseURL, db, logger, restapi.Observability{
+		Requests:   telemetry.Metrics,
+		Prometheus: telemetry.PrometheusHandler,
+	}, restapi.Dependencies{
 		Sessions:                    auth.NewSessionAuthenticator(authStore, clock),
 		Login:                       loginService,
 		LocalSessions:               sessionService,
@@ -162,12 +166,12 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	}, gitHTTP)
 	if err != nil {
 		db.Close()
-		_ = shutdownTelemetry(ctx)
+		_ = telemetry.Shutdown(ctx)
 		return nil, fmt.Errorf("create REST server: %w", err)
 	}
 
 	return app.NewWithWorkers(server, sshServer, logger, cfg.ShutdownTimeout, []app.Worker{webhookWorker, repositoryPurgeWorker},
-		shutdownTelemetry,
+		telemetry.Shutdown,
 		func(context.Context) error {
 			db.Close()
 			return nil

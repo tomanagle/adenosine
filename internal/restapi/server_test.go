@@ -22,14 +22,25 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/profile"
 	"github.com/adenosine-dev/adenosine/internal/repository"
 	"github.com/google/uuid"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
 type fakeReadiness struct {
 	err error
+}
+
+type recordedRequest struct {
+	method   string
+	route    string
+	status   int
+	duration time.Duration
+}
+
+type fakeRequestMetrics struct {
+	requests []recordedRequest
+}
+
+func (metrics *fakeRequestMetrics) RecordHTTPRequest(_ context.Context, method, route string, status int, duration time.Duration) {
+	metrics.requests = append(metrics.requests, recordedRequest{method: method, route: route, status: status, duration: duration})
 }
 
 type fakeSessions struct{}
@@ -263,7 +274,7 @@ func (fakeGitReader) MergeBase(context.Context, repository.ID, string, string) (
 
 func TestAPIDocumentation(t *testing.T) {
 	t.Parallel()
-	server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Dependencies{}, nil)
+	server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Observability{}, Dependencies{}, nil)
 	if err != nil {
 		t.Fatalf("create server: %v", err)
 	}
@@ -304,6 +315,31 @@ func TestAPIDocumentation(t *testing.T) {
 	}
 }
 
+func TestPrometheusEndpointUsesInternalServerMiddleware(t *testing.T) {
+	testCases := []struct{ name string }{{name: "serves scrape through shared middleware"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			metrics := &fakeRequestMetrics{}
+			prometheus := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write([]byte("# EOF\n"))
+			})
+			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Observability{Requests: metrics, Prometheus: prometheus}, Dependencies{}, nil)
+			if err != nil {
+				t.Fatalf("create server: %v", err)
+			}
+			request := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+			response := httptest.NewRecorder()
+			server.Handler.ServeHTTP(response, request)
+			if response.Code != http.StatusOK || response.Body.String() != "# EOF\n" {
+				t.Fatalf("scrape response = %d %q", response.Code, response.Body.String())
+			}
+			if len(metrics.requests) != 1 || metrics.requests[0].route != "GET /metrics" {
+				t.Fatalf("recorded requests = %#v", metrics.requests)
+			}
+		})
+	}
+}
+
 func (f fakeReadiness) Ping(context.Context) error { return f.err }
 
 func TestHealthEndpoints(t *testing.T) {
@@ -323,7 +359,7 @@ func TestHealthEndpoints(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			server, err := NewServer(":0", "http://localhost:8080", testCase.readiness, logger, Dependencies{}, nil)
+			server, err := NewServer(":0", "http://localhost:8080", testCase.readiness, logger, Observability{}, Dependencies{}, nil)
 			if err != nil {
 				t.Fatalf("create server: %v", err)
 			}
@@ -370,20 +406,10 @@ func TestRequestObservabilityUsesMatchedRoute(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			reader := sdkmetric.NewManualReader()
-			provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-			previousProvider := otel.GetMeterProvider()
-			otel.SetMeterProvider(provider)
-			t.Cleanup(func() {
-				otel.SetMeterProvider(previousProvider)
-				if err := provider.Shutdown(context.Background()); err != nil {
-					t.Errorf("shut down meter provider: %v", err)
-				}
-			})
-
 			var logs bytes.Buffer
 			logger := slog.New(slog.NewJSONHandler(&logs, nil))
-			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, logger, testCase.deps, nil)
+			metrics := &fakeRequestMetrics{}
+			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, logger, Observability{Requests: metrics}, testCase.deps, nil)
 			if err != nil {
 				t.Fatalf("create server: %v", err)
 			}
@@ -403,26 +429,16 @@ func TestRequestObservabilityUsesMatchedRoute(t *testing.T) {
 				t.Fatal("missing request ID")
 			}
 
-			var metrics metricdata.ResourceMetrics
-			if err := reader.Collect(context.Background(), &metrics); err != nil {
-				t.Fatalf("collect metrics: %v", err)
+			if len(metrics.requests) != 1 {
+				t.Fatalf("recorded requests = %d, want 1", len(metrics.requests))
 			}
-			for _, metricName := range []string{"adenosine.http.server.requests", "adenosine.http.server.duration"} {
-				attributes := metricAttributes(metrics, metricName)
-				if len(attributes) == 0 {
-					t.Fatalf("metric %q has no data point attributes", metricName)
-				}
-				for _, keyValue := range attributes {
-					for _, identifier := range testCase.identifiers {
-						if strings.Contains(keyValue.Value.Emit(), identifier) {
-							t.Errorf("metric %q attribute %q contains identifier %q", metricName, keyValue.Key, identifier)
-						}
-					}
-				}
-				attributeSet := attribute.NewSet(attributes...)
-				route, found := attributeSet.Value("http.route")
-				if !found || route.AsString() != testCase.wantRoute {
-					t.Errorf("metric %q http.route = %q, want %q", metricName, route.AsString(), testCase.wantRoute)
+			recorded := metrics.requests[0]
+			if recorded.method != http.MethodGet || recorded.route != testCase.wantRoute || recorded.status != testCase.wantStatus || recorded.duration <= 0 {
+				t.Errorf("recorded request = %#v", recorded)
+			}
+			for _, identifier := range testCase.identifiers {
+				if strings.Contains(recorded.route, identifier) {
+					t.Errorf("metric route contains identifier %q", identifier)
 				}
 			}
 
@@ -440,27 +456,6 @@ func TestRequestObservabilityUsesMatchedRoute(t *testing.T) {
 			}
 		})
 	}
-}
-
-func metricAttributes(metrics metricdata.ResourceMetrics, name string) []attribute.KeyValue {
-	for _, scope := range metrics.ScopeMetrics {
-		for _, current := range scope.Metrics {
-			if current.Name != name {
-				continue
-			}
-			switch data := current.Data.(type) {
-			case metricdata.Sum[int64]:
-				if len(data.DataPoints) != 0 {
-					return data.DataPoints[0].Attributes.ToSlice()
-				}
-			case metricdata.Histogram[float64]:
-				if len(data.DataPoints) != 0 {
-					return data.DataPoints[0].Attributes.ToSlice()
-				}
-			}
-		}
-	}
-	return nil
 }
 
 func TestCredentialEndpointsRequireSessionAndOrigin(t *testing.T) {
@@ -832,7 +827,7 @@ func TestOAuthClientMetadata(t *testing.T) {
 
 func testAPIServer(t *testing.T, dependencies Dependencies) *http.Server {
 	t.Helper()
-	server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), dependencies, nil)
+	server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Observability{}, dependencies, nil)
 	if err != nil {
 		t.Fatalf("create server: %v", err)
 	}

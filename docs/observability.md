@@ -1,12 +1,12 @@
 # Observability
 
-Adenosine emits structured JSON logs to stdout and vendor-neutral OpenTelemetry traces and metrics over OTLP/HTTP. The Collector owns batching, retry, memory limits, and backend export. Collector failure does not affect readiness or request handling. Provider construction fails fast at startup, while shutdown flush is capped at five seconds.
+Adenosine emits structured JSON logs to stdout, vendor-neutral OpenTelemetry traces, and OpenTelemetry metrics through a Prometheus scrape endpoint. OTLP/HTTP remains available for traces and can also export metrics when configured. Collector failure does not affect readiness or request handling. Provider construction fails fast at startup, while shutdown flush is capped at five seconds.
 
 ## Resource identity
 
 Every trace and metric has `service.name`, `service.version`, `service.instance.id`, and `deployment.environment.name`. Defaults are `adenosine`, build module version or VCS revision, hostname, and `development`. `OTEL_RESOURCE_ATTRIBUTES` overrides fallback identity and may add deployment metadata such as region; standard `OTEL_SERVICE_NAME` overrides `service.name` from that list. Set version, instance, and environment with `service.version`, `service.instance.id`, and `deployment.environment.name` in `OTEL_RESOURCE_ATTRIBUTES`. Resource attributes must not contain repository IDs, DIDs, Git SHAs, or other tenant identifiers.
 
-Set `OTEL_EXPORTER_OTLP_ENDPOINT` on Adenosine to enable OTLP/HTTP export. Standard OTel exporter TLS, headers, timeout, and compression variables apply. `OTEL_TRACES_SAMPLER` supports `always_on`, `always_off`, `traceidratio`, `parentbased_always_on`, `parentbased_always_off`, and `parentbased_traceidratio`; ratio samplers require `OTEL_TRACES_SAMPLER_ARG` from 0 through 1. The default is `parentbased_always_on`. Invalid sampler configuration fails startup. Without an endpoint providers remain local no-export providers. Sampling is configuration, never domain logic.
+Set `OTEL_EXPORTER_OTLP_ENDPOINT` on Adenosine to enable OTLP/HTTP trace export. Metrics are also exported over OTLP unless `OTEL_METRICS_EXPORTER=prometheus`; the development stack sets that value so the same series is not ingested through both OTLP and scraping. Standard OTel exporter TLS, headers, timeout, and compression variables apply. `OTEL_TRACES_SAMPLER` supports `always_on`, `always_off`, `traceidratio`, `parentbased_always_on`, `parentbased_always_off`, and `parentbased_traceidratio`; ratio samplers require `OTEL_TRACES_SAMPLER_ARG` from 0 through 1. The default is `parentbased_always_on`. Invalid sampler configuration fails startup. Sampling is configuration, never domain logic.
 
 ## Correlation
 
@@ -30,16 +30,22 @@ Metric dimensions are fixed allow-lists. No repository UUID, DID, URI, owner, sl
 | `adenosine.db.client.connections` | connections | `state=used|idle|max` |
 | `adenosine.db.client.connection.waits` | waits | none |
 | `adenosine.db.client.connection.wait.duration` | seconds | none |
-| `adenosine.http.server.requests` | requests | method, route, status class |
-| `adenosine.http.server.duration` | seconds | method, route, status class |
+| `http.server.request.duration` | seconds | `http.request.method`, route template, status code, bounded `error.type` on failure, `outcome=success\|error` |
+| `db.client.operation.duration` | seconds | PostgreSQL system, operation, bounded `adenosine.db.caller`, bounded `error.type` on failure, `outcome=success\|error` |
+
+The HTTP histogram uses the OpenTelemetry HTTP server boundaries: 5 ms, 10 ms, 25 ms, 50 ms, 75 ms, 100 ms, 250 ms, 500 ms, 750 ms, 1 s, 2.5 s, 5 s, 7.5 s, and 10 s. HTTP outcomes classify 5xx responses as `error`; 1xx through 4xx responses are successful server handling outcomes. Route values come from Go's matched route pattern, never the raw URL. Standard HTTP methods retain their name; any other method is recorded as `_OTHER`.
+
+The database histogram uses the OpenTelemetry database boundaries: 1 ms, 5 ms, 10 ms, 50 ms, 100 ms, 500 ms, 1 s, 5 s, and 10 s. Its timer covers execution plus row scan or iteration. Any database error produces `outcome=error`. Generated sqlc calls derive `adenosine.db.caller` from their bounded query name; transactions use `Begin`, `Commit`, or `Rollback`, and raw SQL uses `Unmapped`.
 
 Native Git has a process-wide limit of 16 commands, a five-second admission wait, and a 30-minute total deadline that begins before admission. It also has process-group cancellation, a five-second process wait delay, and 32 KiB bounded stderr. Smart HTTP caps upload-pack requests at 16 MiB and receive-pack requests at 2 GiB. SSH caps active connections at 128 and sessions at 64, limits handshakes to ten seconds, and closes authenticated pre-exec or active sessions after two minutes without network activity.
 
 ## Collector and dashboards
 
-`infra/observability/otel-collector.yaml` is a bounded Collector baseline. Set `TELEMETRY_BACKEND_OTLP_ENDPOINT`; configure `TELEMETRY_BACKEND_OTLP_HEADERS` only through a secret source. Versioned Grafana dashboards and Prometheus-compatible rules are in `infra/observability/dashboards` and `infra/observability/alerts.yaml`.
+The internal `GET /metrics` endpoint serves OpenMetrics/Prometheus exposition. The development gateway deliberately does not proxy it. The Prometheus instance bundled in `otel-lgtm` scrapes `adenosine:8080` every ten seconds from `infra/observability/prometheus.yaml`. Grafana provisions the versioned dashboards in `infra/observability/dashboards` into the Adenosine folder; the HTTP/database dashboard uses the Prometheus datasource and groups database panels by caller and outcome.
 
-Dashboard queries assume an OTel Collector Prometheus exporter or a backend that translates OTel metric names to Prometheus underscores. Validate translated names in the selected backend before importing.
+`infra/observability/otel-collector.yaml` remains a bounded Collector baseline for deployments using OTLP. Set `TELEMETRY_BACKEND_OTLP_ENDPOINT`; configure `TELEMETRY_BACKEND_OTLP_HEADERS` only through a secret source. Prometheus-compatible rules are in `infra/observability/alerts.yaml`.
+
+Prometheus translation turns the histograms into `http_server_request_duration_seconds_*` and `db_client_operation_duration_seconds_*`. The dashboard derives call volume from histogram `_count` series rather than adding duplicate counters.
 
 ## Data handling
 
