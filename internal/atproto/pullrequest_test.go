@@ -139,6 +139,88 @@ func TestPutPullRequestStatusEnforcesOwnerAndCAS(t *testing.T) {
 	}
 }
 
+func TestPutPullRequestReviewRequestUsesDeterministicOwnerSlot(t *testing.T) {
+	t.Parallel()
+	current := pullRequestReviewRequestTestRecord()
+	updated := current
+	updated.Subject.CID = "bafybeibwzif5g2dkjaxtv3p67te2g7a2n5xwbn2khoxalctlp7ch5vmo3a"
+	updated.UpdatedAt = pullRequestTime.Add(time.Minute)
+	rkey, err := pullrequest.ReviewRequestRecordKey(current.Subject.URI, current.ReviewerDID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testCases := []struct {
+		name      string
+		getErrors []error
+		outputs   []getRecordOutput
+		record    pullrequest.ReviewRequestRecord
+		wantPosts int
+		wantSwap  *string
+	}{
+		{name: "creates absent deterministic slot", getErrors: []error{recordNotFoundError()}, record: current, wantPosts: 1},
+		{name: "exact duplicate is idempotent", outputs: []getRecordOutput{pullRequestReviewRequestGetOutput(current)}, record: current},
+		{name: "new pull request CID swaps current slot", outputs: []getRecordOutput{pullRequestReviewRequestGetOutput(current)}, record: updated, wantPosts: 1, wantSwap: stringPointer(profileCID)},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			api := &fakeStarAPI{
+				getErrors: testCase.getErrors, getOutputs: testCase.outputs,
+				putOutput: &putRecordOutput{URI: pullRequestEnvelopeURI(pullrequest.ReviewRequestCollection, rkey), CID: profileCID},
+			}
+			client, _ := newStarClient(t, api, &starSessionStore{})
+			result, err := client.PutPullRequestReviewRequest(context.Background(), canonicalDID, testCase.record)
+			if err != nil || len(api.postCalls) != testCase.wantPosts || result.AuthorDID != canonicalDID {
+				t.Fatalf("result/error/posts = %#v/%v/%d", result, err, len(api.postCalls))
+			}
+			if testCase.wantPosts == 1 {
+				input, ok := api.postCalls[0].input.(pullRequestPutRecordInput)
+				if !ok || input.Collection != pullrequest.ReviewRequestCollection || input.RKey != rkey || !equalStringPointers(input.SwapRecord, testCase.wantSwap) || input.Record["reviewer"] != current.ReviewerDID || input.Record["requestedBy"] != current.RequestedByDID {
+					t.Fatalf("review request input = %#v", api.postCalls[0].input)
+				}
+			}
+			if testCase.name == "new pull request CID swaps current slot" && !result.CreatedAt.Equal(current.CreatedAt) {
+				t.Fatalf("createdAt = %v, want %v", result.CreatedAt, current.CreatedAt)
+			}
+		})
+	}
+}
+
+func TestDeletePullRequestReviewRequestUsesFetchedCID(t *testing.T) {
+	t.Parallel()
+	record := pullRequestReviewRequestTestRecord()
+	rkey, err := pullrequest.ReviewRequestRecordKey(record.Subject.URI, record.ReviewerDID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testCases := []struct {
+		name      string
+		getErrors []error
+		outputs   []getRecordOutput
+		wantPosts int
+	}{
+		{name: "missing request is already cancelled", getErrors: []error{recordNotFoundError()}},
+		{name: "existing request is compare and swap deleted", outputs: []getRecordOutput{pullRequestReviewRequestGetOutput(record)}, wantPosts: 1},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			api := &fakeStarAPI{getErrors: testCase.getErrors, getOutputs: testCase.outputs}
+			client, _ := newStarClient(t, api, &starSessionStore{})
+			if err := client.DeletePullRequestReviewRequest(context.Background(), canonicalDID, record.Subject.URI, record.ReviewerDID); err != nil {
+				t.Fatal(err)
+			}
+			if len(api.postCalls) != testCase.wantPosts {
+				t.Fatalf("post calls = %d, want %d", len(api.postCalls), testCase.wantPosts)
+			}
+			if testCase.wantPosts == 1 {
+				input, ok := api.postCalls[0].input.(pullRequestDeleteRecordInput)
+				if !ok || api.postCalls[0].nsid != deleteRecordNSID || input.Collection != pullrequest.ReviewRequestCollection || input.RKey != rkey || input.SwapRecord != profileCID {
+					t.Fatalf("delete input = %#v", api.postCalls[0])
+				}
+			}
+		})
+	}
+}
+
 func TestPullRequestProviderFailuresAndEnvelopesAreRedacted(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
@@ -174,6 +256,13 @@ func pullRequestStatusTestRecord() pullrequest.StatusRecord {
 	return pullrequest.StatusRecord{Subject: pullrequest.StrongRef{URI: pullRequestSubjectURI(), CID: profileCID}, TargetRepository: pullRequestTestRecord().TargetRepository, State: pullrequest.StateClosed, CreatedAt: pullRequestTime, UpdatedAt: pullRequestTime}
 }
 
+func pullRequestReviewRequestTestRecord() pullrequest.ReviewRequestRecord {
+	return pullrequest.ReviewRequestRecord{
+		Subject: pullrequest.StrongRef{URI: pullRequestSubjectURI(), CID: profileCID}, TargetRepository: pullRequestTestRecord().TargetRepository,
+		ReviewerDID: "did:plc:reviewer", RequestedByDID: "did:plc:maintainer", CreatedAt: pullRequestTime, UpdatedAt: pullRequestTime,
+	}
+}
+
 func pullRequestSubjectURI() string {
 	return "at://did:plc:contributor/" + pullrequest.Collection + "/" + pullRequestRKey
 }
@@ -207,6 +296,15 @@ func pullRequestStatusGetOutput(record pullrequest.StatusRecord) getRecordOutput
 	value := map[string]any{"$type": pullrequest.StatusCollection, "subject": pullRequestStrongRef(record.Subject), "targetRepository": pullRequestStrongRef(record.TargetRepository),
 		"state": record.State, "createdAt": record.CreatedAt.Format(time.RFC3339), "updatedAt": record.UpdatedAt.Format(time.RFC3339)}
 	return pullRequestRawOutput(pullrequest.StatusCollection, rkey, value)
+}
+
+func pullRequestReviewRequestGetOutput(record pullrequest.ReviewRequestRecord) getRecordOutput {
+	rkey, _ := pullrequest.ReviewRequestRecordKey(record.Subject.URI, record.ReviewerDID)
+	value := map[string]any{
+		"$type": pullrequest.ReviewRequestCollection, "subject": pullRequestStrongRef(record.Subject), "targetRepository": pullRequestStrongRef(record.TargetRepository),
+		"reviewer": record.ReviewerDID, "requestedBy": record.RequestedByDID, "createdAt": record.CreatedAt.Format(time.RFC3339), "updatedAt": record.UpdatedAt.Format(time.RFC3339),
+	}
+	return pullRequestRawOutput(pullrequest.ReviewRequestCollection, rkey, value)
 }
 
 func pullRequestRawOutput(collection, rkey string, value map[string]any) getRecordOutput {

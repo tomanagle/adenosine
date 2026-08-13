@@ -1,0 +1,51 @@
+{
+  "lexicon": 1,
+  "id": "dev.adenosine.pullRequestReviewRequest",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": [
+          "subject",
+          "targetRepository",
+          "reviewer",
+          "requestedBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The exact dev.adenosine.pullRequest observation to review."
+          },
+          "targetRepository": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The dev.adenosine.repo record whose owner authorizes this request."
+          },
+          "reviewer": {
+            "type": "string",
+            "format": "did",
+            "description": "The account requested to review the pull request."
+          },
+          "requestedBy": {
+            "type": "string",
+            "format": "did",
+            "description": "The repository maintainer who initiated the request."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

@@ -890,6 +890,55 @@ LIMIT sqlc.arg(result_limit);
 SELECT uri, cid FROM network.pull_requests
 WHERE uri = sqlc.arg(pull_request_uri) AND deleted_at IS NULL AND cid IS NOT NULL;
 
+-- name: PageProjectedPullRequestReviewRequests :many
+SELECT request.uri, request.cid, request.author_did, request.pull_request_uri,
+       request.pull_request_cid, request.target_repository_uri, request.target_repository_cid,
+       request.reviewer_did, request.requested_by_did, request.record_created_at,
+       request.record_updated_at, request.indexed_at
+FROM network.pull_request_review_requests AS request
+JOIN network.pull_requests AS pull_request
+  ON pull_request.uri = request.pull_request_uri
+ AND pull_request.cid = request.pull_request_cid
+ AND pull_request.deleted_at IS NULL
+ AND pull_request.cid IS NOT NULL
+WHERE pull_request.uri = sqlc.arg(pull_request_uri)
+  AND request.deleted_at IS NULL
+  AND request.cid IS NOT NULL
+  AND (
+    sqlc.narg(viewer_did)::text IS NULL
+    OR (
+      NOT EXISTS (
+        SELECT 1 FROM moderation.blocked_dids AS block
+        WHERE block.account_did = sqlc.narg(viewer_did)::text
+          AND block.blocked_did IN (request.author_did, request.requested_by_did, request.reviewer_did)
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM moderation.hidden_records AS hidden
+        WHERE hidden.account_did = sqlc.narg(viewer_did)::text
+          AND hidden.record_uri IN (request.uri, request.pull_request_uri, request.target_repository_uri)
+      )
+    )
+  )
+  AND (
+    sqlc.narg(after_time)::timestamptz IS NULL
+    OR (request.record_updated_at, request.uri) <
+       (sqlc.narg(after_time)::timestamptz, sqlc.narg(after_uri)::text)
+  )
+ORDER BY request.record_updated_at DESC, request.uri DESC
+LIMIT sqlc.arg(result_limit);
+
+-- name: PullRequestReviewRequestModerationAllowed :one
+SELECT NOT EXISTS (
+         SELECT 1 FROM moderation.blocked_dids AS block
+         WHERE (block.account_did = sqlc.arg(actor_did) AND block.blocked_did = sqlc.arg(reviewer_did))
+            OR (block.account_did = sqlc.arg(reviewer_did) AND block.blocked_did = sqlc.arg(actor_did))
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM moderation.hidden_records AS hidden
+         WHERE hidden.account_did = sqlc.arg(reviewer_did)
+           AND hidden.record_uri IN (sqlc.arg(pull_request_uri), sqlc.arg(repository_uri))
+       ) AS allowed;
+
 -- name: GetProjectedPullRequestStatusTarget :one
 SELECT pull_request.uri, pull_request.cid, pull_request.target_repository_uri,
        pull_request.target_repository_cid, status.record_created_at AS status_created_at,
@@ -915,6 +964,9 @@ SELECT pull_request_uri, target_repository_uri FROM network.pull_request_statuse
 
 -- name: GetFederationPullRequestReviewSubject :one
 SELECT pull_request_uri FROM network.pull_request_reviews WHERE uri = $1;
+
+-- name: GetFederationPullRequestReviewRequestSubject :one
+SELECT pull_request_uri FROM network.pull_request_review_requests WHERE uri = $1;
 
 -- name: ListFederationRepositoryPullRequestURIs :many
 SELECT uri FROM network.pull_requests WHERE target_repository_uri = $1 ORDER BY uri;
@@ -1054,6 +1106,50 @@ UPDATE network.pull_request_reviews AS review SET
     cid = NULL, indexed_at = $2, deleted_at = $2, source_event_id = $3
 WHERE review.uri = $1
   AND review.source_event_id < $3
+  AND EXISTS (
+      SELECT 1 FROM network.records AS current_record
+      WHERE current_record.uri = $1 AND current_record.source_event_id = $3 AND current_record.deleted_at IS NOT NULL
+  )
+RETURNING pull_request_uri;
+
+-- name: UpsertFederationPullRequestReviewRequest :one
+INSERT INTO network.pull_request_review_requests (
+    uri, cid, author_did, rkey, pull_request_uri, pull_request_cid,
+    target_repository_uri, target_repository_cid, reviewer_did, requested_by_did,
+    record_created_at, record_updated_at, indexed_at, deleted_at, source_event_id
+)
+SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NULL, $14
+FROM network.records AS source_record
+WHERE source_record.uri = $1 AND source_record.source_event_id = $14 AND source_record.deleted_at IS NULL
+ON CONFLICT (uri) DO UPDATE SET
+    cid = EXCLUDED.cid,
+    pull_request_cid = EXCLUDED.pull_request_cid,
+    target_repository_cid = EXCLUDED.target_repository_cid,
+    reviewer_did = EXCLUDED.reviewer_did,
+    requested_by_did = EXCLUDED.requested_by_did,
+    record_created_at = EXCLUDED.record_created_at,
+    record_updated_at = EXCLUDED.record_updated_at,
+    indexed_at = EXCLUDED.indexed_at,
+    deleted_at = NULL,
+    source_event_id = EXCLUDED.source_event_id
+WHERE network.pull_request_review_requests.source_event_id < EXCLUDED.source_event_id
+  AND network.pull_request_review_requests.author_did = EXCLUDED.author_did
+  AND network.pull_request_review_requests.rkey = EXCLUDED.rkey
+  AND network.pull_request_review_requests.pull_request_uri = EXCLUDED.pull_request_uri
+  AND network.pull_request_review_requests.target_repository_uri = EXCLUDED.target_repository_uri
+  AND EXISTS (
+      SELECT 1 FROM network.records AS current_record
+      WHERE current_record.uri = EXCLUDED.uri
+        AND current_record.source_event_id = EXCLUDED.source_event_id
+        AND current_record.deleted_at IS NULL
+  )
+RETURNING pull_request_uri;
+
+-- name: TombstoneFederationPullRequestReviewRequest :one
+UPDATE network.pull_request_review_requests AS request SET
+    cid = NULL, indexed_at = $2, deleted_at = $2, source_event_id = $3
+WHERE request.uri = $1
+  AND request.source_event_id < $3
   AND EXISTS (
       SELECT 1 FROM network.records AS current_record
       WHERE current_record.uri = $1 AND current_record.source_event_id = $3 AND current_record.deleted_at IS NOT NULL

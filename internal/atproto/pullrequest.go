@@ -59,6 +59,23 @@ type pullRequestStatusWireRecord struct {
 	UpdatedAt        string                   `json:"updatedAt"`
 }
 
+type pullRequestReviewRequestWireRecord struct {
+	Type             string                   `json:"$type"`
+	Subject          pullRequestStrongRefWire `json:"subject"`
+	TargetRepository pullRequestStrongRefWire `json:"targetRepository"`
+	Reviewer         string                   `json:"reviewer"`
+	RequestedBy      string                   `json:"requestedBy"`
+	CreatedAt        string                   `json:"createdAt"`
+	UpdatedAt        string                   `json:"updatedAt"`
+}
+
+type pullRequestDeleteRecordInput struct {
+	Collection string `json:"collection"`
+	Repo       string `json:"repo"`
+	RKey       string `json:"rkey"`
+	SwapRecord string `json:"swapRecord"`
+}
+
 // CreatePullRequest creates contributor-authored content using a retry-safe caller key.
 func (client *Client) CreatePullRequest(ctx context.Context, authorDID, rkey string, record pullrequest.Record) (pullrequest.PullRequest, error) {
 	if err := pullrequest.ValidateRecordKey(rkey); err != nil {
@@ -239,6 +256,119 @@ func (client *Client) PutPullRequestStatus(ctx context.Context, authorDID string
 	return result, err
 }
 
+// PutPullRequestReviewRequest creates or compare-and-swaps one deterministic
+// target-authoritative reviewer slot.
+func (client *Client) PutPullRequestReviewRequest(ctx context.Context, authorDID string, record pullrequest.ReviewRequestRecord) (pullrequest.ReviewRequest, error) {
+	if err := record.Validate(); err != nil {
+		return pullrequest.ReviewRequest{}, err
+	}
+	owner, err := pullrequest.RepositoryOwnerDID(record.TargetRepository.URI)
+	if err != nil {
+		return pullrequest.ReviewRequest{}, err
+	}
+	if authorDID != owner {
+		return pullrequest.ReviewRequest{}, &pullrequest.AuthorizationError{Err: errors.New("review request author is not target repository owner")}
+	}
+	rkey, err := pullrequest.ReviewRequestRecordKey(record.Subject.URI, record.ReviewerDID)
+	if err != nil {
+		return pullrequest.ReviewRequest{}, err
+	}
+	var result pullrequest.ReviewRequest
+	err = client.withPullRequestSession(ctx, authorDID, func(host, did string, session *oauth.ClientSession) error {
+		api := client.apiFactory(host, session)
+		existing, found, err := getPullRequestRecord(ctx, api, did, pullrequest.ReviewRequestCollection, rkey)
+		if err != nil {
+			return err
+		}
+		var swap *string
+		if found {
+			current, decodeErr := decodePullRequestReviewRequest(existing, did, rkey)
+			if decodeErr != nil {
+				return &pullrequest.ConflictError{Err: decodeErr}
+			}
+			if current.Subject.URI != record.Subject.URI || current.TargetRepository.URI != record.TargetRepository.URI || current.ReviewerDID != record.ReviewerDID {
+				return &pullrequest.ConflictError{Err: errors.New("review request slot has incompatible identity")}
+			}
+			if current.Subject.CID == record.Subject.CID && current.TargetRepository.CID == record.TargetRepository.CID {
+				result = current
+				return nil
+			}
+			record.CreatedAt = current.CreatedAt
+			if !record.UpdatedAt.After(current.UpdatedAt) {
+				return &pullrequest.ConflictError{Err: errors.New("review request update is stale")}
+			}
+			swap = &current.CID
+		}
+		createdAt, updatedAt, err := canonicalPullRequestTimes(record.CreatedAt, record.UpdatedAt)
+		if err != nil {
+			return err
+		}
+		wire := map[string]any{
+			"$type": pullrequest.ReviewRequestCollection, "subject": pullRequestStrongRef(record.Subject),
+			"targetRepository": pullRequestStrongRef(record.TargetRepository), "reviewer": record.ReviewerDID,
+			"requestedBy": record.RequestedByDID, "createdAt": createdAt, "updatedAt": updatedAt,
+		}
+		input := pullRequestPutRecordInput{Collection: pullrequest.ReviewRequestCollection, Repo: did, RKey: rkey, SwapRecord: swap, Record: wire}
+		var output putRecordOutput
+		if err := api.Post(ctx, putRecordNSID, input, &output); err != nil {
+			if !isInvalidSwap(err) {
+				return &pullrequest.ProviderError{Operation: "put review request", Err: err}
+			}
+			latest, latestFound, getErr := getPullRequestRecord(ctx, api, did, pullrequest.ReviewRequestCollection, rkey)
+			if getErr != nil {
+				return getErr
+			}
+			if latestFound {
+				current, decodeErr := decodePullRequestReviewRequest(latest, did, rkey)
+				if decodeErr == nil && current.Subject == record.Subject && current.TargetRepository == record.TargetRepository && current.ReviewerDID == record.ReviewerDID {
+					result = current
+					return nil
+				}
+			}
+			return &pullrequest.ConflictError{Err: errors.New("review request changed concurrently")}
+		}
+		result = pullrequest.ReviewRequest{URI: output.URI, CID: output.CID, AuthorDID: did, ReviewRequestRecord: record}
+		result.CreatedAt, _ = syntax.ParseDatetimeTime(createdAt)
+		result.UpdatedAt, _ = syntax.ParseDatetimeTime(updatedAt)
+		if err := result.Validate(); err != nil {
+			return &pullrequest.ProviderError{Operation: "review request response validation", Err: err}
+		}
+		return nil
+	})
+	return result, err
+}
+
+// DeletePullRequestReviewRequest compare-and-swaps the deterministic slot and
+// treats a missing record as already cancelled.
+func (client *Client) DeletePullRequestReviewRequest(ctx context.Context, authorDID, pullRequestURI, reviewerDID string) error {
+	rkey, err := pullrequest.ReviewRequestRecordKey(pullRequestURI, reviewerDID)
+	if err != nil {
+		return err
+	}
+	return client.withPullRequestSession(ctx, authorDID, func(host, did string, session *oauth.ClientSession) error {
+		api := client.apiFactory(host, session)
+		existing, found, err := getPullRequestRecord(ctx, api, did, pullrequest.ReviewRequestCollection, rkey)
+		if err != nil || !found {
+			return err
+		}
+		current, err := decodePullRequestReviewRequest(existing, did, rkey)
+		if err != nil || current.Subject.URI != pullRequestURI || current.ReviewerDID != reviewerDID {
+			return &pullrequest.ConflictError{Err: err}
+		}
+		input := pullRequestDeleteRecordInput{Collection: pullrequest.ReviewRequestCollection, Repo: did, RKey: rkey, SwapRecord: current.CID}
+		if err := api.Post(ctx, deleteRecordNSID, input, &struct{}{}); err != nil {
+			if isRecordNotFound(err) {
+				return nil
+			}
+			if isInvalidSwap(err) {
+				return &pullrequest.ConflictError{Err: errors.New("review request changed concurrently")}
+			}
+			return &pullrequest.ProviderError{Operation: "delete review request", Err: err}
+		}
+		return nil
+	})
+}
+
 func (client *Client) withPullRequestSession(ctx context.Context, rawDID string, operation func(string, string, *oauth.ClientSession) error) error {
 	did, host, err := client.resolvePullRequestIdentity(ctx, rawDID)
 	if err != nil {
@@ -352,6 +482,37 @@ func decodePullRequestStatus(output getRecordOutput, did, rkey string) (pullrequ
 		return pullrequest.Status{}, errors.New("pull request status authority is invalid")
 	}
 	return pullrequest.Status{URI: output.URI, CID: *output.CID, AuthorDID: did, StatusRecord: record}, nil
+}
+
+func decodePullRequestReviewRequest(output getRecordOutput, did, rkey string) (pullrequest.ReviewRequest, error) {
+	if output.CID == nil || output.Value == nil {
+		return pullrequest.ReviewRequest{}, errors.New("pull request review request envelope is incomplete")
+	}
+	if err := validatePullRequestEnvelope(output.URI, *output.CID, did, pullrequest.ReviewRequestCollection, rkey); err != nil {
+		return pullrequest.ReviewRequest{}, err
+	}
+	var wire pullRequestReviewRequestWireRecord
+	if err := decodePullRequestJSON(*output.Value, &wire); err != nil || wire.Type != pullrequest.ReviewRequestCollection {
+		return pullrequest.ReviewRequest{}, errors.New("pull request review request record is invalid")
+	}
+	record := pullrequest.ReviewRequestRecord{
+		Subject:          pullrequest.StrongRef{URI: wire.Subject.URI, CID: wire.Subject.CID},
+		TargetRepository: pullrequest.StrongRef{URI: wire.TargetRepository.URI, CID: wire.TargetRepository.CID},
+		ReviewerDID:      wire.Reviewer, RequestedByDID: wire.RequestedBy,
+	}
+	var err error
+	record.CreatedAt, err = parseCanonicalPullRequestTime(wire.CreatedAt)
+	if err == nil {
+		record.UpdatedAt, err = parseCanonicalPullRequestTime(wire.UpdatedAt)
+	}
+	if err != nil {
+		return pullrequest.ReviewRequest{}, err
+	}
+	value := pullrequest.ReviewRequest{URI: output.URI, CID: *output.CID, AuthorDID: did, ReviewRequestRecord: record}
+	if err := value.Validate(); err != nil {
+		return pullrequest.ReviewRequest{}, err
+	}
+	return value, nil
 }
 
 func decodePullRequestJSON(value json.RawMessage, target any) error {

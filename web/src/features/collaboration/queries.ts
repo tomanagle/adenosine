@@ -10,10 +10,13 @@ import {
   getPullRequestOptions,
   getStarsOptions,
   listPullRequestReviewsOptions,
+  listPullRequestReviewRequestsOptions,
   listPullRequestsOptions,
   mergePullRequestMutation,
   putIssueStatusMutation,
   putPullRequestStatusMutation,
+  putPullRequestReviewRequestMutation,
+  deletePullRequestReviewRequestMutation,
 } from '@adenosine/api-client/query'
 
 import { browserApiClient } from '@/api/browser-client'
@@ -41,6 +44,11 @@ export const reviewsQueryOptions = (pullRequestUri: string) =>
     client: browserApiClient,
     query: { pull_request_uri: pullRequestUri },
   })
+export const reviewRequestsQueryOptions = (pullRequestUri: string) =>
+  listPullRequestReviewRequestsOptions({
+    client: browserApiClient,
+    query: { pull_request_uri: pullRequestUri, limit: 100 },
+  })
 export const activityStarsQueryOptions = (repositoryUri: string) =>
   getStarsOptions({ client: browserApiClient, query: { repository_uri: repositoryUri } })
 
@@ -52,6 +60,10 @@ export const createPullMutationOptions = () =>
   createPullRequestMutation({ client: browserApiClient })
 export const createReviewMutationOptions = () =>
   createPullRequestReviewMutation({ client: browserApiClient })
+export const putReviewRequestMutationOptions = () =>
+  putPullRequestReviewRequestMutation({ client: browserApiClient })
+export const deleteReviewRequestMutationOptions = () =>
+  deletePullRequestReviewRequestMutation({ client: browserApiClient })
 export const pullStatusMutationOptions = () =>
   putPullRequestStatusMutation({ client: browserApiClient })
 export const mergeMutationOptions = () => mergePullRequestMutation({ client: browserApiClient })

@@ -244,6 +244,18 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 			}
 			return recomputePullRequestReviewCount(ctx, queries, pullRequestURI)
 		}
+		if record.Collection == PullRequestReviewRequestCollection {
+			_, err := queries.TombstoneFederationPullRequestReviewRequest(ctx, dbgen.TombstoneFederationPullRequestReviewRequestParams{
+				Uri: record.URI, IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
+			})
+			if err == pgx.ErrNoRows {
+				return nil
+			}
+			if err != nil {
+				return fmt.Errorf("tombstone pull request review request: %w", err)
+			}
+			return nil
+		}
 		previousForkSource, previousForkErr := queries.GetFederationRepositoryForkSource(ctx, record.URI)
 		if previousForkErr != nil && previousForkErr != pgx.ErrNoRows {
 			return fmt.Errorf("resolve deleted repository fork source: %w", previousForkErr)
@@ -511,6 +523,24 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 		}
 		return recomputePullRequestReviewCount(ctx, queries, pullRequestURI)
 	}
+	if record.PullRequestReviewRequest != nil {
+		value := record.PullRequestReviewRequest
+		_, err := queries.UpsertFederationPullRequestReviewRequest(ctx, dbgen.UpsertFederationPullRequestReviewRequestParams{
+			Uri: record.URI, Cid: pgText(record.CID), AuthorDid: record.DID, Rkey: record.RKey,
+			PullRequestUri: value.Subject.URI, PullRequestCid: value.Subject.CID,
+			TargetRepositoryUri: value.TargetRepository.URI, TargetRepositoryCid: value.TargetRepository.CID,
+			ReviewerDid: value.ReviewerDID, RequestedByDid: value.RequestedByDID,
+			RecordCreatedAt: pgTime(value.CreatedAt), RecordUpdatedAt: pgTime(value.UpdatedAt),
+			IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
+		})
+		if err == pgx.ErrNoRows {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("upsert pull request review request: %w", err)
+		}
+		return nil
+	}
 	value := record.Repository
 	if value == nil {
 		return fmt.Errorf("project repository: missing decoded value")
@@ -609,7 +639,7 @@ func lockForkProjection(ctx context.Context, queries *dbgen.Queries, repositoryU
 }
 
 func lockPullRequestProjection(ctx context.Context, queries *dbgen.Queries, record *RecordEvent) error {
-	if record.Collection != RepositoryCollection && record.Collection != PullRequestCollection && record.Collection != PullRequestStatusCollection && record.Collection != PullRequestReviewCollection {
+	if record.Collection != RepositoryCollection && record.Collection != PullRequestCollection && record.Collection != PullRequestStatusCollection && record.Collection != PullRequestReviewCollection && record.Collection != PullRequestReviewRequestCollection {
 		return nil
 	}
 	pullRequests := make(map[string]struct{})
@@ -635,6 +665,10 @@ func lockPullRequestProjection(ctx context.Context, queries *dbgen.Queries, reco
 	if record.PullRequestReview != nil {
 		pullRequests[record.PullRequestReview.Subject.URI] = struct{}{}
 	}
+	if record.PullRequestReviewRequest != nil {
+		pullRequests[record.PullRequestReviewRequest.Subject.URI] = struct{}{}
+		repositories[record.PullRequestReviewRequest.TargetRepository.URI] = struct{}{}
+	}
 	if record.Collection == PullRequestCollection {
 		targetURI, err := queries.GetFederationPullRequestTargetRepositoryURI(ctx, record.URI)
 		if err != nil && err != pgx.ErrNoRows {
@@ -659,6 +693,15 @@ func lockPullRequestProjection(ctx context.Context, queries *dbgen.Queries, reco
 		uri, err := queries.GetFederationPullRequestReviewSubject(ctx, record.URI)
 		if err != nil && err != pgx.ErrNoRows {
 			return fmt.Errorf("resolve pull request review subject for lock: %w", err)
+		}
+		if err == nil {
+			pullRequests[uri] = struct{}{}
+		}
+	}
+	if record.Collection == PullRequestReviewRequestCollection {
+		uri, err := queries.GetFederationPullRequestReviewRequestSubject(ctx, record.URI)
+		if err != nil && err != pgx.ErrNoRows {
+			return fmt.Errorf("resolve pull request review request subject for lock: %w", err)
 		}
 		if err == nil {
 			pullRequests[uri] = struct{}{}

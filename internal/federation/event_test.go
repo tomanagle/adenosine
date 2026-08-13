@@ -80,6 +80,10 @@ func TestDecodeEventRejectsUnknownCollectionRecordFields(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	pullRequestReviewRequestRKey, err := pullrequest.ReviewRequestRecordKey(pullRequestURI, testBobDID)
+	if err != nil {
+		t.Fatal(err)
+	}
 	unknownTopLevel := func(record string) string {
 		return strings.TrimSuffix(record, "}") + `,"unexpected":true}`
 	}
@@ -101,6 +105,7 @@ func TestDecodeEventRejectsUnknownCollectionRecordFields(t *testing.T) {
 		{name: "pull request top level", collection: PullRequestCollection, rkey: "pr1", record: unknownTopLevel(pullRequestRecord(repositoryURI, repositoryURI, "Title"))},
 		{name: "pull request status top level", collection: PullRequestStatusCollection, rkey: pullRequestStatusRKey, record: unknownTopLevel(pullRequestStatusRecord(pullRequestURI, repositoryURI, "open", ""))},
 		{name: "pull request review top level", collection: PullRequestReviewCollection, rkey: "review1", record: unknownTopLevel(pullRequestReviewRecord(pullRequestURI, "comment", "Review"))},
+		{name: "pull request review request top level", collection: PullRequestReviewRequestCollection, rkey: pullRequestReviewRequestRKey, record: unknownTopLevel(pullRequestReviewRequestRecord(pullRequestURI, repositoryURI, testBobDID, testDID))},
 		{name: "repository git object", collection: RepositoryCollection, rkey: "project", record: strings.Replace(validRepository, `"git":{"https":"https://code.example/project.git"}`, `"git":{"https":"https://code.example/project.git","unexpected":true}`, 1)},
 		{name: "issue repository strong ref", collection: IssueCollection, rkey: "issue1", record: strings.Replace(validIssue, `"cid":"`+testCID+`"`, `"cid":"`+testCID+`","unexpected":true`, 1)},
 	}

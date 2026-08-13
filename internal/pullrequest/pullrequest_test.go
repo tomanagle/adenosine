@@ -191,13 +191,47 @@ func TestReviewRecordValidation(t *testing.T) {
 	}
 }
 
+func TestReviewRequestRecordValidation(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 8, 9, 12, 0, 0, 0, time.UTC)
+	valid := ReviewRequestRecord{
+		Subject: StrongRef{URI: testPullRequestURI, CID: testCID}, TargetRepository: StrongRef{URI: testTargetRepositoryURI, CID: testCID},
+		ReviewerDID: "did:plc:reviewer", RequestedByDID: "did:plc:maintainer", CreatedAt: now, UpdatedAt: now,
+	}
+	testCases := []struct {
+		name   string
+		mutate func(*ReviewRequestRecord)
+		want   error
+	}{
+		{name: "valid target-authoritative request"},
+		{name: "wrong subject collection", mutate: func(value *ReviewRequestRecord) { value.Subject.URI = testTargetRepositoryURI }, want: ErrValidation},
+		{name: "wrong target collection", mutate: func(value *ReviewRequestRecord) { value.TargetRepository.URI = testPullRequestURI }, want: ErrValidation},
+		{name: "reviewer handle is not a DID", mutate: func(value *ReviewRequestRecord) { value.ReviewerDID = "reviewer.example" }, want: ErrValidation},
+		{name: "requester DID is not canonical", mutate: func(value *ReviewRequestRecord) { value.RequestedByDID = "DID:PLC:maintainer" }, want: ErrValidation},
+		{name: "updated before created", mutate: func(value *ReviewRequestRecord) { value.UpdatedAt = now.Add(-time.Second) }, want: ErrValidation},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			value := valid
+			if testCase.mutate != nil {
+				testCase.mutate(&value)
+			}
+			if err := value.Validate(); !errors.Is(err, testCase.want) {
+				t.Fatalf("Validate() error = %v, want %v", err, testCase.want)
+			}
+		})
+	}
+}
+
 func TestEnvelopeValidationAndAuthority(t *testing.T) {
 	t.Parallel()
 	now := time.Date(2026, 8, 9, 12, 0, 0, 0, time.UTC)
 	statusKey, _ := StatusRecordKey(testPullRequestURI)
+	reviewRequestKey, _ := ReviewRequestRecordKey(testPullRequestURI, "did:plc:reviewer")
 	validRecord := Record{SourceRepository: StrongRef{URI: testSourceRepositoryURI, CID: testCID}, TargetRepository: StrongRef{URI: testTargetRepositoryURI, CID: testCID}, SourceBranch: "feature", TargetBranch: "main", HeadSHA: testSHA1, Title: "title", Body: "body", CreatedAt: now, UpdatedAt: now}
 	validStatus := StatusRecord{Subject: StrongRef{URI: testPullRequestURI, CID: testCID}, TargetRepository: StrongRef{URI: testTargetRepositoryURI, CID: testCID}, State: StateOpen, CreatedAt: now, UpdatedAt: now}
 	validReview := ReviewRecord{Subject: StrongRef{URI: testPullRequestURI, CID: testCID}, Verdict: VerdictApprove, Body: "review", CreatedAt: now, UpdatedAt: now}
+	validReviewRequest := ReviewRequestRecord{Subject: StrongRef{URI: testPullRequestURI, CID: testCID}, TargetRepository: StrongRef{URI: testTargetRepositoryURI, CID: testCID}, ReviewerDID: "did:plc:reviewer", RequestedByDID: "did:plc:maintainer", CreatedAt: now, UpdatedAt: now}
 	testCases := []struct {
 		name  string
 		value interface{ Validate() error }
@@ -216,6 +250,9 @@ func TestEnvelopeValidationAndAuthority(t *testing.T) {
 		{name: "contributor may review", value: Review{URI: "at://did:plc:contributor/" + ReviewCollection + "/key", CID: testCID, AuthorDID: "did:plc:contributor", ReviewRecord: validReview}},
 		{name: "review envelope mismatch", value: Review{URI: testReviewURI, CID: testCID, AuthorDID: "did:plc:mallory", ReviewRecord: validReview}, want: ErrAuthorization},
 		{name: "review wrong collection", value: Review{URI: testPullRequestURI, CID: testCID, AuthorDID: "did:plc:contributor", ReviewRecord: validReview}, want: ErrValidation},
+		{name: "target owner owns review request", value: ReviewRequest{URI: "at://did:plc:target/" + ReviewRequestCollection + "/" + reviewRequestKey, CID: testCID, AuthorDID: "did:plc:target", ReviewRequestRecord: validReviewRequest}},
+		{name: "non-target owner review request", value: ReviewRequest{URI: "at://did:plc:source/" + ReviewRequestCollection + "/" + reviewRequestKey, CID: testCID, AuthorDID: "did:plc:source", ReviewRequestRecord: validReviewRequest}, want: ErrAuthorization},
+		{name: "wrong review request key", value: ReviewRequest{URI: "at://did:plc:target/" + ReviewRequestCollection + "/wrong", CID: testCID, AuthorDID: "did:plc:target", ReviewRequestRecord: validReviewRequest}, want: ErrValidation},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -247,6 +284,36 @@ func TestRecordKeys(t *testing.T) {
 			}
 			if err == nil && (got != strings.ToLower(got) || strings.Contains(got, "=")) {
 				t.Fatalf("status key is not lowercase unpadded base32: %q", got)
+			}
+		})
+	}
+}
+
+func TestReviewRequestRecordKeys(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name      string
+		uri       string
+		reviewer  string
+		wantError bool
+	}{
+		{name: "stable deterministic slot", uri: testPullRequestURI, reviewer: "did:plc:reviewer"},
+		{name: "different reviewer has a different slot", uri: testPullRequestURI, reviewer: "did:plc:other"},
+		{name: "wrong subject collection", uri: testTargetRepositoryURI, reviewer: "did:plc:reviewer", wantError: true},
+		{name: "reviewer handle", uri: testPullRequestURI, reviewer: "reviewer.example", wantError: true},
+	}
+	first, _ := ReviewRequestRecordKey(testPullRequestURI, "did:plc:reviewer")
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			value, err := ReviewRequestRecordKey(testCase.uri, testCase.reviewer)
+			if (err != nil) != testCase.wantError {
+				t.Fatalf("ReviewRequestRecordKey() = %q, %v", value, err)
+			}
+			if err == nil && (len(value) != 52 || value != strings.ToLower(value) || strings.Contains(value, "=")) {
+				t.Fatalf("review request key is not lowercase unpadded base32: %q", value)
+			}
+			if testCase.reviewer == "did:plc:other" && value == first {
+				t.Fatal("different reviewer reused the same deterministic slot")
 			}
 		})
 	}

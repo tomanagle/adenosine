@@ -16,6 +16,8 @@ import { encodeRecordIdentity } from './identity'
 import { boundedCommentDepth } from './comments'
 import { canTriageIssue } from './permissions'
 import { PublicationNotice, usePublication } from './publication'
+import { ProfileLink } from './profile-link'
+import { ReviewRequestPanel } from './review-request-panel'
 import {
   activityStarsQueryOptions,
   commentsQueryOptions,
@@ -23,6 +25,7 @@ import {
   createIssueMutationOptions,
   createPullMutationOptions,
   createReviewMutationOptions,
+  deleteReviewRequestMutationOptions,
   issueQueryOptions,
   issuesQueryOptions,
   issueStatusMutationOptions,
@@ -31,6 +34,8 @@ import {
   pullRequestQueryOptions,
   pullRequestsQueryOptions,
   pullStatusMutationOptions,
+  putReviewRequestMutationOptions,
+  reviewRequestsQueryOptions,
   reviewsQueryOptions,
 } from './queries'
 
@@ -397,12 +402,35 @@ export function PullRequestPage({
   const { data: repository } = useSuspenseQuery(repositoryQueryOptions(params))
   const { data: pull } = useSuspenseQuery(pullRequestQueryOptions(pullRequestUri))
   const { data: reviews } = useSuspenseQuery(reviewsQueryOptions(pullRequestUri))
+  const { data: reviewRequests } = useSuspenseQuery(reviewRequestsQueryOptions(pullRequestUri))
   const queryClient = useQueryClient()
   const reviewMutation = useMutation(createReviewMutationOptions())
+  const putReviewRequest = useMutation(putReviewRequestMutationOptions())
+  const deleteReviewRequest = useMutation(deleteReviewRequestMutationOptions())
   const statusMutation = useMutation(pullStatusMutationOptions())
   const mergeMutation = useMutation(mergeMutationOptions())
   const publication = usePublication()
-  const canTriage = identityDid === repository.owner.did && repository.hosting.local
+  const canTriage = repository.viewer_can_admin && repository.hosting.local
+
+  async function requestReview(reviewer: string) {
+    await putReviewRequest.mutateAsync({
+      path: { reviewer },
+      body: { pull_request_uri: pullRequestUri },
+    })
+    await queryClient.invalidateQueries({
+      queryKey: reviewRequestsQueryOptions(pullRequestUri).queryKey,
+    })
+  }
+
+  async function cancelReviewRequest(reviewer: string) {
+    await deleteReviewRequest.mutateAsync({
+      path: { reviewer },
+      query: { pull_request_uri: pullRequestUri },
+    })
+    await queryClient.invalidateQueries({
+      queryKey: reviewRequestsQueryOptions(pullRequestUri).queryKey,
+    })
+  }
   async function review(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
@@ -487,6 +515,15 @@ export function PullRequestPage({
       <section className="rounded-lg border bg-card">
         <SafeMarkdown source={pull.body} />
       </section>
+      <ReviewRequestPanel
+        cancelling={deleteReviewRequest.isPending}
+        canTriage={Boolean(canTriage)}
+        items={reviewRequests.items}
+        onCancel={cancelReviewRequest}
+        onRequest={requestReview}
+        pullRequestOpen={pull.state === 'open'}
+        requesting={putReviewRequest.isPending}
+      />
       {repository.hosting.local ? (
         <VerifiedPullRequestDiff pullRequestUri={pullRequestUri} />
       ) : (
@@ -626,17 +663,6 @@ export function ActivityPage({ params }: PageProps) {
   )
 }
 
-function ProfileLink({ did }: { did: string }) {
-  return (
-    <Link
-      className="font-mono text-xs underline-offset-4 hover:underline"
-      params={{ identity: did }}
-      to="/profiles/$identity"
-    >
-      {did}
-    </Link>
-  )
-}
 function formatDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value))
 }

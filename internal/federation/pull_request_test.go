@@ -176,6 +176,10 @@ func TestDecodePullRequestStatusAndReviewRecords(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	reviewRequestRKey, err := pullrequest.ReviewRequestRecordKey(pullRequestURI, testBobDID)
+	if err != nil {
+		t.Fatal(err)
+	}
 	testCases := []struct {
 		name       string
 		body       string
@@ -187,6 +191,9 @@ func TestDecodePullRequestStatusAndReviewRecords(t *testing.T) {
 		{name: "target owner merged status", body: recordEnvelopeForDID(2, testDID, PullRequestStatusCollection, statusRKey, "create", pullRequestStatusRecord(pullRequestURI, targetURI, "merged", testGitSHA)), wantKind: "status", wantAuthor: testDID},
 		{name: "malicious contributor status remains typed", body: recordEnvelopeForDID(3, testBobDID, PullRequestStatusCollection, statusRKey, "create", pullRequestStatusRecord(pullRequestURI, targetURI, "closed", "")), wantKind: "status", wantAuthor: testBobDID},
 		{name: "review authorship follows envelope", body: recordEnvelopeForDID(4, testDID, PullRequestReviewCollection, "review1", "create", pullRequestReviewRecord(pullRequestURI, "approve", "Looks good")), wantKind: "review", wantAuthor: testDID},
+		{name: "target owner review request", body: recordEnvelopeForDID(10, testDID, PullRequestReviewRequestCollection, reviewRequestRKey, "create", pullRequestReviewRequestRecord(pullRequestURI, targetURI, testBobDID, testDID)), wantKind: "review_request", wantAuthor: testDID},
+		{name: "review request rejects non-owner authority", body: recordEnvelopeForDID(11, testBobDID, PullRequestReviewRequestCollection, reviewRequestRKey, "create", pullRequestReviewRequestRecord(pullRequestURI, targetURI, testBobDID, testBobDID)), wantError: true},
+		{name: "review request rejects wrong deterministic key", body: recordEnvelopeForDID(12, testDID, PullRequestReviewRequestCollection, strings.Repeat("a", 52), "create", pullRequestReviewRequestRecord(pullRequestURI, targetURI, testBobDID, testDID)), wantError: true},
 		{name: "merged status requires commit", body: recordEnvelopeForDID(5, testDID, PullRequestStatusCollection, statusRKey, "create", pullRequestStatusRecord(pullRequestURI, targetURI, "merged", "")), wantError: true},
 		{name: "invalid merged commit", body: recordEnvelopeForDID(6, testDID, PullRequestStatusCollection, statusRKey, "create", pullRequestStatusRecord(pullRequestURI, targetURI, "merged", "not-a-sha")), wantError: true},
 		{name: "non-merged status rejects commit", body: recordEnvelopeForDID(7, testDID, PullRequestStatusCollection, statusRKey, "create", pullRequestStatusRecord(pullRequestURI, targetURI, "closed", testGitSHA)), wantError: true},
@@ -207,6 +214,8 @@ func TestDecodePullRequestStatusAndReviewRecords(t *testing.T) {
 				kind = "pull_request"
 			} else if event.Record.PullRequestStatus != nil {
 				kind = "status"
+			} else if event.Record.PullRequestReviewRequest != nil {
+				kind = "review_request"
 			}
 			if kind != testCase.wantKind || event.Record.DID != testCase.wantAuthor {
 				t.Fatalf("kind/author = %s/%s", kind, event.Record.DID)
@@ -332,4 +341,8 @@ func pullRequestStatusRecord(pullRequestURI, targetURI, state, mergeCommitSHA st
 
 func pullRequestReviewRecord(pullRequestURI, verdict, body string) string {
 	return `{"$type":"` + PullRequestReviewCollection + `","subject":{"uri":"` + pullRequestURI + `","cid":"` + testCID + `"},"verdict":"` + verdict + `","body":"` + body + `","createdAt":"2026-08-09T12:00:00Z","updatedAt":"2026-08-09T13:00:00Z"}`
+}
+
+func pullRequestReviewRequestRecord(pullRequestURI, targetURI, reviewerDID, requestedByDID string) string {
+	return `{"$type":"` + PullRequestReviewRequestCollection + `","subject":{"uri":"` + pullRequestURI + `","cid":"` + testCID + `"},"targetRepository":{"uri":"` + targetURI + `","cid":"` + testCID + `"},"reviewer":"` + reviewerDID + `","requestedBy":"` + requestedByDID + `","createdAt":"2026-08-09T12:00:00Z","updatedAt":"2026-08-09T13:00:00Z"}`
 }
