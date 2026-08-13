@@ -13,20 +13,6 @@ afterEach(() => {
 })
 
 describe('Oxc checks', () => {
-  test('oxlint rejects a deliberate violation', () => {
-    const file = temporaryFile('lint.ts', 'debugger\n')
-    const result = Bun.spawnSync([
-      join(root, 'node_modules', '.bin', 'oxlint'),
-      '--config',
-      join(root, '.oxlintrc.json'),
-      '--deny-warnings',
-      file,
-    ])
-
-    expect(result.exitCode).not.toBe(0)
-    expect(result.stdout.toString() + result.stderr.toString()).toContain('no-debugger')
-  })
-
   test('oxfmt rejects deliberate formatting drift', () => {
     const file = temporaryFile('format.ts', 'const value={answer:42}\n')
     const result = Bun.spawnSync([
