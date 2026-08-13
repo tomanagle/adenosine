@@ -26,6 +26,10 @@ preparation belongs in `dev/entrypoint.sh`.
 9. Run `make generate` followed by `git diff --exit-code` from a clean generated baseline.
 10. Run `make e2e` or `make e2e-federation` when the changed boundary requires it.
 
+Oxlint also loads the vendored anti-slop plugin from `tools/oxlint/anti-slop`. Its rules are
+project-owned source copied from `dmmulroy/anti-slop`; update and review that copy explicitly
+rather than replacing it with an implicit package dependency.
+
 ## Test layers
 
 - Package unit tests use fakes beside consumers and run under `make test`.

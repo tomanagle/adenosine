@@ -5,6 +5,7 @@
     "packages/*",
     "web"
   ],
+  "type": "module",
   "scripts": {
     "format": "oxfmt --write \"**/*.{ts,tsx,json,jsonc,css}\"",
     "format:check": "oxfmt --check \"**/*.{ts,tsx,json,jsonc,css}\"",
@@ -15,6 +16,7 @@
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "0.99.0",
+    "@oxlint/plugins": "1.78.0",
     "lefthook": "2.1.10",
     "oxfmt": "0.63.0",
     "oxlint": "1.78.0",
