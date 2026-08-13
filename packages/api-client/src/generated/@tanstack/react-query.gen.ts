@@ -2930,9 +2930,9 @@ export const listBranchProtectionsInfiniteOptions = (options: Options<ListBranch
 };
 
 /**
- * Create a repository-wide branch protection
+ * Create a branch protection policy
  *
- * The basic protection release supports the * pattern. Git itself rejects non-fast-forward updates and branch deletion before ref mutation.
+ * Patterns are exact branch names, namespace prefixes ending in *, or the * fallback. The most specific matching policy is enforced against the exact proposed old and new object IDs before refs change.
  */
 export const createBranchProtectionMutation = (options?: Partial<Options<CreateBranchProtectionData>>): UseMutationOptions<CreateBranchProtectionResponse, CreateBranchProtectionError, Options<CreateBranchProtectionData>> => {
     const mutationOptions: UseMutationOptions<CreateBranchProtectionResponse, CreateBranchProtectionError, Options<CreateBranchProtectionData>> = {

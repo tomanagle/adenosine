@@ -43,36 +43,6 @@ func (e AccessTokenScopes) Valid() bool {
 	}
 }
 
-// Defines values for BranchProtectionPattern.
-const (
-	BranchProtectionPatternAsterisk BranchProtectionPattern = "*"
-)
-
-// Valid indicates whether the value is a known member of the BranchProtectionPattern enum.
-func (e BranchProtectionPattern) Valid() bool {
-	switch e {
-	case BranchProtectionPatternAsterisk:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BranchProtectionInputPattern.
-const (
-	BranchProtectionInputPatternAsterisk BranchProtectionInputPattern = "*"
-)
-
-// Valid indicates whether the value is a known member of the BranchProtectionInputPattern enum.
-func (e BranchProtectionInputPattern) Valid() bool {
-	switch e {
-	case BranchProtectionInputPatternAsterisk:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for CheckRunConclusion.
 const (
 	CheckRunConclusionActionRequired CheckRunConclusion = "action_required"
@@ -1901,26 +1871,36 @@ type BranchList struct {
 
 // BranchProtection defines model for BranchProtection.
 type BranchProtection struct {
-	CreatedAt     time.Time               `json:"created_at"`
-	DenyDeletion  bool                    `json:"deny_deletion"`
-	DenyForcePush bool                    `json:"deny_force_push"`
-	Id            openapi_types.UUID      `json:"id"`
-	Pattern       BranchProtectionPattern `json:"pattern"`
-	UpdatedAt     time.Time               `json:"updated_at"`
-}
+	CreatedAt     time.Time `json:"created_at"`
+	DenyDeletion  bool      `json:"deny_deletion"`
+	DenyForcePush bool      `json:"deny_force_push"`
 
-// BranchProtectionPattern defines model for BranchProtection.Pattern.
-type BranchProtectionPattern string
+	// DismissStaleReviews Count approvals only for the pull request's current CID/head revision.
+	DismissStaleReviews bool               `json:"dismiss_stale_reviews"`
+	Id                  openapi_types.UUID `json:"id"`
+
+	// Pattern Exact branch name, namespace prefix ending in /*, or * fallback.
+	Pattern string `json:"pattern"`
+
+	// RequireSignedCommits Require every newly reachable commit to carry a valid SSH signature from an active Adenosine SSH key.
+	RequireSignedCommits bool `json:"require_signed_commits"`
+	RequiredApprovals    int  `json:"required_approvals"`
+
+	// RequiredStatusChecks Case-sensitive commit status contexts that must each have a latest success result.
+	RequiredStatusChecks []string  `json:"required_status_checks"`
+	UpdatedAt            time.Time `json:"updated_at"`
+}
 
 // BranchProtectionInput defines model for BranchProtectionInput.
 type BranchProtectionInput struct {
-	DenyDeletion  bool                         `json:"deny_deletion"`
-	DenyForcePush bool                         `json:"deny_force_push"`
-	Pattern       BranchProtectionInputPattern `json:"pattern"`
+	DenyDeletion         bool     `json:"deny_deletion"`
+	DenyForcePush        bool     `json:"deny_force_push"`
+	DismissStaleReviews  bool     `json:"dismiss_stale_reviews"`
+	Pattern              string   `json:"pattern"`
+	RequireSignedCommits bool     `json:"require_signed_commits"`
+	RequiredApprovals    int      `json:"required_approvals"`
+	RequiredStatusChecks []string `json:"required_status_checks"`
 }
-
-// BranchProtectionInputPattern defines model for BranchProtectionInput.Pattern.
-type BranchProtectionInputPattern string
 
 // BranchProtectionList defines model for BranchProtectionList.
 type BranchProtectionList struct {
@@ -4716,7 +4696,7 @@ type ServerInterface interface {
 	// List repository branch protections
 	// (GET /api/v1/repositories/{owner}/{repo}/branch-protections)
 	ListBranchProtections(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListBranchProtectionsParams)
-	// Create a repository-wide branch protection
+	// Create a branch protection policy
 	// (POST /api/v1/repositories/{owner}/{repo}/branch-protections)
 	CreateBranchProtection(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug)
 	// Delete a branch protection

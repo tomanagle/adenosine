@@ -540,17 +540,37 @@ export type CheckRunList = {
 
 export type BranchProtection = {
     id: string;
-    pattern: '*';
+    /**
+     * Exact branch name, namespace prefix ending in *, or * fallback.
+     */
+    pattern: string;
     deny_force_push: boolean;
     deny_deletion: boolean;
+    required_approvals: number;
+    /**
+     * Count approvals only for the pull request's current CID/head revision.
+     */
+    dismiss_stale_reviews: boolean;
+    /**
+     * Case-sensitive commit status contexts that must each have a latest success result.
+     */
+    required_status_checks: Array<string>;
+    /**
+     * Require every newly reachable commit to carry a valid SSH signature from an active Adenosine SSH key.
+     */
+    require_signed_commits: boolean;
     created_at: string;
     updated_at: string;
 };
 
 export type BranchProtectionInput = {
-    pattern: '*';
+    pattern: string;
     deny_force_push: boolean;
     deny_deletion: boolean;
+    required_approvals: number;
+    dismiss_stale_reviews: boolean;
+    required_status_checks: Array<string>;
+    require_signed_commits: boolean;
 };
 
 export type BranchProtectionList = {

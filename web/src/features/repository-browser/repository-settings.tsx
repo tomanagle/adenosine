@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Archive, GitBranch, Send, Settings2, Trash2, Webhook } from 'lucide-react'
+import { Archive, GitBranch, Send, Settings2, ShieldCheck, Trash2, Webhook } from 'lucide-react'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -391,80 +391,223 @@ function ProtectionSettings({ params }: { params: RepositoryRouteParams }) {
   const remove = useMutation(deleteBranchProtectionMutationOptions())
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: branchProtectionsQueryOptions(params).queryKey })
-  const protection = data.items[0]
+  const form = useForm({
+    defaultValues: {
+      pattern: 'main',
+      denyForcePush: true,
+      denyDeletion: true,
+      requiredApprovals: 1,
+      dismissStaleReviews: true,
+      requiredStatusChecks: '',
+      requireSignedCommits: false,
+    },
+    onSubmit: async ({ value }) => {
+      const requiredStatusChecks = value.requiredStatusChecks
+        .split(/[\n,]/)
+        .map((context) => context.trim())
+        .filter(Boolean)
+      await create.mutateAsync({
+        path: { owner: params.owner, repo: params.repo },
+        body: {
+          pattern: value.pattern.trim(),
+          deny_force_push: value.denyForcePush,
+          deny_deletion: value.denyDeletion,
+          required_approvals: value.requiredApprovals,
+          dismiss_stale_reviews: value.dismissStaleReviews,
+          required_status_checks: requiredStatusChecks,
+          require_signed_commits: value.requireSignedCommits,
+        },
+      })
+      await refresh()
+    },
+  })
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <GitBranch className="size-4" /> Branch protection
+          <ShieldCheck className="size-4" /> Branch protection
         </CardTitle>
         <CardDescription>
-          Basic repository-wide guards are enforced inside native receive-pack before Git updates
-          refs.
+          Exact branches outrank namespace rules; the longest namespace outranks the * fallback.
+          Every transport evaluates the same policy before refs move.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-wrap items-center gap-4">
-        {protection ? (
-          <>
-            <div className="min-w-0 flex-1 text-sm">
-              <p className="font-medium">
-                All branches <code className="rounded bg-muted px-1.5 py-0.5">*</code>
-              </p>
-              <p className="mt-1 text-muted-foreground">
-                {[
-                  protection.deny_force_push && 'force pushes',
-                  protection.deny_deletion && 'deletions',
-                ]
-                  .filter(Boolean)
-                  .join(' and ')}{' '}
-                denied
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              disabled={remove.isPending}
-              onClick={() => {
-                void remove
-                  .mutateAsync({
-                    path: { owner: params.owner, repo: params.repo, protection: protection.id },
-                  })
-                  .then(refresh)
-              }}
-            >
-              Disable protection
-            </Button>
-          </>
+      <CardContent className="space-y-6">
+        {data.items.length ? (
+          <div className="divide-y rounded-lg border bg-muted/10">
+            {data.items.map((protection) => (
+              <div
+                className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                key={protection.id}
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <GitBranch className="size-4 text-primary" />
+                    <code className="rounded bg-muted px-1.5 py-0.5 text-sm font-semibold">
+                      {protection.pattern}
+                    </code>
+                    <Badge variant="outline">
+                      {protection.pattern === '*'
+                        ? 'fallback'
+                        : protection.pattern.endsWith('/*')
+                          ? 'namespace'
+                          : 'exact'}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
+                    {protection.deny_force_push ? (
+                      <Badge variant="outline">No force push</Badge>
+                    ) : null}
+                    {protection.deny_deletion ? <Badge variant="outline">No deletion</Badge> : null}
+                    {protection.required_approvals ? (
+                      <Badge variant="outline">
+                        {protection.required_approvals} approval
+                        {protection.required_approvals === 1 ? '' : 's'}
+                      </Badge>
+                    ) : null}
+                    {protection.required_status_checks.map((context) => (
+                      <Badge key={context} variant="outline">
+                        {context}
+                      </Badge>
+                    ))}
+                    {protection.require_signed_commits ? (
+                      <Badge variant="outline">Signed commits</Badge>
+                    ) : null}
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  disabled={remove.isPending}
+                  onClick={() => {
+                    void remove
+                      .mutateAsync({
+                        path: {
+                          owner: params.owner,
+                          repo: params.repo,
+                          protection: protection.id,
+                        },
+                      })
+                      .then(refresh)
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+          </div>
         ) : (
-          <>
-            <p className="min-w-0 flex-1 text-sm text-muted-foreground">
-              Force pushes and branch deletions are currently allowed.
-            </p>
-            <Button
-              disabled={create.isPending}
-              onClick={() => {
-                void create
-                  .mutateAsync({
-                    path: { owner: params.owner, repo: params.repo },
-                    body: { pattern: '*', deny_force_push: true, deny_deletion: true },
-                  })
-                  .then(refresh)
-              }}
-            >
-              Protect all branches
-            </Button>
-          </>
+          <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
+            No rules yet. Branch updates currently rely on repository write permission alone.
+          </div>
         )}
-        {create.isError || remove.isError ? (
-          <Alert className="w-full">
-            <AlertTitle>Protection change failed</AlertTitle>
-            <AlertDescription>
-              {apiErrorMessage(
-                create.error ?? remove.error,
-                'The receive policy could not be changed.',
-              )}
-            </AlertDescription>
-          </Alert>
-        ) : null}
+
+        <form
+          className="grid gap-4 border-t pt-6 sm:grid-cols-2"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void form.handleSubmit()
+          }}
+        >
+          <div className="sm:col-span-2">
+            <p className="text-sm font-semibold">Add a policy</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Use <code>main</code> for one branch, <code>release/*</code> for a namespace, or{' '}
+              <code>*</code> as the fallback.
+            </p>
+          </div>
+          <form.Field name="pattern">
+            {(field) => (
+              <Field htmlFor="protection-pattern" label="Branch pattern">
+                <Input
+                  id="protection-pattern"
+                  maxLength={255}
+                  required
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
+              </Field>
+            )}
+          </form.Field>
+          <form.Field name="requiredApprovals">
+            {(field) => (
+              <Field htmlFor="protection-approvals" label="Required approvals">
+                <Input
+                  id="protection-approvals"
+                  max={100}
+                  min={0}
+                  type="number"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.valueAsNumber || 0)}
+                />
+              </Field>
+            )}
+          </form.Field>
+          <form.Field name="requiredStatusChecks">
+            {(field) => (
+              <Field
+                className="sm:col-span-2"
+                htmlFor="protection-contexts"
+                label="Required status contexts"
+                hint="Comma or line separated; matching is case-sensitive."
+              >
+                <Textarea
+                  id="protection-contexts"
+                  placeholder={'ci/test\nci/build'}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
+              </Field>
+            )}
+          </form.Field>
+          <div className="grid gap-2 sm:col-span-2 sm:grid-cols-2">
+            {(
+              [
+                ['denyForcePush', 'Block force pushes'],
+                ['denyDeletion', 'Block branch deletion'],
+                ['dismissStaleReviews', 'Dismiss stale approvals'],
+                ['requireSignedCommits', 'Require trusted SSH signatures'],
+              ] as const
+            ).map(([name, label]) => (
+              <form.Field key={name} name={name}>
+                {(field) => (
+                  <label
+                    className="flex items-center gap-3 rounded-lg border bg-muted/15 px-3 py-2.5 text-sm"
+                    htmlFor={`protection-${name}`}
+                  >
+                    <Input
+                      checked={field.state.value}
+                      className="size-4"
+                      id={`protection-${name}`}
+                      type="checkbox"
+                      onChange={(event) => field.handleChange(event.target.checked)}
+                    />
+                    {label}
+                  </label>
+                )}
+              </form.Field>
+            ))}
+          </div>
+          <div className="sm:col-span-2">
+            <Button disabled={create.isPending} type="submit">
+              <ShieldCheck className="size-4" />
+              {create.isPending ? 'Adding policy…' : 'Add policy'}
+            </Button>
+          </div>
+          {create.isError || remove.isError ? (
+            <Alert className="sm:col-span-2">
+              <AlertTitle>Protection change failed</AlertTitle>
+              <AlertDescription>
+                {apiErrorMessage(
+                  create.error ?? remove.error,
+                  'The branch policy could not be changed.',
+                )}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+        </form>
       </CardContent>
     </Card>
   )

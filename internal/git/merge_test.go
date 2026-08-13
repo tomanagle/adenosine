@@ -12,8 +12,16 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/adenosine-dev/adenosine/internal/branchprotection"
 	"github.com/adenosine-dev/adenosine/internal/repository"
 )
+
+type rejectingRefAuthorizer struct{ updates []branchprotection.RefUpdate }
+
+func (authorizer *rejectingRefAuthorizer) Authorize(_ context.Context, _ repository.ID, updates []branchprotection.RefUpdate) error {
+	authorizer.updates = append([]branchprotection.RefUpdate(nil), updates...)
+	return errors.New("required status is not successful")
+}
 
 func TestMergeStrategies(t *testing.T) {
 	testCases := []struct {
@@ -180,6 +188,30 @@ func TestMergeCASConflictLeavesBranchUnchanged(t *testing.T) {
 				t.Errorf("main changed from %s to %s", before, after)
 			}
 			fixture.assertNoTransientRefs()
+		})
+	}
+}
+
+func TestMergeBranchProtectionUsesExactProposedObjects(t *testing.T) {
+	testCases := []struct{ name string }{{name: "policy rejects before CAS"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			fixture := newMergeFixture(t, "sha1", false)
+			before := fixture.git("rev-parse", "refs/heads/main")
+			authorizer := &rejectingRefAuthorizer{}
+			if err := fixture.service.ConfigureRefAuthorizer(authorizer); err != nil {
+				t.Fatalf("ConfigureRefAuthorizer() error = %v", err)
+			}
+			_, err := fixture.service.Merge(context.Background(), fixture.id, fixture.request(MergeCommit))
+			if !errors.Is(err, ErrMergeRefRejected) {
+				t.Fatalf("Merge() error = %v, want ErrMergeRefRejected", err)
+			}
+			if after := fixture.git("rev-parse", "refs/heads/main"); after != before {
+				t.Fatalf("main changed from %s to %s", before, after)
+			}
+			if len(authorizer.updates) != 1 || authorizer.updates[0].OldSHA != before || authorizer.updates[0].NewSHA == "" || authorizer.updates[0].Ref != "refs/heads/main" || authorizer.updates[0].EvidenceSHA != fixture.headSHA {
+				t.Fatalf("authorized updates = %+v", authorizer.updates)
+			}
 		})
 	}
 }

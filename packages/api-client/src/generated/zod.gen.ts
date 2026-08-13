@@ -516,17 +516,25 @@ export const zUpdateCheckRunRequest = z.object({
 
 export const zBranchProtection = z.object({
     id: z.uuid(),
-    pattern: z.enum(['*']),
+    pattern: z.string().min(1).max(255),
     deny_force_push: z.boolean(),
     deny_deletion: z.boolean(),
+    required_approvals: z.int().gte(0).lte(100),
+    dismiss_stale_reviews: z.boolean(),
+    required_status_checks: z.array(z.string().min(1).max(100)).max(50),
+    require_signed_commits: z.boolean(),
     created_at: z.iso.datetime({ offset: true }),
     updated_at: z.iso.datetime({ offset: true })
 });
 
 export const zBranchProtectionInput = z.object({
-    pattern: z.enum(['*']),
+    pattern: z.string().min(1).max(255),
     deny_force_push: z.boolean(),
-    deny_deletion: z.boolean()
+    deny_deletion: z.boolean(),
+    required_approvals: z.int().gte(0).lte(100),
+    dismiss_stale_reviews: z.boolean(),
+    required_status_checks: z.array(z.string().min(1).max(100)).max(50),
+    require_signed_commits: z.boolean()
 });
 
 export const zCreateRepositoryForkRequest = z.object({

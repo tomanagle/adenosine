@@ -13,19 +13,24 @@ import (
 
 const createBranchProtection = `-- name: CreateBranchProtection :one
 INSERT INTO core.branch_protections (
-  id, repository_id, pattern, deny_force_push, deny_deletion, created_at, updated_at
+  id, repository_id, pattern, deny_force_push, deny_deletion, required_approvals,
+  dismiss_stale_reviews, required_status_checks, require_signed_commits, created_at, updated_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $6)
-RETURNING id, repository_id, pattern, deny_force_push, deny_deletion, created_at, updated_at
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+RETURNING id, repository_id, pattern, deny_force_push, deny_deletion, created_at, updated_at, required_approvals, dismiss_stale_reviews, required_status_checks, require_signed_commits
 `
 
 type CreateBranchProtectionParams struct {
-	ID            pgtype.UUID        `json:"id"`
-	RepositoryID  pgtype.UUID        `json:"repository_id"`
-	Pattern       string             `json:"pattern"`
-	DenyForcePush bool               `json:"deny_force_push"`
-	DenyDeletion  bool               `json:"deny_deletion"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	ID                   pgtype.UUID        `json:"id"`
+	RepositoryID         pgtype.UUID        `json:"repository_id"`
+	Pattern              string             `json:"pattern"`
+	DenyForcePush        bool               `json:"deny_force_push"`
+	DenyDeletion         bool               `json:"deny_deletion"`
+	RequiredApprovals    int16              `json:"required_approvals"`
+	DismissStaleReviews  bool               `json:"dismiss_stale_reviews"`
+	RequiredStatusChecks []string           `json:"required_status_checks"`
+	RequireSignedCommits bool               `json:"require_signed_commits"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) CreateBranchProtection(ctx context.Context, arg CreateBranchProtectionParams) (CoreBranchProtection, error) {
@@ -35,6 +40,10 @@ func (q *Queries) CreateBranchProtection(ctx context.Context, arg CreateBranchPr
 		arg.Pattern,
 		arg.DenyForcePush,
 		arg.DenyDeletion,
+		arg.RequiredApprovals,
+		arg.DismissStaleReviews,
+		arg.RequiredStatusChecks,
+		arg.RequireSignedCommits,
 		arg.CreatedAt,
 	)
 	var i CoreBranchProtection
@@ -46,6 +55,10 @@ func (q *Queries) CreateBranchProtection(ctx context.Context, arg CreateBranchPr
 		&i.DenyDeletion,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RequiredApprovals,
+		&i.DismissStaleReviews,
+		&i.RequiredStatusChecks,
+		&i.RequireSignedCommits,
 	)
 	return i, err
 }
@@ -68,7 +81,7 @@ func (q *Queries) DeleteBranchProtection(ctx context.Context, arg DeleteBranchPr
 }
 
 const getBranchProtection = `-- name: GetBranchProtection :one
-SELECT id, repository_id, pattern, deny_force_push, deny_deletion, created_at, updated_at FROM core.branch_protections WHERE id = $1 AND repository_id = $2
+SELECT id, repository_id, pattern, deny_force_push, deny_deletion, created_at, updated_at, required_approvals, dismiss_stale_reviews, required_status_checks, require_signed_commits FROM core.branch_protections WHERE id = $1 AND repository_id = $2
 `
 
 type GetBranchProtectionParams struct {
@@ -87,7 +100,70 @@ func (q *Queries) GetBranchProtection(ctx context.Context, arg GetBranchProtecti
 		&i.DenyDeletion,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RequiredApprovals,
+		&i.DismissStaleReviews,
+		&i.RequiredStatusChecks,
+		&i.RequireSignedCommits,
 	)
+	return i, err
+}
+
+const getBranchProtectionReviewSummary = `-- name: GetBranchProtectionReviewSummary :one
+WITH candidate AS (
+  SELECT pull.uri, pull.cid, pull.author_did
+  FROM network.pull_requests AS pull
+  JOIN network.repositories AS projected_repository
+    ON projected_repository.uri = pull.target_repository_uri
+   AND projected_repository.deleted_at IS NULL
+   AND projected_repository.cid IS NOT NULL
+  WHERE projected_repository.local_repository_id = $1
+    AND pull.target_branch = $2
+    AND pull.head_sha = $3
+    AND pull.state = 'open'
+    AND pull.deleted_at IS NULL
+    AND pull.cid IS NOT NULL
+  ORDER BY pull.record_updated_at DESC, pull.uri DESC
+  LIMIT 1
+), latest_reviews AS (
+  SELECT DISTINCT ON (review.author_did) review.author_did, review.verdict
+  FROM network.pull_request_reviews AS review
+  JOIN candidate ON candidate.uri = review.pull_request_uri
+  WHERE review.deleted_at IS NULL
+    AND review.cid IS NOT NULL
+    AND review.author_did <> candidate.author_did
+    AND (NOT $4::boolean OR review.pull_request_cid = candidate.cid)
+  ORDER BY review.author_did, review.record_updated_at DESC, review.uri DESC
+)
+SELECT candidate.uri AS pull_request_uri,
+       count(*) FILTER (WHERE latest_reviews.verdict = 'approve')::integer AS approval_count,
+       coalesce(bool_or(latest_reviews.verdict = 'request_changes'), false)::boolean AS changes_requested
+FROM candidate
+LEFT JOIN latest_reviews ON TRUE
+GROUP BY candidate.uri
+`
+
+type GetBranchProtectionReviewSummaryParams struct {
+	RepositoryID        pgtype.UUID `json:"repository_id"`
+	TargetBranch        string      `json:"target_branch"`
+	HeadSha             string      `json:"head_sha"`
+	DismissStaleReviews bool        `json:"dismiss_stale_reviews"`
+}
+
+type GetBranchProtectionReviewSummaryRow struct {
+	PullRequestUri   string `json:"pull_request_uri"`
+	ApprovalCount    int32  `json:"approval_count"`
+	ChangesRequested bool   `json:"changes_requested"`
+}
+
+func (q *Queries) GetBranchProtectionReviewSummary(ctx context.Context, arg GetBranchProtectionReviewSummaryParams) (GetBranchProtectionReviewSummaryRow, error) {
+	row := q.db.QueryRow(ctx, getBranchProtectionReviewSummary,
+		arg.RepositoryID,
+		arg.TargetBranch,
+		arg.HeadSha,
+		arg.DismissStaleReviews,
+	)
+	var i GetBranchProtectionReviewSummaryRow
+	err := row.Scan(&i.PullRequestUri, &i.ApprovalCount, &i.ChangesRequested)
 	return i, err
 }
 
@@ -110,8 +186,73 @@ func (q *Queries) GetEffectiveReceiveProtection(ctx context.Context, repositoryI
 	return i, err
 }
 
+const listBranchProtectionsForEvaluation = `-- name: ListBranchProtectionsForEvaluation :many
+SELECT id, repository_id, pattern, deny_force_push, deny_deletion, created_at, updated_at, required_approvals, dismiss_stale_reviews, required_status_checks, require_signed_commits
+FROM core.branch_protections
+WHERE repository_id = $1
+ORDER BY pattern, id
+`
+
+func (q *Queries) ListBranchProtectionsForEvaluation(ctx context.Context, repositoryID pgtype.UUID) ([]CoreBranchProtection, error) {
+	rows, err := q.db.Query(ctx, listBranchProtectionsForEvaluation, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CoreBranchProtection{}
+	for rows.Next() {
+		var i CoreBranchProtection
+		if err := rows.Scan(
+			&i.ID,
+			&i.RepositoryID,
+			&i.Pattern,
+			&i.DenyForcePush,
+			&i.DenyDeletion,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.RequiredApprovals,
+			&i.DismissStaleReviews,
+			&i.RequiredStatusChecks,
+			&i.RequireSignedCommits,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProtectedRepositoryIDs = `-- name: ListProtectedRepositoryIDs :many
+SELECT DISTINCT repository_id
+FROM core.branch_protections
+ORDER BY repository_id
+`
+
+func (q *Queries) ListProtectedRepositoryIDs(ctx context.Context) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, listProtectedRepositoryIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []pgtype.UUID{}
+	for rows.Next() {
+		var repository_id pgtype.UUID
+		if err := rows.Scan(&repository_id); err != nil {
+			return nil, err
+		}
+		items = append(items, repository_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const pageBranchProtections = `-- name: PageBranchProtections :many
-SELECT id, repository_id, pattern, deny_force_push, deny_deletion, created_at, updated_at FROM core.branch_protections AS protection
+SELECT id, repository_id, pattern, deny_force_push, deny_deletion, created_at, updated_at, required_approvals, dismiss_stale_reviews, required_status_checks, require_signed_commits FROM core.branch_protections AS protection
 WHERE protection.repository_id = $1
   AND (
     $2::uuid IS NULL
@@ -147,6 +288,10 @@ func (q *Queries) PageBranchProtections(ctx context.Context, arg PageBranchProte
 			&i.DenyDeletion,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.RequiredApprovals,
+			&i.DismissStaleReviews,
+			&i.RequiredStatusChecks,
+			&i.RequireSignedCommits,
 		); err != nil {
 			return nil, err
 		}
@@ -161,18 +306,25 @@ func (q *Queries) PageBranchProtections(ctx context.Context, arg PageBranchProte
 const updateBranchProtection = `-- name: UpdateBranchProtection :one
 UPDATE core.branch_protections
 SET pattern = $1, deny_force_push = $2,
-    deny_deletion = $3, updated_at = $4
-WHERE id = $5 AND repository_id = $6
-RETURNING id, repository_id, pattern, deny_force_push, deny_deletion, created_at, updated_at
+    deny_deletion = $3, required_approvals = $4,
+    dismiss_stale_reviews = $5,
+    required_status_checks = $6,
+    require_signed_commits = $7, updated_at = $8
+WHERE id = $9 AND repository_id = $10
+RETURNING id, repository_id, pattern, deny_force_push, deny_deletion, created_at, updated_at, required_approvals, dismiss_stale_reviews, required_status_checks, require_signed_commits
 `
 
 type UpdateBranchProtectionParams struct {
-	Pattern       string             `json:"pattern"`
-	DenyForcePush bool               `json:"deny_force_push"`
-	DenyDeletion  bool               `json:"deny_deletion"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
-	ID            pgtype.UUID        `json:"id"`
-	RepositoryID  pgtype.UUID        `json:"repository_id"`
+	Pattern              string             `json:"pattern"`
+	DenyForcePush        bool               `json:"deny_force_push"`
+	DenyDeletion         bool               `json:"deny_deletion"`
+	RequiredApprovals    int16              `json:"required_approvals"`
+	DismissStaleReviews  bool               `json:"dismiss_stale_reviews"`
+	RequiredStatusChecks []string           `json:"required_status_checks"`
+	RequireSignedCommits bool               `json:"require_signed_commits"`
+	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
+	ID                   pgtype.UUID        `json:"id"`
+	RepositoryID         pgtype.UUID        `json:"repository_id"`
 }
 
 func (q *Queries) UpdateBranchProtection(ctx context.Context, arg UpdateBranchProtectionParams) (CoreBranchProtection, error) {
@@ -180,6 +332,10 @@ func (q *Queries) UpdateBranchProtection(ctx context.Context, arg UpdateBranchPr
 		arg.Pattern,
 		arg.DenyForcePush,
 		arg.DenyDeletion,
+		arg.RequiredApprovals,
+		arg.DismissStaleReviews,
+		arg.RequiredStatusChecks,
+		arg.RequireSignedCommits,
 		arg.UpdatedAt,
 		arg.ID,
 		arg.RepositoryID,
@@ -193,6 +349,10 @@ func (q *Queries) UpdateBranchProtection(ctx context.Context, arg UpdateBranchPr
 		&i.DenyDeletion,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.RequiredApprovals,
+		&i.DismissStaleReviews,
+		&i.RequiredStatusChecks,
+		&i.RequireSignedCommits,
 	)
 	return i, err
 }

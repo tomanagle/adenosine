@@ -43,8 +43,15 @@ Use the OpenAPI operation rather than guessing behavior. The current conventions
 - Webhook secrets are write-only and encrypted at rest. Deliveries are public-HTTPS-only,
   do not follow redirects, and carry `X-Adenosine-Signature-256: sha256=<hex>` over the exact
   body. Delivery history and explicit redelivery are repository-scoped resources.
-- Basic branch protection currently supports the repository-wide `*` pattern and delegates
-  non-fast-forward and deletion rejection to native Git receive-pack configuration.
+- Branch-protection resources accept an exact branch, a namespace ending in `/*`, or the `*`
+  fallback. Exact matches win, followed by the longest namespace and then the fallback.
+  Policies can reject force pushes and deletion, require pull-request approvals and exact,
+  case-sensitive status contexts, dismiss stale reviews, and require SSH-signed commits.
+  HTTP and SSH pushes are authorized by one managed pre-receive path against Git's exact
+  proposed old/new object IDs before any ref changes. REST pull-request merges use that same
+  evaluator; checks and reviews are read from the exact pull-request head while ancestry and
+  signed-commit rules apply to the proposed merge commit. A multi-ref push is rejected as one
+  operation if any protected update fails.
 - External CI providers use personal access tokens with only `repository:status`; tokens with
   that scope must set `repository_id` and cannot report results for any other repository.
   Commit-status history and check runs are addressed under a full commit

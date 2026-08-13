@@ -115,13 +115,17 @@ type CoreAccount struct {
 }
 
 type CoreBranchProtection struct {
-	ID            pgtype.UUID        `json:"id"`
-	RepositoryID  pgtype.UUID        `json:"repository_id"`
-	Pattern       string             `json:"pattern"`
-	DenyForcePush bool               `json:"deny_force_push"`
-	DenyDeletion  bool               `json:"deny_deletion"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+	ID                   pgtype.UUID        `json:"id"`
+	RepositoryID         pgtype.UUID        `json:"repository_id"`
+	Pattern              string             `json:"pattern"`
+	DenyForcePush        bool               `json:"deny_force_push"`
+	DenyDeletion         bool               `json:"deny_deletion"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
+	RequiredApprovals    int16              `json:"required_approvals"`
+	DismissStaleReviews  bool               `json:"dismiss_stale_reviews"`
+	RequiredStatusChecks []string           `json:"required_status_checks"`
+	RequireSignedCommits bool               `json:"require_signed_commits"`
 }
 
 type CoreCheckRun struct {

@@ -4184,11 +4184,20 @@ func webhookEventStrings(values []generated.WebhookEvent) []string {
 }
 
 func branchProtectionInput(value generated.BranchProtectionInput) branchprotection.Input {
-	return branchprotection.Input{Pattern: string(value.Pattern), DenyForcePush: value.DenyForcePush, DenyDeletion: value.DenyDeletion}
+	return branchprotection.Input{
+		Pattern: value.Pattern, DenyForcePush: value.DenyForcePush, DenyDeletion: value.DenyDeletion,
+		RequiredApprovals: value.RequiredApprovals, DismissStaleReviews: value.DismissStaleReviews,
+		RequiredStatusChecks: append([]string(nil), value.RequiredStatusChecks...), RequireSignedCommits: value.RequireSignedCommits,
+	}
 }
 
 func branchProtectionResponse(value branchprotection.Protection) generated.BranchProtection {
-	return generated.BranchProtection{Id: openapi_types.UUID(value.ID), Pattern: generated.BranchProtectionPattern(value.Pattern), DenyForcePush: value.DenyForcePush, DenyDeletion: value.DenyDeletion, CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
+	return generated.BranchProtection{
+		Id: openapi_types.UUID(value.ID), Pattern: value.Pattern, DenyForcePush: value.DenyForcePush, DenyDeletion: value.DenyDeletion,
+		RequiredApprovals: value.RequiredApprovals, DismissStaleReviews: value.DismissStaleReviews,
+		RequiredStatusChecks: append([]string(nil), value.RequiredStatusChecks...), RequireSignedCommits: value.RequireSignedCommits,
+		CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt,
+	}
 }
 
 func commitStatusResponse(value commitstatus.CommitStatus) generated.CommitStatus {

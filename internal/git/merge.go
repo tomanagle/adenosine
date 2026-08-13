@@ -11,6 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/adenosine-dev/adenosine/internal/branchprotection"
 	"github.com/adenosine-dev/adenosine/internal/repository"
 )
 
@@ -26,6 +27,8 @@ var (
 	ErrMergeConflict = errors.New("Git merge conflict")
 	// ErrMergeRefConflict indicates that the target ref does not match the expected SHA.
 	ErrMergeRefConflict = errors.New("Git merge target ref changed")
+	// ErrMergeRefRejected indicates that branch policy rejected the exact proposed ref update.
+	ErrMergeRefRejected = errors.New("Git merge rejected by branch protection")
 )
 
 // MergeStrategy determines the parent shape of the commit produced by Merge.
@@ -160,6 +163,13 @@ func (service *Service) Merge(ctx context.Context, id repository.ID, request Mer
 	newSHA, err := singleLine(commitOutput.buffer.Bytes())
 	if err != nil || validateMergeSHA(newSHA, shaLength) != nil {
 		return MergeResult{}, fmt.Errorf("parse merge commit: %w", ErrInvalidInput)
+	}
+	if service.refAuthorizer != nil {
+		if err := service.refAuthorizer.Authorize(ctx, id, []branchprotection.RefUpdate{{
+			OldSHA: targetSHA, NewSHA: newSHA, Ref: targetRef, EvidenceSHA: headSHA,
+		}}); err != nil {
+			return MergeResult{}, fmt.Errorf("%w: %v", ErrMergeRefRejected, err)
+		}
 	}
 
 	if service.beforeMergeCAS != nil {
