@@ -30,6 +30,7 @@ type fakePullRequests struct {
 	review            pullrequest.Review
 	status            pullrequest.Status
 	merge             pullrequest.MergeResult
+	checkout          pullrequest.Checkout
 	err               error
 	operation, author string
 	createInput       pullrequest.CreateInput
@@ -37,6 +38,12 @@ type fakePullRequests struct {
 	statusInput       pullrequest.StatusInput
 	mergeInput        pullrequest.MergeInput
 	calls             int
+}
+
+func (fake *fakePullRequests) Checkout(context.Context, string) (pullrequest.Checkout, error) {
+	fake.calls++
+	fake.operation = "checkout"
+	return fake.checkout, fake.err
 }
 
 func (fake *fakePullRequests) List(context.Context, string) (pullrequest.Projection, error) {
@@ -101,12 +108,13 @@ func TestPullRequestEndpoints(t *testing.T) {
 		{name: "anonymous list", method: http.MethodGet, path: "/api/v1/pull-requests?repository_uri=" + restPRTargetURI, operation: "list", manager: &fakePullRequests{projection: pullrequest.Projection{PullRequestCount: 5, OpenPullRequestCount: 3, PullRequests: []pullrequest.ProjectedPullRequest{projected}}}, wantStatus: http.StatusOK, wantCalls: 1},
 		{name: "anonymous detail", method: http.MethodGet, path: "/api/v1/pull-requests/detail?pull_request_uri=" + restPullRequestURI, operation: "get", manager: &fakePullRequests{pullRequest: projected}, wantStatus: http.StatusOK, wantCalls: 1},
 		{name: "anonymous diff", method: http.MethodGet, path: "/api/v1/pull-requests/diff?pull_request_uri=" + restPullRequestURI, operation: "diff", manager: &fakePullRequests{diff: diff}, wantStatus: http.StatusOK, wantCalls: 1},
+		{name: "anonymous checkout target", method: http.MethodGet, path: "/api/v1/pull-requests/checkout?pull_request_uri=" + restPullRequestURI, operation: "checkout", manager: &fakePullRequests{checkout: pullrequest.Checkout{GitHTTPSURL: "https://source.example/repo.git", SourceBranch: "feature", HeadSHA: strings.Repeat("a", 40)}}, wantStatus: http.StatusOK, wantCalls: 1},
 		{name: "anonymous reviews", method: http.MethodGet, path: "/api/v1/pull-requests/reviews?pull_request_uri=" + restPullRequestURI, operation: "reviews", manager: &fakePullRequests{reviews: []pullrequest.ProjectedReview{{Review: review, IndexedAt: createdAt.Add(time.Minute)}}}, wantStatus: http.StatusOK, wantCalls: 1},
 		{name: "create derives session author", method: http.MethodPost, path: "/api/v1/pull-requests", body: createBody, operation: "create", session: true, manager: &fakePullRequests{created: base}, wantStatus: http.StatusAccepted, wantCalls: 1},
 		{name: "review derives session author", method: http.MethodPost, path: "/api/v1/pull-requests/reviews", body: `{"pull_request_uri":"` + restPullRequestURI + `","verdict":"approve","body":"ok"}`, operation: "review", session: true, manager: &fakePullRequests{review: review}, wantStatus: http.StatusAccepted, wantCalls: 1},
 		{name: "status derives target owner", method: http.MethodPut, path: "/api/v1/pull-requests/status", body: `{"pull_request_uri":"` + restPullRequestURI + `","state":"closed"}`, operation: "status", session: true, manager: &fakePullRequests{status: status}, wantStatus: http.StatusAccepted, wantCalls: 1},
 		{name: "merged generic status is rejected", method: http.MethodPut, path: "/api/v1/pull-requests/status", body: `{"pull_request_uri":"` + restPullRequestURI + `","state":"merged"}`, session: true, manager: &fakePullRequests{}, wantStatus: http.StatusUnprocessableEntity},
-		{name: "mutation rejects PAT", method: http.MethodPost, path: "/api/v1/pull-requests", body: createBody, pat: true, manager: &fakePullRequests{}, wantStatus: http.StatusForbidden, wantCode: "permission_denied"},
+		{name: "create accepts repository write PAT", method: http.MethodPost, path: "/api/v1/pull-requests", body: createBody, operation: "create", pat: true, manager: &fakePullRequests{created: base}, wantStatus: http.StatusAccepted, wantCalls: 1},
 		{name: "not found maps stably", method: http.MethodGet, path: "/api/v1/pull-requests/detail?pull_request_uri=" + restPullRequestURI, operation: "get", manager: &fakePullRequests{err: pullrequest.ErrNotFound}, wantStatus: http.StatusNotFound, wantCalls: 1, wantCode: "not_found"},
 		{name: "provider error is redacted", method: http.MethodPost, path: "/api/v1/pull-requests", body: createBody, operation: "create", session: true, manager: &fakePullRequests{err: &pullrequest.ProviderError{Operation: "secret", Err: errors.New("provider-secret")}}, wantStatus: http.StatusBadGateway, wantCalls: 1, wantCode: "pull_request_provider_unavailable"},
 	}
@@ -130,7 +138,7 @@ func TestPullRequestEndpoints(t *testing.T) {
 			if response.Code != testCase.wantStatus || testCase.manager.calls != testCase.wantCalls || testCase.manager.operation != testCase.operation {
 				t.Fatalf("status/calls/operation = %d/%d/%q, want %d/%d/%q body=%s", response.Code, testCase.manager.calls, testCase.manager.operation, testCase.wantStatus, testCase.wantCalls, testCase.operation, response.Body.String())
 			}
-			if testCase.method == http.MethodGet && testCase.wantStatus == http.StatusOK && response.Header().Get("Vary") != "Cookie" {
+			if testCase.method == http.MethodGet && testCase.wantStatus == http.StatusOK && testCase.operation != "checkout" && response.Header().Get("Vary") != "Cookie" {
 				t.Fatalf("Vary = %q, want Cookie", response.Header().Get("Vary"))
 			}
 			if testCase.wantStatus == http.StatusAccepted && (testCase.manager.author != "did:plc:alice" || !strings.Contains(response.Body.String(), `"projected":false`)) {
@@ -146,6 +154,12 @@ func TestPullRequestEndpoints(t *testing.T) {
 				var body generated.PullRequestDiff
 				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.MergeBase != diff.MergeBase || body.HeadRef != diff.HeadRef || body.Diff.Patch != "patch" {
 					t.Fatalf("diff response = %#v, %v", body, err)
+				}
+			}
+			if testCase.name == "anonymous checkout target" {
+				var body generated.PullRequestCheckout
+				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.GitHttpsUrl != "https://source.example/repo.git" || body.SourceBranch != "feature" || body.HeadSha != strings.Repeat("a", 40) {
+					t.Fatalf("checkout response = %#v, %v", body, err)
 				}
 			}
 			if testCase.wantCode != "" {
@@ -176,7 +190,7 @@ func TestMergePullRequestEndpoint(t *testing.T) {
 	}{
 		{name: "session merge", body: `{"pull_request_uri":"` + restPullRequestURI + `","strategy":"merge-commit"}`, session: true, origin: "http://localhost:8080", wantStatus: http.StatusOK, wantCalls: 1},
 		{name: "anonymous denied", body: `{}`, wantStatus: http.StatusUnauthorized, wantCode: "authentication_required"},
-		{name: "PAT denied", body: `{}`, authorization: "Bearer valid-pat", origin: "http://localhost:8080", wantStatus: http.StatusForbidden, wantCode: "permission_denied"},
+		{name: "PAT merge", body: `{"pull_request_uri":"` + restPullRequestURI + `","strategy":"merge-commit"}`, authorization: "Bearer valid-pat", wantStatus: http.StatusOK, wantCalls: 1},
 		{name: "missing origin denied", body: `{}`, session: true, wantStatus: http.StatusForbidden, wantCode: "permission_denied"},
 		{name: "wrong origin denied", body: `{}`, session: true, origin: "http://evil.example", wantStatus: http.StatusForbidden, wantCode: "permission_denied"},
 		{name: "invalid strategy", body: `{"pull_request_uri":"` + restPullRequestURI + `","strategy":"rebase"}`, session: true, origin: "http://localhost:8080", wantStatus: http.StatusUnprocessableEntity, wantCode: "validation_failed"},

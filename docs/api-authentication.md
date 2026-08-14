@@ -19,6 +19,11 @@ Only the token hash and a safe display prefix are persisted. The complete plaint
 PAT scopes and optional repository restriction are enforced per operation. A
 repository-restricted token cannot administer account credentials, and credential
 administration remains session-only even if a PAT has repository write scope.
+Issue creation, pull request creation, and pull request merge accept an account-wide
+`repository:write` PAT. They reject repository-restricted PATs because their portable
+AT URIs may identify repositories on another instance and cannot be safely matched to one
+local repository UUID. Cookie-authenticated forms continue to require exact-origin CSRF
+validation; PAT requests do not send an `Origin` header.
 
 Credential administration is deliberately session-only:
 

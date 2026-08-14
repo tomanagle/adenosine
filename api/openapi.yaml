@@ -103,7 +103,7 @@
         "summary": "Start AT Protocol OAuth login",
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StartATProtoLoginRequest" } } } },
         "responses": {
-          "200": { "description": "Authorization URL", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StartATProtoLoginResponse" } } } },
+          "200": { "description": "Authorization URL", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ATProtoLoginStart" } } } },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "422": { "$ref": "#/components/responses/UnprocessableEntity" },
           "502": { "description": "AT Protocol identity or OAuth provider unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
@@ -599,8 +599,8 @@
         }
       },
       "post": {
-        "operationId": "createIssue", "tags": ["Issues"], "summary": "Publish a reporter-authored issue", "security": [{ "sessionCookie": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "operationId": "createIssue", "tags": ["Issues"], "summary": "Publish a reporter-authored issue", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SessionMutationOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateIssueRequest" } } } },
         "responses": {
           "202": { "description": "Issue published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueMutation" } } } },
@@ -673,8 +673,8 @@
         }
       },
       "post": {
-        "operationId": "createPullRequest", "tags": ["Pull Requests"], "summary": "Publish a contributor-authored pull request", "security": [{ "sessionCookie": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "operationId": "createPullRequest", "tags": ["Pull Requests"], "summary": "Publish a contributor-authored pull request", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SessionMutationOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreatePullRequestRequest" } } } },
         "responses": {
           "202": { "description": "Pull request published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestMutation" } } } },
@@ -698,6 +698,16 @@
         "responses": {
           "200": { "description": "Verified bounded pull request diff", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestDiff" } } } },
           "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "413": { "description": "Diff exceeds the bounded output limit", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/v1/pull-requests/checkout": {
+      "get": {
+        "operationId": "getPullRequestCheckout", "tags": ["Pull Requests"], "summary": "Resolve the canonical Git source for a pull request checkout", "security": [],
+        "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }],
+        "responses": {
+          "200": { "description": "Canonical Git checkout target", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestCheckout" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
         }
       }
     },
@@ -732,8 +742,8 @@
     },
     "/api/v1/pull-requests/merge": {
       "post": {
-        "operationId": "mergePullRequest", "tags": ["Pull Requests"], "summary": "Merge an open pull request into its local target repository", "security": [{ "sessionCookie": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/ExactOrigin" }],
+        "operationId": "mergePullRequest", "tags": ["Pull Requests"], "summary": "Merge an open pull request into its local target repository", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SessionMutationOrigin" }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MergePullRequestRequest" } } } },
         "responses": {
           "200": { "description": "Pull request merged and target-owner status published", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestMerge" } } } },
@@ -1376,6 +1386,7 @@
       "RecordURI": { "name": "record_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "MutationOrigin": { "name": "Origin", "in": "header", "required": false, "description": "Required for browser-session mutations and must exactly match the configured Adenosine origin.", "schema": { "type": "string", "format": "uri" } },
       "ExactOrigin": { "name": "Origin", "in": "header", "required": false, "description": "Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.", "schema": { "type": "string", "format": "uri" } },
+      "SessionMutationOrigin": { "name": "Origin", "in": "header", "required": false, "description": "Required for cookie-authenticated mutations and ignored for personal access token authentication. When required, it must exactly match the configured Adenosine browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.", "schema": { "type": "string", "format": "uri" } },
       "IdempotencyKey": { "name": "Idempotency-Key", "in": "header", "required": false, "schema": { "type": "string", "minLength": 1, "maxLength": 255 } },
       "Limit": { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 } },
       "Cursor": { "name": "cursor", "in": "query", "required": false, "schema": { "type": "string" } },
@@ -1557,7 +1568,7 @@
         "required": ["identifier"],
         "properties": { "identifier": { "type": "string", "minLength": 1, "maxLength": 2048 } }
       },
-      "StartATProtoLoginResponse": {
+      "ATProtoLoginStart": {
         "type": "object",
         "required": ["authorization_url"],
         "properties": { "authorization_url": { "type": "string", "format": "uri" } }
@@ -2120,6 +2131,10 @@
         }
       },
       "PullRequestDiff": { "type": "object", "additionalProperties": false, "required": ["merge_base", "head_ref", "diff"], "properties": { "merge_base": { "type": "string" }, "head_ref": { "type": "string" }, "diff": { "$ref": "#/components/schemas/Diff" } } },
+      "PullRequestCheckout": {
+        "type": "object", "additionalProperties": false, "required": ["git_https_url", "source_branch", "head_sha"],
+        "properties": { "git_https_url": { "type": "string", "format": "uri" }, "source_branch": { "type": "string", "minLength": 1 }, "head_sha": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$" } }
+      },
       "Comment": {
         "type": "object", "additionalProperties": false,
         "required": ["uri", "cid", "author_did", "issue_uri", "issue_cid", "parent_uri", "parent_cid", "body", "created_at", "updated_at", "indexed_at"],

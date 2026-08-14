@@ -226,7 +226,7 @@ export type StartAtProtoLoginRequest = {
     identifier: string;
 };
 
-export type StartAtProtoLoginResponse = {
+export type AtProtoLoginStart = {
     authorization_url: string;
 };
 
@@ -989,6 +989,12 @@ export type PullRequestDiff = {
     diff: Diff;
 };
 
+export type PullRequestCheckout = {
+    git_https_url: string;
+    source_branch: string;
+    head_sha: string;
+};
+
 export type Comment = {
     uri: string;
     cid: string;
@@ -1177,6 +1183,11 @@ export type MutationOrigin = string;
  * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
  */
 export type ExactOrigin = string;
+
+/**
+ * Required for cookie-authenticated mutations and ignored for personal access token authentication. When required, it must exactly match the configured Adenosine browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+ */
+export type SessionMutationOrigin = string;
 
 export type IdempotencyKey = string;
 
@@ -1430,10 +1441,10 @@ export type StartAtProtoLoginResponses = {
     /**
      * Authorization URL
      */
-    200: StartAtProtoLoginResponse;
+    200: AtProtoLoginStart;
 };
 
-export type StartAtProtoLoginResponse2 = StartAtProtoLoginResponses[keyof StartAtProtoLoginResponses];
+export type StartAtProtoLoginResponse = StartAtProtoLoginResponses[keyof StartAtProtoLoginResponses];
 
 export type LogoutData = {
     body?: never;
@@ -3283,7 +3294,7 @@ export type CreateIssueData = {
     body: CreateIssueRequest;
     headers?: {
         /**
-         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         * Required for cookie-authenticated mutations and ignored for personal access token authentication. When required, it must exactly match the configured Adenosine browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
          */
         Origin?: string;
     };
@@ -3605,7 +3616,7 @@ export type CreatePullRequestData = {
     body: CreatePullRequestRequest;
     headers?: {
         /**
-         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         * Required for cookie-authenticated mutations and ignored for personal access token authentication. When required, it must exactly match the configured Adenosine browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
          */
         Origin?: string;
     };
@@ -3721,6 +3732,37 @@ export type GetPullRequestDiffResponses = {
 };
 
 export type GetPullRequestDiffResponse = GetPullRequestDiffResponses[keyof GetPullRequestDiffResponses];
+
+export type GetPullRequestCheckoutData = {
+    body?: never;
+    path?: never;
+    query: {
+        pull_request_uri: string;
+    };
+    url: '/api/v1/pull-requests/checkout';
+};
+
+export type GetPullRequestCheckoutErrors = {
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type GetPullRequestCheckoutError = GetPullRequestCheckoutErrors[keyof GetPullRequestCheckoutErrors];
+
+export type GetPullRequestCheckoutResponses = {
+    /**
+     * Canonical Git checkout target
+     */
+    200: PullRequestCheckout;
+};
+
+export type GetPullRequestCheckoutResponse = GetPullRequestCheckoutResponses[keyof GetPullRequestCheckoutResponses];
 
 export type ListPullRequestReviewsData = {
     body?: never;
@@ -3869,7 +3911,7 @@ export type MergePullRequestData = {
     body: MergePullRequestRequest;
     headers?: {
         /**
-         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         * Required for cookie-authenticated mutations and ignored for personal access token authentication. When required, it must exactly match the configured Adenosine browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
          */
         Origin?: string;
     };
