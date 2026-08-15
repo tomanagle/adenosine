@@ -22,29 +22,33 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/profile"
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
 	"github.com/adenosine-dev/adenosine/internal/star"
+	"github.com/adenosine-dev/adenosine/internal/transfer"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 )
 
 const (
-	ProfileCollection                = "dev.adenosine.profile"
-	RepositoryCollection             = "dev.adenosine.repo"
-	StarCollection                   = star.Collection
-	IssueCollection                  = issue.Collection
-	IssueStatusCollection            = issue.StatusCollection
-	PullRequestCollection            = pullrequest.Collection
-	PullRequestStatusCollection      = pullrequest.StatusCollection
-	PullRequestReviewCollection      = pullrequest.ReviewCollection
-	OrganizationCollection           = "dev.adenosine.organization"
-	OrganizationGrantCollection      = "dev.adenosine.organizationGrant"
-	OrganizationMembershipCollection = "dev.adenosine.organizationMembership"
-	OrganizationRevocationCollection = "dev.adenosine.organizationRevocation"
-	maxEventBytes                    = 1 << 20
+	ProfileCollection                      = "dev.adenosine.profile"
+	RepositoryCollection                   = "dev.adenosine.repo"
+	StarCollection                         = star.Collection
+	IssueCollection                        = issue.Collection
+	IssueStatusCollection                  = issue.StatusCollection
+	PullRequestCollection                  = pullrequest.Collection
+	PullRequestStatusCollection            = pullrequest.StatusCollection
+	PullRequestReviewCollection            = pullrequest.ReviewCollection
+	OrganizationCollection                 = "dev.adenosine.organization"
+	OrganizationGrantCollection            = "dev.adenosine.organizationGrant"
+	OrganizationMembershipCollection       = "dev.adenosine.organizationMembership"
+	OrganizationRevocationCollection       = "dev.adenosine.organizationRevocation"
+	RepositoryTransferCollection           = transfer.ProposalCollection
+	RepositoryTransferAcceptanceCollection = transfer.AcceptanceCollection
+	maxEventBytes                          = 1 << 20
 )
 
 var (
 	slugPattern             = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
 	organizationSlugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
 	starRKeyPattern         = regexp.MustCompile(`^[a-z2-7]{52}$`)
+	transferRKeyPattern     = regexp.MustCompile(`^[0-9a-f]{32}$`)
 )
 
 // ErrInvalidEvent identifies untrusted input which should be acknowledged and discarded.
@@ -60,26 +64,28 @@ type Event struct {
 
 // RecordEvent is a validated Tap record mutation.
 type RecordEvent struct {
-	DID                    string
-	Collection             string
-	RKey                   string
-	URI                    string
-	Action                 string
-	CID                    string
-	Raw                    []byte
-	Profile                *ProfileRecord
-	Repository             *RepositoryRecord
-	Star                   *StarRecord
-	Issue                  *issue.Record
-	IssueComment           *issue.CommentRecord
-	IssueStatus            *issue.StatusRecord
-	PullRequest            *pullrequest.Record
-	PullRequestStatus      *pullrequest.StatusRecord
-	PullRequestReview      *pullrequest.ReviewRecord
-	Organization           *OrganizationRecord
-	OrganizationGrant      *OrganizationGrantRecord
-	OrganizationMembership *OrganizationMembershipRecord
-	OrganizationRevocation *OrganizationRevocationRecord
+	DID                          string
+	Collection                   string
+	RKey                         string
+	URI                          string
+	Action                       string
+	CID                          string
+	Raw                          []byte
+	Profile                      *ProfileRecord
+	Repository                   *RepositoryRecord
+	Star                         *StarRecord
+	Issue                        *issue.Record
+	IssueComment                 *issue.CommentRecord
+	IssueStatus                  *issue.StatusRecord
+	PullRequest                  *pullrequest.Record
+	PullRequestStatus            *pullrequest.StatusRecord
+	PullRequestReview            *pullrequest.ReviewRecord
+	Organization                 *OrganizationRecord
+	OrganizationGrant            *OrganizationGrantRecord
+	OrganizationMembership       *OrganizationMembershipRecord
+	OrganizationRevocation       *OrganizationRevocationRecord
+	RepositoryTransfer           *RepositoryTransferRecord
+	RepositoryTransferAcceptance *RepositoryTransferAcceptanceRecord
 }
 
 // IdentityEvent is a validated Tap identity projection.
@@ -101,17 +107,34 @@ type ProfileRecord struct {
 
 // RepositoryRecord is the portable repository projection.
 type RepositoryRecord struct {
-	Slug          string
-	Name          string
-	Description   string
-	DefaultBranch string
-	GitHTTPS      string
-	GitSSH        string
-	Web           string
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	Organization  *StrongRef
-	ForkedFrom    *StrongRef
+	Slug            string
+	Name            string
+	Description     string
+	DefaultBranch   string
+	GitHTTPS        string
+	GitSSH          string
+	Web             string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	Organization    *StrongRef
+	ForkedFrom      *StrongRef
+	TransferredFrom *StrongRef
+	TransferredTo   *StrongRef
+}
+
+type RepositoryTransferRecord struct {
+	Repository              StrongRef
+	DestinationDID          string
+	DestinationOrganization *StrongRef
+	DestinationOwner        string
+	CreatedAt               time.Time
+	ExpiresAt               time.Time
+}
+
+type RepositoryTransferAcceptanceRecord struct {
+	Proposal   StrongRef
+	Repository StrongRef
+	CreatedAt  time.Time
 }
 
 // StarRecord is the decoded subset needed by the federation projection.
@@ -244,7 +267,7 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 	if err != nil || collection.String() != wire.Collection {
 		return RecordEvent{}, invalid("collection is not a canonical NSID")
 	}
-	if wire.Collection != ProfileCollection && wire.Collection != RepositoryCollection && wire.Collection != StarCollection && wire.Collection != IssueCollection && wire.Collection != issue.CommentCollection && wire.Collection != IssueStatusCollection && wire.Collection != PullRequestCollection && wire.Collection != PullRequestStatusCollection && wire.Collection != PullRequestReviewCollection && wire.Collection != OrganizationCollection && wire.Collection != OrganizationGrantCollection && wire.Collection != OrganizationMembershipCollection && wire.Collection != OrganizationRevocationCollection {
+	if wire.Collection != ProfileCollection && wire.Collection != RepositoryCollection && wire.Collection != StarCollection && wire.Collection != IssueCollection && wire.Collection != issue.CommentCollection && wire.Collection != IssueStatusCollection && wire.Collection != PullRequestCollection && wire.Collection != PullRequestStatusCollection && wire.Collection != PullRequestReviewCollection && wire.Collection != OrganizationCollection && wire.Collection != OrganizationGrantCollection && wire.Collection != OrganizationMembershipCollection && wire.Collection != OrganizationRevocationCollection && wire.Collection != RepositoryTransferCollection && wire.Collection != RepositoryTransferAcceptanceCollection {
 		return RecordEvent{}, invalid("unsupported collection %q", wire.Collection)
 	}
 	rkey, err := syntax.ParseRecordKey(wire.RKey)
@@ -289,6 +312,9 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 	if wire.Collection == OrganizationMembershipCollection && !starRKeyPattern.MatchString(wire.RKey) {
 		return RecordEvent{}, invalid("organization membership rkey is not deterministic key shaped")
 	}
+	if wire.Collection == RepositoryTransferCollection && !transferRKeyPattern.MatchString(wire.RKey) {
+		return RecordEvent{}, invalid("repository transfer rkey is not UUID shaped")
+	}
 	switch wire.Action {
 	case "delete":
 		if wire.CID != "" || len(wire.Record) != 0 {
@@ -321,6 +347,12 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 		}
 		if value.ForkedFrom != nil && value.ForkedFrom.URI == result.URI {
 			return RecordEvent{}, invalid("repository cannot be forked from itself")
+		}
+		if (value.TransferredFrom != nil && value.TransferredFrom.URI == result.URI) || (value.TransferredTo != nil && value.TransferredTo.URI == result.URI) {
+			return RecordEvent{}, invalid("repository transfer cannot reference itself")
+		}
+		if value.TransferredFrom != nil && value.TransferredTo != nil && value.TransferredFrom.URI == value.TransferredTo.URI {
+			return RecordEvent{}, invalid("repository transfer predecessor and successor must differ")
 		}
 		result.Repository = &value
 	} else if wire.Collection == StarCollection {
@@ -409,12 +441,27 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 			return RecordEvent{}, invalid("organization membership rkey does not match organization URI")
 		}
 		result.OrganizationMembership = &value
-	} else {
+	} else if wire.Collection == OrganizationRevocationCollection {
 		value, err := decodeOrganizationRevocationRecord(wire.Record)
 		if err != nil {
 			return RecordEvent{}, err
 		}
 		result.OrganizationRevocation = &value
+	} else if wire.Collection == RepositoryTransferCollection {
+		value, err := decodeRepositoryTransferRecord(wire.Record)
+		if err != nil {
+			return RecordEvent{}, err
+		}
+		result.RepositoryTransfer = &value
+	} else {
+		value, err := decodeRepositoryTransferAcceptanceRecord(wire.Record)
+		if err != nil {
+			return RecordEvent{}, err
+		}
+		if wire.RKey != transfer.AcceptanceRecordKey(value.Proposal.URI) {
+			return RecordEvent{}, invalid("repository transfer acceptance rkey does not match proposal URI")
+		}
+		result.RepositoryTransferAcceptance = &value
 	}
 	return result, nil
 }
@@ -838,14 +885,16 @@ func validateStrongRef(value StrongRef, collection string) error {
 
 func decodeRepositoryRecord(raw []byte) (RepositoryRecord, error) {
 	var wire struct {
-		Type          string     `json:"$type"`
-		Slug          string     `json:"slug"`
-		Name          string     `json:"name"`
-		Description   string     `json:"description,omitempty"`
-		Organization  *StrongRef `json:"organization,omitempty"`
-		ForkedFrom    *StrongRef `json:"forkedFrom,omitempty"`
-		DefaultBranch string     `json:"defaultBranch"`
-		Git           struct {
+		Type            string     `json:"$type"`
+		Slug            string     `json:"slug"`
+		Name            string     `json:"name"`
+		Description     string     `json:"description,omitempty"`
+		Organization    *StrongRef `json:"organization,omitempty"`
+		ForkedFrom      *StrongRef `json:"forkedFrom,omitempty"`
+		TransferredFrom *StrongRef `json:"transferredFrom,omitempty"`
+		TransferredTo   *StrongRef `json:"transferredTo,omitempty"`
+		DefaultBranch   string     `json:"defaultBranch"`
+		Git             struct {
 			HTTPS string `json:"https"`
 			SSH   string `json:"ssh,omitempty"`
 		} `json:"git"`
@@ -889,6 +938,16 @@ func decodeRepositoryRecord(raw []byte) (RepositoryRecord, error) {
 			return RepositoryRecord{}, err
 		}
 	}
+	if wire.TransferredFrom != nil {
+		if err := validateStrongRef(*wire.TransferredFrom, RepositoryCollection); err != nil {
+			return RepositoryRecord{}, err
+		}
+	}
+	if wire.TransferredTo != nil {
+		if err := validateStrongRef(*wire.TransferredTo, RepositoryCollection); err != nil {
+			return RepositoryRecord{}, err
+		}
+	}
 	createdAt, err := canonicalDatetime(wire.CreatedAt)
 	if err != nil {
 		return RepositoryRecord{}, err
@@ -902,8 +961,75 @@ func decodeRepositoryRecord(raw []byte) (RepositoryRecord, error) {
 	}
 	return RepositoryRecord{
 		Slug: wire.Slug, Name: wire.Name, Description: wire.Description, DefaultBranch: wire.DefaultBranch,
-		GitHTTPS: wire.Git.HTTPS, GitSSH: wire.Git.SSH, Web: wire.Web, CreatedAt: createdAt, UpdatedAt: updatedAt, Organization: wire.Organization, ForkedFrom: wire.ForkedFrom,
+		GitHTTPS: wire.Git.HTTPS, GitSSH: wire.Git.SSH, Web: wire.Web, CreatedAt: createdAt, UpdatedAt: updatedAt,
+		Organization: wire.Organization, ForkedFrom: wire.ForkedFrom,
+		TransferredFrom: wire.TransferredFrom, TransferredTo: wire.TransferredTo,
 	}, nil
+}
+
+func decodeRepositoryTransferRecord(raw []byte) (RepositoryTransferRecord, error) {
+	var wire struct {
+		Type                    string     `json:"$type"`
+		Repository              StrongRef  `json:"repository"`
+		DestinationDID          string     `json:"destinationDID"`
+		DestinationOrganization *StrongRef `json:"destinationOrganization,omitempty"`
+		DestinationOwner        string     `json:"destinationOwner"`
+		CreatedAt               string     `json:"createdAt"`
+		ExpiresAt               string     `json:"expiresAt"`
+	}
+	if err := decodeStrict(raw, &wire); err != nil {
+		return RepositoryTransferRecord{}, invalid("decode repository transfer: %v", err)
+	}
+	if wire.Type != RepositoryTransferCollection || canonicalDID(wire.DestinationDID) != nil || !validText(wire.DestinationOwner, 253, 253, true) {
+		return RepositoryTransferRecord{}, invalid("repository transfer fields are invalid")
+	}
+	if err := validateStrongRef(wire.Repository, RepositoryCollection); err != nil {
+		return RepositoryTransferRecord{}, err
+	}
+	if wire.DestinationOrganization != nil {
+		if err := validateStrongRef(*wire.DestinationOrganization, OrganizationCollection); err != nil {
+			return RepositoryTransferRecord{}, err
+		}
+	}
+	createdAt, err := canonicalDatetime(wire.CreatedAt)
+	if err != nil {
+		return RepositoryTransferRecord{}, err
+	}
+	expiresAt, err := canonicalDatetime(wire.ExpiresAt)
+	if err != nil || !expiresAt.After(createdAt) {
+		return RepositoryTransferRecord{}, invalid("repository transfer expiry is invalid")
+	}
+	return RepositoryTransferRecord{
+		Repository: wire.Repository, DestinationDID: wire.DestinationDID,
+		DestinationOrganization: wire.DestinationOrganization, DestinationOwner: wire.DestinationOwner,
+		CreatedAt: createdAt, ExpiresAt: expiresAt,
+	}, nil
+}
+
+func decodeRepositoryTransferAcceptanceRecord(raw []byte) (RepositoryTransferAcceptanceRecord, error) {
+	var wire struct {
+		Type       string    `json:"$type"`
+		Proposal   StrongRef `json:"proposal"`
+		Repository StrongRef `json:"repository"`
+		CreatedAt  string    `json:"createdAt"`
+	}
+	if err := decodeStrict(raw, &wire); err != nil {
+		return RepositoryTransferAcceptanceRecord{}, invalid("decode repository transfer acceptance: %v", err)
+	}
+	if wire.Type != RepositoryTransferAcceptanceCollection {
+		return RepositoryTransferAcceptanceRecord{}, invalid("repository transfer acceptance type is invalid")
+	}
+	if err := validateStrongRef(wire.Proposal, RepositoryTransferCollection); err != nil {
+		return RepositoryTransferAcceptanceRecord{}, err
+	}
+	if err := validateStrongRef(wire.Repository, RepositoryCollection); err != nil {
+		return RepositoryTransferAcceptanceRecord{}, err
+	}
+	createdAt, err := canonicalDatetime(wire.CreatedAt)
+	if err != nil {
+		return RepositoryTransferAcceptanceRecord{}, err
+	}
+	return RepositoryTransferAcceptanceRecord{Proposal: wire.Proposal, Repository: wire.Repository, CreatedAt: createdAt}, nil
 }
 
 func validText(value string, maximumBytes, maximumRunes int, required bool) bool {

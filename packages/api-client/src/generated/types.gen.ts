@@ -544,6 +544,39 @@ export type RepositoryForkList = {
     fork_count: number;
 };
 
+export type CreateRepositoryTransferRequest = {
+    /**
+     * Account handle, DID, or organization slug in the shared owner namespace.
+     */
+    destination_owner: string;
+};
+
+export type RepositoryTransfer = {
+    id: string;
+    repository_id: string;
+    source_owner: string;
+    destination_owner: string;
+    source_repository?: RepositoryStrongRef;
+    proposal?: RepositoryStrongRef;
+    successor?: RepositoryStrongRef;
+    acceptance?: RepositoryStrongRef;
+    status: 'pending' | 'completed' | 'cancelled';
+    created_at: string;
+    expires_at: string;
+    /**
+     * Durable start of the retryable acceptance workflow. Once set, cancellation is no longer safe.
+     */
+    acceptance_started_at?: string | null;
+    accepted_at?: string | null;
+    accepted_by?: string | null;
+    cancelled_at?: string | null;
+};
+
+export type RepositoryTransferList = {
+    items: Array<RepositoryTransfer>;
+    page: Page;
+};
+
 export type NetworkRepositoryList = {
     items: Array<Repository>;
     page: Page;
@@ -575,6 +608,18 @@ export type SyncRepository = {
     web?: string | null;
     forked_from_uri?: string | null;
     forked_from_cid?: string | null;
+    transferred_from_uri?: string | null;
+    transferred_from_cid?: string | null;
+    transferred_to_uri?: string | null;
+    transferred_to_cid?: string | null;
+    /**
+     * Immutable first repository URI in this transfer lineage.
+     */
+    lineage_uri: string;
+    /**
+     * Current repository URI selected by a complete bilateral transfer chain.
+     */
+    canonical_uri: string;
     record_created_at?: string | null;
     record_updated_at?: string | null;
     indexed_at: string;
@@ -3108,6 +3153,244 @@ export type SyncRepositoryForkResponses = {
 };
 
 export type SyncRepositoryForkResponse = SyncRepositoryForkResponses[keyof SyncRepositoryForkResponses];
+
+export type ListRepositoryTransfersData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/transfers';
+};
+
+export type ListRepositoryTransfersErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListRepositoryTransfersError = ListRepositoryTransfersErrors[keyof ListRepositoryTransfersErrors];
+
+export type ListRepositoryTransfersResponses = {
+    /**
+     * A cursor page of repository transfers
+     */
+    200: RepositoryTransferList;
+};
+
+export type ListRepositoryTransfersResponse = ListRepositoryTransfersResponses[keyof ListRepositoryTransfersResponses];
+
+export type CreateRepositoryTransferData = {
+    body: CreateRepositoryTransferRequest;
+    headers?: {
+        /**
+         * Required for browser-session mutations and must exactly match the configured Adenosine origin.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/transfers';
+};
+
+export type CreateRepositoryTransferErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type CreateRepositoryTransferError = CreateRepositoryTransferErrors[keyof CreateRepositoryTransferErrors];
+
+export type CreateRepositoryTransferResponses = {
+    /**
+     * Transfer proposal created or resumed
+     */
+    202: RepositoryTransfer;
+};
+
+export type CreateRepositoryTransferResponse = CreateRepositoryTransferResponses[keyof CreateRepositoryTransferResponses];
+
+export type DeleteRepositoryTransferData = {
+    body?: never;
+    headers?: {
+        /**
+         * Required for browser-session mutations and must exactly match the configured Adenosine origin.
+         */
+        Origin?: string;
+    };
+    path: {
+        transfer: string;
+    };
+    query?: never;
+    url: '/api/v1/repository-transfers/{transfer}';
+};
+
+export type DeleteRepositoryTransferErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type DeleteRepositoryTransferError = DeleteRepositoryTransferErrors[keyof DeleteRepositoryTransferErrors];
+
+export type DeleteRepositoryTransferResponses = {
+    /**
+     * Transfer cancelled
+     */
+    204: void;
+};
+
+export type DeleteRepositoryTransferResponse = DeleteRepositoryTransferResponses[keyof DeleteRepositoryTransferResponses];
+
+export type GetRepositoryTransferData = {
+    body?: never;
+    path: {
+        transfer: string;
+    };
+    query?: never;
+    url: '/api/v1/repository-transfers/{transfer}';
+};
+
+export type GetRepositoryTransferErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetRepositoryTransferError = GetRepositoryTransferErrors[keyof GetRepositoryTransferErrors];
+
+export type GetRepositoryTransferResponses = {
+    /**
+     * Repository transfer state
+     */
+    200: RepositoryTransfer;
+};
+
+export type GetRepositoryTransferResponse = GetRepositoryTransferResponses[keyof GetRepositoryTransferResponses];
+
+export type CreateRepositoryTransferAcceptanceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Required for browser-session mutations and must exactly match the configured Adenosine origin.
+         */
+        Origin?: string;
+    };
+    path: {
+        transfer: string;
+    };
+    query?: never;
+    url: '/api/v1/repository-transfers/{transfer}/acceptance';
+};
+
+export type CreateRepositoryTransferAcceptanceErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type CreateRepositoryTransferAcceptanceError = CreateRepositoryTransferAcceptanceErrors[keyof CreateRepositoryTransferAcceptanceErrors];
+
+export type CreateRepositoryTransferAcceptanceResponses = {
+    /**
+     * Transfer completed
+     */
+    200: RepositoryTransfer;
+};
+
+export type CreateRepositoryTransferAcceptanceResponse = CreateRepositoryTransferAcceptanceResponses[keyof CreateRepositoryTransferAcceptanceResponses];
 
 export type DeleteStarData = {
     body?: never;

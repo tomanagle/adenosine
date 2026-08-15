@@ -35,6 +35,7 @@ import (
 	searchservice "github.com/adenosine-dev/adenosine/internal/search"
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/syncproxy"
+	"github.com/adenosine-dev/adenosine/internal/transfer"
 	webhookservice "github.com/adenosine-dev/adenosine/internal/webhook"
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -100,6 +101,14 @@ type RepositoryManager interface {
 	Create(context.Context, repository.CreateInput) (repository.Repository, error)
 	GetByOwnerSlug(context.Context, string, string) (repository.Repository, error)
 	ListByOrganization(context.Context, uuid.UUID) ([]repository.Repository, error)
+}
+
+type RepositoryTransferManager interface {
+	Initiate(context.Context, repository.Repository, string, string) (transfer.Transfer, error)
+	Get(context.Context, uuid.UUID, string) (transfer.Transfer, error)
+	Page(context.Context, repository.ID, string, *uuid.UUID, int) (transfer.Page, error)
+	Accept(context.Context, uuid.UUID, string) (transfer.Transfer, error)
+	Cancel(context.Context, uuid.UUID, string) (transfer.Transfer, error)
 }
 
 type repositoryForkManager interface {
@@ -435,6 +444,7 @@ type Dependencies struct {
 	Teams                       OrganizationTeamManager
 	Collaborators               OrganizationCollaboratorManager
 	Repositories                RepositoryManager
+	Transfers                   RepositoryTransferManager
 	Endpoints                   RepositoryEndpointBuilder
 	Discovery                   NetworkRepositoryDiscovery
 	Search                      SearchManager
@@ -3682,6 +3692,16 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusConflict, "pull_request_conflict", "The pull request conflicts with existing state", err)
 	case errors.Is(err, pullrequest.ErrProvider):
 		handler.writeAPIError(w, r, http.StatusBadGateway, "pull_request_provider_unavailable", "The pull request provider is unavailable", err)
+	case errors.Is(err, transfer.ErrNotFound):
+		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested repository transfer was not found", err)
+	case errors.Is(err, transfer.ErrForbidden):
+		handler.writeAPIError(w, r, http.StatusForbidden, "permission_denied", "Permission denied", err)
+	case errors.Is(err, transfer.ErrConflict):
+		handler.writeAPIError(w, r, http.StatusConflict, "repository_transfer_conflict", "The repository transfer conflicts with existing state", err)
+	case errors.Is(err, transfer.ErrValidation):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The repository transfer request is invalid", err)
+	case errors.Is(err, transfer.ErrProvider):
+		handler.writeAPIError(w, r, http.StatusBadGateway, "repository_transfer_provider_unavailable", "The repository transfer provider is unavailable", err)
 	case errors.Is(err, gitservice.ErrInvalidInput):
 		handler.writeAPIError(w, r, http.StatusBadRequest, "malformed_request", "The Git revision, path, or object ID is invalid", err)
 	case errors.Is(err, gitservice.ErrObjectNotFound):

@@ -493,6 +493,32 @@ export const zRepository = z.object({
     updated_at: z.iso.datetime({ offset: true })
 });
 
+export const zCreateRepositoryTransferRequest = z.object({
+    destination_owner: z.string().min(1).max(253)
+});
+
+export const zRepositoryTransfer = z.object({
+    id: z.uuid(),
+    repository_id: z.uuid(),
+    source_owner: z.string(),
+    destination_owner: z.string(),
+    source_repository: zRepositoryStrongRef.optional(),
+    proposal: zRepositoryStrongRef.optional(),
+    successor: zRepositoryStrongRef.optional(),
+    acceptance: zRepositoryStrongRef.optional(),
+    status: z.enum([
+        'pending',
+        'completed',
+        'cancelled'
+    ]),
+    created_at: z.iso.datetime({ offset: true }),
+    expires_at: z.iso.datetime({ offset: true }),
+    acceptance_started_at: z.iso.datetime({ offset: true }).nullish(),
+    accepted_at: z.iso.datetime({ offset: true }).nullish(),
+    accepted_by: z.string().nullish(),
+    cancelled_at: z.iso.datetime({ offset: true }).nullish()
+});
+
 /**
  * Flat approved network.repositories projection materialized from Electric insert rows. This is intentionally distinct from the nested REST Repository model.
  */
@@ -509,6 +535,12 @@ export const zSyncRepository = z.object({
     web: z.string().nullish(),
     forked_from_uri: z.string().nullish(),
     forked_from_cid: z.string().nullish(),
+    transferred_from_uri: z.string().nullish(),
+    transferred_from_cid: z.string().nullish(),
+    transferred_to_uri: z.string().nullish(),
+    transferred_to_cid: z.string().nullish(),
+    lineage_uri: z.string(),
+    canonical_uri: z.string(),
     record_created_at: z.iso.datetime({ offset: true }).nullish(),
     record_updated_at: z.iso.datetime({ offset: true }).nullish(),
     indexed_at: z.iso.datetime({ offset: true }),
@@ -1145,6 +1177,11 @@ export const zRepositoryForkList = z.object({
     items: z.array(zRepository),
     page: zPage,
     fork_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
+});
+
+export const zRepositoryTransferList = z.object({
+    items: z.array(zRepositoryTransfer),
+    page: zPage
 });
 
 export const zNetworkRepositoryList = z.object({
@@ -1832,6 +1869,72 @@ export const zSyncRepositoryForkPath = z.object({
  * Fork synchronization result
  */
 export const zSyncRepositoryForkResponse = zRepositoryForkSync;
+
+export const zListRepositoryTransfersPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+export const zListRepositoryTransfersQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * A cursor page of repository transfers
+ */
+export const zListRepositoryTransfersResponse = zRepositoryTransferList;
+
+export const zCreateRepositoryTransferBody = zCreateRepositoryTransferRequest;
+
+export const zCreateRepositoryTransferHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zCreateRepositoryTransferPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+/**
+ * Transfer proposal created or resumed
+ */
+export const zCreateRepositoryTransferResponse = zRepositoryTransfer;
+
+export const zDeleteRepositoryTransferHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zDeleteRepositoryTransferPath = z.object({
+    transfer: z.uuid()
+});
+
+/**
+ * Transfer cancelled
+ */
+export const zDeleteRepositoryTransferResponse = z.void();
+
+export const zGetRepositoryTransferPath = z.object({
+    transfer: z.uuid()
+});
+
+/**
+ * Repository transfer state
+ */
+export const zGetRepositoryTransferResponse = zRepositoryTransfer;
+
+export const zCreateRepositoryTransferAcceptanceHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zCreateRepositoryTransferAcceptancePath = z.object({
+    transfer: z.uuid()
+});
+
+/**
+ * Transfer completed
+ */
+export const zCreateRepositoryTransferAcceptanceResponse = zRepositoryTransfer;
 
 export const zDeleteStarHeaders = z.object({
     Origin: z.url().optional()

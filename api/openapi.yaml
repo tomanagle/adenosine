@@ -13,6 +13,7 @@
     { "name": "Profiles" },
     { "name": "Organizations" },
     { "name": "Repositories" },
+    { "name": "Repository Transfers", "description": "Bilateral, retryable repository ownership transfers. Public transfers are represented by portable AT Protocol proposal, successor, and acceptance records." },
     { "name": "Credentials" },
     { "name": "Passkeys" },
     { "name": "Issues" },
@@ -557,6 +558,44 @@
           "200": { "description": "Fork synchronization result", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryForkSync" } } } },
           "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" }
         }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/transfers": {
+      "get": {
+        "operationId": "listRepositoryTransfers", "tags": ["Repository Transfers"], "summary": "List repository transfer history visible to the current owner", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": {
+          "200": { "description": "A cursor page of repository transfers", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryTransferList" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "post": {
+        "operationId": "createRepositoryTransfer", "tags": ["Repository Transfers"], "summary": "Propose transferring a repository to another owner", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/MutationOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateRepositoryTransferRequest" } } } },
+        "responses": {
+          "202": { "description": "Transfer proposal created or resumed", "headers": { "Location": { "description": "Canonical API URL for the transfer", "schema": { "type": "string", "format": "uri-reference" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryTransfer" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" }
+        }
+      }
+    },
+    "/api/v1/repository-transfers/{transfer}": {
+      "get": {
+        "operationId": "getRepositoryTransfer", "tags": ["Repository Transfers"], "summary": "Inspect a repository transfer as its source or destination owner", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "transfer", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Repository transfer state", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryTransfer" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "delete": {
+        "operationId": "deleteRepositoryTransfer", "tags": ["Repository Transfers"], "summary": "Cancel a pending transfer before acceptance", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "transfer", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "$ref": "#/components/parameters/MutationOrigin" }],
+        "responses": { "204": { "description": "Transfer cancelled", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "502": { "$ref": "#/components/responses/BadGateway" } }
+      }
+    },
+    "/api/v1/repository-transfers/{transfer}/acceptance": {
+      "post": {
+        "operationId": "createRepositoryTransferAcceptance", "tags": ["Repository Transfers"], "summary": "Accept a pending transfer as the destination owner", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "transfer", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "$ref": "#/components/parameters/MutationOrigin" }],
+        "responses": { "200": { "description": "Transfer completed", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryTransfer" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } }
       }
     },
     "/api/v1/stars": {
@@ -1855,6 +1894,32 @@
       },
       "RepositoryList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }, "page": { "$ref": "#/components/schemas/Page" } } },
       "RepositoryForkList": { "type": "object", "additionalProperties": false, "required": ["items", "page", "fork_count"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }, "page": { "$ref": "#/components/schemas/Page" }, "fork_count": { "type": "integer", "format": "int64", "minimum": 0 } } },
+      "CreateRepositoryTransferRequest": {
+        "type": "object", "additionalProperties": false, "required": ["destination_owner"],
+        "properties": { "destination_owner": { "type": "string", "minLength": 1, "maxLength": 253, "description": "Account handle, DID, or organization slug in the shared owner namespace." } }
+      },
+      "RepositoryTransfer": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "repository_id", "source_owner", "destination_owner", "status", "created_at", "expires_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "repository_id": { "type": "string", "format": "uuid" },
+          "source_owner": { "type": "string" },
+          "destination_owner": { "type": "string" },
+          "source_repository": { "$ref": "#/components/schemas/RepositoryStrongRef" },
+          "proposal": { "$ref": "#/components/schemas/RepositoryStrongRef" },
+          "successor": { "$ref": "#/components/schemas/RepositoryStrongRef" },
+          "acceptance": { "$ref": "#/components/schemas/RepositoryStrongRef" },
+          "status": { "type": "string", "enum": ["pending", "completed", "cancelled"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "acceptance_started_at": { "type": "string", "format": "date-time", "nullable": true, "description": "Durable start of the retryable acceptance workflow. Once set, cancellation is no longer safe." },
+          "accepted_at": { "type": "string", "format": "date-time", "nullable": true },
+          "accepted_by": { "type": "string", "nullable": true },
+          "cancelled_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "RepositoryTransferList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/RepositoryTransfer" } }, "page": { "$ref": "#/components/schemas/Page" } } },
       "NetworkRepositoryList": {
         "type": "object",
         "required": ["items", "page"],
@@ -1875,7 +1940,7 @@
         "type": "object",
         "additionalProperties": false,
         "description": "Flat approved network.repositories projection materialized from Electric insert rows. This is intentionally distinct from the nested REST Repository model.",
-        "required": ["uri", "cid", "owner_did", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "fork_count", "indexed_at"],
+        "required": ["uri", "cid", "owner_did", "lineage_uri", "canonical_uri", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "fork_count", "indexed_at"],
         "properties": {
           "uri": { "type": "string" },
           "cid": { "type": "string" },
@@ -1889,6 +1954,12 @@
           "web": { "type": "string", "nullable": true },
           "forked_from_uri": { "type": "string", "nullable": true },
           "forked_from_cid": { "type": "string", "nullable": true },
+          "transferred_from_uri": { "type": "string", "nullable": true },
+          "transferred_from_cid": { "type": "string", "nullable": true },
+          "transferred_to_uri": { "type": "string", "nullable": true },
+          "transferred_to_cid": { "type": "string", "nullable": true },
+          "lineage_uri": { "type": "string", "description": "Immutable first repository URI in this transfer lineage." },
+          "canonical_uri": { "type": "string", "description": "Current repository URI selected by a complete bilateral transfer chain." },
           "record_created_at": { "type": "string", "format": "date-time", "nullable": true },
           "record_updated_at": { "type": "string", "format": "date-time", "nullable": true },
           "indexed_at": { "type": "string", "format": "date-time" },

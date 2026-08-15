@@ -34,6 +34,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/storage"
 	"github.com/adenosine-dev/adenosine/internal/syncproxy"
+	"github.com/adenosine-dev/adenosine/internal/transfer"
 	"github.com/adenosine-dev/adenosine/internal/webhook"
 )
 
@@ -72,6 +73,14 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		repository.UUIDv7Generator{},
 		oauthClient,
 		repositoryEndpoints,
+	)
+	repositoryTransfers := transfer.NewService(
+		transfer.NewPostgresStore(db.Queries()),
+		oauthClient,
+		oauthClient,
+		repositoryEndpoints,
+		auth.UUIDv7Generator{},
+		auth.SystemClock{},
 	)
 	authStore := auth.NewPostgresStore(db.Queries())
 	clock := auth.SystemClock{}
@@ -143,6 +152,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		Collaborators:               organizationCollaborators,
 		Federation:                  federationDependencies,
 		Repositories:                repositories,
+		Transfers:                   repositoryTransfers,
 		Endpoints:                   repositoryEndpoints,
 		Discovery:                   discovery,
 		Search:                      searchService,

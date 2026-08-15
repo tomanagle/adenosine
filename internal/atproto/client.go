@@ -17,6 +17,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/issue"
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
 	"github.com/adenosine-dev/adenosine/internal/star"
+	"github.com/adenosine-dev/adenosine/internal/transfer"
 	"github.com/bluesky-social/indigo/atproto/atclient"
 	"github.com/bluesky-social/indigo/atproto/auth/oauth"
 	indigoidentity "github.com/bluesky-social/indigo/atproto/identity"
@@ -31,6 +32,8 @@ const oauthScope = "atproto"
 func publishedCollections() []string {
 	return []string{
 		repositoryCollection,
+		transfer.ProposalCollection,
+		transfer.AcceptanceCollection,
 		profileCollection,
 		organizationCollection,
 		"dev.adenosine.organizationGrant",

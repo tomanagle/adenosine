@@ -112,7 +112,8 @@ func TestBuildConfiguresLocalhostAndPublicMetadata(t *testing.T) {
 			baseURL: "http://127.0.0.1:3000",
 			// A loopback client advertises its scopes inside the client ID.
 			clientID: "http://localhost?redirect_uri=http%3A%2F%2F127.0.0.1%3A3000%2Foauth%2Fatproto%2Fcallback" +
-				"&scope=atproto+repo%3Adev.adenosine.repo+repo%3Adev.adenosine.profile+repo%3Adev.adenosine.organization" +
+				"&scope=atproto+repo%3Adev.adenosine.repo+repo%3Adev.adenosine.repositoryTransfer" +
+				"+repo%3Adev.adenosine.repositoryTransferAcceptance+repo%3Adev.adenosine.profile+repo%3Adev.adenosine.organization" +
 				"+repo%3Adev.adenosine.organizationGrant+repo%3Adev.adenosine.organizationMembership" +
 				"+repo%3Adev.adenosine.organizationRevocation+repo%3Adev.adenosine.issue" +
 				"+repo%3Adev.adenosine.issueComment+repo%3Adev.adenosine.issueStatus+repo%3Adev.adenosine.pullRequest" +
@@ -459,6 +460,8 @@ func TestOAuthScopesRequestGranularCollectionWrites(t *testing.T) {
 			want: []string{
 				"atproto",
 				"repo:dev.adenosine.repo",
+				"repo:dev.adenosine.repositoryTransfer",
+				"repo:dev.adenosine.repositoryTransferAcceptance",
 				"repo:dev.adenosine.profile",
 				"repo:dev.adenosine.organization",
 				"repo:dev.adenosine.organizationGrant",

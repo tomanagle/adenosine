@@ -130,16 +130,40 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 			return nil
 		}
 		if record.Collection == OrganizationCollection {
-			return queries.TombstoneFederationOrganizationProjection(ctx, dbgen.TombstoneFederationOrganizationProjectionParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID})
+			if err := queries.TombstoneFederationOrganizationProjection(ctx, dbgen.TombstoneFederationOrganizationProjectionParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+				return fmt.Errorf("tombstone organization: %w", err)
+			}
+			return reconcileTransferLineages(ctx, queries)
 		}
 		if record.Collection == OrganizationGrantCollection {
-			return queries.TombstoneFederationOrganizationGrant(ctx, dbgen.TombstoneFederationOrganizationGrantParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID})
+			if err := queries.TombstoneFederationOrganizationGrant(ctx, dbgen.TombstoneFederationOrganizationGrantParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+				return fmt.Errorf("tombstone organization grant: %w", err)
+			}
+			return nil
 		}
 		if record.Collection == OrganizationMembershipCollection {
-			return queries.TombstoneFederationOrganizationMembership(ctx, dbgen.TombstoneFederationOrganizationMembershipParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID})
+			if err := queries.TombstoneFederationOrganizationMembership(ctx, dbgen.TombstoneFederationOrganizationMembershipParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+				return fmt.Errorf("tombstone organization membership: %w", err)
+			}
+			return nil
 		}
 		if record.Collection == OrganizationRevocationCollection {
-			return queries.TombstoneFederationOrganizationRevocation(ctx, dbgen.TombstoneFederationOrganizationRevocationParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID})
+			if err := queries.TombstoneFederationOrganizationRevocation(ctx, dbgen.TombstoneFederationOrganizationRevocationParams{Uri: record.URI, DeletedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+				return fmt.Errorf("tombstone organization revocation: %w", err)
+			}
+			return nil
+		}
+		if record.Collection == RepositoryTransferCollection {
+			if err := queries.TombstoneFederationRepositoryTransfer(ctx, dbgen.TombstoneFederationRepositoryTransferParams{Uri: record.URI, IndexedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+				return fmt.Errorf("tombstone repository transfer: %w", err)
+			}
+			return reconcileTransferLineages(ctx, queries)
+		}
+		if record.Collection == RepositoryTransferAcceptanceCollection {
+			if err := queries.TombstoneFederationRepositoryTransferAcceptance(ctx, dbgen.TombstoneFederationRepositoryTransferAcceptanceParams{Uri: record.URI, IndexedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+				return fmt.Errorf("tombstone repository transfer acceptance: %w", err)
+			}
+			return reconcileTransferLineages(ctx, queries)
 		}
 		if record.Collection == StarCollection {
 			repositoryURI, err := queries.TombstoneFederationStar(ctx, dbgen.TombstoneFederationStarParams{
@@ -280,7 +304,7 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 		if err := queries.RecomputeFederationPullRequestCounts(ctx, record.URI); err != nil {
 			return fmt.Errorf("recompute pull request counts: %w", err)
 		}
-		return nil
+		return reconcileTransferLineages(ctx, queries)
 	}
 
 	createdAt := recordTime(record)
@@ -311,7 +335,7 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 		if err := queries.UpsertFederationOrganization(ctx, dbgen.UpsertFederationOrganizationParams{Uri: record.URI, Cid: pgText(record.CID), CreatorDid: record.DID, Rkey: record.RKey, Slug: pgText(value.Slug), Name: pgText(value.Name), Description: pgText(value.Description), Website: pgText(value.Website), Location: pgText(value.Location), RecordCreatedAt: pgTime(value.CreatedAt), RecordUpdatedAt: pgTime(value.UpdatedAt), IndexedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
 			return fmt.Errorf("upsert organization: %w", err)
 		}
-		return nil
+		return reconcileTransferLineages(ctx, queries)
 	}
 	if record.OrganizationGrant != nil {
 		value := record.OrganizationGrant
@@ -337,6 +361,36 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 			return fmt.Errorf("upsert organization revocation: %w", err)
 		}
 		return nil
+	}
+	if record.RepositoryTransfer != nil {
+		value := record.RepositoryTransfer
+		organizationURI, organizationCID := "", ""
+		if value.DestinationOrganization != nil {
+			organizationURI, organizationCID = value.DestinationOrganization.URI, value.DestinationOrganization.CID
+		}
+		if err := queries.UpsertFederationRepositoryTransfer(ctx, dbgen.UpsertFederationRepositoryTransferParams{
+			Uri: record.URI, Cid: pgText(record.CID), AuthorDid: record.DID, Rkey: record.RKey,
+			RepositoryUri: pgText(value.Repository.URI), RepositoryCid: pgText(value.Repository.CID),
+			DestinationDid: pgText(value.DestinationDID), DestinationOrganizationUri: pgText(organizationURI),
+			DestinationOrganizationCid: pgText(organizationCID), DestinationOwnerAlias: pgText(value.DestinationOwner),
+			CreatedAt: pgTime(value.CreatedAt), ExpiresAt: pgTime(value.ExpiresAt),
+			IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
+		}); err != nil {
+			return fmt.Errorf("upsert repository transfer: %w", err)
+		}
+		return reconcileTransferLineages(ctx, queries)
+	}
+	if record.RepositoryTransferAcceptance != nil {
+		value := record.RepositoryTransferAcceptance
+		if err := queries.UpsertFederationRepositoryTransferAcceptance(ctx, dbgen.UpsertFederationRepositoryTransferAcceptanceParams{
+			Uri: record.URI, Cid: pgText(record.CID), AuthorDid: record.DID, Rkey: record.RKey,
+			ProposalUri: pgText(value.Proposal.URI), ProposalCid: pgText(value.Proposal.CID),
+			RepositoryUri: pgText(value.Repository.URI), RepositoryCid: pgText(value.Repository.CID),
+			CreatedAt: pgTime(value.CreatedAt), IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
+		}); err != nil {
+			return fmt.Errorf("upsert repository transfer acceptance: %w", err)
+		}
+		return reconcileTransferLineages(ctx, queries)
 	}
 	if record.Star != nil {
 		value := record.Star
@@ -523,6 +577,14 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 	if value.ForkedFrom != nil {
 		forkedFromURI, forkedFromCID = value.ForkedFrom.URI, value.ForkedFrom.CID
 	}
+	transferredFromURI, transferredFromCID := "", ""
+	if value.TransferredFrom != nil {
+		transferredFromURI, transferredFromCID = value.TransferredFrom.URI, value.TransferredFrom.CID
+	}
+	transferredToURI, transferredToCID := "", ""
+	if value.TransferredTo != nil {
+		transferredToURI, transferredToCID = value.TransferredTo.URI, value.TransferredTo.CID
+	}
 	previousForkSource, previousForkErr := queries.GetFederationRepositoryForkSource(ctx, record.URI)
 	if previousForkErr != nil && previousForkErr != pgx.ErrNoRows {
 		return fmt.Errorf("resolve previous repository fork source: %w", previousForkErr)
@@ -531,6 +593,12 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 	if previousForkErr == nil && previousForkSource.Valid {
 		previousForkURI = previousForkSource.String
 	}
+	previousTransfer, previousTransferErr := queries.GetFederationRepositoryTransferLinks(ctx, record.URI)
+	if previousTransferErr != nil && previousTransferErr != pgx.ErrNoRows {
+		return fmt.Errorf("resolve previous repository transfer links: %w", previousTransferErr)
+	}
+	reconcileTransfers := transferredFromURI != "" || transferredToURI != "" ||
+		(previousTransferErr == nil && (previousTransfer.TransferredFromUri.Valid || previousTransfer.TransferredToUri.Valid))
 	if err := lockForkProjection(ctx, queries, record.URI, previousForkURI, forkedFromURI); err != nil {
 		return err
 	}
@@ -540,6 +608,8 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 		DefaultBranch: pgText(value.DefaultBranch), GitHttps: pgText(value.GitHTTPS), GitSsh: pgText(value.GitSSH), Web: pgText(value.Web),
 		OrganizationUri: pgText(organizationURI), OrganizationCid: pgText(organizationCID),
 		ForkedFromUri: pgText(forkedFromURI), ForkedFromCid: pgText(forkedFromCID),
+		TransferredFromUri: pgText(transferredFromURI), TransferredFromCid: pgText(transferredFromCID),
+		TransferredToUri: pgText(transferredToURI), TransferredToCid: pgText(transferredToCID),
 		RecordCreatedAt: pgTime(value.CreatedAt), RecordUpdatedAt: pgTime(value.UpdatedAt),
 		IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
 	}); err != nil {
@@ -584,6 +654,22 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 	}
 	if err := queries.RecomputeFederationPullRequestCounts(ctx, record.URI); err != nil {
 		return fmt.Errorf("recompute pull request counts: %w", err)
+	}
+	if reconcileTransfers {
+		return reconcileTransferLineages(ctx, queries)
+	}
+	return nil
+}
+
+func reconcileTransferLineages(ctx context.Context, queries *dbgen.Queries) error {
+	if err := queries.LockFederationRepositoryTransferLineages(ctx); err != nil {
+		return fmt.Errorf("lock repository transfer lineages: %w", err)
+	}
+	if err := queries.ReconcileFederationRepositoryTransferLineages(ctx); err != nil {
+		return fmt.Errorf("reconcile repository transfer lineages: %w", err)
+	}
+	if err := queries.RecomputeFederationRepositoryLineageCounts(ctx); err != nil {
+		return fmt.Errorf("recompute repository lineage counts: %w", err)
 	}
 	return nil
 }
@@ -898,6 +984,12 @@ func recordTime(record *RecordEvent) time.Time {
 	}
 	if record.OrganizationRevocation != nil {
 		return record.OrganizationRevocation.CreatedAt
+	}
+	if record.RepositoryTransfer != nil {
+		return record.RepositoryTransfer.CreatedAt
+	}
+	if record.RepositoryTransferAcceptance != nil {
+		return record.RepositoryTransferAcceptance.CreatedAt
 	}
 	return time.Time{}
 }

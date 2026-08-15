@@ -18,14 +18,20 @@ type Querier interface {
 	AdvanceFederationCursor(ctx context.Context, arg AdvanceFederationCursorParams) error
 	AuthenticateSession(ctx context.Context, arg AuthenticateSessionParams) (AuthSession, error)
 	BlockDID(ctx context.Context, arg BlockDIDParams) error
+	CanAcceptRepositoryTransfer(ctx context.Context, arg CanAcceptRepositoryTransferParams) (bool, error)
 	CanAdminOrganizationRepository(ctx context.Context, arg CanAdminOrganizationRepositoryParams) (bool, error)
 	CanAdminRepository(ctx context.Context, arg CanAdminRepositoryParams) (bool, error)
+	CanCompleteRepositoryTransfer(ctx context.Context, id pgtype.UUID) (bool, error)
+	CanInitiateRepositoryTransfer(ctx context.Context, arg CanInitiateRepositoryTransferParams) (bool, error)
 	CanReadRepository(ctx context.Context, arg CanReadRepositoryParams) (bool, error)
 	CanTriageRepository(ctx context.Context, arg CanTriageRepositoryParams) (bool, error)
 	CanWriteRepository(ctx context.Context, arg CanWriteRepositoryParams) (bool, error)
+	CancelRepositoryTransfer(ctx context.Context, arg CancelRepositoryTransferParams) (CoreRepositoryTransfer, error)
 	ClaimOutboxEvents(ctx context.Context, arg ClaimOutboxEventsParams) ([]OpsOutboxEvent, error)
 	ClaimWebhookDeliveries(ctx context.Context, arg ClaimWebhookDeliveriesParams) ([]ClaimWebhookDeliveriesRow, error)
 	CompleteOutboxEvent(ctx context.Context, arg CompleteOutboxEventParams) error
+	CompletePrivateRepositoryTransfer(ctx context.Context, arg CompletePrivateRepositoryTransferParams) (CoreRepositoryTransfer, error)
+	CompleteRepositoryTransfer(ctx context.Context, arg CompleteRepositoryTransferParams) (CoreRepositoryTransfer, error)
 	CompleteWebhookDelivery(ctx context.Context, arg CompleteWebhookDeliveryParams) error
 	ConsumeOAuthState(ctx context.Context, arg ConsumeOAuthStateParams) ([]byte, error)
 	ConsumePasskeyCeremony(ctx context.Context, arg ConsumePasskeyCeremonyParams) (ConsumePasskeyCeremonyRow, error)
@@ -48,6 +54,7 @@ type Querier interface {
 	CreatePasskeyCredential(ctx context.Context, arg CreatePasskeyCredentialParams) (AuthPasskeyCredential, error)
 	CreateRepository(ctx context.Context, arg CreateRepositoryParams) (CoreRepository, error)
 	CreateRepositoryActivityEvent(ctx context.Context, arg CreateRepositoryActivityEventParams) error
+	CreateRepositoryTransfer(ctx context.Context, arg CreateRepositoryTransferParams) (CoreRepositoryTransfer, error)
 	CreateRepositoryWebhook(ctx context.Context, arg CreateRepositoryWebhookParams) (CoreRepositoryWebhook, error)
 	CreateSSHKey(ctx context.Context, arg CreateSSHKeyParams) (AuthSshKey, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (AuthSession, error)
@@ -80,6 +87,7 @@ type Querier interface {
 	GetFederationPullRequestStatusTarget(ctx context.Context, uri string) (GetFederationPullRequestStatusTargetRow, error)
 	GetFederationPullRequestTargetRepositoryURI(ctx context.Context, uri string) (string, error)
 	GetFederationRepositoryForkSource(ctx context.Context, uri string) (pgtype.Text, error)
+	GetFederationRepositoryTransferLinks(ctx context.Context, uri string) (GetFederationRepositoryTransferLinksRow, error)
 	GetFederationStarRepositoryURI(ctx context.Context, uri string) (string, error)
 	GetForkSourceByURI(ctx context.Context, uri string) (GetForkSourceByURIRow, error)
 	GetLatestOAuthCredential(ctx context.Context, accountDid string) (GetLatestOAuthCredentialRow, error)
@@ -98,6 +106,7 @@ type Querier interface {
 	GetOrganizationOwner(ctx context.Context, arg GetOrganizationOwnerParams) (CoreOrganizationMember, error)
 	GetOrganizationTeam(ctx context.Context, arg GetOrganizationTeamParams) (CoreOrganizationTeam, error)
 	GetOrganizationTeamMember(ctx context.Context, arg GetOrganizationTeamMemberParams) (CoreOrganizationTeamMember, error)
+	GetPendingRepositoryTransfer(ctx context.Context, repositoryID pgtype.UUID) (CoreRepositoryTransfer, error)
 	GetProfile(ctx context.Context, did string) (NetworkProfile, error)
 	GetProjectedPullRequest(ctx context.Context, pullRequestUri string) (GetProjectedPullRequestRow, error)
 	GetProjectedPullRequestCounts(ctx context.Context, repositoryUri string) (GetProjectedPullRequestCountsRow, error)
@@ -110,6 +119,8 @@ type Querier interface {
 	GetRepositoryByOwnerSlug(ctx context.Context, arg GetRepositoryByOwnerSlugParams) (CoreRepository, error)
 	GetRepositoryCollaborator(ctx context.Context, arg GetRepositoryCollaboratorParams) (CoreRepositoryCollaborator, error)
 	GetRepositoryDeletion(ctx context.Context, id pgtype.UUID) (CoreRepositoryDeletion, error)
+	GetRepositoryForTransfer(ctx context.Context, repositoryID pgtype.UUID) (CoreRepository, error)
+	GetRepositoryTransfer(ctx context.Context, id pgtype.UUID) (CoreRepositoryTransfer, error)
 	GetRepositoryWebhook(ctx context.Context, arg GetRepositoryWebhookParams) (CoreRepositoryWebhook, error)
 	GetWebAuthnUser(ctx context.Context, arg GetWebAuthnUserParams) (AuthWebauthnUser, error)
 	HasFederationReceipt(ctx context.Context, arg HasFederationReceiptParams) (bool, error)
@@ -146,13 +157,14 @@ type Querier interface {
 	ListSearchPullRequestReviews(ctx context.Context, arg ListSearchPullRequestReviewsParams) ([]NetworkPullRequestReview, error)
 	ListSearchPullRequests(ctx context.Context, arg ListSearchPullRequestsParams) ([]ListSearchPullRequestsRow, error)
 	ListSearchRepositoryForks(ctx context.Context, arg ListSearchRepositoryForksParams) ([]ListSearchRepositoryForksRow, error)
-	ListSearchStars(ctx context.Context, arg ListSearchStarsParams) ([]NetworkStar, error)
+	ListSearchStars(ctx context.Context, arg ListSearchStarsParams) ([]ListSearchStarsRow, error)
 	LockFederationIssueComments(ctx context.Context, issueUri string) error
 	LockFederationPullRequest(ctx context.Context, pullRequestUri string) error
 	LockFederationRepositoryForks(ctx context.Context, repositoryUri string) error
 	LockFederationRepositoryIssues(ctx context.Context, repositoryUri string) error
 	LockFederationRepositoryPullRequests(ctx context.Context, repositoryUri string) error
 	LockFederationRepositoryStars(ctx context.Context, repositoryUri string) error
+	LockFederationRepositoryTransferLineages(ctx context.Context) error
 	LockOrganizationInvitation(ctx context.Context, id pgtype.UUID) (CoreOrganizationInvitation, error)
 	LockOrganizationOwners(ctx context.Context, organizationID pgtype.UUID) ([]string, error)
 	MarkRepositoryPurged(ctx context.Context, arg MarkRepositoryPurgedParams) error
@@ -167,6 +179,7 @@ type Querier interface {
 	PageOrganizationsForAccount(ctx context.Context, arg PageOrganizationsForAccountParams) ([]CoreOrganization, error)
 	PagePendingOrganizationInvitationsForAccount(ctx context.Context, arg PagePendingOrganizationInvitationsForAccountParams) ([]PagePendingOrganizationInvitationsForAccountRow, error)
 	PageRepositoriesByOrganization(ctx context.Context, arg PageRepositoriesByOrganizationParams) ([]PageRepositoriesByOrganizationRow, error)
+	PageRepositoryTransfers(ctx context.Context, arg PageRepositoryTransfersParams) ([]CoreRepositoryTransfer, error)
 	PageRepositoryWebhooks(ctx context.Context, arg PageRepositoryWebhooksParams) ([]CoreRepositoryWebhook, error)
 	PageWebhookDeliveries(ctx context.Context, arg PageWebhookDeliveriesParams) ([]OpsWebhookDelivery, error)
 	ProjectIdentityHandle(ctx context.Context, arg ProjectIdentityHandleParams) error
@@ -176,17 +189,21 @@ type Querier interface {
 	PutOrganizationTeamRepository(ctx context.Context, arg PutOrganizationTeamRepositoryParams) (CoreOrganizationTeamRepository, error)
 	RecomputeFederationForkCount(ctx context.Context, repositoryUri string) error
 	RecomputeFederationIssueCommentCount(ctx context.Context, issueUri string) error
-	RecomputeFederationIssueCounts(ctx context.Context, repositoryUri string) error
+	RecomputeFederationIssueCounts(ctx context.Context, uri string) error
 	RecomputeFederationIssueState(ctx context.Context, uri string) error
-	RecomputeFederationPullRequestCounts(ctx context.Context, targetRepositoryUri string) error
+	RecomputeFederationPullRequestCounts(ctx context.Context, uri string) error
 	RecomputeFederationPullRequestReviewCount(ctx context.Context, pullRequestUri string) error
 	RecomputeFederationPullRequestState(ctx context.Context, uri string) error
-	RecomputeFederationRepositoryCommentCount(ctx context.Context, repositoryUri string) error
+	RecomputeFederationRepositoryCommentCount(ctx context.Context, uri string) error
 	RecomputeFederationRepositoryCount(ctx context.Context, ownerDid string) error
-	RecomputeFederationStarCount(ctx context.Context, repositoryUri string) error
+	RecomputeFederationRepositoryLineageCounts(ctx context.Context) error
+	RecomputeFederationStarCount(ctx context.Context, uri string) error
+	ReconcileFederationRepositoryTransferLineages(ctx context.Context) error
 	RedeliverWebhookDelivery(ctx context.Context, arg RedeliverWebhookDeliveryParams) (OpsWebhookDelivery, error)
 	RequestRepositoryDeletion(ctx context.Context, arg RequestRepositoryDeletionParams) (CoreRepositoryDeletion, error)
 	ResolveOwner(ctx context.Context, owner string) (ResolveOwnerRow, error)
+	ResolveRepositoryTransferOwner(ctx context.Context, owner string) (ResolveRepositoryTransferOwnerRow, error)
+	ResolveRepositoryTransferSourceAlias(ctx context.Context, repositoryID pgtype.UUID) (string, error)
 	ResolveSearchIssue(ctx context.Context, arg ResolveSearchIssueParams) (ResolveSearchIssueRow, error)
 	ResolveSearchProfile(ctx context.Context, arg ResolveSearchProfileParams) (ResolveSearchProfileRow, error)
 	ResolveSearchPullRequest(ctx context.Context, arg ResolveSearchPullRequestParams) (ResolveSearchPullRequestRow, error)
@@ -202,6 +219,11 @@ type Querier interface {
 	SearchProfiles(ctx context.Context, arg SearchProfilesParams) ([]SearchProfilesRow, error)
 	SearchRepositories(ctx context.Context, arg SearchRepositoriesParams) ([]SearchRepositoriesRow, error)
 	SetOrganizationInvitationGrant(ctx context.Context, arg SetOrganizationInvitationGrantParams) (CoreOrganizationInvitation, error)
+	SetRepositoryTransferAcceptance(ctx context.Context, arg SetRepositoryTransferAcceptanceParams) (CoreRepositoryTransfer, error)
+	SetRepositoryTransferProposal(ctx context.Context, arg SetRepositoryTransferProposalParams) (CoreRepositoryTransfer, error)
+	SetRepositoryTransferSourceRedirect(ctx context.Context, arg SetRepositoryTransferSourceRedirectParams) (CoreRepositoryTransfer, error)
+	SetRepositoryTransferSuccessor(ctx context.Context, arg SetRepositoryTransferSuccessorParams) (CoreRepositoryTransfer, error)
+	StartRepositoryTransferAcceptance(ctx context.Context, arg StartRepositoryTransferAcceptanceParams) (CoreRepositoryTransfer, error)
 	TombstoneFederationIssue(ctx context.Context, arg TombstoneFederationIssueParams) (string, error)
 	TombstoneFederationIssueComment(ctx context.Context, arg TombstoneFederationIssueCommentParams) (string, error)
 	TombstoneFederationIssueStatus(ctx context.Context, arg TombstoneFederationIssueStatusParams) (TombstoneFederationIssueStatusRow, error)
@@ -215,6 +237,8 @@ type Querier interface {
 	TombstoneFederationPullRequestStatus(ctx context.Context, arg TombstoneFederationPullRequestStatusParams) (TombstoneFederationPullRequestStatusRow, error)
 	TombstoneFederationRecord(ctx context.Context, arg TombstoneFederationRecordParams) error
 	TombstoneFederationRepository(ctx context.Context, arg TombstoneFederationRepositoryParams) error
+	TombstoneFederationRepositoryTransfer(ctx context.Context, arg TombstoneFederationRepositoryTransferParams) error
+	TombstoneFederationRepositoryTransferAcceptance(ctx context.Context, arg TombstoneFederationRepositoryTransferAcceptanceParams) error
 	TombstoneFederationStar(ctx context.Context, arg TombstoneFederationStarParams) (string, error)
 	TouchAccessToken(ctx context.Context, arg TouchAccessTokenParams) error
 	TouchAccountLogin(ctx context.Context, arg TouchAccountLoginParams) (CoreAccount, error)
@@ -245,6 +269,8 @@ type Querier interface {
 	UpsertFederationPullRequestStatus(ctx context.Context, arg UpsertFederationPullRequestStatusParams) (UpsertFederationPullRequestStatusRow, error)
 	UpsertFederationRecord(ctx context.Context, arg UpsertFederationRecordParams) error
 	UpsertFederationRepository(ctx context.Context, arg UpsertFederationRepositoryParams) error
+	UpsertFederationRepositoryTransfer(ctx context.Context, arg UpsertFederationRepositoryTransferParams) error
+	UpsertFederationRepositoryTransferAcceptance(ctx context.Context, arg UpsertFederationRepositoryTransferAcceptanceParams) error
 	UpsertFederationStar(ctx context.Context, arg UpsertFederationStarParams) (string, error)
 	UpsertOAuthCredential(ctx context.Context, arg UpsertOAuthCredentialParams) error
 	UpsertRepositoryCollaborator(ctx context.Context, arg UpsertRepositoryCollaboratorParams) (CoreRepositoryCollaborator, error)

@@ -21,25 +21,31 @@ import (
 )
 
 const (
-	tapPath           = "/internal/federation/tap"
-	networkPath       = "/api/v1/network/repositories"
-	searchPath        = "/api/v1/search/repositories"
-	testCID           = "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
-	hostedDID         = "did:plc:cccccccccccccccccccccccc"
-	hostedRKey        = "0198a8512a897ae2a370dc68883e3af5"
-	hostedURI         = "at://" + hostedDID + "/dev.adenosine.repo/" + hostedRKey
-	hostedGit         = "https://adenosine-a-tls/" + hostedDID + "/hosted-repo.git"
-	sourceURI         = "at://did:plc:bbbbbbbbbbbbbbbbbbbbbbbb/dev.adenosine.repo/b-only"
-	sourceGit         = "https://adenosine-b-tls/did:plc:bbbbbbbbbbbbbbbbbbbbbbbb/b-only.git"
-	hostedReadme      = "# Hosted Federation Repository\n"
-	starAuthorDID     = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb"
-	starCollection    = "dev.adenosine.star"
-	issueCollection   = "dev.adenosine.issue"
-	commentCollection = "dev.adenosine.issueComment"
-	issueTitle        = "Federated issue from Bob"
-	issueBody         = "Created through B against A's projected repository."
-	rootCommentBody   = "Bob's federated root comment."
-	replyCommentBody  = "Bob's reply to the exact root observation."
+	tapPath             = "/internal/federation/tap"
+	networkPath         = "/api/v1/network/repositories"
+	searchPath          = "/api/v1/search/repositories"
+	testCID             = "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
+	staleCID            = "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdj"
+	hostedDID           = "did:plc:cccccccccccccccccccccccc"
+	hostedRKey          = "0198a8512a897ae2a370dc68883e3af5"
+	hostedURI           = "at://" + hostedDID + "/dev.adenosine.repo/" + hostedRKey
+	transferRKey        = "0198a8512a897ae2a370dc68883e3af6"
+	transferProposalURI = "at://" + hostedDID + "/dev.adenosine.repositoryTransfer/" + transferRKey
+	transferredRKey     = hostedRKey
+	transferredURI      = "at://" + starAuthorDID + "/dev.adenosine.repo/" + transferredRKey
+	hostedGit           = "https://adenosine-a-tls/" + hostedDID + "/hosted-repo.git"
+	transferredGit      = "https://adenosine-a-tls/bob.example/hosted-repo.git"
+	sourceURI           = "at://did:plc:bbbbbbbbbbbbbbbbbbbbbbbb/dev.adenosine.repo/b-only"
+	sourceGit           = "https://adenosine-b-tls/did:plc:bbbbbbbbbbbbbbbbbbbbbbbb/b-only.git"
+	hostedReadme        = "# Hosted Federation Repository\n"
+	starAuthorDID       = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb"
+	starCollection      = "dev.adenosine.star"
+	issueCollection     = "dev.adenosine.issue"
+	commentCollection   = "dev.adenosine.issueComment"
+	issueTitle          = "Federated issue from Bob"
+	issueBody           = "Created through B against A's projected repository."
+	rootCommentBody     = "Bob's federated root comment."
+	replyCommentBody    = "Bob's reply to the exact root observation."
 )
 
 var (
@@ -61,13 +67,16 @@ type fixture struct {
 }
 
 type repository struct {
-	URI            string `json:"uri"`
-	CID            string `json:"cid"`
-	Slug           string `json:"slug"`
-	StarCount      int64  `json:"star_count"`
-	IssueCount     int64  `json:"issue_count"`
-	OpenIssueCount int64  `json:"open_issue_count"`
-	Owner          struct {
+	URI                  string `json:"uri"`
+	CID                  string `json:"cid"`
+	Slug                 string `json:"slug"`
+	StarCount            int64  `json:"star_count"`
+	IssueCount           int64  `json:"issue_count"`
+	OpenIssueCount       int64  `json:"open_issue_count"`
+	CommentCount         int64  `json:"comment_count"`
+	PullRequestCount     int64  `json:"pull_request_count"`
+	OpenPullRequestCount int64  `json:"open_pull_request_count"`
+	Owner                struct {
 		DID string `json:"did"`
 	} `json:"owner"`
 	Hosting struct {
@@ -144,7 +153,7 @@ type authoritativeComment struct {
 var client = &http.Client{Timeout: 10 * time.Second}
 
 func main() {
-	phase := flag.String("phase", "seed", "acceptance phase: seed, star, issue, comments, comments-deleted, or final")
+	phase := flag.String("phase", "seed", "acceptance phase: seed, star, issue, comments, comments-deleted, transfer, or final")
 	flag.Parse()
 
 	instances := map[string]instance{
@@ -165,6 +174,8 @@ func main() {
 		err = verifyComments([]instance{instances["a"], instances["b"]}, false)
 	case "comments-deleted":
 		err = verifyComments([]instance{instances["a"], instances["b"]}, true)
+	case "transfer":
+		err = verifyTransfer(instances, password)
 	case "final":
 		err = final(instances["b"])
 	default:
@@ -279,9 +290,181 @@ func seed(instances map[string]instance, password string) error {
 	return nil
 }
 
+func verifyTransfer(instances map[string]instance, password string) error {
+	proposal := map[string]any{
+		"$type":          "dev.adenosine.repositoryTransfer",
+		"repository":     map[string]string{"uri": hostedURI, "cid": testCID},
+		"destinationDID": starAuthorDID, "destinationOwner": "bob.example",
+		"createdAt": "2026-08-09T16:00:00Z", "expiresAt": "2026-08-16T16:00:00Z",
+	}
+	staleProposal := map[string]any{
+		"$type":          "dev.adenosine.repositoryTransfer",
+		"repository":     map[string]string{"uri": hostedURI, "cid": staleCID},
+		"destinationDID": starAuthorDID, "destinationOwner": "bob.example",
+		"createdAt": "2026-08-09T16:00:00Z", "expiresAt": "2026-08-16T16:00:00Z",
+	}
+	successor := map[string]any{
+		"$type": "dev.adenosine.repo", "slug": "hosted-repo", "name": "Hosted repository", "defaultBranch": "main",
+		"description": "Transferred repository lineage", "git": map[string]string{"https": "https://adenosine-a-tls/" + starAuthorDID + "/hosted-repo.git"},
+		"web":             "https://adenosine-a-tls/" + starAuthorDID + "/hosted-repo",
+		"transferredFrom": map[string]string{"uri": hostedURI, "cid": testCID},
+		"createdAt":       "2026-08-09T12:00:00Z", "updatedAt": "2026-08-09T16:01:00Z",
+	}
+	staleSuccessor := map[string]any{
+		"$type": "dev.adenosine.repo", "slug": "hosted-repo", "name": "Hosted repository", "defaultBranch": "main",
+		"description": "Transferred repository lineage", "git": map[string]string{"https": "https://adenosine-a-tls/" + starAuthorDID + "/hosted-repo.git"},
+		"web":             "https://adenosine-a-tls/" + starAuthorDID + "/hosted-repo",
+		"transferredFrom": map[string]string{"uri": hostedURI, "cid": staleCID},
+		"createdAt":       "2026-08-09T12:00:00Z", "updatedAt": "2026-08-09T16:01:00Z",
+	}
+	digest := sha256.Sum256([]byte(transferProposalURI))
+	acceptanceRKey := strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(digest[:]))
+	acceptance := map[string]any{
+		"$type":      "dev.adenosine.repositoryTransferAcceptance",
+		"proposal":   map[string]string{"uri": transferProposalURI, "cid": testCID},
+		"repository": map[string]string{"uri": transferredURI, "cid": testCID},
+		"createdAt":  "2026-08-09T16:02:00Z",
+	}
+	redirect := map[string]any{
+		"$type": "dev.adenosine.repo", "slug": "hosted-repo", "name": "Hosted repository", "defaultBranch": "main",
+		"description":   "Cloned through isolated federation acceptance",
+		"git":           map[string]string{"https": hostedGit, "ssh": "ssh://git@adenosine-a:2222/" + hostedDID + "/hosted-repo.git"},
+		"web":           strings.TrimSuffix(hostedGit, ".git"),
+		"transferredTo": map[string]string{"uri": transferredURI, "cid": testCID},
+		"createdAt":     "2026-08-09T12:00:00Z", "updatedAt": "2026-08-09T16:03:00Z",
+	}
+	fixtures := map[string][]string{
+		"a": {
+			recordMutation(201, hostedDID, "dev.adenosine.repositoryTransfer", transferRKey, "create", staleProposal),
+			recordMutationWithCID(202, starAuthorDID, "dev.adenosine.repo", transferredRKey, "create", staleCID, staleSuccessor),
+			recordMutation(203, starAuthorDID, "dev.adenosine.repositoryTransferAcceptance", acceptanceRKey, "create", acceptance),
+			recordMutation(204, hostedDID, "dev.adenosine.repo", hostedRKey, "update", redirect),
+		},
+		"b": {
+			recordMutation(203, starAuthorDID, "dev.adenosine.repositoryTransferAcceptance", acceptanceRKey, "create", acceptance),
+			recordMutation(204, hostedDID, "dev.adenosine.repo", hostedRKey, "update", redirect),
+			recordMutation(201, hostedDID, "dev.adenosine.repositoryTransfer", transferRKey, "create", staleProposal),
+			recordMutationWithCID(202, starAuthorDID, "dev.adenosine.repo", transferredRKey, "create", staleCID, staleSuccessor),
+		},
+	}
+	for name, events := range fixtures {
+		for _, event := range events {
+			if err := deliver(instances[name], password, event); err != nil {
+				return fmt.Errorf("deliver transfer event to %s: %w", instances[name].name, err)
+			}
+		}
+	}
+	for _, target := range []instance{instances["a"], instances["b"]} {
+		matches, err := searchRepositories(target, "Hosted repository")
+		if err != nil {
+			return fmt.Errorf("search stale transfer projections on %s: %w", target.name, err)
+		}
+		uris := map[string]bool{}
+		for _, match := range matches {
+			uris[match.URI] = true
+		}
+		if len(matches) != 2 || !uris[hostedURI] || !uris[transferredURI] {
+			return fmt.Errorf("%s stale-CID transfer projections were unexpectedly linked: %#v", target.name, matches)
+		}
+		response, err := client.Get(target.url + "/api/v1/issues?repository_uri=" + url.QueryEscape(transferredURI))
+		if err != nil {
+			return err
+		}
+		var issues issuePage
+		decodeErr := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&issues)
+		response.Body.Close()
+		if response.StatusCode != http.StatusOK || decodeErr != nil || issues.IssueCount != 0 || len(issues.Data) != 0 {
+			return fmt.Errorf("%s stale-CID successor inherited issue lineage: status=%d value=%+v error=%v", target.name, response.StatusCode, issues, decodeErr)
+		}
+	}
+	corrections := map[string][]string{
+		"a": {
+			recordMutation(205, hostedDID, "dev.adenosine.repositoryTransfer", transferRKey, "update", proposal),
+			recordMutation(206, starAuthorDID, "dev.adenosine.repo", transferredRKey, "update", successor),
+		},
+		"b": {
+			recordMutation(206, starAuthorDID, "dev.adenosine.repo", transferredRKey, "update", successor),
+			recordMutation(205, hostedDID, "dev.adenosine.repositoryTransfer", transferRKey, "update", proposal),
+		},
+	}
+	for name, events := range corrections {
+		for _, event := range events {
+			if err := deliver(instances[name], password, event); err != nil {
+				return fmt.Errorf("deliver transfer correction to %s: %w", instances[name].name, err)
+			}
+		}
+	}
+
+	for _, target := range []instance{instances["a"], instances["b"]} {
+		matches, err := searchRepositories(target, "Hosted repository")
+		if err != nil || len(matches) != 1 || matches[0].URI != transferredURI {
+			return fmt.Errorf("%s canonical transfer search = %#v: %w", target.name, matches, err)
+		}
+		canonical, err := findRepository(target, transferredURI, testCID)
+		if err != nil {
+			return fmt.Errorf("find successor projection on %s: %w", target.name, err)
+		}
+		if canonical.StarCount != 1 || canonical.IssueCount != 1 || canonical.OpenIssueCount != 1 ||
+			canonical.CommentCount != 1 || canonical.PullRequestCount != 1 || canonical.OpenPullRequestCount != 0 {
+			return fmt.Errorf("%s successor collaboration counts = %+v", target.name, canonical)
+		}
+		for _, owner := range []string{hostedDID, "hosted.example", starAuthorDID, "bob.example"} {
+			projected, err := getRepositoryRoute(target, owner, "hosted-repo")
+			if err != nil {
+				return fmt.Errorf("resolve %s transfer route on %s: %w", owner, target.name, err)
+			}
+			if projected.URI != transferredURI {
+				return fmt.Errorf("%s transfer route %s = %+v", target.name, owner, projected)
+			}
+		}
+		response, err := client.Get(target.url + "/api/v1/issues?repository_uri=" + url.QueryEscape(transferredURI))
+		if err != nil {
+			return err
+		}
+		var issues issuePage
+		decodeErr := json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(&issues)
+		response.Body.Close()
+		if response.StatusCode != http.StatusOK || decodeErr != nil || len(issues.Data) != 1 || issues.Data[0].RepositoryURI != hostedURI {
+			return fmt.Errorf("%s transferred issue projection status=%d value=%+v error=%v", target.name, response.StatusCode, issues, decodeErr)
+		}
+	}
+	for _, gitURL := range []string{hostedGit, transferredGit} {
+		if err := cloneAndVerify(gitURL, hostedReadme); err != nil {
+			return fmt.Errorf("clone retained transfer route %s: %w", gitURL, err)
+		}
+	}
+	return nil
+}
+
+func getRepositoryRoute(target instance, owner, slug string) (repository, error) {
+	response, err := client.Get(target.url + "/api/v1/repositories/" + url.PathEscape(owner) + "/" + url.PathEscape(slug))
+	if err != nil {
+		return repository{}, err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(response.Body, 4096))
+		return repository{}, fmt.Errorf("GET repository status %d: %s", response.StatusCode, body)
+	}
+	var value repository
+	if err := json.NewDecoder(response.Body).Decode(&value); err != nil {
+		return repository{}, err
+	}
+	return value, nil
+}
+
+func recordMutation(id int, did, collection, rkey, action string, record map[string]any) string {
+	return recordMutationWithCID(id, did, collection, rkey, action, testCID, record)
+}
+
+func recordMutationWithCID(id int, did, collection, rkey, action, cid string, record map[string]any) string {
+	recordJSON, _ := json.Marshal(record)
+	return fmt.Sprintf(`{"id":%d,"type":"record","record":{"live":true,"rev":"3kzfcijpj2z2a","did":%q,"collection":%q,"rkey":%q,"action":%q,"cid":%q,"record":%s}}`, id, did, collection, rkey, action, cid, recordJSON)
+}
+
 func final(b instance) error {
 	matches, err := searchRepositories(b, "Hosted repository")
-	if err != nil || len(matches) != 1 || matches[0].URI != hostedURI || matches[0].Hosting.Local {
+	if err != nil || len(matches) != 1 || matches[0].URI != transferredURI || matches[0].Hosting.Local {
 		return fmt.Errorf("B search after A and Electric stop = %#v: %w", matches, err)
 	}
 	if err := verifyStars([]instance{b}); err != nil {

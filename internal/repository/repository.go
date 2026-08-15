@@ -65,6 +65,7 @@ type Repository struct {
 	ATURI            string
 	ATCID            string
 	ForkedFrom       *ForkSource
+	TransferredFrom  *ATIdentity
 	ForkCount        int64
 	ViewerCanAdmin   bool
 	ArchivedAt       *time.Time
@@ -101,19 +102,21 @@ type ForkSync struct {
 
 // Publication is the portable public repository record to publish for an owner.
 type Publication struct {
-	ID            ID
-	OwnerDID      string
-	Organization  *ATIdentity
-	ForkedFrom    *ATIdentity
-	Slug          string
-	Name          string
-	Description   string
-	DefaultBranch string
-	GitHTTPS      string
-	GitSSH        string
-	Web           string
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID              ID
+	OwnerDID        string
+	Organization    *ATIdentity
+	ForkedFrom      *ATIdentity
+	TransferredFrom *ATIdentity
+	TransferredTo   *ATIdentity
+	Slug            string
+	Name            string
+	Description     string
+	DefaultBranch   string
+	GitHTTPS        string
+	GitSSH          string
+	Web             string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // CreateInput is validated repository creation data.

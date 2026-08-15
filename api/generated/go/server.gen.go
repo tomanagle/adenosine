@@ -943,6 +943,27 @@ func (e RepositoryOwnerKind) Valid() bool {
 	}
 }
 
+// Defines values for RepositoryTransferStatus.
+const (
+	Cancelled RepositoryTransferStatus = "cancelled"
+	Completed RepositoryTransferStatus = "completed"
+	Pending   RepositoryTransferStatus = "pending"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryTransferStatus enum.
+func (e RepositoryTransferStatus) Valid() bool {
+	switch e {
+	case Cancelled:
+		return true
+	case Completed:
+		return true
+	case Pending:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RepositoryWebhookHasSecret.
 const (
 	True RepositoryWebhookHasSecret = true
@@ -2003,6 +2024,12 @@ type CreateRepositoryRequest struct {
 // CreateRepositoryRequestVisibility defines model for CreateRepositoryRequest.Visibility.
 type CreateRepositoryRequestVisibility string
 
+// CreateRepositoryTransferRequest defines model for CreateRepositoryTransferRequest.
+type CreateRepositoryTransferRequest struct {
+	// DestinationOwner Account handle, DID, or organization slug in the shared owner namespace.
+	DestinationOwner string `json:"destination_owner"`
+}
+
 // CreateRepositoryWebhookRequest defines model for CreateRepositoryWebhookRequest.
 type CreateRepositoryWebhookRequest struct {
 	Enabled *bool          `json:"enabled,omitempty"`
@@ -2816,6 +2843,36 @@ type RepositoryStrongRef struct {
 	Uri string `json:"uri"`
 }
 
+// RepositoryTransfer defines model for RepositoryTransfer.
+type RepositoryTransfer struct {
+	Acceptance *RepositoryStrongRef `json:"acceptance,omitempty"`
+
+	// AcceptanceStartedAt Durable start of the retryable acceptance workflow. Once set, cancellation is no longer safe.
+	AcceptanceStartedAt *time.Time               `json:"acceptance_started_at,omitempty"`
+	AcceptedAt          *time.Time               `json:"accepted_at,omitempty"`
+	AcceptedBy          *string                  `json:"accepted_by,omitempty"`
+	CancelledAt         *time.Time               `json:"cancelled_at,omitempty"`
+	CreatedAt           time.Time                `json:"created_at"`
+	DestinationOwner    string                   `json:"destination_owner"`
+	ExpiresAt           time.Time                `json:"expires_at"`
+	Id                  openapi_types.UUID       `json:"id"`
+	Proposal            *RepositoryStrongRef     `json:"proposal,omitempty"`
+	RepositoryId        openapi_types.UUID       `json:"repository_id"`
+	SourceOwner         string                   `json:"source_owner"`
+	SourceRepository    *RepositoryStrongRef     `json:"source_repository,omitempty"`
+	Status              RepositoryTransferStatus `json:"status"`
+	Successor           *RepositoryStrongRef     `json:"successor,omitempty"`
+}
+
+// RepositoryTransferStatus defines model for RepositoryTransfer.Status.
+type RepositoryTransferStatus string
+
+// RepositoryTransferList defines model for RepositoryTransferList.
+type RepositoryTransferList struct {
+	Items []RepositoryTransfer `json:"items"`
+	Page  Page                 `json:"page"`
+}
+
 // RepositoryWebhook defines model for RepositoryWebhook.
 type RepositoryWebhook struct {
 	CreatedAt time.Time                  `json:"created_at"`
@@ -3001,17 +3058,22 @@ type SyncPullRequestReviewVerdict string
 
 // SyncRepository Flat approved network.repositories projection materialized from Electric insert rows. This is intentionally distinct from the nested REST Repository model.
 type SyncRepository struct {
-	Cid                  string     `json:"cid"`
-	CommentCount         int64      `json:"comment_count"`
-	DefaultBranch        *string    `json:"default_branch,omitempty"`
-	Description          *string    `json:"description,omitempty"`
-	ForkCount            int64      `json:"fork_count"`
-	ForkedFromCid        *string    `json:"forked_from_cid,omitempty"`
-	ForkedFromUri        *string    `json:"forked_from_uri,omitempty"`
-	GitHttps             *string    `json:"git_https,omitempty"`
-	GitSsh               *string    `json:"git_ssh,omitempty"`
-	IndexedAt            time.Time  `json:"indexed_at"`
-	IssueCount           int64      `json:"issue_count"`
+	// CanonicalUri Current repository URI selected by a complete bilateral transfer chain.
+	CanonicalUri  string    `json:"canonical_uri"`
+	Cid           string    `json:"cid"`
+	CommentCount  int64     `json:"comment_count"`
+	DefaultBranch *string   `json:"default_branch,omitempty"`
+	Description   *string   `json:"description,omitempty"`
+	ForkCount     int64     `json:"fork_count"`
+	ForkedFromCid *string   `json:"forked_from_cid,omitempty"`
+	ForkedFromUri *string   `json:"forked_from_uri,omitempty"`
+	GitHttps      *string   `json:"git_https,omitempty"`
+	GitSsh        *string   `json:"git_ssh,omitempty"`
+	IndexedAt     time.Time `json:"indexed_at"`
+	IssueCount    int64     `json:"issue_count"`
+
+	// LineageUri Immutable first repository URI in this transfer lineage.
+	LineageUri           string     `json:"lineage_uri"`
 	Name                 *string    `json:"name,omitempty"`
 	OpenIssueCount       int64      `json:"open_issue_count"`
 	OpenPullRequestCount int64      `json:"open_pull_request_count"`
@@ -3021,6 +3083,10 @@ type SyncRepository struct {
 	RecordUpdatedAt      *time.Time `json:"record_updated_at,omitempty"`
 	Slug                 *string    `json:"slug,omitempty"`
 	StarCount            int64      `json:"star_count"`
+	TransferredFromCid   *string    `json:"transferred_from_cid,omitempty"`
+	TransferredFromUri   *string    `json:"transferred_from_uri,omitempty"`
+	TransferredToCid     *string    `json:"transferred_to_cid,omitempty"`
+	TransferredToUri     *string    `json:"transferred_to_uri,omitempty"`
 	Uri                  string     `json:"uri"`
 	Web                  *string    `json:"web,omitempty"`
 }
@@ -3587,6 +3653,18 @@ type ListRepositoryTagsParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// ListRepositoryTransfersParams defines parameters for ListRepositoryTransfers.
+type ListRepositoryTransfersParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// CreateRepositoryTransferParams defines parameters for CreateRepositoryTransfer.
+type CreateRepositoryTransferParams struct {
+	// Origin Required for browser-session mutations and must exactly match the configured Adenosine origin.
+	Origin *MutationOrigin `json:"Origin,omitempty"`
+}
+
 // GetRepositoryTreeParams defines parameters for GetRepositoryTree.
 type GetRepositoryTreeParams struct {
 	Rev  *string `form:"rev,omitempty" json:"rev,omitempty"`
@@ -3603,6 +3681,18 @@ type ListRepositoryWebhooksParams struct {
 type ListWebhookDeliveriesParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// DeleteRepositoryTransferParams defines parameters for DeleteRepositoryTransfer.
+type DeleteRepositoryTransferParams struct {
+	// Origin Required for browser-session mutations and must exactly match the configured Adenosine origin.
+	Origin *MutationOrigin `json:"Origin,omitempty"`
+}
+
+// CreateRepositoryTransferAcceptanceParams defines parameters for CreateRepositoryTransferAcceptance.
+type CreateRepositoryTransferAcceptanceParams struct {
+	// Origin Required for browser-session mutations and must exactly match the configured Adenosine origin.
+	Origin *MutationOrigin `json:"Origin,omitempty"`
 }
 
 // SearchProfilesParams defines parameters for SearchProfiles.
@@ -4192,6 +4282,9 @@ type UpdateBranchProtectionJSONRequestBody = BranchProtectionInput
 // CreateRepositoryForkJSONRequestBody defines body for CreateRepositoryFork for application/json ContentType.
 type CreateRepositoryForkJSONRequestBody = CreateRepositoryForkRequest
 
+// CreateRepositoryTransferJSONRequestBody defines body for CreateRepositoryTransfer for application/json ContentType.
+type CreateRepositoryTransferJSONRequestBody = CreateRepositoryTransferRequest
+
 // CreateRepositoryWebhookJSONRequestBody defines body for CreateRepositoryWebhook for application/json ContentType.
 type CreateRepositoryWebhookJSONRequestBody = CreateRepositoryWebhookRequest
 
@@ -4538,6 +4631,12 @@ type ServerInterface interface {
 	// List repository tags
 	// (GET /api/v1/repositories/{owner}/{repo}/tags)
 	ListRepositoryTags(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryTagsParams)
+	// List repository transfer history visible to the current owner
+	// (GET /api/v1/repositories/{owner}/{repo}/transfers)
+	ListRepositoryTransfers(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params ListRepositoryTransfersParams)
+	// Propose transferring a repository to another owner
+	// (POST /api/v1/repositories/{owner}/{repo}/transfers)
+	CreateRepositoryTransfer(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params CreateRepositoryTransferParams)
 	// List one repository tree directory
 	// (GET /api/v1/repositories/{owner}/{repo}/tree)
 	GetRepositoryTree(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryTreeParams)
@@ -4568,6 +4667,15 @@ type ServerInterface interface {
 	// Get a recoverable repository deletion
 	// (GET /api/v1/repository-deletions/{deletion})
 	GetRepositoryDeletion(w http.ResponseWriter, r *http.Request, deletion openapi_types.UUID)
+	// Cancel a pending transfer before acceptance
+	// (DELETE /api/v1/repository-transfers/{transfer})
+	DeleteRepositoryTransfer(w http.ResponseWriter, r *http.Request, transfer openapi_types.UUID, params DeleteRepositoryTransferParams)
+	// Inspect a repository transfer as its source or destination owner
+	// (GET /api/v1/repository-transfers/{transfer})
+	GetRepositoryTransfer(w http.ResponseWriter, r *http.Request, transfer openapi_types.UUID)
+	// Accept a pending transfer as the destination owner
+	// (POST /api/v1/repository-transfers/{transfer}/acceptance)
+	CreateRepositoryTransferAcceptance(w http.ResponseWriter, r *http.Request, transfer openapi_types.UUID, params CreateRepositoryTransferAcceptanceParams)
 	// Search profiles in the local network index
 	// (GET /api/v1/search/profiles)
 	SearchProfiles(w http.ResponseWriter, r *http.Request, params SearchProfilesParams)
@@ -8674,6 +8782,145 @@ func (siw *ServerInterfaceWrapper) ListRepositoryTags(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// ListRepositoryTransfers operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryTransfers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryTransfersParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryTransfers(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryTransfer operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryTransfer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRepositoryTransferParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin MutationOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryTransfer(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetRepositoryTree operation middleware
 func (siw *ServerInterfaceWrapper) GetRepositoryTree(w http.ResponseWriter, r *http.Request) {
 
@@ -9209,6 +9456,156 @@ func (siw *ServerInterfaceWrapper) GetRepositoryDeletion(w http.ResponseWriter, 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepositoryDeletion(w, r, deletion)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRepositoryTransfer operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepositoryTransfer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "transfer" -------------
+	var transfer openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "transfer", r.PathValue("transfer"), &transfer, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "transfer", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteRepositoryTransferParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin MutationOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepositoryTransfer(w, r, transfer, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryTransfer operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryTransfer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "transfer" -------------
+	var transfer openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "transfer", r.PathValue("transfer"), &transfer, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "transfer", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryTransfer(w, r, transfer)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryTransferAcceptance operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryTransferAcceptance(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "transfer" -------------
+	var transfer openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "transfer", r.PathValue("transfer"), &transfer, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "transfer", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRepositoryTransferAcceptanceParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin MutationOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryTransferAcceptance(w, r, transfer, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -11754,6 +12151,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/merge-base", wrapper.GetRepositoryMergeBase)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/sync-fork", wrapper.SyncRepositoryFork)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tags", wrapper.ListRepositoryTags)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/transfers", wrapper.ListRepositoryTransfers)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/transfers", wrapper.CreateRepositoryTransfer)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tree", wrapper.GetRepositoryTree)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks", wrapper.ListRepositoryWebhooks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks", wrapper.CreateRepositoryWebhook)
@@ -11764,6 +12163,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}/deliveries", wrapper.CreateWebhookRedelivery)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repository-deletions/{deletion}", wrapper.RestoreRepositoryDeletion)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repository-deletions/{deletion}", wrapper.GetRepositoryDeletion)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repository-transfers/{transfer}", wrapper.DeleteRepositoryTransfer)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repository-transfers/{transfer}", wrapper.GetRepositoryTransfer)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repository-transfers/{transfer}/acceptance", wrapper.CreateRepositoryTransferAcceptance)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/search/profiles", wrapper.SearchProfiles)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/search/repositories", wrapper.SearchRepositories)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/ssh-keys", wrapper.ListSSHKeys)
