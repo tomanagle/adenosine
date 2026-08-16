@@ -187,18 +187,64 @@ SELECT issue.*,
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = comment.author_did)
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = comment.uri)) AS visible_comment_count
 FROM network.issues issue JOIN network.repositories repository ON repository.uri = issue.repository_uri
+LEFT JOIN LATERAL (
+  SELECT metadata.*
+  FROM network.subject_triage metadata
+  JOIN network.repositories metadata_repository ON metadata_repository.uri = metadata.repository_uri
+  WHERE metadata.subject_uri = issue.uri AND metadata.subject_kind = 'issue'
+    AND metadata_repository.lineage_uri = repository.lineage_uri
+    AND metadata.author_did = metadata_repository.owner_did
+    AND metadata.deleted_at IS NULL AND metadata.cid IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = metadata.uri)
+  ORDER BY metadata.source_event_id DESC, metadata.uri DESC
+  LIMIT 1
+) triage ON true
 WHERE repository.lineage_uri = (SELECT requested.lineage_uri FROM network.repositories AS requested WHERE requested.uri = sqlc.arg(repository_uri)::text) AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did IN (repository.owner_did, issue.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri IN (repository.uri, issue.uri))
+  AND (sqlc.narg(state_filter)::text IS NULL OR issue.state = sqlc.narg(state_filter)::text)
+  AND (sqlc.narg(label_filter)::text IS NULL OR EXISTS (
+    SELECT 1 FROM network.repository_labels label
+    JOIN network.repositories label_repository ON label_repository.uri = label.repository_uri
+    WHERE label.uri = ANY(triage.label_uris) AND label.rkey = sqlc.narg(label_filter)::text
+      AND label_repository.lineage_uri = repository.lineage_uri AND label.author_did = label_repository.owner_did
+      AND label.deleted_at IS NULL AND label.cid IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = label.author_did)
+      AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = label.uri)
+  ))
+  AND (sqlc.narg(assignee_filter)::text IS NULL OR (sqlc.narg(assignee_filter)::text = ANY(triage.assignee_dids)
+    AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = sqlc.narg(assignee_filter)::text)))
+  AND (sqlc.narg(milestone_filter)::text IS NULL OR EXISTS (
+    SELECT 1 FROM network.repository_milestones milestone
+    JOIN network.repositories milestone_repository ON milestone_repository.uri = milestone.repository_uri
+    WHERE milestone.uri = triage.milestone_uri AND milestone.rkey = sqlc.narg(milestone_filter)::text
+      AND milestone_repository.lineage_uri = repository.lineage_uri AND milestone.author_did = milestone_repository.owner_did
+      AND milestone.deleted_at IS NULL AND milestone.cid IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = milestone.author_did)
+      AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = milestone.uri)
+  ))
   AND (sqlc.narg(cursor_uri)::text IS NULL OR (issue.record_created_at, issue.uri) < (sqlc.narg(cursor_created_at)::timestamptz, sqlc.narg(cursor_uri)::text))
 ORDER BY issue.record_created_at DESC, issue.uri DESC LIMIT sqlc.arg(result_limit);
 
 -- name: CountSearchIssues :one
 SELECT count(*) AS visible_issue_count, count(*) FILTER (WHERE issue.state = 'open') AS visible_open_issue_count
 FROM network.issues issue JOIN network.repositories repository ON repository.uri = issue.repository_uri
+LEFT JOIN LATERAL (
+  SELECT metadata.* FROM network.subject_triage metadata
+  JOIN network.repositories metadata_repository ON metadata_repository.uri = metadata.repository_uri
+  WHERE metadata.subject_uri = issue.uri AND metadata.subject_kind = 'issue'
+    AND metadata_repository.lineage_uri = repository.lineage_uri AND metadata.author_did = metadata_repository.owner_did
+    AND metadata.deleted_at IS NULL AND metadata.cid IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = metadata.uri)
+  ORDER BY metadata.source_event_id DESC, metadata.uri DESC LIMIT 1
+) triage ON true
 WHERE repository.lineage_uri = (SELECT requested.lineage_uri FROM network.repositories AS requested WHERE requested.uri = sqlc.arg(repository_uri)::text) AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did IN (repository.owner_did, issue.author_did))
-  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri IN (repository.uri, issue.uri));
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri IN (repository.uri, issue.uri))
+  AND (sqlc.narg(state_filter)::text IS NULL OR issue.state = sqlc.narg(state_filter)::text)
+  AND (sqlc.narg(label_filter)::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_labels label JOIN network.repositories label_repository ON label_repository.uri = label.repository_uri WHERE label.uri = ANY(triage.label_uris) AND label.rkey = sqlc.narg(label_filter)::text AND label_repository.lineage_uri = repository.lineage_uri AND label.author_did = label_repository.owner_did AND label.deleted_at IS NULL AND label.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = label.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = label.uri)))
+  AND (sqlc.narg(assignee_filter)::text IS NULL OR (sqlc.narg(assignee_filter)::text = ANY(triage.assignee_dids) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = sqlc.narg(assignee_filter)::text)))
+  AND (sqlc.narg(milestone_filter)::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_milestones milestone JOIN network.repositories milestone_repository ON milestone_repository.uri = milestone.repository_uri WHERE milestone.uri = triage.milestone_uri AND milestone.rkey = sqlc.narg(milestone_filter)::text AND milestone_repository.lineage_uri = repository.lineage_uri AND milestone.author_did = milestone_repository.owner_did AND milestone.deleted_at IS NULL AND milestone.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = milestone.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = milestone.uri)));
 
 -- name: ListSearchStars :many
 WITH candidates AS (
@@ -225,18 +271,45 @@ SELECT pull.*,
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = review.author_did)
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = review.uri)) AS visible_review_count
 FROM network.pull_requests pull JOIN network.repositories repository ON repository.uri = pull.target_repository_uri
+LEFT JOIN LATERAL (
+  SELECT metadata.*
+  FROM network.subject_triage metadata
+  JOIN network.repositories metadata_repository ON metadata_repository.uri = metadata.repository_uri
+  WHERE metadata.subject_uri = pull.uri AND metadata.subject_kind = 'pull_request'
+    AND metadata_repository.lineage_uri = repository.lineage_uri AND metadata.author_did = metadata_repository.owner_did
+    AND metadata.deleted_at IS NULL AND metadata.cid IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = metadata.uri)
+  ORDER BY metadata.source_event_id DESC, metadata.uri DESC LIMIT 1
+) triage ON true
 WHERE repository.lineage_uri = (SELECT requested.lineage_uri FROM network.repositories AS requested WHERE requested.uri = sqlc.arg(repository_uri)::text) AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did IN (repository.owner_did, pull.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri IN (repository.uri, pull.uri))
+  AND (sqlc.narg(state_filter)::text IS NULL OR pull.state = sqlc.narg(state_filter)::text)
+  AND (sqlc.narg(label_filter)::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_labels label JOIN network.repositories label_repository ON label_repository.uri = label.repository_uri WHERE label.uri = ANY(triage.label_uris) AND label.rkey = sqlc.narg(label_filter)::text AND label_repository.lineage_uri = repository.lineage_uri AND label.author_did = label_repository.owner_did AND label.deleted_at IS NULL AND label.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = label.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = label.uri)))
+  AND (sqlc.narg(assignee_filter)::text IS NULL OR (sqlc.narg(assignee_filter)::text = ANY(triage.assignee_dids) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = sqlc.narg(assignee_filter)::text)))
+  AND (sqlc.narg(milestone_filter)::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_milestones milestone JOIN network.repositories milestone_repository ON milestone_repository.uri = milestone.repository_uri WHERE milestone.uri = triage.milestone_uri AND milestone.rkey = sqlc.narg(milestone_filter)::text AND milestone_repository.lineage_uri = repository.lineage_uri AND milestone.author_did = milestone_repository.owner_did AND milestone.deleted_at IS NULL AND milestone.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = milestone.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = milestone.uri)))
   AND (sqlc.narg(cursor_uri)::text IS NULL OR (pull.record_created_at, pull.uri) < (sqlc.narg(cursor_created_at)::timestamptz, sqlc.narg(cursor_uri)::text))
 ORDER BY pull.record_created_at DESC, pull.uri DESC LIMIT sqlc.arg(result_limit);
 
 -- name: CountSearchPullRequests :one
 SELECT count(*) AS visible_pull_request_count, count(*) FILTER (WHERE pull.state = 'open') AS visible_open_pull_request_count
 FROM network.pull_requests pull JOIN network.repositories repository ON repository.uri = pull.target_repository_uri
+LEFT JOIN LATERAL (
+  SELECT metadata.* FROM network.subject_triage metadata
+  JOIN network.repositories metadata_repository ON metadata_repository.uri = metadata.repository_uri
+  WHERE metadata.subject_uri = pull.uri AND metadata.subject_kind = 'pull_request'
+    AND metadata_repository.lineage_uri = repository.lineage_uri AND metadata.author_did = metadata_repository.owner_did
+    AND metadata.deleted_at IS NULL AND metadata.cid IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = metadata.uri)
+  ORDER BY metadata.source_event_id DESC, metadata.uri DESC LIMIT 1
+) triage ON true
 WHERE repository.lineage_uri = (SELECT requested.lineage_uri FROM network.repositories AS requested WHERE requested.uri = sqlc.arg(repository_uri)::text) AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did IN (repository.owner_did, pull.author_did))
-  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri IN (repository.uri, pull.uri));
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri IN (repository.uri, pull.uri))
+  AND (sqlc.narg(state_filter)::text IS NULL OR pull.state = sqlc.narg(state_filter)::text)
+  AND (sqlc.narg(label_filter)::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_labels label JOIN network.repositories label_repository ON label_repository.uri = label.repository_uri WHERE label.uri = ANY(triage.label_uris) AND label.rkey = sqlc.narg(label_filter)::text AND label_repository.lineage_uri = repository.lineage_uri AND label.author_did = label_repository.owner_did AND label.deleted_at IS NULL AND label.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = label.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = label.uri)))
+  AND (sqlc.narg(assignee_filter)::text IS NULL OR (sqlc.narg(assignee_filter)::text = ANY(triage.assignee_dids) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = sqlc.narg(assignee_filter)::text)))
+  AND (sqlc.narg(milestone_filter)::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_milestones milestone JOIN network.repositories milestone_repository ON milestone_repository.uri = milestone.repository_uri WHERE milestone.uri = triage.milestone_uri AND milestone.rkey = sqlc.narg(milestone_filter)::text AND milestone_repository.lineage_uri = repository.lineage_uri AND milestone.author_did = milestone_repository.owner_did AND milestone.deleted_at IS NULL AND milestone.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did = milestone.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri = milestone.uri)));
 
 -- name: ResolveSearchPullRequest :one
 SELECT pull.*,

@@ -268,6 +268,24 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 			}
 			return recomputePullRequestReviewCount(ctx, queries, pullRequestURI)
 		}
+		if record.Collection == RepositoryLabelCollection {
+			if err := queries.TombstoneFederationRepositoryLabel(ctx, dbgen.TombstoneFederationRepositoryLabelParams{Uri: record.URI, IndexedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+				return fmt.Errorf("tombstone repository label: %w", err)
+			}
+			return nil
+		}
+		if record.Collection == RepositoryMilestoneCollection {
+			if err := queries.TombstoneFederationRepositoryMilestone(ctx, dbgen.TombstoneFederationRepositoryMilestoneParams{Uri: record.URI, IndexedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+				return fmt.Errorf("tombstone repository milestone: %w", err)
+			}
+			return nil
+		}
+		if record.Collection == SubjectTriageCollection {
+			if err := queries.TombstoneFederationSubjectTriage(ctx, dbgen.TombstoneFederationSubjectTriageParams{Uri: record.URI, IndexedAt: pgTime(indexedAt), SourceEventID: event.ID}); err != nil {
+				return fmt.Errorf("tombstone subject triage: %w", err)
+			}
+			return nil
+		}
 		previousForkSource, previousForkErr := queries.GetFederationRepositoryForkSource(ctx, record.URI)
 		if previousForkErr != nil && previousForkErr != pgx.ErrNoRows {
 			return fmt.Errorf("resolve deleted repository fork source: %w", previousForkErr)
@@ -564,6 +582,47 @@ func project(ctx context.Context, queries *dbgen.Queries, event Event, indexedAt
 			return fmt.Errorf("upsert pull request review: %w", err)
 		}
 		return recomputePullRequestReviewCount(ctx, queries, pullRequestURI)
+	}
+	if record.RepositoryLabel != nil {
+		value := record.RepositoryLabel
+		if err := queries.UpsertFederationRepositoryLabel(ctx, dbgen.UpsertFederationRepositoryLabelParams{
+			Uri: record.URI, Cid: pgText(record.CID), AuthorDid: record.DID, Rkey: record.RKey,
+			RepositoryUri: value.Repository.URI, RepositoryCid: value.Repository.CID,
+			Name: value.Name, Color: value.Color, Description: value.Description,
+			RecordCreatedAt: pgTime(value.CreatedAt), RecordUpdatedAt: pgTime(value.UpdatedAt),
+			IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
+		}); err != nil {
+			return fmt.Errorf("upsert repository label: %w", err)
+		}
+		return nil
+	}
+	if record.RepositoryMilestone != nil {
+		value := record.RepositoryMilestone
+		if err := queries.UpsertFederationRepositoryMilestone(ctx, dbgen.UpsertFederationRepositoryMilestoneParams{
+			Uri: record.URI, Cid: pgText(record.CID), AuthorDid: record.DID, Rkey: record.RKey,
+			RepositoryUri: value.Repository.URI, RepositoryCid: value.Repository.CID,
+			Title: value.Title, Description: value.Description, State: string(value.State),
+			DueAt: optionalPGTime(value.DueAt), ClosedAt: optionalPGTime(value.ClosedAt),
+			RecordCreatedAt: pgTime(value.CreatedAt), RecordUpdatedAt: pgTime(value.UpdatedAt),
+			IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
+		}); err != nil {
+			return fmt.Errorf("upsert repository milestone: %w", err)
+		}
+		return nil
+	}
+	if record.SubjectTriage != nil {
+		value := record.SubjectTriage
+		if err := queries.UpsertFederationSubjectTriage(ctx, dbgen.UpsertFederationSubjectTriageParams{
+			Uri: record.URI, Cid: pgText(record.CID), AuthorDid: record.DID, Rkey: record.RKey,
+			SubjectUri: value.Subject.URI, SubjectCid: value.Subject.CID, SubjectKind: string(value.Kind),
+			RepositoryUri: value.Repository.URI, RepositoryCid: value.Repository.CID,
+			LabelUris: value.LabelURIs, AssigneeDids: value.AssigneeDIDs, MilestoneUri: pgText(value.MilestoneURI),
+			RecordCreatedAt: pgTime(value.CreatedAt), RecordUpdatedAt: pgTime(value.UpdatedAt),
+			IndexedAt: pgTime(indexedAt), SourceEventID: event.ID,
+		}); err != nil {
+			return fmt.Errorf("upsert subject triage: %w", err)
+		}
+		return nil
 	}
 	value := record.Repository
 	if value == nil {
@@ -973,6 +1032,15 @@ func recordTime(record *RecordEvent) time.Time {
 	if record.PullRequestReview != nil {
 		return record.PullRequestReview.CreatedAt
 	}
+	if record.RepositoryLabel != nil {
+		return record.RepositoryLabel.CreatedAt
+	}
+	if record.RepositoryMilestone != nil {
+		return record.RepositoryMilestone.CreatedAt
+	}
+	if record.SubjectTriage != nil {
+		return record.SubjectTriage.CreatedAt
+	}
 	if record.Organization != nil {
 		return record.Organization.CreatedAt
 	}
@@ -998,6 +1066,13 @@ func pgText(value string) pgtype.Text { return pgtype.Text{String: value, Valid:
 
 func pgTime(value time.Time) pgtype.Timestamptz {
 	return pgtype.Timestamptz{Time: value, Valid: !value.IsZero()}
+}
+
+func optionalPGTime(value *time.Time) pgtype.Timestamptz {
+	if value == nil {
+		return pgtype.Timestamptz{}
+	}
+	return pgTime(*value)
 }
 
 func pgInt8(value int64) pgtype.Int8 { return pgtype.Int8{Int64: value, Valid: true} }

@@ -23,6 +23,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/transfer"
+	"github.com/adenosine-dev/adenosine/internal/triage"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 )
 
@@ -41,6 +42,9 @@ const (
 	OrganizationRevocationCollection       = "dev.adenosine.organizationRevocation"
 	RepositoryTransferCollection           = transfer.ProposalCollection
 	RepositoryTransferAcceptanceCollection = transfer.AcceptanceCollection
+	RepositoryLabelCollection              = triage.LabelCollection
+	RepositoryMilestoneCollection          = triage.MilestoneCollection
+	SubjectTriageCollection                = triage.MetadataCollection
 	maxEventBytes                          = 1 << 20
 )
 
@@ -86,6 +90,9 @@ type RecordEvent struct {
 	OrganizationRevocation       *OrganizationRevocationRecord
 	RepositoryTransfer           *RepositoryTransferRecord
 	RepositoryTransferAcceptance *RepositoryTransferAcceptanceRecord
+	RepositoryLabel              *triage.LabelRecord
+	RepositoryMilestone          *triage.MilestoneRecord
+	SubjectTriage                *triage.MetadataRecord
 }
 
 // IdentityEvent is a validated Tap identity projection.
@@ -267,7 +274,7 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 	if err != nil || collection.String() != wire.Collection {
 		return RecordEvent{}, invalid("collection is not a canonical NSID")
 	}
-	if wire.Collection != ProfileCollection && wire.Collection != RepositoryCollection && wire.Collection != StarCollection && wire.Collection != IssueCollection && wire.Collection != issue.CommentCollection && wire.Collection != IssueStatusCollection && wire.Collection != PullRequestCollection && wire.Collection != PullRequestStatusCollection && wire.Collection != PullRequestReviewCollection && wire.Collection != OrganizationCollection && wire.Collection != OrganizationGrantCollection && wire.Collection != OrganizationMembershipCollection && wire.Collection != OrganizationRevocationCollection && wire.Collection != RepositoryTransferCollection && wire.Collection != RepositoryTransferAcceptanceCollection {
+	if wire.Collection != ProfileCollection && wire.Collection != RepositoryCollection && wire.Collection != StarCollection && wire.Collection != IssueCollection && wire.Collection != issue.CommentCollection && wire.Collection != IssueStatusCollection && wire.Collection != PullRequestCollection && wire.Collection != PullRequestStatusCollection && wire.Collection != PullRequestReviewCollection && wire.Collection != OrganizationCollection && wire.Collection != OrganizationGrantCollection && wire.Collection != OrganizationMembershipCollection && wire.Collection != OrganizationRevocationCollection && wire.Collection != RepositoryTransferCollection && wire.Collection != RepositoryTransferAcceptanceCollection && wire.Collection != RepositoryLabelCollection && wire.Collection != RepositoryMilestoneCollection && wire.Collection != SubjectTriageCollection {
 		return RecordEvent{}, invalid("unsupported collection %q", wire.Collection)
 	}
 	rkey, err := syntax.ParseRecordKey(wire.RKey)
@@ -308,6 +315,14 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 		if err := pullrequest.ValidateRecordKey(wire.RKey); err != nil {
 			return RecordEvent{}, invalid("pull request record rkey: %v", err)
 		}
+	}
+	if wire.Collection == RepositoryLabelCollection || wire.Collection == RepositoryMilestoneCollection {
+		if err := triage.ValidateRecordKey(wire.RKey); err != nil {
+			return RecordEvent{}, invalid("triage definition rkey: %v", err)
+		}
+	}
+	if wire.Collection == SubjectTriageCollection && !starRKeyPattern.MatchString(wire.RKey) {
+		return RecordEvent{}, invalid("subject triage rkey is not deterministic key shaped")
 	}
 	if wire.Collection == OrganizationMembershipCollection && !starRKeyPattern.MatchString(wire.RKey) {
 		return RecordEvent{}, invalid("organization membership rkey is not deterministic key shaped")
@@ -418,6 +433,37 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 			return RecordEvent{}, invalid("pull request review: %v", err)
 		}
 		result.PullRequestReview = &value
+	} else if wire.Collection == RepositoryLabelCollection {
+		value, err := decodeRepositoryLabelRecord(wire.Record)
+		if err != nil {
+			return RecordEvent{}, err
+		}
+		if err := (triage.Label{URI: result.URI, CID: result.CID, AuthorDID: result.DID, RKey: result.RKey, LabelRecord: value}).Validate(); err != nil {
+			return RecordEvent{}, invalid("repository label: %v", err)
+		}
+		result.RepositoryLabel = &value
+	} else if wire.Collection == RepositoryMilestoneCollection {
+		value, err := decodeRepositoryMilestoneRecord(wire.Record)
+		if err != nil {
+			return RecordEvent{}, err
+		}
+		if err := (triage.Milestone{URI: result.URI, CID: result.CID, AuthorDID: result.DID, RKey: result.RKey, MilestoneRecord: value}).Validate(); err != nil {
+			return RecordEvent{}, invalid("repository milestone: %v", err)
+		}
+		result.RepositoryMilestone = &value
+	} else if wire.Collection == SubjectTriageCollection {
+		value, err := decodeSubjectTriageRecord(wire.Record)
+		if err != nil {
+			return RecordEvent{}, err
+		}
+		expectedRKey, err := triage.MetadataRecordKey(value.Subject.URI)
+		if err != nil || wire.RKey != expectedRKey {
+			return RecordEvent{}, invalid("subject triage rkey does not match subject URI")
+		}
+		if err := (triage.Metadata{URI: result.URI, CID: result.CID, AuthorDID: result.DID, RKey: result.RKey, MetadataRecord: value}).Validate(); err != nil {
+			return RecordEvent{}, invalid("subject triage: %v", err)
+		}
+		result.SubjectTriage = &value
 	} else if wire.Collection == OrganizationCollection {
 		value, err := decodeOrganizationRecord(wire.Record)
 		if err != nil {
@@ -464,6 +510,122 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 		result.RepositoryTransferAcceptance = &value
 	}
 	return result, nil
+}
+
+func decodeRepositoryLabelRecord(raw []byte) (triage.LabelRecord, error) {
+	var wire struct {
+		Type        string           `json:"$type"`
+		Repository  triage.StrongRef `json:"repository"`
+		Name        string           `json:"name"`
+		Color       string           `json:"color"`
+		Description string           `json:"description"`
+		CreatedAt   string           `json:"createdAt"`
+		UpdatedAt   string           `json:"updatedAt"`
+	}
+	if err := decodeStrict(raw, &wire); err != nil {
+		return triage.LabelRecord{}, invalid("decode repository label: %v", err)
+	}
+	if wire.Type != RepositoryLabelCollection {
+		return triage.LabelRecord{}, invalid("repository label type is invalid")
+	}
+	createdAt, err := canonicalDatetime(wire.CreatedAt)
+	if err != nil {
+		return triage.LabelRecord{}, err
+	}
+	updatedAt, err := canonicalDatetime(wire.UpdatedAt)
+	if err != nil {
+		return triage.LabelRecord{}, err
+	}
+	value := triage.LabelRecord{Repository: wire.Repository, Name: wire.Name, Color: wire.Color, Description: wire.Description, CreatedAt: createdAt, UpdatedAt: updatedAt}
+	if err := value.Validate(); err != nil {
+		return triage.LabelRecord{}, invalid("repository label: %v", err)
+	}
+	return value, nil
+}
+
+func decodeRepositoryMilestoneRecord(raw []byte) (triage.MilestoneRecord, error) {
+	var wire struct {
+		Type        string                `json:"$type"`
+		Repository  triage.StrongRef      `json:"repository"`
+		Title       string                `json:"title"`
+		Description string                `json:"description"`
+		State       triage.MilestoneState `json:"state"`
+		DueAt       *string               `json:"dueAt,omitempty"`
+		ClosedAt    *string               `json:"closedAt,omitempty"`
+		CreatedAt   string                `json:"createdAt"`
+		UpdatedAt   string                `json:"updatedAt"`
+	}
+	if err := decodeStrict(raw, &wire); err != nil {
+		return triage.MilestoneRecord{}, invalid("decode repository milestone: %v", err)
+	}
+	if wire.Type != RepositoryMilestoneCollection {
+		return triage.MilestoneRecord{}, invalid("repository milestone type is invalid")
+	}
+	createdAt, err := canonicalDatetime(wire.CreatedAt)
+	if err != nil {
+		return triage.MilestoneRecord{}, err
+	}
+	updatedAt, err := canonicalDatetime(wire.UpdatedAt)
+	if err != nil {
+		return triage.MilestoneRecord{}, err
+	}
+	dueAt, err := optionalCanonicalDatetime(wire.DueAt)
+	if err != nil {
+		return triage.MilestoneRecord{}, err
+	}
+	closedAt, err := optionalCanonicalDatetime(wire.ClosedAt)
+	if err != nil {
+		return triage.MilestoneRecord{}, err
+	}
+	value := triage.MilestoneRecord{Repository: wire.Repository, Title: wire.Title, Description: wire.Description, State: wire.State, DueAt: dueAt, ClosedAt: closedAt, CreatedAt: createdAt, UpdatedAt: updatedAt}
+	if err := value.Validate(); err != nil {
+		return triage.MilestoneRecord{}, invalid("repository milestone: %v", err)
+	}
+	return value, nil
+}
+
+func decodeSubjectTriageRecord(raw []byte) (triage.MetadataRecord, error) {
+	var wire struct {
+		Type       string             `json:"$type"`
+		Subject    triage.StrongRef   `json:"subject"`
+		Kind       triage.SubjectKind `json:"kind"`
+		Repository triage.StrongRef   `json:"repository"`
+		Labels     []string           `json:"labels"`
+		Assignees  []string           `json:"assignees"`
+		Milestone  string             `json:"milestone,omitempty"`
+		CreatedAt  string             `json:"createdAt"`
+		UpdatedAt  string             `json:"updatedAt"`
+	}
+	if err := decodeStrict(raw, &wire); err != nil {
+		return triage.MetadataRecord{}, invalid("decode subject triage: %v", err)
+	}
+	if wire.Type != SubjectTriageCollection {
+		return triage.MetadataRecord{}, invalid("subject triage type is invalid")
+	}
+	createdAt, err := canonicalDatetime(wire.CreatedAt)
+	if err != nil {
+		return triage.MetadataRecord{}, err
+	}
+	updatedAt, err := canonicalDatetime(wire.UpdatedAt)
+	if err != nil {
+		return triage.MetadataRecord{}, err
+	}
+	value := triage.MetadataRecord{Subject: wire.Subject, Kind: wire.Kind, Repository: wire.Repository, LabelURIs: wire.Labels, AssigneeDIDs: wire.Assignees, MilestoneURI: wire.Milestone, CreatedAt: createdAt, UpdatedAt: updatedAt}
+	if err := value.Validate(); err != nil {
+		return triage.MetadataRecord{}, invalid("subject triage: %v", err)
+	}
+	return value, nil
+}
+
+func optionalCanonicalDatetime(value *string) (*time.Time, error) {
+	if value == nil {
+		return nil, nil
+	}
+	parsed, err := canonicalDatetime(*value)
+	if err != nil {
+		return nil, err
+	}
+	return &parsed, nil
 }
 
 func decodePullRequestRecord(raw []byte) (pullrequest.Record, error) {

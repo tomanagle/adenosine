@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base32"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -153,7 +154,7 @@ type authoritativeComment struct {
 var client = &http.Client{Timeout: 10 * time.Second}
 
 func main() {
-	phase := flag.String("phase", "seed", "acceptance phase: seed, star, issue, comments, comments-deleted, transfer, or final")
+	phase := flag.String("phase", "seed", "acceptance phase: seed, star, issue, triage, comments, comments-deleted, transfer, or final")
 	flag.Parse()
 
 	instances := map[string]instance{
@@ -170,6 +171,8 @@ func main() {
 		err = verifyStars([]instance{instances["a"], instances["b"]})
 	case "issue":
 		err = verifyIssues([]instance{instances["a"], instances["b"]})
+	case "triage":
+		err = verifyTriage(instances, password)
 	case "comments":
 		err = verifyComments([]instance{instances["a"], instances["b"]}, false)
 	case "comments-deleted":
@@ -186,6 +189,155 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Printf("federation acceptance phase %s passed\n", *phase)
+}
+
+type triageLabelPage struct {
+	Items []struct {
+		ID        string `json:"id"`
+		URI       string `json:"uri"`
+		Name      string `json:"name"`
+		Color     string `json:"color"`
+		AuthorDID string `json:"author_did"`
+	} `json:"items"`
+	Page struct {
+		NextCursor *string `json:"next_cursor"`
+	} `json:"page"`
+}
+
+type triageMilestonePage struct {
+	Items []struct {
+		ID        string `json:"id"`
+		Title     string `json:"title"`
+		State     string `json:"state"`
+		AuthorDID string `json:"author_did"`
+	} `json:"items"`
+}
+
+type subjectTriageView struct {
+	URI           *string  `json:"uri"`
+	AuthorDID     *string  `json:"author_did"`
+	SubjectURI    string   `json:"subject_uri"`
+	RepositoryURI string   `json:"repository_uri"`
+	LabelIDs      []string `json:"label_ids"`
+	AssigneeDIDs  []string `json:"assignee_dids"`
+	MilestoneID   *string  `json:"milestone_id"`
+	Labels        []struct {
+		ID string `json:"id"`
+	} `json:"labels"`
+	Assignees []struct {
+		DID string `json:"did"`
+	} `json:"assignees"`
+	Milestone *struct {
+		ID string `json:"id"`
+	} `json:"milestone"`
+}
+
+func verifyTriage(instances map[string]instance, password string) error {
+	issue, err := getFederatedIssue(instances["a"])
+	if err != nil {
+		return err
+	}
+	labelRKey := "bug"
+	milestoneRKey := "v1"
+	labelURI := "at://" + hostedDID + "/dev.adenosine.repositoryLabel/" + labelRKey
+	milestoneURI := "at://" + hostedDID + "/dev.adenosine.repositoryMilestone/" + milestoneRKey
+	digest := sha256.Sum256([]byte("dev.adenosine.subjectTriage\x00" + issue.URI))
+	metadataRKey := strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(digest[:]))
+	label := map[string]any{
+		"$type": "dev.adenosine.repositoryLabel", "repository": map[string]string{"uri": hostedURI, "cid": testCID},
+		"name": "bug", "color": "d73a4a", "description": "Something is broken",
+		"createdAt": "2026-08-09T14:30:00Z", "updatedAt": "2026-08-09T14:30:00Z",
+	}
+	forgedLabel := map[string]any{
+		"$type": "dev.adenosine.repositoryLabel", "repository": map[string]string{"uri": hostedURI, "cid": testCID},
+		"name": "forged", "color": "000000", "description": "Must never project",
+		"createdAt": "2026-08-09T14:30:00Z", "updatedAt": "2026-08-09T14:30:00Z",
+	}
+	milestone := map[string]any{
+		"$type": "dev.adenosine.repositoryMilestone", "repository": map[string]string{"uri": hostedURI, "cid": testCID},
+		"title": "v1", "description": "First public release", "state": "open",
+		"createdAt": "2026-08-09T14:31:00Z", "updatedAt": "2026-08-09T14:31:00Z",
+	}
+	metadata := map[string]any{
+		"$type":   "dev.adenosine.subjectTriage",
+		"subject": map[string]string{"uri": issue.URI, "cid": issue.CID}, "kind": "issue",
+		"repository": map[string]string{"uri": hostedURI, "cid": testCID},
+		"labels":     []string{labelURI}, "assignees": []string{starAuthorDID}, "milestone": milestoneURI,
+		"createdAt": "2026-08-09T14:32:00Z", "updatedAt": "2026-08-09T14:32:00Z",
+	}
+	assigneeProfile := map[string]any{
+		"$type": "dev.adenosine.profile", "displayName": "Bob", "createdAt": "2026-08-09T11:00:00Z",
+	}
+	events := map[string][]string{
+		"a": {
+			recordMutation(149, starAuthorDID, "dev.adenosine.profile", "self", "create", assigneeProfile),
+			recordMutation(150, hostedDID, "dev.adenosine.repositoryLabel", labelRKey, "create", label),
+			recordMutation(151, hostedDID, "dev.adenosine.repositoryMilestone", milestoneRKey, "create", milestone),
+			recordMutation(152, hostedDID, "dev.adenosine.subjectTriage", metadataRKey, "create", metadata),
+			recordMutation(153, starAuthorDID, "dev.adenosine.repositoryLabel", "forged", "create", forgedLabel),
+		},
+		"b": {
+			recordMutation(152, hostedDID, "dev.adenosine.subjectTriage", metadataRKey, "create", metadata),
+			recordMutation(153, starAuthorDID, "dev.adenosine.repositoryLabel", "forged", "create", forgedLabel),
+			recordMutation(151, hostedDID, "dev.adenosine.repositoryMilestone", milestoneRKey, "create", milestone),
+			recordMutation(150, hostedDID, "dev.adenosine.repositoryLabel", labelRKey, "create", label),
+			recordMutation(149, starAuthorDID, "dev.adenosine.profile", "self", "create", assigneeProfile),
+		},
+	}
+	for name, values := range events {
+		for _, event := range values {
+			if err := deliver(instances[name], password, event); err != nil {
+				return fmt.Errorf("deliver triage event to %s: %w", instances[name].name, err)
+			}
+		}
+	}
+
+	encodedSubject := base64.RawURLEncoding.EncodeToString([]byte(issue.URI))
+	for _, target := range []instance{instances["a"], instances["b"]} {
+		base := target.url + "/api/v1/repositories/" + url.PathEscape(hostedDID) + "/hosted-repo"
+		var labels triageLabelPage
+		if err := getJSON(base+"/labels?limit=1", &labels); err != nil {
+			return fmt.Errorf("list labels from %s: %w", target.name, err)
+		}
+		if len(labels.Items) != 1 || labels.Items[0].ID != labelRKey || labels.Items[0].Name != "bug" || labels.Items[0].Color != "d73a4a" || labels.Items[0].AuthorDID != hostedDID || labels.Page.NextCursor != nil {
+			return fmt.Errorf("%s labels did not reject forged authority or converge: %+v", target.name, labels)
+		}
+		var milestones triageMilestonePage
+		if err := getJSON(base+"/milestones?limit=10", &milestones); err != nil {
+			return fmt.Errorf("list milestones from %s: %w", target.name, err)
+		}
+		if len(milestones.Items) != 1 || milestones.Items[0].ID != milestoneRKey || milestones.Items[0].Title != "v1" || milestones.Items[0].State != "open" || milestones.Items[0].AuthorDID != hostedDID {
+			return fmt.Errorf("%s milestone projection did not converge: %+v", target.name, milestones)
+		}
+		var projected subjectTriageView
+		if err := getJSON(base+"/issues/"+encodedSubject+"/triage", &projected); err != nil {
+			return fmt.Errorf("get issue triage from %s: %w", target.name, err)
+		}
+		if projected.URI == nil || projected.AuthorDID == nil || *projected.AuthorDID != hostedDID || projected.SubjectURI != issue.URI || projected.RepositoryURI != hostedURI ||
+			!reflect.DeepEqual(projected.LabelIDs, []string{labelRKey}) || !reflect.DeepEqual(projected.AssigneeDIDs, []string{starAuthorDID}) || projected.MilestoneID == nil || *projected.MilestoneID != milestoneRKey ||
+			len(projected.Labels) != 1 || projected.Labels[0].ID != labelRKey || len(projected.Assignees) != 1 || projected.Assignees[0].DID != starAuthorDID || projected.Milestone == nil || projected.Milestone.ID != milestoneRKey {
+			return fmt.Errorf("%s subject triage projection did not converge: %+v", target.name, projected)
+		}
+		filterURL := target.url + "/api/v1/issues?repository_uri=" + url.QueryEscape(hostedURI) + "&label=" + labelRKey + "&assignee=" + url.QueryEscape(starAuthorDID) + "&milestone=" + milestoneRKey
+		var filtered issuePage
+		if err := getJSON(filterURL, &filtered); err != nil || len(filtered.Data) != 1 || filtered.Data[0].URI != issue.URI {
+			return fmt.Errorf("%s filtered issue projection = %+v: %w", target.name, filtered, err)
+		}
+	}
+	return nil
+}
+
+func getJSON(endpoint string, output any) error {
+	response, err := client.Get(endpoint)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(response.Body, 4096))
+		return fmt.Errorf("GET %s status = %d: %s", endpoint, response.StatusCode, strings.TrimSpace(string(body)))
+	}
+	return json.NewDecoder(io.LimitReader(response.Body, 1<<20)).Decode(output)
 }
 
 func seed(instances map[string]instance, password string) error {

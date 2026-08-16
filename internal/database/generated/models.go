@@ -584,6 +584,42 @@ type NetworkRepository struct {
 	CanonicalUri         string             `json:"canonical_uri"`
 }
 
+type NetworkRepositoryLabel struct {
+	Uri             string             `json:"uri"`
+	Cid             pgtype.Text        `json:"cid"`
+	AuthorDid       string             `json:"author_did"`
+	Rkey            string             `json:"rkey"`
+	RepositoryUri   string             `json:"repository_uri"`
+	RepositoryCid   string             `json:"repository_cid"`
+	Name            string             `json:"name"`
+	Color           string             `json:"color"`
+	Description     string             `json:"description"`
+	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID   int64              `json:"source_event_id"`
+}
+
+type NetworkRepositoryMilestone struct {
+	Uri             string             `json:"uri"`
+	Cid             pgtype.Text        `json:"cid"`
+	AuthorDid       string             `json:"author_did"`
+	Rkey            string             `json:"rkey"`
+	RepositoryUri   string             `json:"repository_uri"`
+	RepositoryCid   string             `json:"repository_cid"`
+	Title           string             `json:"title"`
+	Description     string             `json:"description"`
+	State           string             `json:"state"`
+	DueAt           pgtype.Timestamptz `json:"due_at"`
+	ClosedAt        pgtype.Timestamptz `json:"closed_at"`
+	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID   int64              `json:"source_event_id"`
+}
+
 type NetworkRepositoryTransfer struct {
 	Uri                        string             `json:"uri"`
 	Cid                        pgtype.Text        `json:"cid"`
@@ -625,6 +661,26 @@ type NetworkStar struct {
 	RepositoryUri   string             `json:"repository_uri"`
 	RepositoryCid   string             `json:"repository_cid"`
 	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID   int64              `json:"source_event_id"`
+}
+
+type NetworkSubjectTriage struct {
+	Uri             string             `json:"uri"`
+	Cid             pgtype.Text        `json:"cid"`
+	AuthorDid       string             `json:"author_did"`
+	Rkey            string             `json:"rkey"`
+	SubjectUri      string             `json:"subject_uri"`
+	SubjectCid      string             `json:"subject_cid"`
+	SubjectKind     string             `json:"subject_kind"`
+	RepositoryUri   string             `json:"repository_uri"`
+	RepositoryCid   string             `json:"repository_cid"`
+	LabelUris       []string           `json:"label_uris"`
+	AssigneeDids    []string           `json:"assignee_dids"`
+	MilestoneUri    pgtype.Text        `json:"milestone_uri"`
+	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt pgtype.Timestamptz `json:"record_updated_at"`
 	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
 	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
 	SourceEventID   int64              `json:"source_event_id"`

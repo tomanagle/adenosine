@@ -36,6 +36,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/syncproxy"
 	"github.com/adenosine-dev/adenosine/internal/transfer"
+	"github.com/adenosine-dev/adenosine/internal/triage"
 	webhookservice "github.com/adenosine-dev/adenosine/internal/webhook"
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -111,6 +112,22 @@ type RepositoryTransferManager interface {
 	Cancel(context.Context, uuid.UUID, string) (transfer.Transfer, error)
 }
 
+type TriageManager interface {
+	ListLabels(context.Context, triage.RepositoryRoute, string, int, string) ([]triage.Label, error)
+	GetLabel(context.Context, triage.RepositoryRoute, string, string) (triage.Label, error)
+	CreateLabel(context.Context, string, triage.RepositoryRoute, triage.LabelInput) (triage.Label, error)
+	UpdateLabel(context.Context, string, triage.RepositoryRoute, string, triage.LabelInput) (triage.Label, error)
+	DeleteLabel(context.Context, string, triage.RepositoryRoute, string) error
+	ListMilestones(context.Context, triage.RepositoryRoute, string, int, string) ([]triage.Milestone, error)
+	GetMilestone(context.Context, triage.RepositoryRoute, string, string) (triage.Milestone, error)
+	CreateMilestone(context.Context, string, triage.RepositoryRoute, triage.MilestoneInput) (triage.Milestone, error)
+	UpdateMilestone(context.Context, string, triage.RepositoryRoute, string, triage.MilestoneInput) (triage.Milestone, error)
+	DeleteMilestone(context.Context, string, triage.RepositoryRoute, string) error
+	GetMetadata(context.Context, triage.RepositoryRoute, triage.SubjectKind, string, string) (triage.Metadata, error)
+	PutMetadata(context.Context, string, triage.RepositoryRoute, triage.SubjectKind, string, triage.MetadataInput) (triage.Metadata, error)
+	DeleteMetadata(context.Context, string, triage.RepositoryRoute, triage.SubjectKind, string) error
+}
+
 type repositoryForkManager interface {
 	SyncFork(context.Context, repository.Repository) (repository.ForkSync, error)
 }
@@ -165,6 +182,11 @@ type collaborationPager interface {
 	PageStars(context.Context, string, string, int, string) (searchservice.StarPage, error)
 	PagePullRequests(context.Context, string, string, int, string) (searchservice.PullRequestPage, error)
 	PagePullRequestReviews(context.Context, string, string, int, string) (searchservice.PullRequestReviewPage, error)
+}
+
+type filteredCollaborationPager interface {
+	PageIssuesFiltered(context.Context, string, string, int, string, searchservice.TriageFilter) (searchservice.IssuePage, error)
+	PagePullRequestsFiltered(context.Context, string, string, int, string, searchservice.TriageFilter) (searchservice.PullRequestPage, error)
 }
 
 func profileReadError(err error) error {
@@ -445,6 +467,7 @@ type Dependencies struct {
 	Collaborators               OrganizationCollaboratorManager
 	Repositories                RepositoryManager
 	Transfers                   RepositoryTransferManager
+	Triage                      TriageManager
 	Endpoints                   RepositoryEndpointBuilder
 	Discovery                   NetworkRepositoryDiscovery
 	Search                      SearchManager
@@ -2760,14 +2783,22 @@ func (handler *apiHandler) GetIssues(w http.ResponseWriter, r *http.Request, par
 	}
 	var projection issue.Projection
 	var next *string
-	if pager, ok := handler.deps.Search.(collaborationPager); ok {
+	filter := issueTriageFilter(params)
+	if pager, ok := handler.deps.Search.(filteredCollaborationPager); ok {
 		limit, cursor := collectionParameters(params.Limit, params.Cursor)
-		page, pageErr := pager.PageIssues(r.Context(), params.RepositoryUri, viewerDID, limit, cursor)
+		page, pageErr := pager.PageIssuesFiltered(r.Context(), params.RepositoryUri, viewerDID, limit, cursor, filter)
 		if pageErr != nil {
-			handler.writeMalformed(w, r, pageErr)
+			if errors.Is(pageErr, searchservice.ErrInvalidFilter) {
+				handler.writeError(w, r, pageErr)
+			} else {
+				handler.writeMalformed(w, r, pageErr)
+			}
 			return
 		}
 		projection, next = page.Projection, page.NextCursor
+	} else if !filter.Empty() {
+		handler.writeError(w, r, searchservice.ErrInvalidFilter)
+		return
 	} else if reader, ok := handler.deps.Search.(collaborationReader); ok {
 		projection, err = reader.ListIssues(r.Context(), params.RepositoryUri, viewerDID)
 	} else {
@@ -2782,7 +2813,7 @@ func (handler *apiHandler) GetIssues(w http.ResponseWriter, r *http.Request, par
 		data[index] = projectedIssueResponse(value)
 	}
 	items := data
-	if _, paged := handler.deps.Search.(collaborationPager); !paged {
+	if _, paged := handler.deps.Search.(filteredCollaborationPager); !paged {
 		limit, cursor := paginationInputs(params.Limit, params.Cursor)
 		items, next, err = paginate(data, limit, cursor, "issues:"+params.RepositoryUri+":"+viewerDID, func(value projectedIssueJSON) string { return value.URI })
 		if err != nil {
@@ -2878,14 +2909,22 @@ func (handler *apiHandler) ListPullRequests(w http.ResponseWriter, r *http.Reque
 	}
 	var projection pullrequest.Projection
 	var next *string
-	if pager, ok := handler.deps.Search.(collaborationPager); ok {
+	filter := pullRequestTriageFilter(params)
+	if pager, ok := handler.deps.Search.(filteredCollaborationPager); ok {
 		limit, cursor := collectionParameters(params.Limit, params.Cursor)
-		page, pageErr := pager.PagePullRequests(r.Context(), params.RepositoryUri, viewerDID, limit, cursor)
+		page, pageErr := pager.PagePullRequestsFiltered(r.Context(), params.RepositoryUri, viewerDID, limit, cursor, filter)
 		if pageErr != nil {
-			handler.writeMalformed(w, r, pageErr)
+			if errors.Is(pageErr, searchservice.ErrInvalidFilter) {
+				handler.writeError(w, r, pageErr)
+			} else {
+				handler.writeMalformed(w, r, pageErr)
+			}
 			return
 		}
 		projection, next = page.Projection, page.NextCursor
+	} else if !filter.Empty() {
+		handler.writeError(w, r, searchservice.ErrInvalidFilter)
+		return
 	} else if reader, ok := handler.deps.Search.(collaborationReader); ok {
 		projection, err = reader.ListPullRequests(r.Context(), params.RepositoryUri, viewerDID)
 	} else {
@@ -2900,7 +2939,7 @@ func (handler *apiHandler) ListPullRequests(w http.ResponseWriter, r *http.Reque
 		data[index] = projectedPullRequestResponse(value)
 	}
 	items := data
-	if _, paged := handler.deps.Search.(collaborationPager); !paged {
+	if _, paged := handler.deps.Search.(filteredCollaborationPager); !paged {
 		limit, cursor := paginationInputs(params.Limit, params.Cursor)
 		items, next, err = paginate(data, limit, cursor, "pull-requests:"+params.RepositoryUri+":"+viewerDID, func(value generated.PullRequest) string { return value.Uri })
 		if err != nil {
@@ -3702,6 +3741,16 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The repository transfer request is invalid", err)
 	case errors.Is(err, transfer.ErrProvider):
 		handler.writeAPIError(w, r, http.StatusBadGateway, "repository_transfer_provider_unavailable", "The repository transfer provider is unavailable", err)
+	case errors.Is(err, triage.ErrNotFound):
+		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested triage resource was not found", err)
+	case errors.Is(err, triage.ErrAuthorization):
+		handler.writeAPIError(w, r, http.StatusForbidden, "permission_denied", "You do not have permission to manage repository triage", err)
+	case errors.Is(err, triage.ErrConflict):
+		handler.writeAPIError(w, r, http.StatusConflict, "triage_conflict", "The triage record conflicts with existing state", err)
+	case errors.Is(err, triage.ErrValidation):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The triage request is invalid", err)
+	case errors.Is(err, triage.ErrProvider):
+		handler.writeAPIError(w, r, http.StatusBadGateway, "triage_provider_unavailable", "The triage provider is unavailable", err)
 	case errors.Is(err, gitservice.ErrInvalidInput):
 		handler.writeAPIError(w, r, http.StatusBadRequest, "malformed_request", "The Git revision, path, or object ID is invalid", err)
 	case errors.Is(err, gitservice.ErrObjectNotFound):
@@ -3718,6 +3767,8 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusBadGateway, "fork_upstream_unavailable", "The fork upstream is unavailable", err)
 	case errors.Is(err, searchservice.ErrNotFound):
 		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested resource was not found", err)
+	case errors.Is(err, searchservice.ErrInvalidFilter):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The collaboration filter is invalid", err)
 	case errors.Is(err, localatproto.ErrInvalidIdentifier):
 		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "invalid_atproto_identifier", "The AT Protocol handle or DID is invalid", err)
 	case errors.Is(err, localatproto.ErrProviderFailure):

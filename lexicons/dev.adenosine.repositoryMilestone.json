@@ -1,0 +1,25 @@
+{
+  "lexicon": 1,
+  "id": "dev.adenosine.repositoryMilestone",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A stable repository-authoritative milestone definition.",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["repository", "title", "description", "state", "createdAt", "updatedAt"],
+        "properties": {
+          "repository": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 255, "maxGraphemes": 255 },
+          "description": { "type": "string", "maxLength": 65535, "maxGraphemes": 65535 },
+          "state": { "type": "string", "knownValues": ["open", "closed"] },
+          "dueAt": { "type": "string", "format": "datetime" },
+          "closedAt": { "type": "string", "format": "datetime" },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

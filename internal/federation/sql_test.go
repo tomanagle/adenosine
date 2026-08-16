@@ -237,6 +237,29 @@ func TestFederationSQLGuardsReplayAndAtomicStateShape(t *testing.T) {
 				"count(DISTINCT star.author_did)", "repository.uri = requested_repository.canonical_uri",
 			},
 		},
+		{
+			name: "repository triage migration uses portable text constraints",
+			path: "../../migrations/000022_repository_triage.sql",
+			required: []string{
+				"CREATE TABLE network.repository_labels", "CREATE TABLE network.repository_milestones",
+				"CREATE TABLE network.subject_triage", "network_repository_milestones_state CHECK",
+				"network_subject_triage_kind CHECK", "USING GIN (label_uris)", "USING GIN (assignee_dids)",
+			},
+			forbidden: []string{"CREATE TYPE", "REFERENCES network.repositories", "REFERENCES network.issues", "REFERENCES network.pull_requests"},
+		},
+		{
+			name: "repository triage projection guards source events and authority",
+			path: "../database/queries/triage.sql",
+			required: []string{
+				"-- name: UpsertFederationRepositoryLabel :exec", "-- name: TombstoneFederationRepositoryLabel :exec",
+				"-- name: UpsertFederationRepositoryMilestone :exec", "-- name: TombstoneFederationRepositoryMilestone :exec",
+				"-- name: UpsertFederationSubjectTriage :exec", "-- name: TombstoneFederationSubjectTriage :exec",
+				"source_record.source_event_id = sqlc.arg(source_event_id)",
+				"label.author_did = label_repository.owner_did", "milestone.author_did = milestone_repository.owner_did",
+				"metadata.author_did = metadata_repository.owner_did", "metadata_repository.lineage_uri = requested_repository.lineage_uri",
+				"block.blocked_did = metadata.author_did", "hidden.record_uri = metadata.uri",
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {

@@ -19,6 +19,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/profile"
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
 	"github.com/adenosine-dev/adenosine/internal/star"
+	"github.com/bluesky-social/indigo/atproto/syntax"
 )
 
 const (
@@ -34,6 +35,7 @@ var (
 	ErrInvalidLimit  = errors.New("search limit must be between 1 and 50")
 	ErrInvalidCursor = errors.New("invalid search cursor")
 	ErrNotFound      = errors.New("search result not found")
+	ErrInvalidFilter = errors.New("invalid collaboration filter")
 )
 
 type Sort string
@@ -47,6 +49,14 @@ type Cursor struct {
 	Score     float64
 	IndexedAt time.Time
 	Identity  string
+}
+
+// TriageFilter narrows issue and pull-request pages by effective repository metadata.
+type TriageFilter struct {
+	State     string
+	Label     string
+	Assignee  string
+	Milestone string
 }
 
 type RepositoryResult struct {
@@ -119,6 +129,11 @@ type collaborationStore interface {
 	ListPullRequests(context.Context, string, string, int, *Cursor) (pullrequest.Projection, error)
 	ResolvePullRequest(context.Context, string, string) (pullrequest.ProjectedPullRequest, error)
 	ListPullRequestReviews(context.Context, string, string, int, *Cursor) ([]pullrequest.ProjectedReview, error)
+}
+
+type filteredCollaborationStore interface {
+	ListIssuesFiltered(context.Context, string, string, int, *Cursor, TriageFilter) (issue.Projection, error)
+	ListPullRequestsFiltered(context.Context, string, string, int, *Cursor, TriageFilter) (pullrequest.Projection, error)
 }
 
 type Service struct{ store Store }
@@ -219,15 +234,31 @@ func (service *Service) ListPullRequestReviews(ctx context.Context, uri, viewerD
 }
 
 func (service *Service) PageIssues(ctx context.Context, repositoryURI, viewerDID string, limit int, encodedCursor string) (IssuePage, error) {
+	return service.PageIssuesFiltered(ctx, repositoryURI, viewerDID, limit, encodedCursor, TriageFilter{})
+}
+
+// PageIssuesFiltered lists issues using a cursor bound to the complete filter set.
+func (service *Service) PageIssuesFiltered(ctx context.Context, repositoryURI, viewerDID string, limit int, encodedCursor string, filter TriageFilter) (IssuePage, error) {
 	store, ok := service.store.(collaborationStore)
 	if !ok {
 		return IssuePage{}, ErrNotFound
 	}
-	cursor, err := validateCollectionCursor(encodedCursor, "issue", repositoryURI, limit)
+	if err := filter.validate(false); err != nil {
+		return IssuePage{}, err
+	}
+	cursorIdentity := repositoryURI + "\x00" + filter.scope()
+	cursor, err := validateCollectionCursor(encodedCursor, "issue", cursorIdentity, limit)
 	if err != nil {
 		return IssuePage{}, err
 	}
-	projection, err := store.ListIssues(ctx, repositoryURI, viewerDID, limit+1, cursor)
+	var projection issue.Projection
+	if filtered, supported := service.store.(filteredCollaborationStore); supported {
+		projection, err = filtered.ListIssuesFiltered(ctx, repositoryURI, viewerDID, limit+1, cursor, filter)
+	} else if filter.empty() {
+		projection, err = store.ListIssues(ctx, repositoryURI, viewerDID, limit+1, cursor)
+	} else {
+		return IssuePage{}, ErrInvalidFilter
+	}
 	if err != nil {
 		return IssuePage{}, err
 	}
@@ -235,7 +266,7 @@ func (service *Service) PageIssues(ctx context.Context, repositoryURI, viewerDID
 	if len(page.Projection.Issues) > limit {
 		last := page.Projection.Issues[limit-1]
 		page.Projection.Issues = page.Projection.Issues[:limit]
-		next := encodeCursor("issue", repositoryURI, SortRecent, Cursor{IndexedAt: last.CreatedAt, Identity: last.URI})
+		next := encodeCursor("issue", cursorIdentity, SortRecent, Cursor{IndexedAt: last.CreatedAt, Identity: last.URI})
 		page.NextCursor = &next
 	}
 	return page, nil
@@ -265,15 +296,31 @@ func (service *Service) PageStars(ctx context.Context, repositoryURI, viewerDID 
 }
 
 func (service *Service) PagePullRequests(ctx context.Context, repositoryURI, viewerDID string, limit int, encodedCursor string) (PullRequestPage, error) {
+	return service.PagePullRequestsFiltered(ctx, repositoryURI, viewerDID, limit, encodedCursor, TriageFilter{})
+}
+
+// PagePullRequestsFiltered lists pull requests using a cursor bound to the complete filter set.
+func (service *Service) PagePullRequestsFiltered(ctx context.Context, repositoryURI, viewerDID string, limit int, encodedCursor string, filter TriageFilter) (PullRequestPage, error) {
 	store, ok := service.store.(collaborationStore)
 	if !ok {
 		return PullRequestPage{}, ErrNotFound
 	}
-	cursor, err := validateCollectionCursor(encodedCursor, "pull-request", repositoryURI, limit)
+	if err := filter.validate(true); err != nil {
+		return PullRequestPage{}, err
+	}
+	cursorIdentity := repositoryURI + "\x00" + filter.scope()
+	cursor, err := validateCollectionCursor(encodedCursor, "pull-request", cursorIdentity, limit)
 	if err != nil {
 		return PullRequestPage{}, err
 	}
-	projection, err := store.ListPullRequests(ctx, repositoryURI, viewerDID, limit+1, cursor)
+	var projection pullrequest.Projection
+	if filtered, supported := service.store.(filteredCollaborationStore); supported {
+		projection, err = filtered.ListPullRequestsFiltered(ctx, repositoryURI, viewerDID, limit+1, cursor, filter)
+	} else if filter.empty() {
+		projection, err = store.ListPullRequests(ctx, repositoryURI, viewerDID, limit+1, cursor)
+	} else {
+		return PullRequestPage{}, ErrInvalidFilter
+	}
 	if err != nil {
 		return PullRequestPage{}, err
 	}
@@ -281,10 +328,46 @@ func (service *Service) PagePullRequests(ctx context.Context, repositoryURI, vie
 	if len(page.Projection.PullRequests) > limit {
 		last := page.Projection.PullRequests[limit-1]
 		page.Projection.PullRequests = page.Projection.PullRequests[:limit]
-		next := encodeCursor("pull-request", repositoryURI, SortRecent, Cursor{IndexedAt: last.CreatedAt, Identity: last.URI})
+		next := encodeCursor("pull-request", cursorIdentity, SortRecent, Cursor{IndexedAt: last.CreatedAt, Identity: last.URI})
 		page.NextCursor = &next
 	}
 	return page, nil
+}
+
+func (filter TriageFilter) validate(pullRequest bool) error {
+	if filter.State != "" {
+		valid := filter.State == "open" || filter.State == "closed" || (pullRequest && filter.State == "merged")
+		if !valid {
+			return ErrInvalidFilter
+		}
+	}
+	for _, value := range []string{filter.Label, filter.Milestone} {
+		if value == "" {
+			continue
+		}
+		rkey, err := syntax.ParseRecordKey(value)
+		if err != nil || rkey.String() != value {
+			return ErrInvalidFilter
+		}
+	}
+	if filter.Assignee != "" {
+		did, err := syntax.ParseDID(filter.Assignee)
+		if err != nil || did.String() != filter.Assignee {
+			return ErrInvalidFilter
+		}
+	}
+	return nil
+}
+
+func (filter TriageFilter) empty() bool {
+	return filter == (TriageFilter{})
+}
+
+// Empty reports whether the filter has no active predicates.
+func (filter TriageFilter) Empty() bool { return filter.empty() }
+
+func (filter TriageFilter) scope() string {
+	return strings.Join([]string{filter.State, filter.Label, filter.Assignee, filter.Milestone}, "\x00")
 }
 
 func (service *Service) PagePullRequestReviews(ctx context.Context, uri, viewerDID string, limit int, encodedCursor string) (PullRequestReviewPage, error) {
