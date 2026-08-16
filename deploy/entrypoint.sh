@@ -16,8 +16,12 @@ case "${1:-serve}" in
     git --version
     test -d "${ADENOSINE_REPO_ROOT:?ADENOSINE_REPO_ROOT is required}"
     test -w "$ADENOSINE_REPO_ROOT"
-    test -d "${ADENOSINE_RELEASE_ASSET_ROOT:?ADENOSINE_RELEASE_ASSET_ROOT is required}"
-    test -w "$ADENOSINE_RELEASE_ASSET_ROOT"
+    if [ "${ADENOSINE_RELEASE_ASSET_BACKEND:-filesystem}" = filesystem ]; then
+      test -d "${ADENOSINE_RELEASE_ASSET_ROOT:?ADENOSINE_RELEASE_ASSET_ROOT is required}"
+      test -w "$ADENOSINE_RELEASE_ASSET_ROOT"
+    else
+      test "${ADENOSINE_RELEASE_ASSET_BACKEND:-}" = s3
+    fi
     test -s "${ADENOSINE_SSH_HOST_KEY_PATH:?ADENOSINE_SSH_HOST_KEY_PATH is required}"
     psql "${DATABASE_URL:?DATABASE_URL is required}" -Atqc 'SELECT MAX(name) FROM public.schema_migrations'
     ;;

@@ -47,6 +47,24 @@ validate_environment() {
   [[ "$ADENOSINE_BASE_URL" == "https://$ADENOSINE_DOMAIN" ]] || die "ADENOSINE_BASE_URL must be https://ADENOSINE_DOMAIN"
   [[ "$ADENOSINE_ELECTRIC_URL" == "" || "$ADENOSINE_ELECTRIC_URL" == "http://electric:3000" ]] || die "ADENOSINE_ELECTRIC_URL must be empty or http://electric:3000"
   [[ "$ADENOSINE_ELECTRIC_SECRET" == "" || "$ADENOSINE_ELECTRIC_SECRET" == "$ELECTRIC_SECRET" ]] || die "ADENOSINE_ELECTRIC_SECRET must match ELECTRIC_SECRET"
+  case "${ADENOSINE_RELEASE_ASSET_BACKEND:-filesystem}" in
+    filesystem)
+      for name in ADENOSINE_RELEASE_ASSET_S3_ENDPOINT ADENOSINE_RELEASE_ASSET_S3_REGION \
+        ADENOSINE_RELEASE_ASSET_S3_BUCKET ADENOSINE_RELEASE_ASSET_S3_ACCESS_KEY_ID \
+        ADENOSINE_RELEASE_ASSET_S3_SECRET_ACCESS_KEY ADENOSINE_RELEASE_ASSET_S3_SESSION_TOKEN; do
+        [[ -z "${!name:-}" ]] || die "$name requires ADENOSINE_RELEASE_ASSET_BACKEND=s3"
+      done
+      [[ "${ADENOSINE_RELEASE_ASSET_S3_PATH_STYLE:-false}" == false ]] || die "ADENOSINE_RELEASE_ASSET_S3_PATH_STYLE requires ADENOSINE_RELEASE_ASSET_BACKEND=s3"
+      ;;
+    s3)
+      require_env ADENOSINE_RELEASE_ASSET_S3_ENDPOINT ADENOSINE_RELEASE_ASSET_S3_REGION \
+        ADENOSINE_RELEASE_ASSET_S3_BUCKET ADENOSINE_RELEASE_ASSET_S3_ACCESS_KEY_ID \
+        ADENOSINE_RELEASE_ASSET_S3_SECRET_ACCESS_KEY
+      [[ "$ADENOSINE_RELEASE_ASSET_S3_ENDPOINT" =~ ^https?://[^/?#]+(/[^?#]*)?$ ]] || die "ADENOSINE_RELEASE_ASSET_S3_ENDPOINT must be an absolute HTTP or HTTPS URL"
+      [[ "${ADENOSINE_RELEASE_ASSET_S3_PATH_STYLE:-false}" == true || "${ADENOSINE_RELEASE_ASSET_S3_PATH_STYLE:-false}" == false ]] || die "ADENOSINE_RELEASE_ASSET_S3_PATH_STYLE must be true or false"
+      ;;
+    *) die "ADENOSINE_RELEASE_ASSET_BACKEND must be filesystem or s3" ;;
+  esac
   if [[ ",${COMPOSE_PROFILES:-}," == *,electric,* ]]; then
     [[ "$ADENOSINE_ELECTRIC_URL" == "http://electric:3000" && "$ADENOSINE_ELECTRIC_SECRET" == "$ELECTRIC_SECRET" ]] || die "the electric profile requires Electric application settings"
   elif [[ -n "$ADENOSINE_ELECTRIC_URL" ]]; then
@@ -58,6 +76,11 @@ validate_environment() {
   elif [[ ",${COMPOSE_PROFILES:-}," == *,tap,* ]]; then
     die "the tap profile requires ADENOSINE_TAP_CONSUMER"
   fi
+}
+
+require_portable_release_asset_backend() {
+  [[ "${ADENOSINE_RELEASE_ASSET_BACKEND:-filesystem}" == filesystem ]] ||
+    die "bundled backup and restore require filesystem release assets; coordinate PostgreSQL and bucket recovery with the S3 provider procedure"
 }
 
 need_tools() {

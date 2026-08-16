@@ -75,4 +75,8 @@ Compliance is checked by release-service tests, filesystem traversal/symlink/siz
 
 ## More Information
 
-This decision implements [issue #48](https://github.com/tomanagle/adenosine/issues/48). Reconsider the default backend when Adenosine supports horizontal application replicas or incremental portable backups. A future backend must retain opaque keys, exact-size writes, checksum verification, idempotent deletion, and streaming reads.
+This decision implements [issue #48](https://github.com/tomanagle/adenosine/issues/48).
+[ADR 0002](0002-support-selectable-s3-release-asset-storage.md) extends it with an optional shared
+S3-compatible backend while retaining filesystem storage as the single-node default. Both backends
+retain opaque keys, exact-size writes, checksum verification, idempotent deletion, and streaming
+reads.

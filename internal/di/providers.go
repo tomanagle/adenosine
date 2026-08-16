@@ -62,12 +62,15 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		_ = shutdownTelemetry(ctx)
 		return nil, fmt.Errorf("open repository storage: %w", err)
 	}
-	releaseAssetStorage, err := release.NewFilesystem(cfg.ReleaseAssetRoot)
-	if err != nil {
-		db.Close()
-		_ = shutdownTelemetry(ctx)
-		return nil, fmt.Errorf("open release asset storage: %w", err)
-	}
+	releaseAssetStorage := release.MustBlobStore(ctx, release.BlobStoreConfig{
+		Backend:        cfg.ReleaseAssetBackend,
+		FilesystemRoot: cfg.ReleaseAssetRoot,
+		S3: release.S3Config{
+			Endpoint: cfg.ReleaseAssetS3Endpoint, Region: cfg.ReleaseAssetS3Region, Bucket: cfg.ReleaseAssetS3Bucket,
+			AccessKeyID: cfg.ReleaseAssetS3AccessKeyID, SecretAccessKey: cfg.ReleaseAssetS3SecretKey,
+			SessionToken: cfg.ReleaseAssetS3SessionToken, PathStyle: cfg.ReleaseAssetS3PathStyle,
+		},
+	})
 	git := gitservice.NewService(gitservice.NewRunner(cfg.GitBinary), repositoryStorage)
 	oauthClient := atproto.Must(cfg.BaseURL, db.Queries(), cfg.OAuthStateKey, cfg.OAuthCredentialKey, atproto.SystemClock{})
 	repositoryEndpoints := repository.Must(cfg.BaseURL, cfg.SSHHost, cfg.SSHPort)

@@ -17,11 +17,12 @@ import (
 const maxReleaseBodyBytes = 1024 * 1024
 
 var (
-	ErrNotFound      = errors.New("release not found")
-	ErrConflict      = errors.New("release already exists")
-	ErrValidation    = errors.New("release validation failed")
-	ErrQuotaExceeded = errors.New("release asset quota exceeded")
-	ErrSizeMismatch  = errors.New("release asset size mismatch")
+	ErrNotFound         = errors.New("release not found")
+	ErrConflict         = errors.New("release already exists")
+	ErrValidation       = errors.New("release validation failed")
+	ErrQuotaExceeded    = errors.New("release asset quota exceeded")
+	ErrSizeMismatch     = errors.New("release asset size mismatch")
+	ErrChecksumMismatch = errors.New("release asset checksum mismatch")
 )
 
 type State string

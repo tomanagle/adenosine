@@ -48,4 +48,9 @@ if "$root/scripts/release.sh" --version v0.1.0 --output "$root" >"$temporary/rel
 fi
 grep -q -- '--output must be a child directory' "$temporary/release.out"
 
+if (source "$root/deploy/lib.sh"; ADENOSINE_RELEASE_ASSET_BACKEND=s3; require_portable_release_asset_backend) >/dev/null 2>&1; then
+  echo "portable backup accepted the S3 release asset backend" >&2
+  exit 1
+fi
+
 printf 'ok: production operation script tests\n'

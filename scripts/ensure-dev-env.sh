@@ -14,6 +14,10 @@ if [[ -f .env.local ]]; then
     printf 'ADENOSINE_OAUTH_CREDENTIAL_KEY=%s\n' "$oauth_credential_key" >> .env.local
     echo "Added ADENOSINE_OAUTH_CREDENTIAL_KEY to .env.local."
   fi
+  if ! grep -q '^ADENOSINE_RELEASE_ASSET_BACKEND=' .env.local; then
+    printf 'ADENOSINE_RELEASE_ASSET_BACKEND=filesystem\n' >> .env.local
+    echo "Added ADENOSINE_RELEASE_ASSET_BACKEND to .env.local."
+  fi
   if ! grep -q '^ADENOSINE_TAP_CONSUMER=' .env.local; then
     printf 'ADENOSINE_TAP_CONSUMER=tap:dev.adenosine:v1\n' >> .env.local
     echo "Enabled the Tap consumer in .env.local."
@@ -48,6 +52,7 @@ oauth_state_key="$(openssl rand -base64 32)"
   printf 'ADENOSINE_BASE_URL=http://127.0.0.1:8080\n'
   printf 'ADENOSINE_LISTEN_ADDR=:8080\n'
   printf 'ADENOSINE_REPO_ROOT=/var/lib/adenosine/repos\n'
+  printf 'ADENOSINE_RELEASE_ASSET_BACKEND=filesystem\n'
   printf 'ADENOSINE_RELEASE_ASSET_ROOT=/var/lib/adenosine/state/release-assets\n'
   printf 'ADENOSINE_GIT_BINARY=git\n'
   printf 'ADENOSINE_HTTP_PORT=8080\n'
