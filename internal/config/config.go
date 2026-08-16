@@ -21,7 +21,15 @@ type Config struct {
 	ElectricURL                 string
 	ElectricSecret              string
 	RepositoryRoot              string
+	ReleaseAssetBackend         string
 	ReleaseAssetRoot            string
+	ReleaseAssetS3Endpoint      string
+	ReleaseAssetS3Region        string
+	ReleaseAssetS3Bucket        string
+	ReleaseAssetS3AccessKeyID   string
+	ReleaseAssetS3SecretKey     string
+	ReleaseAssetS3SessionToken  string
+	ReleaseAssetS3PathStyle     bool
 	ReleaseAssetMaxBytes        int64
 	ReleaseMaxBytes             int64
 	RepositoryReleaseMaxBytes   int64
@@ -50,21 +58,40 @@ func Must() Config {
 
 func load() (Config, error) {
 	cfg := Config{
-		BaseURL:          valueOrDefault("ADENOSINE_BASE_URL", "http://127.0.0.1:8080"),
-		ListenAddr:       listenAddrOrDefault("ADENOSINE_LISTEN_ADDR", ":8080"),
-		DatabaseURL:      strings.TrimSpace(os.Getenv("DATABASE_URL")),
-		ElectricURL:      strings.TrimSpace(os.Getenv("ADENOSINE_ELECTRIC_URL")),
-		ElectricSecret:   strings.TrimSpace(os.Getenv("ADENOSINE_ELECTRIC_SECRET")),
-		RepositoryRoot:   valueOrDefault("ADENOSINE_REPO_ROOT", "/var/lib/adenosine/repos"),
-		ReleaseAssetRoot: valueOrDefault("ADENOSINE_RELEASE_ASSET_ROOT", "/var/lib/adenosine/state/release-assets"),
-		GitBinary:        valueOrDefault("ADENOSINE_GIT_BINARY", "git"),
-		SSHListenAddr:    listenAddrOrDefault("ADENOSINE_SSH_LISTEN_ADDR", ":2222"),
-		SSHHost:          valueOrDefault("ADENOSINE_SSH_HOST", "localhost"),
-		SSHPort:          2222,
-		SSHHostKeyPath:   valueOrDefault("ADENOSINE_SSH_HOST_KEY_PATH", "/var/lib/adenosine/state/ssh_host_ed25519_key"),
-		TapAdminPassword: strings.TrimSpace(os.Getenv("ADENOSINE_TAP_ADMIN_PASSWORD")),
-		SessionLifetime:  30 * 24 * time.Hour,
-		ShutdownTimeout:  10 * time.Second,
+		BaseURL:                    valueOrDefault("ADENOSINE_BASE_URL", "http://127.0.0.1:8080"),
+		ListenAddr:                 listenAddrOrDefault("ADENOSINE_LISTEN_ADDR", ":8080"),
+		DatabaseURL:                strings.TrimSpace(os.Getenv("DATABASE_URL")),
+		ElectricURL:                strings.TrimSpace(os.Getenv("ADENOSINE_ELECTRIC_URL")),
+		ElectricSecret:             strings.TrimSpace(os.Getenv("ADENOSINE_ELECTRIC_SECRET")),
+		RepositoryRoot:             valueOrDefault("ADENOSINE_REPO_ROOT", "/var/lib/adenosine/repos"),
+		ReleaseAssetBackend:        valueOrDefault("ADENOSINE_RELEASE_ASSET_BACKEND", "filesystem"),
+		ReleaseAssetRoot:           valueOrDefault("ADENOSINE_RELEASE_ASSET_ROOT", "/var/lib/adenosine/state/release-assets"),
+		ReleaseAssetS3Endpoint:     os.Getenv("ADENOSINE_RELEASE_ASSET_S3_ENDPOINT"),
+		ReleaseAssetS3Region:       os.Getenv("ADENOSINE_RELEASE_ASSET_S3_REGION"),
+		ReleaseAssetS3Bucket:       os.Getenv("ADENOSINE_RELEASE_ASSET_S3_BUCKET"),
+		ReleaseAssetS3AccessKeyID:  os.Getenv("ADENOSINE_RELEASE_ASSET_S3_ACCESS_KEY_ID"),
+		ReleaseAssetS3SecretKey:    os.Getenv("ADENOSINE_RELEASE_ASSET_S3_SECRET_ACCESS_KEY"),
+		ReleaseAssetS3SessionToken: os.Getenv("ADENOSINE_RELEASE_ASSET_S3_SESSION_TOKEN"),
+		GitBinary:                  valueOrDefault("ADENOSINE_GIT_BINARY", "git"),
+		SSHListenAddr:              listenAddrOrDefault("ADENOSINE_SSH_LISTEN_ADDR", ":2222"),
+		SSHHost:                    valueOrDefault("ADENOSINE_SSH_HOST", "localhost"),
+		SSHPort:                    2222,
+		SSHHostKeyPath:             valueOrDefault("ADENOSINE_SSH_HOST_KEY_PATH", "/var/lib/adenosine/state/ssh_host_ed25519_key"),
+		TapAdminPassword:           strings.TrimSpace(os.Getenv("ADENOSINE_TAP_ADMIN_PASSWORD")),
+		SessionLifetime:            30 * 24 * time.Hour,
+		ShutdownTimeout:            10 * time.Second,
+	}
+	releaseAssetS3PathStyle, err := boolOrDefault("ADENOSINE_RELEASE_ASSET_S3_PATH_STYLE", false)
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.ReleaseAssetS3PathStyle = releaseAssetS3PathStyle
+	if cfg.ReleaseAssetS3Endpoint != "" {
+		canonical, err := canonicalS3Endpoint(cfg.ReleaseAssetS3Endpoint)
+		if err != nil {
+			return Config{}, err
+		}
+		cfg.ReleaseAssetS3Endpoint = canonical
 	}
 	releaseAssetMaxBytes, err := positiveInt64OrDefault("ADENOSINE_RELEASE_ASSET_MAX_BYTES", 100*1024*1024)
 	if err != nil {
@@ -148,8 +175,20 @@ func (c Config) Validate() error {
 	if strings.TrimSpace(c.RepositoryRoot) == "" {
 		return fmt.Errorf("ADENOSINE_REPO_ROOT must not be empty")
 	}
-	if strings.TrimSpace(c.ReleaseAssetRoot) == "" {
-		return fmt.Errorf("ADENOSINE_RELEASE_ASSET_ROOT must not be empty")
+	switch c.ReleaseAssetBackend {
+	case "filesystem":
+		if strings.TrimSpace(c.ReleaseAssetRoot) == "" {
+			return fmt.Errorf("ADENOSINE_RELEASE_ASSET_ROOT must not be empty for the filesystem backend")
+		}
+		if c.hasS3ReleaseAssetConfiguration() {
+			return fmt.Errorf("ADENOSINE_RELEASE_ASSET_S3_* settings require ADENOSINE_RELEASE_ASSET_BACKEND=s3")
+		}
+	case "s3":
+		if err := c.validateReleaseAssetS3(); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("ADENOSINE_RELEASE_ASSET_BACKEND must be filesystem or s3")
 	}
 	if c.ReleaseAssetMaxBytes <= 0 || c.ReleaseMaxBytes < c.ReleaseAssetMaxBytes || c.RepositoryReleaseMaxBytes < c.ReleaseMaxBytes {
 		return fmt.Errorf("release asset byte limits must be positive and monotonically increasing")
@@ -212,6 +251,74 @@ func durationOrDefault(name string, fallback time.Duration) (time.Duration, erro
 		return 0, fmt.Errorf("%s must be a valid duration: %w", name, err)
 	}
 	return duration, nil
+}
+
+func boolOrDefault(name string, fallback bool) (bool, error) {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return fallback, nil
+	}
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf("%s must be true or false", name)
+	}
+	return parsed, nil
+}
+
+func (c Config) hasS3ReleaseAssetConfiguration() bool {
+	return c.ReleaseAssetS3Endpoint != "" || c.ReleaseAssetS3Region != "" || c.ReleaseAssetS3Bucket != "" ||
+		c.ReleaseAssetS3AccessKeyID != "" || c.ReleaseAssetS3SecretKey != "" || c.ReleaseAssetS3SessionToken != "" ||
+		c.ReleaseAssetS3PathStyle
+}
+
+func (c Config) validateReleaseAssetS3() error {
+	if c.ReleaseAssetS3Endpoint == "" {
+		return fmt.Errorf("ADENOSINE_RELEASE_ASSET_S3_ENDPOINT must not be empty for the S3 backend")
+	}
+	canonical, err := canonicalS3Endpoint(c.ReleaseAssetS3Endpoint)
+	if err != nil {
+		return err
+	}
+	if canonical != c.ReleaseAssetS3Endpoint {
+		return fmt.Errorf("ADENOSINE_RELEASE_ASSET_S3_ENDPOINT must be canonical (for example %q)", canonical)
+	}
+	values := []struct {
+		name  string
+		value string
+	}{
+		{name: "ADENOSINE_RELEASE_ASSET_S3_REGION", value: c.ReleaseAssetS3Region},
+		{name: "ADENOSINE_RELEASE_ASSET_S3_BUCKET", value: c.ReleaseAssetS3Bucket},
+		{name: "ADENOSINE_RELEASE_ASSET_S3_ACCESS_KEY_ID", value: c.ReleaseAssetS3AccessKeyID},
+		{name: "ADENOSINE_RELEASE_ASSET_S3_SECRET_ACCESS_KEY", value: c.ReleaseAssetS3SecretKey},
+	}
+	for _, value := range values {
+		if value.value == "" || strings.TrimSpace(value.value) != value.value {
+			return fmt.Errorf("%s must not be empty or contain surrounding whitespace", value.name)
+		}
+	}
+	if strings.ContainsAny(c.ReleaseAssetS3Bucket, `/\\`) {
+		return fmt.Errorf("ADENOSINE_RELEASE_ASSET_S3_BUCKET must not contain path separators")
+	}
+	if strings.TrimSpace(c.ReleaseAssetS3SessionToken) != c.ReleaseAssetS3SessionToken {
+		return fmt.Errorf("ADENOSINE_RELEASE_ASSET_S3_SESSION_TOKEN must not contain surrounding whitespace")
+	}
+	return nil
+}
+
+func canonicalS3Endpoint(value string) (string, error) {
+	parsed, err := url.ParseRequestURI(value)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") ||
+		parsed.User != nil || parsed.RawQuery != "" || parsed.Fragment != "" || parsed.ForceQuery || parsed.RawPath != "" {
+		return "", fmt.Errorf("ADENOSINE_RELEASE_ASSET_S3_ENDPOINT must be an absolute HTTP or HTTPS URL without userinfo, query, or fragment")
+	}
+	parsed.Scheme = strings.ToLower(parsed.Scheme)
+	parsed.Host = strings.ToLower(parsed.Host)
+	if parsed.Path == "" || parsed.Path == "/" {
+		parsed.Path = ""
+	} else {
+		parsed.Path = path.Clean(parsed.Path)
+	}
+	return parsed.String(), nil
 }
 
 func canonicalElectricURL(value string) (string, error) {

@@ -10,7 +10,9 @@ Adenosine's public-alpha security posture is defined by the [threat model](secur
 - Session-only credential administration prevents a repository-scoped PAT from minting stronger credentials.
 - Cookie-authenticated mutations require the configured same-origin `Origin`.
 
-`auth.*`, `.env.local`, database dumps, encryption keys, Tap/Electric secrets, telemetry exporter headers, and the SSH host private key are sensitive. Do not put them in logs, traces, issues, federation records, or support bundles.
+`auth.*`, `.env.local`, database dumps, encryption keys, release-storage access keys and session
+tokens, Tap/Electric secrets, telemetry exporter headers, and the SSH host private key are sensitive.
+Do not put them in logs, traces, issues, federation records, or support bundles.
 
 ## Operational posture
 

@@ -94,6 +94,13 @@ transaction. Services restart even when capture fails. The package contains:
 - the identity/decryption-critical production environment
 - SHA-256 checksums for every payload
 
+This portable backup supports the default filesystem release-asset backend. It fails closed when
+`ADENOSINE_RELEASE_ASSET_BACKEND=s3`, because an archive without the external bucket is not a
+complete recovery point. S3 operators must stop every write-capable node and capture PostgreSQL and
+the bucket at the same maintenance barrier using provider tooling. Preserve the bucket version or
+inventory, lifecycle and encryption configuration, credentials or workload identity, and the
+application/schema version. Restore both sides to that paired recovery point before serving.
+
 The resulting archive contains secrets and local Git objects that cannot be rebuilt from ATProto.
 It also contains hosted release assets. Live deletion is immediate, while copies in backups remain
 until the operator's encrypted off-host retention policy expires them.
@@ -125,6 +132,8 @@ and runs doctor. Failed clean restores remove the newly created project volumes 
 selected env file, making the same command safely retryable. It never regenerates secrets or the SSH host key. A backup requiring an unavailable
 image or unsupported future format fails closed. After restore, rebuild/reindex optional Electric
 and network projections and verify ordinary Git clone/push and the recorded SSH fingerprint.
+Portable restore also rejects an S3 release-asset configuration; use the paired provider recovery
+procedure described in [Repository Releases](repository-releases.md#backup-restore-retention-and-deletion).
 
 ## Upgrade and rollback
 

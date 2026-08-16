@@ -45,10 +45,8 @@ func (storage *Filesystem) Put(ctx context.Context, key string, source io.Reader
 	}
 	temporaryPath := temporary.Name()
 	defer func() {
-		if returnedErr != nil {
-			_ = temporary.Close()
-			_ = os.Remove(temporaryPath)
-		}
+		_ = temporary.Close()
+		_ = os.Remove(temporaryPath)
 	}()
 	if err := temporary.Chmod(0o640); err != nil {
 		return "", fmt.Errorf("protect release asset temporary file: %w", err)
@@ -68,15 +66,20 @@ func (storage *Filesystem) Put(ctx context.Context, key string, source io.Reader
 	if err := temporary.Close(); err != nil {
 		return "", fmt.Errorf("close release asset: %w", err)
 	}
-	if _, err := os.Lstat(path); err == nil {
-		return "", ErrConflict
-	} else if !os.IsNotExist(err) {
-		return "", fmt.Errorf("inspect release asset target: %w", err)
+	checksum = hex.EncodeToString(hash.Sum(nil))
+	if err := os.Link(temporaryPath, path); err != nil {
+		if !os.IsExist(err) {
+			return "", fmt.Errorf("publish release asset: %w", err)
+		}
+		matches, inspectErr := matchingFile(path, expectedSize, checksum)
+		if inspectErr != nil {
+			return "", inspectErr
+		}
+		if !matches {
+			return "", ErrConflict
+		}
 	}
-	if err := os.Rename(temporaryPath, path); err != nil {
-		return "", fmt.Errorf("publish release asset: %w", err)
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
+	return checksum, nil
 }
 
 func (storage *Filesystem) Open(ctx context.Context, key string) (io.ReadCloser, error) {
@@ -129,8 +132,8 @@ func (storage *Filesystem) Delete(ctx context.Context, key string) error {
 }
 
 func (storage *Filesystem) path(key string) (string, error) {
-	if key == "" || filepath.IsAbs(key) || strings.ContainsRune(key, 0) {
-		return "", fmt.Errorf("invalid release asset key")
+	if err := validateStorageKey(key); err != nil {
+		return "", err
 	}
 	clean := filepath.Clean(filepath.FromSlash(key))
 	if clean == "." || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
@@ -167,6 +170,26 @@ func (storage *Filesystem) ensureDirectory(directory string) error {
 		}
 	}
 	return nil
+}
+
+func matchingFile(path string, expectedSize int64, expectedChecksum string) (bool, error) {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return false, fmt.Errorf("inspect existing release asset: %w", err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() || info.Size() != expectedSize {
+		return false, nil
+	}
+	file, err := os.Open(path)
+	if err != nil {
+		return false, fmt.Errorf("open existing release asset: %w", err)
+	}
+	defer file.Close()
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return false, fmt.Errorf("checksum existing release asset: %w", err)
+	}
+	return hex.EncodeToString(hash.Sum(nil)) == expectedChecksum, nil
 }
 
 type contextReader struct {

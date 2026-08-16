@@ -27,7 +27,8 @@ type store interface {
 	DeleteAsset(context.Context, repository.ID, uuid.UUID, uuid.UUID) error
 }
 
-type blobStore interface {
+// BlobStore persists immutable release asset bytes behind opaque keys.
+type BlobStore interface {
 	Put(context.Context, string, io.Reader, int64) (string, error)
 	Open(context.Context, string) (io.ReadCloser, error)
 	Delete(context.Context, string) error
@@ -42,14 +43,14 @@ type idGenerator interface{ New() (uuid.UUID, error) }
 
 type Service struct {
 	store  store
-	blobs  blobStore
+	blobs  BlobStore
 	tags   tagReader
 	clock  clock
 	ids    idGenerator
 	limits Limits
 }
 
-func NewService(store store, blobs blobStore, tags tagReader, clock clock, ids idGenerator, limits Limits) (*Service, error) {
+func NewService(store store, blobs BlobStore, tags tagReader, clock clock, ids idGenerator, limits Limits) (*Service, error) {
 	if store == nil || blobs == nil || tags == nil || clock == nil || ids == nil {
 		return nil, fmt.Errorf("construct release service: dependencies must not be nil")
 	}
