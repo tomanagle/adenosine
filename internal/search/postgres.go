@@ -24,6 +24,15 @@ func NewPostgresStore(queries *dbgen.Queries) *PostgresStore { return &PostgresS
 
 func (store *PostgresStore) ResolveRepository(ctx context.Context, owner, slug, viewerDID string) (federation.DiscoveryRepository, error) {
 	row, err := store.queries.ResolveSearchRepository(ctx, dbgen.ResolveSearchRepositoryParams{RepositoryOwner: owner, RepositorySlug: slug, ViewerDid: optionalText(viewerDID)})
+	return resolvedRepository(row, err)
+}
+
+func (store *PostgresStore) ResolveRepositoryByURI(ctx context.Context, repositoryURI, viewerDID string) (federation.DiscoveryRepository, error) {
+	row, err := store.queries.ResolveSearchRepository(ctx, dbgen.ResolveSearchRepositoryParams{RequestedRepositoryUri: optionalText(repositoryURI), ViewerDid: optionalText(viewerDID)})
+	return resolvedRepository(row, err)
+}
+
+func resolvedRepository(row dbgen.ResolveSearchRepositoryRow, err error) (federation.DiscoveryRepository, error) {
 	if errors.Is(err, pgx.ErrNoRows) {
 		return federation.DiscoveryRepository{}, ErrNotFound
 	}

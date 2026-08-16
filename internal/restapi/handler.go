@@ -143,6 +143,10 @@ type networkRepositoryResolver interface {
 	ResolveRepository(context.Context, string, string, string) (federation.DiscoveryRepository, error)
 }
 
+type networkRepositoryURIResolver interface {
+	ResolveRepositoryByURI(context.Context, string, string) (federation.DiscoveryRepository, error)
+}
+
 type repositoryForkPager interface {
 	PageForks(context.Context, string, string, int, string) (searchservice.ForkPage, error)
 }
@@ -2026,12 +2030,27 @@ func (handler *apiHandler) repositoryOrganization(r *http.Request, actorDID stri
 func (handler *apiHandler) GetRepository(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
 	repo, err := handler.readableRepository(r, owner, slug)
 	if err == nil {
-		if viewerDID, viewerErr := handler.optionalSessionViewer(r); viewerErr == nil && viewerDID != "" {
+		viewerDID, _ := handler.optionalSessionViewer(r)
+		if viewerDID != "" {
 			if authorizer, ok := handler.deps.Authorization.(repositoryAdminAuthorizer); ok {
 				repo.ViewerCanAdmin, _ = authorizer.CanAdminRepository(r.Context(), viewerDID, repo.ID)
 			}
 		}
-		writeJSON(w, http.StatusOK, handler.repositoryResponse(repo))
+		response := handler.repositoryResponse(repo)
+		if repo.Visibility == repository.VisibilityPublic && repo.ATURI != "" {
+			if resolver, ok := handler.deps.Search.(networkRepositoryURIResolver); ok {
+				projected, resolveErr := resolver.ResolveRepositoryByURI(r.Context(), repo.ATURI, viewerDID)
+				if resolveErr != nil && !errors.Is(resolveErr, searchservice.ErrNotFound) {
+					handler.writeError(w, r, resolveErr)
+					return
+				}
+				if resolveErr == nil {
+					applyRepositoryCounters(&response, projected)
+				}
+			}
+		}
+		w.Header().Set("Vary", "Cookie")
+		writeJSON(w, http.StatusOK, response)
 		return
 	}
 	if !errors.Is(err, repository.ErrNotFound) {
@@ -3974,6 +3993,16 @@ func networkRepositoryResponse(repo federation.DiscoveryRepository) generated.Re
 			GitHttpsUrl: repo.GitHTTPS, GitSshUrl: pointerUnlessEmpty(repo.GitSSH), SourceBrowsing: sourceBrowsing(repo)},
 		CreatedAt: repo.CreatedAt, UpdatedAt: repo.UpdatedAt,
 	}
+}
+
+func applyRepositoryCounters(response *generated.Repository, projection federation.DiscoveryRepository) {
+	response.ForkCount = projection.ForkCount
+	response.StarCount = projection.StarCount
+	response.IssueCount = projection.IssueCount
+	response.OpenIssueCount = projection.OpenIssueCount
+	response.CommentCount = projection.CommentCount
+	response.PullRequestCount = projection.PullRequestCount
+	response.OpenPullRequestCount = projection.OpenPullRequestCount
 }
 
 func repositoryOwnerResponse(repo repository.Repository) generated.RepositoryOwner {
