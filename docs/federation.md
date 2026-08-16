@@ -1,8 +1,8 @@
 # Lexicons, Publication, And Tap
 
 [`../lexicons/`](../lexicons/) is the implementation-independent source of truth for
-`dev.adenosine.*` records: profile, repository, star, issue/status/comment, and pull
-request/status/review. A DID is the record author; record fields do not duplicate mutable
+`dev.adenosine.*` records: profile, repository, star, issue/status/comment, pull
+request/status/review, and repository triage. A DID is the record author; record fields do not duplicate mutable
 handles or claim a different author. Repository and collaboration references use canonical
 AT URIs and CIDs.
 
@@ -16,6 +16,13 @@ Fork records additionally carry an optional `forkedFrom` strong reference to the
 repository record. The URI is durable ancestry; the CID records the upstream version seen
 when the fork was created. Consumers resolve the current upstream record by URI before a
 later sync, so endpoint rotation does not make ancestry stale.
+
+Repository owners publish stable label and milestone definitions and one complete
+`dev.adenosine.subjectTriage` snapshot per issue or pull request. The snapshot author must be
+the repository's current authority and all referenced definitions must resolve within its
+accepted transfer lineage. A former owner's definitions remain readable after transfer, but
+the former owner cannot mutate workflow state. See
+[`adrs/0002-model-triage-as-owner-authored-snapshots.md`](adrs/0002-model-triage-as-owner-authored-snapshots.md).
 
 A successful publication means the PDS accepted the record. It does not mean this or any
 other Adenosine instance has indexed it. Responses return identity needed for client-side

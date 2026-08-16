@@ -94,11 +94,16 @@ func (store *PostgresStore) ResolveProfile(ctx context.Context, did, viewerDID s
 }
 
 func (store *PostgresStore) ListIssues(ctx context.Context, repositoryURI, viewerDID string, limit int, cursor *Cursor) (issue.Projection, error) {
-	counts, err := store.queries.CountSearchIssues(ctx, dbgen.CountSearchIssuesParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID)})
+	return store.ListIssuesFiltered(ctx, repositoryURI, viewerDID, limit, cursor, TriageFilter{})
+}
+
+func (store *PostgresStore) ListIssuesFiltered(ctx context.Context, repositoryURI, viewerDID string, limit int, cursor *Cursor, filter TriageFilter) (issue.Projection, error) {
+	filterParams := triageFilterParams(filter)
+	counts, err := store.queries.CountSearchIssues(ctx, dbgen.CountSearchIssuesParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), StateFilter: filterParams.state, LabelFilter: filterParams.label, AssigneeFilter: filterParams.assignee, MilestoneFilter: filterParams.milestone})
 	if err != nil {
 		return issue.Projection{}, fmt.Errorf("count issues: %w", err)
 	}
-	params := dbgen.ListSearchIssuesParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit)}
+	params := dbgen.ListSearchIssuesParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit), StateFilter: filterParams.state, LabelFilter: filterParams.label, AssigneeFilter: filterParams.assignee, MilestoneFilter: filterParams.milestone}
 	applyCollectionCursor(&params.CursorUri, &params.CursorCreatedAt, cursor)
 	rows, err := store.queries.ListSearchIssues(ctx, params)
 	if err != nil {
@@ -130,11 +135,16 @@ func (store *PostgresStore) ListStars(ctx context.Context, repositoryURI, viewer
 }
 
 func (store *PostgresStore) ListPullRequests(ctx context.Context, repositoryURI, viewerDID string, limit int, cursor *Cursor) (pullrequest.Projection, error) {
-	counts, err := store.queries.CountSearchPullRequests(ctx, dbgen.CountSearchPullRequestsParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID)})
+	return store.ListPullRequestsFiltered(ctx, repositoryURI, viewerDID, limit, cursor, TriageFilter{})
+}
+
+func (store *PostgresStore) ListPullRequestsFiltered(ctx context.Context, repositoryURI, viewerDID string, limit int, cursor *Cursor, filter TriageFilter) (pullrequest.Projection, error) {
+	filterParams := triageFilterParams(filter)
+	counts, err := store.queries.CountSearchPullRequests(ctx, dbgen.CountSearchPullRequestsParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), StateFilter: filterParams.state, LabelFilter: filterParams.label, AssigneeFilter: filterParams.assignee, MilestoneFilter: filterParams.milestone})
 	if err != nil {
 		return pullrequest.Projection{}, fmt.Errorf("count pull requests: %w", err)
 	}
-	params := dbgen.ListSearchPullRequestsParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit)}
+	params := dbgen.ListSearchPullRequestsParams{RepositoryUri: repositoryURI, ViewerDid: optionalText(viewerDID), ResultLimit: int32(limit), StateFilter: filterParams.state, LabelFilter: filterParams.label, AssigneeFilter: filterParams.assignee, MilestoneFilter: filterParams.milestone}
 	applyCollectionCursor(&params.CursorUri, &params.CursorCreatedAt, cursor)
 	rows, err := store.queries.ListSearchPullRequests(ctx, params)
 	if err != nil {
@@ -256,6 +266,12 @@ func (store *PostgresStore) SearchProfiles(ctx context.Context, query string, so
 }
 
 func optionalText(value string) pgtype.Text { return pgtype.Text{String: value, Valid: value != ""} }
+
+type postgresTriageFilter struct{ state, label, assignee, milestone pgtype.Text }
+
+func triageFilterParams(filter TriageFilter) postgresTriageFilter {
+	return postgresTriageFilter{state: optionalText(filter.State), label: optionalText(filter.Label), assignee: optionalText(filter.Assignee), milestone: optionalText(filter.Milestone)}
+}
 
 func escapeLike(value string) string {
 	value = strings.ReplaceAll(value, `\`, `\\`)

@@ -172,6 +172,7 @@ case "$task" in
     "${federation_compose[@]}" run --rm federation-acceptance federation-acceptance -phase=star
     "${federation_compose[@]}" run --rm federation-issue
     "${federation_compose[@]}" run --rm federation-acceptance federation-acceptance -phase=issue
+    "${federation_compose[@]}" run --rm federation-acceptance federation-acceptance -phase=triage
     "${federation_compose[@]}" run --rm federation-comment go run ./test/federationcomment -phase=create
     "${federation_compose[@]}" run --rm federation-acceptance federation-acceptance -phase=comments
     "${federation_compose[@]}" run --rm federation-comment go run ./test/federationcomment -phase=moderate

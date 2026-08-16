@@ -925,6 +925,72 @@ func (e RepositoryHostingSourceBrowsing) Valid() bool {
 	}
 }
 
+// Defines values for RepositoryLabelMutationProjected.
+const (
+	RepositoryLabelMutationProjectedFalse RepositoryLabelMutationProjected = false
+)
+
+// Valid indicates whether the value is a known member of the RepositoryLabelMutationProjected enum.
+func (e RepositoryLabelMutationProjected) Valid() bool {
+	switch e {
+	case RepositoryLabelMutationProjectedFalse:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RepositoryMilestoneState.
+const (
+	RepositoryMilestoneStateClosed RepositoryMilestoneState = "closed"
+	RepositoryMilestoneStateOpen   RepositoryMilestoneState = "open"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryMilestoneState enum.
+func (e RepositoryMilestoneState) Valid() bool {
+	switch e {
+	case RepositoryMilestoneStateClosed:
+		return true
+	case RepositoryMilestoneStateOpen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RepositoryMilestoneInputState.
+const (
+	RepositoryMilestoneInputStateClosed RepositoryMilestoneInputState = "closed"
+	RepositoryMilestoneInputStateOpen   RepositoryMilestoneInputState = "open"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryMilestoneInputState enum.
+func (e RepositoryMilestoneInputState) Valid() bool {
+	switch e {
+	case RepositoryMilestoneInputStateClosed:
+		return true
+	case RepositoryMilestoneInputStateOpen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RepositoryMilestoneMutationProjected.
+const (
+	RepositoryMilestoneMutationProjectedFalse RepositoryMilestoneMutationProjected = false
+)
+
+// Valid indicates whether the value is a known member of the RepositoryMilestoneMutationProjected enum.
+func (e RepositoryMilestoneMutationProjected) Valid() bool {
+	switch e {
+	case RepositoryMilestoneMutationProjectedFalse:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RepositoryOwnerKind.
 const (
 	RepositoryOwnerKindAccount      RepositoryOwnerKind = "account"
@@ -981,13 +1047,46 @@ func (e RepositoryWebhookHasSecret) Valid() bool {
 
 // Defines values for StarMutationProjected.
 const (
-	False StarMutationProjected = false
+	StarMutationProjectedFalse StarMutationProjected = false
 )
 
 // Valid indicates whether the value is a known member of the StarMutationProjected enum.
 func (e StarMutationProjected) Valid() bool {
 	switch e {
-	case False:
+	case StarMutationProjectedFalse:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SubjectTriageSubjectKind.
+const (
+	SubjectTriageSubjectKindIssue       SubjectTriageSubjectKind = "issue"
+	SubjectTriageSubjectKindPullRequest SubjectTriageSubjectKind = "pull_request"
+)
+
+// Valid indicates whether the value is a known member of the SubjectTriageSubjectKind enum.
+func (e SubjectTriageSubjectKind) Valid() bool {
+	switch e {
+	case SubjectTriageSubjectKindIssue:
+		return true
+	case SubjectTriageSubjectKindPullRequest:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SubjectTriageMutationProjected.
+const (
+	SubjectTriageMutationProjectedFalse SubjectTriageMutationProjected = false
+)
+
+// Valid indicates whether the value is a known member of the SubjectTriageMutationProjected enum.
+func (e SubjectTriageMutationProjected) Valid() bool {
+	switch e {
+	case SubjectTriageMutationProjectedFalse:
 		return true
 	default:
 		return false
@@ -1228,6 +1327,45 @@ func (e ElectricReplica) Valid() bool {
 	}
 }
 
+// Defines values for IssueStateFilter.
+const (
+	IssueStateFilterClosed IssueStateFilter = "closed"
+	IssueStateFilterOpen   IssueStateFilter = "open"
+)
+
+// Valid indicates whether the value is a known member of the IssueStateFilter enum.
+func (e IssueStateFilter) Valid() bool {
+	switch e {
+	case IssueStateFilterClosed:
+		return true
+	case IssueStateFilterOpen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PullRequestStateFilter.
+const (
+	PullRequestStateFilterClosed PullRequestStateFilter = "closed"
+	PullRequestStateFilterMerged PullRequestStateFilter = "merged"
+	PullRequestStateFilterOpen   PullRequestStateFilter = "open"
+)
+
+// Valid indicates whether the value is a known member of the PullRequestStateFilter enum.
+func (e PullRequestStateFilter) Valid() bool {
+	switch e {
+	case PullRequestStateFilterClosed:
+		return true
+	case PullRequestStateFilterMerged:
+		return true
+	case PullRequestStateFilterOpen:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SearchSort.
 const (
 	SearchSortRecent    SearchSort = "recent"
@@ -1240,6 +1378,45 @@ func (e SearchSort) Valid() bool {
 	case SearchSortRecent:
 		return true
 	case SearchSortRelevance:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetIssuesParamsState.
+const (
+	GetIssuesParamsStateClosed GetIssuesParamsState = "closed"
+	GetIssuesParamsStateOpen   GetIssuesParamsState = "open"
+)
+
+// Valid indicates whether the value is a known member of the GetIssuesParamsState enum.
+func (e GetIssuesParamsState) Valid() bool {
+	switch e {
+	case GetIssuesParamsStateClosed:
+		return true
+	case GetIssuesParamsStateOpen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListPullRequestsParamsState.
+const (
+	ListPullRequestsParamsStateClosed ListPullRequestsParamsState = "closed"
+	ListPullRequestsParamsStateMerged ListPullRequestsParamsState = "merged"
+	ListPullRequestsParamsStateOpen   ListPullRequestsParamsState = "open"
+)
+
+// Valid indicates whether the value is a known member of the ListPullRequestsParamsState enum.
+func (e ListPullRequestsParamsState) Valid() bool {
+	switch e {
+	case ListPullRequestsParamsStateClosed:
+		return true
+	case ListPullRequestsParamsStateMerged:
+		return true
+	case ListPullRequestsParamsStateOpen:
 		return true
 	default:
 		return false
@@ -2811,11 +2988,96 @@ type RepositoryHosting struct {
 // RepositoryHostingSourceBrowsing defines model for RepositoryHosting.SourceBrowsing.
 type RepositoryHostingSourceBrowsing string
 
+// RepositoryLabel defines model for RepositoryLabel.
+type RepositoryLabel struct {
+	AuthorDid     string     `json:"author_did"`
+	Cid           string     `json:"cid"`
+	Color         string     `json:"color"`
+	CreatedAt     time.Time  `json:"created_at"`
+	Description   string     `json:"description"`
+	Id            string     `json:"id"`
+	IndexedAt     *time.Time `json:"indexed_at"`
+	Name          string     `json:"name"`
+	RepositoryCid string     `json:"repository_cid"`
+	RepositoryUri string     `json:"repository_uri"`
+	UpdatedAt     time.Time  `json:"updated_at"`
+	Uri           string     `json:"uri"`
+}
+
+// RepositoryLabelInput defines model for RepositoryLabelInput.
+type RepositoryLabelInput struct {
+	Color       string `json:"color"`
+	Description string `json:"description"`
+	Name        string `json:"name"`
+}
+
+// RepositoryLabelList defines model for RepositoryLabelList.
+type RepositoryLabelList struct {
+	Items []RepositoryLabel `json:"items"`
+	Page  Page              `json:"page"`
+}
+
+// RepositoryLabelMutation defines model for RepositoryLabelMutation.
+type RepositoryLabelMutation struct {
+	Label     RepositoryLabel                  `json:"label"`
+	Projected RepositoryLabelMutationProjected `json:"projected"`
+}
+
+// RepositoryLabelMutationProjected defines model for RepositoryLabelMutation.Projected.
+type RepositoryLabelMutationProjected bool
+
 // RepositoryList defines model for RepositoryList.
 type RepositoryList struct {
 	Items []Repository `json:"items"`
 	Page  Page         `json:"page"`
 }
+
+// RepositoryMilestone defines model for RepositoryMilestone.
+type RepositoryMilestone struct {
+	AuthorDid     string                   `json:"author_did"`
+	Cid           string                   `json:"cid"`
+	ClosedAt      *time.Time               `json:"closed_at"`
+	CreatedAt     time.Time                `json:"created_at"`
+	Description   string                   `json:"description"`
+	DueAt         *time.Time               `json:"due_at"`
+	Id            string                   `json:"id"`
+	IndexedAt     *time.Time               `json:"indexed_at"`
+	RepositoryCid string                   `json:"repository_cid"`
+	RepositoryUri string                   `json:"repository_uri"`
+	State         RepositoryMilestoneState `json:"state"`
+	Title         string                   `json:"title"`
+	UpdatedAt     time.Time                `json:"updated_at"`
+	Uri           string                   `json:"uri"`
+}
+
+// RepositoryMilestoneState defines model for RepositoryMilestone.State.
+type RepositoryMilestoneState string
+
+// RepositoryMilestoneInput defines model for RepositoryMilestoneInput.
+type RepositoryMilestoneInput struct {
+	Description string                        `json:"description"`
+	DueAt       *time.Time                    `json:"due_at"`
+	State       RepositoryMilestoneInputState `json:"state"`
+	Title       string                        `json:"title"`
+}
+
+// RepositoryMilestoneInputState defines model for RepositoryMilestoneInput.State.
+type RepositoryMilestoneInputState string
+
+// RepositoryMilestoneList defines model for RepositoryMilestoneList.
+type RepositoryMilestoneList struct {
+	Items []RepositoryMilestone `json:"items"`
+	Page  Page                  `json:"page"`
+}
+
+// RepositoryMilestoneMutation defines model for RepositoryMilestoneMutation.
+type RepositoryMilestoneMutation struct {
+	Milestone RepositoryMilestone                  `json:"milestone"`
+	Projected RepositoryMilestoneMutationProjected `json:"projected"`
+}
+
+// RepositoryMilestoneMutationProjected defines model for RepositoryMilestoneMutation.Projected.
+type RepositoryMilestoneMutationProjected bool
 
 // RepositoryOwner defines model for RepositoryOwner.
 type RepositoryOwner struct {
@@ -2956,6 +3218,46 @@ type StartATProtoLoginRequest struct {
 type StartATProtoLoginResponse struct {
 	AuthorizationUrl string `json:"authorization_url"`
 }
+
+// SubjectTriage defines model for SubjectTriage.
+type SubjectTriage struct {
+	AssigneeDids  []string                 `json:"assignee_dids"`
+	Assignees     []TriageAssignee         `json:"assignees"`
+	AuthorDid     *string                  `json:"author_did"`
+	Cid           *string                  `json:"cid"`
+	CreatedAt     *time.Time               `json:"created_at"`
+	IndexedAt     *time.Time               `json:"indexed_at"`
+	LabelIds      []string                 `json:"label_ids"`
+	Labels        []RepositoryLabel        `json:"labels"`
+	Milestone     *RepositoryMilestone     `json:"milestone"`
+	MilestoneId   *string                  `json:"milestone_id"`
+	RepositoryCid string                   `json:"repository_cid"`
+	RepositoryUri string                   `json:"repository_uri"`
+	SubjectCid    string                   `json:"subject_cid"`
+	SubjectKind   SubjectTriageSubjectKind `json:"subject_kind"`
+	SubjectUri    string                   `json:"subject_uri"`
+	UpdatedAt     *time.Time               `json:"updated_at"`
+	Uri           *string                  `json:"uri"`
+}
+
+// SubjectTriageSubjectKind defines model for SubjectTriage.SubjectKind.
+type SubjectTriageSubjectKind string
+
+// SubjectTriageInput defines model for SubjectTriageInput.
+type SubjectTriageInput struct {
+	AssigneeDids []string `json:"assignee_dids"`
+	LabelIds     []string `json:"label_ids"`
+	MilestoneId  *string  `json:"milestone_id"`
+}
+
+// SubjectTriageMutation defines model for SubjectTriageMutation.
+type SubjectTriageMutation struct {
+	Projected SubjectTriageMutationProjected `json:"projected"`
+	Triage    SubjectTriage                  `json:"triage"`
+}
+
+// SubjectTriageMutationProjected defines model for SubjectTriageMutation.Projected.
+type SubjectTriageMutationProjected bool
 
 // SyncIssue Flat approved network.issues projection including repository-authoritative resolved state.
 type SyncIssue struct {
@@ -3147,6 +3449,13 @@ type TreeEntry struct {
 // TreeEntryType defines model for TreeEntry.Type.
 type TreeEntryType string
 
+// TriageAssignee defines model for TriageAssignee.
+type TriageAssignee struct {
+	Did         string `json:"did"`
+	DisplayName string `json:"display_name"`
+	Handle      string `json:"handle"`
+}
+
 // UpdateDeveloperProfileRequest defines model for UpdateDeveloperProfileRequest.
 type UpdateDeveloperProfileRequest struct {
 	Bio         *string `json:"bio,omitempty"`
@@ -3250,6 +3559,9 @@ type WebhookDeliveryList struct {
 // WebhookEvent defines model for WebhookEvent.
 type WebhookEvent string
 
+// AssigneeFilter defines model for AssigneeFilter.
+type AssigneeFilter = string
+
 // BlockedDID defines model for BlockedDID.
 type BlockedDID = string
 
@@ -3292,17 +3604,35 @@ type ExactOrigin = string
 // IdempotencyKey defines model for IdempotencyKey.
 type IdempotencyKey = string
 
+// IssueStateFilter defines model for IssueStateFilter.
+type IssueStateFilter string
+
 // IssueURI defines model for IssueURI.
 type IssueURI = string
 
+// LabelFilter defines model for LabelFilter.
+type LabelFilter = string
+
+// LabelPath defines model for LabelPath.
+type LabelPath = string
+
 // Limit defines model for Limit.
 type Limit = int
+
+// MilestoneFilter defines model for MilestoneFilter.
+type MilestoneFilter = string
+
+// MilestonePath defines model for MilestonePath.
+type MilestonePath = string
 
 // MutationOrigin defines model for MutationOrigin.
 type MutationOrigin = string
 
 // OwnerNamePath defines model for OwnerNamePath.
 type OwnerNamePath = OwnerName
+
+// PullRequestStateFilter defines model for PullRequestStateFilter.
+type PullRequestStateFilter string
 
 // PullRequestURI defines model for PullRequestURI.
 type PullRequestURI = string
@@ -3330,6 +3660,9 @@ type SearchQuery = string
 
 // SearchSort defines model for SearchSort.
 type SearchSort string
+
+// SubjectPath defines model for SubjectPath.
+type SubjectPath = string
 
 // BadGateway defines model for BadGateway.
 type BadGateway = ErrorResponse
@@ -3372,9 +3705,24 @@ type sessionCookieContextKey string
 // GetIssuesParams defines parameters for GetIssues.
 type GetIssuesParams struct {
 	RepositoryUri RepositoryURI `form:"repository_uri" json:"repository_uri"`
-	Limit         *Limit        `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor        *Cursor       `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// State Filter by effective repository-authoritative issue state.
+	State *GetIssuesParamsState `form:"state,omitempty" json:"state,omitempty"`
+
+	// Label Filter by stable repository label record key.
+	Label *LabelFilter `form:"label,omitempty" json:"label,omitempty"`
+
+	// Assignee Filter by canonical assignee DID.
+	Assignee *AssigneeFilter `form:"assignee,omitempty" json:"assignee,omitempty"`
+
+	// Milestone Filter by stable repository milestone record key.
+	Milestone *MilestoneFilter `form:"milestone,omitempty" json:"milestone,omitempty"`
+	Limit     *Limit           `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor    *Cursor          `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
+
+// GetIssuesParamsState defines parameters for GetIssues.
+type GetIssuesParamsState string
 
 // CreateIssueParams defines parameters for CreateIssue.
 type CreateIssueParams struct {
@@ -3555,9 +3903,24 @@ type DeletePasskeyParams struct {
 // ListPullRequestsParams defines parameters for ListPullRequests.
 type ListPullRequestsParams struct {
 	RepositoryUri RepositoryURI `form:"repository_uri" json:"repository_uri"`
-	Limit         *Limit        `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor        *Cursor       `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// State Filter by effective target-repository-authoritative pull request state.
+	State *ListPullRequestsParamsState `form:"state,omitempty" json:"state,omitempty"`
+
+	// Label Filter by stable repository label record key.
+	Label *LabelFilter `form:"label,omitempty" json:"label,omitempty"`
+
+	// Assignee Filter by canonical assignee DID.
+	Assignee *AssigneeFilter `form:"assignee,omitempty" json:"assignee,omitempty"`
+
+	// Milestone Filter by stable repository milestone record key.
+	Milestone *MilestoneFilter `form:"milestone,omitempty" json:"milestone,omitempty"`
+	Limit     *Limit           `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor    *Cursor          `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
+
+// ListPullRequestsParamsState defines parameters for ListPullRequests.
+type ListPullRequestsParamsState string
 
 // CreatePullRequestParams defines parameters for CreatePullRequest.
 type CreatePullRequestParams struct {
@@ -3641,10 +4004,82 @@ type CreateRepositoryForkParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// DeleteIssueTriageParams defines parameters for DeleteIssueTriage.
+type DeleteIssueTriageParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// PutIssueTriageParams defines parameters for PutIssueTriage.
+type PutIssueTriageParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// ListRepositoryLabelsParams defines parameters for ListRepositoryLabels.
+type ListRepositoryLabelsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// CreateRepositoryLabelParams defines parameters for CreateRepositoryLabel.
+type CreateRepositoryLabelParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// DeleteRepositoryLabelParams defines parameters for DeleteRepositoryLabel.
+type DeleteRepositoryLabelParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// UpdateRepositoryLabelParams defines parameters for UpdateRepositoryLabel.
+type UpdateRepositoryLabelParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
 // GetRepositoryMergeBaseParams defines parameters for GetRepositoryMergeBase.
 type GetRepositoryMergeBaseParams struct {
 	A string `form:"a" json:"a"`
 	B string `form:"b" json:"b"`
+}
+
+// ListRepositoryMilestonesParams defines parameters for ListRepositoryMilestones.
+type ListRepositoryMilestonesParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// CreateRepositoryMilestoneParams defines parameters for CreateRepositoryMilestone.
+type CreateRepositoryMilestoneParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// DeleteRepositoryMilestoneParams defines parameters for DeleteRepositoryMilestone.
+type DeleteRepositoryMilestoneParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// UpdateRepositoryMilestoneParams defines parameters for UpdateRepositoryMilestone.
+type UpdateRepositoryMilestoneParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// DeletePullRequestTriageParams defines parameters for DeletePullRequestTriage.
+type DeletePullRequestTriageParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// PutPullRequestTriageParams defines parameters for PutPullRequestTriage.
+type PutPullRequestTriageParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
 }
 
 // ListRepositoryTagsParams defines parameters for ListRepositoryTags.
@@ -4282,6 +4717,24 @@ type UpdateBranchProtectionJSONRequestBody = BranchProtectionInput
 // CreateRepositoryForkJSONRequestBody defines body for CreateRepositoryFork for application/json ContentType.
 type CreateRepositoryForkJSONRequestBody = CreateRepositoryForkRequest
 
+// PutIssueTriageJSONRequestBody defines body for PutIssueTriage for application/json ContentType.
+type PutIssueTriageJSONRequestBody = SubjectTriageInput
+
+// CreateRepositoryLabelJSONRequestBody defines body for CreateRepositoryLabel for application/json ContentType.
+type CreateRepositoryLabelJSONRequestBody = RepositoryLabelInput
+
+// UpdateRepositoryLabelJSONRequestBody defines body for UpdateRepositoryLabel for application/json ContentType.
+type UpdateRepositoryLabelJSONRequestBody = RepositoryLabelInput
+
+// CreateRepositoryMilestoneJSONRequestBody defines body for CreateRepositoryMilestone for application/json ContentType.
+type CreateRepositoryMilestoneJSONRequestBody = RepositoryMilestoneInput
+
+// UpdateRepositoryMilestoneJSONRequestBody defines body for UpdateRepositoryMilestone for application/json ContentType.
+type UpdateRepositoryMilestoneJSONRequestBody = RepositoryMilestoneInput
+
+// PutPullRequestTriageJSONRequestBody defines body for PutPullRequestTriage for application/json ContentType.
+type PutPullRequestTriageJSONRequestBody = SubjectTriageInput
+
 // CreateRepositoryTransferJSONRequestBody defines body for CreateRepositoryTransfer for application/json ContentType.
 type CreateRepositoryTransferJSONRequestBody = CreateRepositoryTransferRequest
 
@@ -4622,9 +5075,57 @@ type ServerInterface interface {
 	// Fork a public local or federated repository onto this server
 	// (POST /api/v1/repositories/{owner}/{repo}/forks)
 	CreateRepositoryFork(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params CreateRepositoryForkParams)
+	// Remove all issue triage metadata
+	// (DELETE /api/v1/repositories/{owner}/{repo}/issues/{subject}/triage)
+	DeleteIssueTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params DeleteIssueTriageParams)
+	// Get effective issue triage metadata
+	// (GET /api/v1/repositories/{owner}/{repo}/issues/{subject}/triage)
+	GetIssueTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath)
+	// Replace issue labels, assignees, and milestone
+	// (PUT /api/v1/repositories/{owner}/{repo}/issues/{subject}/triage)
+	PutIssueTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params PutIssueTriageParams)
+	// List visible repository labels
+	// (GET /api/v1/repositories/{owner}/{repo}/labels)
+	ListRepositoryLabels(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params ListRepositoryLabelsParams)
+	// Create a repository-authoritative label
+	// (POST /api/v1/repositories/{owner}/{repo}/labels)
+	CreateRepositoryLabel(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params CreateRepositoryLabelParams)
+	// Delete a repository label
+	// (DELETE /api/v1/repositories/{owner}/{repo}/labels/{label})
+	DeleteRepositoryLabel(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params DeleteRepositoryLabelParams)
+	// Get one repository label
+	// (GET /api/v1/repositories/{owner}/{repo}/labels/{label})
+	GetRepositoryLabel(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath)
+	// Replace a repository label
+	// (PUT /api/v1/repositories/{owner}/{repo}/labels/{label})
+	UpdateRepositoryLabel(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params UpdateRepositoryLabelParams)
 	// Find a merge base for two commits
 	// (GET /api/v1/repositories/{owner}/{repo}/merge-base)
 	GetRepositoryMergeBase(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryMergeBaseParams)
+	// List visible repository milestones
+	// (GET /api/v1/repositories/{owner}/{repo}/milestones)
+	ListRepositoryMilestones(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params ListRepositoryMilestonesParams)
+	// Create a repository-authoritative milestone
+	// (POST /api/v1/repositories/{owner}/{repo}/milestones)
+	CreateRepositoryMilestone(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params CreateRepositoryMilestoneParams)
+	// Delete a repository milestone
+	// (DELETE /api/v1/repositories/{owner}/{repo}/milestones/{milestone})
+	DeleteRepositoryMilestone(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params DeleteRepositoryMilestoneParams)
+	// Get one repository milestone
+	// (GET /api/v1/repositories/{owner}/{repo}/milestones/{milestone})
+	GetRepositoryMilestone(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath)
+	// Replace a repository milestone
+	// (PUT /api/v1/repositories/{owner}/{repo}/milestones/{milestone})
+	UpdateRepositoryMilestone(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params UpdateRepositoryMilestoneParams)
+	// Remove all pull request triage metadata
+	// (DELETE /api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage)
+	DeletePullRequestTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params DeletePullRequestTriageParams)
+	// Get effective pull request triage metadata
+	// (GET /api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage)
+	GetPullRequestTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath)
+	// Replace pull request labels, assignees, and milestone
+	// (PUT /api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage)
+	PutPullRequestTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params PutPullRequestTriageParams)
 	// Fast-forward a local fork's default branch from its current upstream
 	// (POST /api/v1/repositories/{owner}/{repo}/sync-fork)
 	SyncRepositoryFork(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath)
@@ -4832,6 +5333,58 @@ func (siw *ServerInterfaceWrapper) GetIssues(w http.ResponseWriter, r *http.Requ
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "repository_uri"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository_uri", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "label" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "label", r.URL.Query(), &params.Label, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "label"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "label", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "assignee" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "assignee", r.URL.Query(), &params.Assignee, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "assignee"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "assignee", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "milestone" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "milestone", r.URL.Query(), &params.Milestone, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "milestone"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "milestone", Err: err})
 		}
 		return
 	}
@@ -7312,6 +7865,58 @@ func (siw *ServerInterfaceWrapper) ListPullRequests(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "label" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "label", r.URL.Query(), &params.Label, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "label"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "label", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "assignee" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "assignee", r.URL.Query(), &params.Assignee, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "assignee"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "assignee", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "milestone" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "milestone", r.URL.Query(), &params.Milestone, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "milestone"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "milestone", Err: err})
+		}
+		return
+	}
+
 	// ------------- Optional query parameter "limit" -------------
 
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
@@ -8597,6 +9202,537 @@ func (siw *ServerInterfaceWrapper) CreateRepositoryFork(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteIssueTriage operation middleware
+func (siw *ServerInterfaceWrapper) DeleteIssueTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteIssueTriageParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteIssueTriage(w, r, owner, repo, subject, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetIssueTriage operation middleware
+func (siw *ServerInterfaceWrapper) GetIssueTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetIssueTriage(w, r, owner, repo, subject)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutIssueTriage operation middleware
+func (siw *ServerInterfaceWrapper) PutIssueTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutIssueTriageParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutIssueTriage(w, r, owner, repo, subject, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRepositoryLabels operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryLabels(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryLabelsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryLabels(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryLabel operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryLabel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRepositoryLabelParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryLabel(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRepositoryLabel operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepositoryLabel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "label" -------------
+	var label LabelPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "label", r.PathValue("label"), &label, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "label", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteRepositoryLabelParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepositoryLabel(w, r, owner, repo, label, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryLabel operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryLabel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "label" -------------
+	var label LabelPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "label", r.PathValue("label"), &label, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "label", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryLabel(w, r, owner, repo, label)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateRepositoryLabel operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRepositoryLabel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "label" -------------
+	var label LabelPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "label", r.PathValue("label"), &label, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "label", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateRepositoryLabelParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateRepositoryLabel(w, r, owner, repo, label, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetRepositoryMergeBase operation middleware
 func (siw *ServerInterfaceWrapper) GetRepositoryMergeBase(w http.ResponseWriter, r *http.Request) {
 
@@ -8660,6 +9796,537 @@ func (siw *ServerInterfaceWrapper) GetRepositoryMergeBase(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepositoryMergeBase(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRepositoryMilestones operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryMilestones(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryMilestonesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryMilestones(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryMilestone operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryMilestone(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRepositoryMilestoneParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryMilestone(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRepositoryMilestone operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepositoryMilestone(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "milestone" -------------
+	var milestone MilestonePath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "milestone", r.PathValue("milestone"), &milestone, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "milestone", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteRepositoryMilestoneParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepositoryMilestone(w, r, owner, repo, milestone, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryMilestone operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryMilestone(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "milestone" -------------
+	var milestone MilestonePath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "milestone", r.PathValue("milestone"), &milestone, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "milestone", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryMilestone(w, r, owner, repo, milestone)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateRepositoryMilestone operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRepositoryMilestone(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "milestone" -------------
+	var milestone MilestonePath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "milestone", r.PathValue("milestone"), &milestone, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "milestone", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateRepositoryMilestoneParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateRepositoryMilestone(w, r, owner, repo, milestone, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeletePullRequestTriage operation middleware
+func (siw *ServerInterfaceWrapper) DeletePullRequestTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeletePullRequestTriageParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePullRequestTriage(w, r, owner, repo, subject, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPullRequestTriage operation middleware
+func (siw *ServerInterfaceWrapper) GetPullRequestTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPullRequestTriage(w, r, owner, repo, subject)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutPullRequestTriage operation middleware
+func (siw *ServerInterfaceWrapper) PutPullRequestTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutPullRequestTriageParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutPullRequestTriage(w, r, owner, repo, subject, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -12148,7 +13815,23 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/diff", wrapper.GetRepositoryDiff)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.ListRepositoryForks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.CreateRepositoryFork)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/issues/{subject}/triage", wrapper.DeleteIssueTriage)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/issues/{subject}/triage", wrapper.GetIssueTriage)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/issues/{subject}/triage", wrapper.PutIssueTriage)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/labels", wrapper.ListRepositoryLabels)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/labels", wrapper.CreateRepositoryLabel)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/labels/{label}", wrapper.DeleteRepositoryLabel)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/labels/{label}", wrapper.GetRepositoryLabel)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/labels/{label}", wrapper.UpdateRepositoryLabel)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/merge-base", wrapper.GetRepositoryMergeBase)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/milestones", wrapper.ListRepositoryMilestones)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/milestones", wrapper.CreateRepositoryMilestone)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/milestones/{milestone}", wrapper.DeleteRepositoryMilestone)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/milestones/{milestone}", wrapper.GetRepositoryMilestone)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/milestones/{milestone}", wrapper.UpdateRepositoryMilestone)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage", wrapper.DeletePullRequestTriage)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage", wrapper.GetPullRequestTriage)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage", wrapper.PutPullRequestTriage)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/sync-fork", wrapper.SyncRepositoryFork)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tags", wrapper.ListRepositoryTags)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/transfers", wrapper.ListRepositoryTransfers)
