@@ -116,6 +116,38 @@ func (q *Queries) ListActiveSSHKeysByAccountDID(ctx context.Context, accountDid 
 	return items, nil
 }
 
+const listActiveSSHKeysForCommitVerification = `-- name: ListActiveSSHKeysForCommitVerification :many
+SELECT account_did, public_key
+FROM auth.ssh_keys
+WHERE revoked_at IS NULL
+ORDER BY account_did, id
+`
+
+type ListActiveSSHKeysForCommitVerificationRow struct {
+	AccountDid string `json:"account_did"`
+	PublicKey  string `json:"public_key"`
+}
+
+func (q *Queries) ListActiveSSHKeysForCommitVerification(ctx context.Context) ([]ListActiveSSHKeysForCommitVerificationRow, error) {
+	rows, err := q.db.Query(ctx, listActiveSSHKeysForCommitVerification)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActiveSSHKeysForCommitVerificationRow{}
+	for rows.Next() {
+		var i ListActiveSSHKeysForCommitVerificationRow
+		if err := rows.Scan(&i.AccountDid, &i.PublicKey); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const revokeSSHKey = `-- name: RevokeSSHKey :one
 UPDATE auth.ssh_keys
 SET revoked_at = $1

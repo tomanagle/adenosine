@@ -376,7 +376,7 @@ export type RepositoryDeletion = {
 
 export type Notification = {
     id: string;
-    kind: 'mention' | 'issue_comment' | 'pull_request_review' | 'pull_request_merged';
+    kind: 'mention' | 'issue_comment' | 'pull_request_review' | 'pull_request_review_request' | 'pull_request_merged';
     actor_did: string;
     repository_uri: string;
     owner: string;
@@ -540,17 +540,37 @@ export type CheckRunList = {
 
 export type BranchProtection = {
     id: string;
-    pattern: '*';
+    /**
+     * Exact branch name, namespace prefix ending in *, or * fallback.
+     */
+    pattern: string;
     deny_force_push: boolean;
     deny_deletion: boolean;
+    required_approvals: number;
+    /**
+     * Count approvals only for the pull request's current CID/head revision.
+     */
+    dismiss_stale_reviews: boolean;
+    /**
+     * Case-sensitive commit status contexts that must each have a latest success result.
+     */
+    required_status_checks: Array<string>;
+    /**
+     * Require every newly reachable commit to carry a valid SSH signature from an active Adenosine SSH key.
+     */
+    require_signed_commits: boolean;
     created_at: string;
     updated_at: string;
 };
 
 export type BranchProtectionInput = {
-    pattern: '*';
+    pattern: string;
     deny_force_push: boolean;
     deny_deletion: boolean;
+    required_approvals: number;
+    dismiss_stale_reviews: boolean;
+    required_status_checks: Array<string>;
+    require_signed_commits: boolean;
 };
 
 export type BranchProtectionList = {
@@ -1036,6 +1056,49 @@ export type PullRequestReviewMutation = {
     projected: false;
 };
 
+export type PullRequestReviewRequest = {
+    uri: string;
+    cid: string;
+    author_did: string;
+    pull_request_uri: string;
+    pull_request_cid: string;
+    target_repository_uri: string;
+    target_repository_cid: string;
+    reviewer_did: string;
+    requested_by_did: string;
+    created_at: string;
+    updated_at: string;
+    indexed_at: string;
+};
+
+export type PullRequestReviewRequestEnvelope = {
+    uri: string;
+    cid: string;
+    author_did: string;
+    pull_request_uri: string;
+    pull_request_cid: string;
+    target_repository_uri: string;
+    target_repository_cid: string;
+    reviewer_did: string;
+    requested_by_did: string;
+    created_at: string;
+    updated_at: string;
+};
+
+export type PullRequestReviewRequestList = {
+    items: Array<PullRequestReviewRequest>;
+    page: Page;
+};
+
+export type PutPullRequestReviewRequest = {
+    pull_request_uri: string;
+};
+
+export type PullRequestReviewRequestMutation = {
+    review_request: PullRequestReviewRequestEnvelope;
+    projected: false;
+};
+
 export type PullRequestStatusEnvelope = {
     uri: string;
     cid: string;
@@ -1252,6 +1315,11 @@ export type RepositoryUri = string;
 export type IssueUri = string;
 
 export type PullRequestUri = string;
+
+/**
+ * Canonical DID of the requested reviewer.
+ */
+export type ReviewerDid = string;
 
 export type CommentUri = string;
 
@@ -3900,6 +3968,167 @@ export type CreatePullRequestReviewResponses = {
 };
 
 export type CreatePullRequestReviewResponse = CreatePullRequestReviewResponses[keyof CreatePullRequestReviewResponses];
+
+export type ListPullRequestReviewRequestsData = {
+    body?: never;
+    path?: never;
+    query: {
+        pull_request_uri: string;
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/pull-requests/review-requests';
+};
+
+export type ListPullRequestReviewRequestsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type ListPullRequestReviewRequestsError = ListPullRequestReviewRequestsErrors[keyof ListPullRequestReviewRequestsErrors];
+
+export type ListPullRequestReviewRequestsResponses = {
+    /**
+     * Current keyset-paginated review requests
+     */
+    200: PullRequestReviewRequestList;
+};
+
+export type ListPullRequestReviewRequestsResponse = ListPullRequestReviewRequestsResponses[keyof ListPullRequestReviewRequestsResponses];
+
+export type DeletePullRequestReviewRequestData = {
+    body?: never;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        /**
+         * Canonical DID of the requested reviewer.
+         */
+        reviewer: string;
+    };
+    query: {
+        pull_request_uri: string;
+    };
+    url: '/api/v1/pull-requests/review-requests/{reviewer}';
+};
+
+export type DeletePullRequestReviewRequestErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The target owner's AT Protocol provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type DeletePullRequestReviewRequestError = DeletePullRequestReviewRequestErrors[keyof DeletePullRequestReviewRequestErrors];
+
+export type DeletePullRequestReviewRequestResponses = {
+    /**
+     * Review request cancellation published; projection update is pending
+     */
+    202: unknown;
+};
+
+export type PutPullRequestReviewRequestData = {
+    body: PutPullRequestReviewRequest;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        /**
+         * Canonical DID of the requested reviewer.
+         */
+        reviewer: string;
+    };
+    query?: never;
+    url: '/api/v1/pull-requests/review-requests/{reviewer}';
+};
+
+export type PutPullRequestReviewRequestErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The target owner's AT Protocol provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type PutPullRequestReviewRequestError = PutPullRequestReviewRequestErrors[keyof PutPullRequestReviewRequestErrors];
+
+export type PutPullRequestReviewRequestResponses = {
+    /**
+     * Review request published; projection update is pending
+     */
+    202: PullRequestReviewRequestMutation;
+};
+
+export type PutPullRequestReviewRequestResponse = PutPullRequestReviewRequestResponses[keyof PutPullRequestReviewRequestResponses];
 
 export type PutPullRequestStatusData = {
     body: PutPullRequestStatusRequest;

@@ -28,3 +28,9 @@ WHERE id = sqlc.arg(id)
   AND account_did = sqlc.arg(account_did)
   AND revoked_at IS NULL
 RETURNING *;
+
+-- name: ListActiveSSHKeysForCommitVerification :many
+SELECT account_did, public_key
+FROM auth.ssh_keys
+WHERE revoked_at IS NULL
+ORDER BY account_did, id;

@@ -35,6 +35,14 @@ FROM core.commit_statuses
 WHERE repository_id = $1 AND commit_sha = $2
 ORDER BY context, id DESC;
 
+-- name: LatestRequiredCommitStatuses :many
+SELECT DISTINCT ON (context) context, state
+FROM core.commit_statuses
+WHERE repository_id = sqlc.arg(repository_id)
+  AND commit_sha = sqlc.arg(commit_sha)
+  AND context = ANY(sqlc.arg(required_contexts)::text[])
+ORDER BY context, created_at DESC, id DESC;
+
 -- name: CreateCheckRun :one
 INSERT INTO core.check_runs (
     id, repository_id, commit_sha, name, external_id, creator_did, status,

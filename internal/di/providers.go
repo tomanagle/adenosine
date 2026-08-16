@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/adenosine-dev/adenosine/internal/app"
 	"github.com/adenosine-dev/adenosine/internal/atproto"
@@ -63,6 +64,17 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		return nil, fmt.Errorf("open repository storage: %w", err)
 	}
 	git := gitservice.NewService(gitservice.NewRunner(cfg.GitBinary), repositoryStorage)
+	executable, err := os.Executable()
+	if err != nil {
+		db.Close()
+		_ = shutdownTelemetry(ctx)
+		return nil, fmt.Errorf("resolve application executable: %w", err)
+	}
+	if err := git.ConfigurePushAuthorization(gitservice.PushAuthorizationConfig{Executable: executable, DatabaseURL: cfg.DatabaseURL, GitBinary: cfg.GitBinary}); err != nil {
+		db.Close()
+		_ = shutdownTelemetry(ctx)
+		return nil, fmt.Errorf("configure Git push authorization: %w", err)
+	}
 	oauthClient := atproto.Must(cfg.BaseURL, db.Queries(), cfg.OAuthStateKey, cfg.OAuthCredentialKey, atproto.SystemClock{})
 	repositoryEndpoints := repository.Must(cfg.BaseURL, cfg.SSHHost, cfg.SSHPort)
 	repositoryStore := repository.NewPostgresStore(db.Queries())
@@ -86,6 +98,17 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	issues := issue.NewService(issue.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{}, authStore)
 	comments := comment.NewService(comment.NewPostgresStore(db.Queries()), oauthClient, atproto.SystemClock{})
 	eventWriter := event.NewWriter(db.Queries())
+	branchProtections := branchprotection.NewService(db.Queries(), git)
+	if err := git.ConfigureRefAuthorizer(branchProtections); err != nil {
+		db.Close()
+		_ = shutdownTelemetry(ctx)
+		return nil, fmt.Errorf("configure direct ref authorization: %w", err)
+	}
+	if err := branchProtections.Reconcile(ctx); err != nil {
+		db.Close()
+		_ = shutdownTelemetry(ctx)
+		return nil, fmt.Errorf("reconcile branch protection: %w", err)
+	}
 	pullRequests := pullrequest.NewApplicationService(pullrequest.NewPostgresStore(db.Queries()), git, oauthClient, atproto.SystemClock{}, authStore, eventWriter)
 	moderationService := moderation.NewService(moderation.NewPostgresStore(db.Queries()), atproto.SystemClock{})
 	notifications := notification.NewStore(db.Queries())
@@ -97,7 +120,6 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	}
 	webhookWorker := webhook.NewWorker(db.Queries(), webhooks)
 	repositoryPurgeWorker := repository.NewPurgeWorker(repositoryStore, git)
-	branchProtections := branchprotection.NewService(db.Queries(), git)
 	commitStatuses := commitstatus.NewService(db.Queries())
 	commitStatusRetentionWorker := commitstatus.NewRetentionWorker(db.Queries())
 	organizations := organization.NewService(

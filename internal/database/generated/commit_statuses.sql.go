@@ -331,6 +331,46 @@ func (q *Queries) LatestCommitStatuses(ctx context.Context, arg LatestCommitStat
 	return items, nil
 }
 
+const latestRequiredCommitStatuses = `-- name: LatestRequiredCommitStatuses :many
+SELECT DISTINCT ON (context) context, state
+FROM core.commit_statuses
+WHERE repository_id = $1
+  AND commit_sha = $2
+  AND context = ANY($3::text[])
+ORDER BY context, created_at DESC, id DESC
+`
+
+type LatestRequiredCommitStatusesParams struct {
+	RepositoryID     pgtype.UUID `json:"repository_id"`
+	CommitSha        string      `json:"commit_sha"`
+	RequiredContexts []string    `json:"required_contexts"`
+}
+
+type LatestRequiredCommitStatusesRow struct {
+	Context string `json:"context"`
+	State   string `json:"state"`
+}
+
+func (q *Queries) LatestRequiredCommitStatuses(ctx context.Context, arg LatestRequiredCommitStatusesParams) ([]LatestRequiredCommitStatusesRow, error) {
+	rows, err := q.db.Query(ctx, latestRequiredCommitStatuses, arg.RepositoryID, arg.CommitSha, arg.RequiredContexts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []LatestRequiredCommitStatusesRow{}
+	for rows.Next() {
+		var i LatestRequiredCommitStatusesRow
+		if err := rows.Scan(&i.Context, &i.State); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const pageCheckRuns = `-- name: PageCheckRuns :many
 SELECT id, repository_id, commit_sha, name, external_id, creator_did, status, conclusion, details_url, output_title, output_summary, version, create_request_hash, started_at, completed_at, created_at, updated_at, expires_at
 FROM core.check_runs AS check_run

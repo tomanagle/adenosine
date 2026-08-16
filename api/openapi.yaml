@@ -718,6 +718,37 @@
         }
       }
     },
+    "/api/v1/pull-requests/review-requests": {
+      "get": {
+        "operationId": "listPullRequestReviewRequests", "tags": ["Pull Requests"], "summary": "List active reviewer requests for the exact current pull request CID", "security": [{}, { "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/PullRequestURI" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": {
+          "200": { "description": "Current keyset-paginated review requests", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestReviewRequestList" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/v1/pull-requests/review-requests/{reviewer}": {
+      "put": {
+        "operationId": "putPullRequestReviewRequest", "tags": ["Pull Requests"], "summary": "Idempotently request a review from one account", "description": "The target repository owner publishes a deterministic record keyed by pull request and reviewer. Repository triage authority, reviewer visibility, blocks, and hidden records are enforced before publication.", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ReviewerDID" }, { "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PutPullRequestReviewRequest" } } } },
+        "responses": {
+          "202": { "description": "Review request published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestReviewRequestMutation" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "The target owner's AT Protocol provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "operationId": "deletePullRequestReviewRequest", "tags": ["Pull Requests"], "summary": "Cancel a requested review", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/ReviewerDID" }, { "$ref": "#/components/parameters/PullRequestURI" }, { "$ref": "#/components/parameters/ExactOrigin" }],
+        "responses": {
+          "202": { "description": "Review request cancellation published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "502": { "description": "The target owner's AT Protocol provider is unavailable", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
     "/api/v1/pull-requests/status": {
       "put": {
         "operationId": "putPullRequestStatus", "tags": ["Pull Requests"], "summary": "Publish target-owner-authoritative open or closed state", "security": [{ "sessionCookie": [] }],
@@ -1084,7 +1115,7 @@
         "responses": { "200": { "description": "Branch protection page", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchProtectionList" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
       },
       "post": {
-        "operationId": "createBranchProtection", "tags": ["Branch Protection"], "summary": "Create a repository-wide branch protection", "description": "The basic protection release supports the * pattern. Git itself rejects non-fast-forward updates and branch deletion before ref mutation.", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "operationId": "createBranchProtection", "tags": ["Branch Protection"], "summary": "Create a branch protection policy", "description": "Patterns are exact branch names, namespace prefixes ending in /*, or the * fallback. The most specific matching policy is enforced against the exact proposed old and new object IDs before refs change.", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
         "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchProtectionInput" } } } },
         "responses": { "201": { "description": "Branch protection created", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BranchProtection" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
@@ -1417,6 +1448,7 @@
       "RepositoryURI": { "name": "repository_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "IssueURI": { "name": "issue_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "PullRequestURI": { "name": "pull_request_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
+      "ReviewerDID": { "name": "reviewer", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 2048, "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._:%-]+$" }, "description": "Canonical DID of the requested reviewer." },
       "CommentURI": { "name": "comment_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "BlockedDID": { "name": "blocked_did", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "RecordURI": { "name": "record_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
@@ -1797,7 +1829,7 @@
         "required": ["id", "kind", "actor_did", "repository_uri", "owner", "repository_slug", "subject_uri", "subject_kind", "title", "occurred_at", "read"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
-          "kind": { "type": "string", "enum": ["mention", "issue_comment", "pull_request_review", "pull_request_merged"] },
+          "kind": { "type": "string", "enum": ["mention", "issue_comment", "pull_request_review", "pull_request_review_request", "pull_request_merged"] },
           "actor_did": { "type": "string" },
           "repository_uri": { "type": "string" },
           "owner": { "type": "string" },
@@ -1837,8 +1869,8 @@
       "CreateCheckRunRequest": { "type": "object", "additionalProperties": false, "required": ["name", "external_id"], "example": { "name": "integration", "external_id": "build-42-integration", "status": "queued", "details_url": "https://ci.example/builds/42" }, "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 100 }, "external_id": { "type": "string", "minLength": 1, "maxLength": 255 }, "status": { "$ref": "#/components/schemas/CheckRunStatus", "default": "queued" }, "conclusion": { "allOf": [{ "$ref": "#/components/schemas/CheckRunConclusion" }], "nullable": true }, "details_url": { "type": "string", "format": "uri", "nullable": true }, "output_title": { "type": "string", "maxLength": 255, "default": "" }, "output_summary": { "type": "string", "maxLength": 65535, "default": "" }, "started_at": { "type": "string", "format": "date-time", "nullable": true }, "completed_at": { "type": "string", "format": "date-time", "nullable": true } } },
       "UpdateCheckRunRequest": { "type": "object", "additionalProperties": false, "required": ["expected_version", "status"], "example": { "expected_version": 2, "status": "completed", "conclusion": "success", "output_title": "Integration passed", "output_summary": "All federation scenarios passed." }, "properties": { "expected_version": { "type": "integer", "format": "int64", "minimum": 1 }, "status": { "$ref": "#/components/schemas/CheckRunStatus" }, "conclusion": { "allOf": [{ "$ref": "#/components/schemas/CheckRunConclusion" }], "nullable": true }, "details_url": { "type": "string", "format": "uri", "nullable": true }, "output_title": { "type": "string", "maxLength": 255, "default": "" }, "output_summary": { "type": "string", "maxLength": 65535, "default": "" }, "started_at": { "type": "string", "format": "date-time", "nullable": true }, "completed_at": { "type": "string", "format": "date-time", "nullable": true } } },
       "CheckRunList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/CheckRun" } }, "page": { "$ref": "#/components/schemas/Page" } } },
-      "BranchProtection": { "type": "object", "additionalProperties": false, "required": ["id", "pattern", "deny_force_push", "deny_deletion", "created_at", "updated_at"], "properties": { "id": { "type": "string", "format": "uuid" }, "pattern": { "type": "string", "enum": ["*"] }, "deny_force_push": { "type": "boolean" }, "deny_deletion": { "type": "boolean" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } } },
-      "BranchProtectionInput": { "type": "object", "additionalProperties": false, "required": ["pattern", "deny_force_push", "deny_deletion"], "properties": { "pattern": { "type": "string", "enum": ["*"] }, "deny_force_push": { "type": "boolean" }, "deny_deletion": { "type": "boolean" } } },
+      "BranchProtection": { "type": "object", "additionalProperties": false, "required": ["id", "pattern", "deny_force_push", "deny_deletion", "required_approvals", "dismiss_stale_reviews", "required_status_checks", "require_signed_commits", "created_at", "updated_at"], "properties": { "id": { "type": "string", "format": "uuid" }, "pattern": { "type": "string", "minLength": 1, "maxLength": 255, "description": "Exact branch name, namespace prefix ending in /*, or * fallback." }, "deny_force_push": { "type": "boolean" }, "deny_deletion": { "type": "boolean" }, "required_approvals": { "type": "integer", "minimum": 0, "maximum": 100 }, "dismiss_stale_reviews": { "type": "boolean", "description": "Count approvals only for the pull request's current CID/head revision." }, "required_status_checks": { "type": "array", "maxItems": 50, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 100 }, "description": "Case-sensitive commit status contexts that must each have a latest success result." }, "require_signed_commits": { "type": "boolean", "description": "Require every newly reachable commit to carry a valid SSH signature from an active Adenosine SSH key." }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } } },
+      "BranchProtectionInput": { "type": "object", "additionalProperties": false, "required": ["pattern", "deny_force_push", "deny_deletion", "required_approvals", "dismiss_stale_reviews", "required_status_checks", "require_signed_commits"], "example": { "pattern": "main", "deny_force_push": true, "deny_deletion": true, "required_approvals": 1, "dismiss_stale_reviews": true, "required_status_checks": ["ci/test"], "require_signed_commits": false }, "properties": { "pattern": { "type": "string", "minLength": 1, "maxLength": 255 }, "deny_force_push": { "type": "boolean" }, "deny_deletion": { "type": "boolean" }, "required_approvals": { "type": "integer", "minimum": 0, "maximum": 100 }, "dismiss_stale_reviews": { "type": "boolean" }, "required_status_checks": { "type": "array", "maxItems": 50, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 100 } }, "require_signed_commits": { "type": "boolean" } } },
       "BranchProtectionList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/BranchProtection" } }, "page": { "$ref": "#/components/schemas/Page" } } },
       "CreateRepositoryForkRequest": {
         "type": "object", "additionalProperties": false,
@@ -2161,6 +2193,19 @@
       "PullRequestReviewList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/PullRequestReview" } }, "page": { "$ref": "#/components/schemas/Page" } } },
       "CreatePullRequestReviewRequest": { "type": "object", "additionalProperties": false, "required": ["pull_request_uri", "verdict", "body"], "properties": { "pull_request_uri": { "type": "string", "minLength": 1 }, "verdict": { "type": "string", "enum": ["comment", "approve", "request_changes"] }, "body": { "type": "string", "maxLength": 65535 } } },
       "PullRequestReviewMutation": { "type": "object", "additionalProperties": false, "required": ["review", "projected"], "properties": { "review": { "$ref": "#/components/schemas/PullRequestReviewEnvelope" }, "projected": { "type": "boolean", "enum": [false] } } },
+      "PullRequestReviewRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["uri", "cid", "author_did", "pull_request_uri", "pull_request_cid", "target_repository_uri", "target_repository_cid", "reviewer_did", "requested_by_did", "created_at", "updated_at", "indexed_at"],
+        "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "pull_request_uri": { "type": "string" }, "pull_request_cid": { "type": "string" }, "target_repository_uri": { "type": "string" }, "target_repository_cid": { "type": "string" }, "reviewer_did": { "type": "string" }, "requested_by_did": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time" } }
+      },
+      "PullRequestReviewRequestEnvelope": {
+        "type": "object", "additionalProperties": false,
+        "required": ["uri", "cid", "author_did", "pull_request_uri", "pull_request_cid", "target_repository_uri", "target_repository_cid", "reviewer_did", "requested_by_did", "created_at", "updated_at"],
+        "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "pull_request_uri": { "type": "string" }, "pull_request_cid": { "type": "string" }, "target_repository_uri": { "type": "string" }, "target_repository_cid": { "type": "string" }, "reviewer_did": { "type": "string" }, "requested_by_did": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } }
+      },
+      "PullRequestReviewRequestList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/PullRequestReviewRequest" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "PutPullRequestReviewRequest": { "type": "object", "additionalProperties": false, "required": ["pull_request_uri"], "properties": { "pull_request_uri": { "type": "string", "minLength": 1 } } },
+      "PullRequestReviewRequestMutation": { "type": "object", "additionalProperties": false, "required": ["review_request", "projected"], "properties": { "review_request": { "$ref": "#/components/schemas/PullRequestReviewRequestEnvelope" }, "projected": { "type": "boolean", "enum": [false] } } },
       "PullRequestStatusEnvelope": {
         "type": "object", "additionalProperties": false, "required": ["uri", "cid", "author_did", "pull_request_uri", "pull_request_cid", "target_repository_uri", "target_repository_cid", "state", "merge_commit_sha", "created_at", "updated_at"],
         "properties": { "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" }, "pull_request_uri": { "type": "string" }, "pull_request_cid": { "type": "string" }, "target_repository_uri": { "type": "string" }, "target_repository_cid": { "type": "string" }, "state": { "type": "string", "enum": ["open", "closed", "merged"] }, "merge_commit_sha": { "type": "string", "nullable": true }, "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" } }

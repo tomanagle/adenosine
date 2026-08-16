@@ -115,13 +115,17 @@ type CoreAccount struct {
 }
 
 type CoreBranchProtection struct {
-	ID            pgtype.UUID        `json:"id"`
-	RepositoryID  pgtype.UUID        `json:"repository_id"`
-	Pattern       string             `json:"pattern"`
-	DenyForcePush bool               `json:"deny_force_push"`
-	DenyDeletion  bool               `json:"deny_deletion"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+	ID                   pgtype.UUID        `json:"id"`
+	RepositoryID         pgtype.UUID        `json:"repository_id"`
+	Pattern              string             `json:"pattern"`
+	DenyForcePush        bool               `json:"deny_force_push"`
+	DenyDeletion         bool               `json:"deny_deletion"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
+	RequiredApprovals    int16              `json:"required_approvals"`
+	DismissStaleReviews  bool               `json:"dismiss_stale_reviews"`
+	RequiredStatusChecks []string           `json:"required_status_checks"`
+	RequireSignedCommits bool               `json:"require_signed_commits"`
 }
 
 type CoreCheckRun struct {
@@ -520,6 +524,24 @@ type NetworkPullRequestReview struct {
 	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
 	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
 	SourceEventID   int64              `json:"source_event_id"`
+}
+
+type NetworkPullRequestReviewRequest struct {
+	Uri                 string             `json:"uri"`
+	Cid                 pgtype.Text        `json:"cid"`
+	AuthorDid           string             `json:"author_did"`
+	Rkey                string             `json:"rkey"`
+	PullRequestUri      string             `json:"pull_request_uri"`
+	PullRequestCid      string             `json:"pull_request_cid"`
+	TargetRepositoryUri string             `json:"target_repository_uri"`
+	TargetRepositoryCid string             `json:"target_repository_cid"`
+	ReviewerDid         string             `json:"reviewer_did"`
+	RequestedByDid      string             `json:"requested_by_did"`
+	RecordCreatedAt     pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt     pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt           pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt           pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID       int64              `json:"source_event_id"`
 }
 
 type NetworkPullRequestStatus struct {

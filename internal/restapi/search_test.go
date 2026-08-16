@@ -26,7 +26,9 @@ type restSearch struct {
 
 type viewerCollaborationSearch struct {
 	restSearch
-	viewerDID string
+	viewerDID    string
+	resolveErr   error
+	resolveCalls int
 }
 
 func (search *viewerCollaborationSearch) ResolveProfile(_ context.Context, did, viewerDID string) (profile.Profile, error) {
@@ -42,8 +44,10 @@ func (search *viewerCollaborationSearch) ListStars(context.Context, string, stri
 func (search *viewerCollaborationSearch) ListPullRequests(context.Context, string, string) (pullrequest.Projection, error) {
 	return pullrequest.Projection{}, nil
 }
-func (search *viewerCollaborationSearch) ResolvePullRequest(context.Context, string, string) (pullrequest.ProjectedPullRequest, error) {
-	return pullrequest.ProjectedPullRequest{}, nil
+func (search *viewerCollaborationSearch) ResolvePullRequest(_ context.Context, _ string, viewerDID string) (pullrequest.ProjectedPullRequest, error) {
+	search.viewerDID = viewerDID
+	search.resolveCalls++
+	return pullrequest.ProjectedPullRequest{}, search.resolveErr
 }
 func (search *viewerCollaborationSearch) ListPullRequestReviews(context.Context, string, string) ([]pullrequest.ProjectedReview, error) {
 	return []pullrequest.ProjectedReview{}, nil
@@ -78,6 +82,32 @@ func TestCollaborationReadUsesSessionViewer(t *testing.T) {
 			server.Handler.ServeHTTP(response, request)
 			if response.Code != http.StatusOK || search.viewerDID != testCase.wantViewer || response.Header().Get("Vary") != "Cookie" {
 				t.Fatalf("status/viewer/vary = %d/%q/%q", response.Code, search.viewerDID, response.Header().Get("Vary"))
+			}
+		})
+	}
+}
+
+func TestReviewRequestReadRequiresVisiblePullRequest(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name       string
+		resolveErr error
+		wantStatus int
+		wantCalls  int
+	}{
+		{name: "visible pull request", wantStatus: http.StatusOK, wantCalls: 1},
+		{name: "hidden pull request", resolveErr: searchservice.ErrNotFound, wantStatus: http.StatusNotFound},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			search := &viewerCollaborationSearch{resolveErr: testCase.resolveErr}
+			manager := &fakePullRequests{reviewRequests: pullrequest.ReviewRequestPage{Items: []pullrequest.ProjectedReviewRequest{}}}
+			server := testAPIServer(t, Dependencies{Search: search, Sessions: fakeSessions{}, PullRequests: manager})
+			request := httptest.NewRequest(http.MethodGet, "/api/v1/pull-requests/review-requests?pull_request_uri="+restPullRequestURI, nil)
+			response := httptest.NewRecorder()
+			server.Handler.ServeHTTP(response, request)
+			if response.Code != testCase.wantStatus || search.resolveCalls != 1 || manager.calls != testCase.wantCalls {
+				t.Fatalf("status/resolve/manager calls = %d/%d/%d, want %d/1/%d: %s", response.Code, search.resolveCalls, manager.calls, testCase.wantStatus, testCase.wantCalls, response.Body.String())
 			}
 		})
 	}

@@ -3,9 +3,12 @@ package git
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/adenosine-dev/adenosine/internal/repository"
@@ -29,6 +32,17 @@ type Service struct {
 	resolver       Resolver
 	allowIP        func(net.IP) bool
 	beforeMergeCAS func()
+	objectEnv      []string
+	pushAuth       *PushAuthorizationConfig
+	refAuthorizer  refAuthorizer
+}
+
+// PushAuthorizationConfig is the minimal environment passed to the managed
+// pre-receive hook. It is never sourced from a Git client.
+type PushAuthorizationConfig struct {
+	Executable  string
+	DatabaseURL string
+	GitBinary   string
 }
 
 // NewService constructs the native Git service.
@@ -46,6 +60,47 @@ func NewServiceWithResolver(runner *Runner, paths repositoryPaths, resolver Reso
 		allowIP = isPublicIP
 	}
 	return &Service{runner: runner, paths: paths, resolver: resolver, allowIP: allowIP}
+}
+
+// NewHookService constructs Git access that preserves only receive-pack's
+// quarantined object paths for pre-receive authorization commands.
+func NewHookService(runner *Runner, repositoryPath string) (*Service, error) {
+	if !filepath.IsAbs(repositoryPath) || filepath.Clean(repositoryPath) != repositoryPath {
+		return nil, errors.New("hook repository path must be clean and absolute")
+	}
+	service := NewService(runner, hookRepositoryPaths{path: repositoryPath})
+	for _, name := range []string{"GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES"} {
+		value := os.Getenv(name)
+		if value == "" {
+			continue
+		}
+		for _, candidate := range strings.Split(value, string(os.PathListSeparator)) {
+			if !filepath.IsAbs(candidate) || filepath.Clean(candidate) != candidate {
+				return nil, fmt.Errorf("%s contains an invalid object path", name)
+			}
+		}
+		service.objectEnv = append(service.objectEnv, name+"="+value)
+	}
+	return service, nil
+}
+
+// ConfigurePushAuthorization enables managed pre-receive hook execution for
+// subsequent receive-pack processes.
+func (service *Service) ConfigurePushAuthorization(config PushAuthorizationConfig) error {
+	if !filepath.IsAbs(config.Executable) || filepath.Clean(config.Executable) != config.Executable || strings.TrimSpace(config.DatabaseURL) == "" || strings.TrimSpace(config.GitBinary) == "" {
+		return errors.New("push authorization executable, database URL, and Git binary are required")
+	}
+	service.pushAuth = &config
+	return nil
+}
+
+type hookRepositoryPaths struct{ path string }
+
+func (paths hookRepositoryPaths) Prepare(context.Context, repository.ID) (string, error) {
+	return paths.path, nil
+}
+func (paths hookRepositoryPaths) Path(context.Context, repository.ID) (string, error) {
+	return paths.path, nil
 }
 
 // Init creates a bare repository with the requested initial branch.
@@ -139,6 +194,48 @@ func (service *Service) SetReceiveProtection(ctx context.Context, id repository.
 	return nil
 }
 
+// InstallPushAuthorization writes Adenosine's fixed pre-receive entrypoint.
+func (service *Service) InstallPushAuthorization(ctx context.Context, id repository.ID) error {
+	if service.pushAuth == nil {
+		return errors.New("push authorization is not configured")
+	}
+	path, err := service.paths.Path(ctx, id)
+	if err != nil {
+		return fmt.Errorf("resolve repository path: %w", err)
+	}
+	hooksPath := filepath.Join(path, "hooks")
+	if err := os.MkdirAll(hooksPath, 0o750); err != nil {
+		return fmt.Errorf("create repository hooks directory: %w", err)
+	}
+	hooksInfo, err := os.Lstat(hooksPath)
+	if err != nil || hooksInfo.Mode()&os.ModeSymlink != 0 || !hooksInfo.IsDir() {
+		return errors.New("repository hooks path is not a physical directory")
+	}
+	hookPath := filepath.Join(hooksPath, "pre-receive")
+	contents := []byte("#!/bin/sh\nset -eu\n: \"${ADENOSINE_HOOK_EXECUTABLE:?}\"\nexec \"$ADENOSINE_HOOK_EXECUTABLE\" authorize-push\n")
+	temporary, err := os.CreateTemp(hooksPath, ".pre-receive-*")
+	if err != nil {
+		return fmt.Errorf("create pre-receive hook: %w", err)
+	}
+	temporaryPath := temporary.Name()
+	defer func() { _ = os.Remove(temporaryPath) }()
+	if err := temporary.Chmod(0o700); err != nil {
+		_ = temporary.Close()
+		return fmt.Errorf("make pre-receive hook executable: %w", err)
+	}
+	if _, err := temporary.Write(contents); err != nil {
+		_ = temporary.Close()
+		return fmt.Errorf("write pre-receive hook: %w", err)
+	}
+	if err := temporary.Close(); err != nil {
+		return fmt.Errorf("close pre-receive hook: %w", err)
+	}
+	if err := os.Rename(temporaryPath, hookPath); err != nil {
+		return fmt.Errorf("install pre-receive hook: %w", err)
+	}
+	return nil
+}
+
 // PackOptions controls stateless Git pack protocol execution.
 type PackOptions struct {
 	AdvertiseRefs bool
@@ -176,6 +273,14 @@ func (service *Service) runPack(ctx context.Context, operation string, id reposi
 	}
 	args = append(args, path)
 	environment := []string{}
+	if operation == "receive-pack" && service.pushAuth != nil {
+		environment = append(environment,
+			"ADENOSINE_HOOK_EXECUTABLE="+service.pushAuth.Executable,
+			"ADENOSINE_HOOK_DATABASE_URL="+service.pushAuth.DatabaseURL,
+			"ADENOSINE_HOOK_GIT_BINARY="+service.pushAuth.GitBinary,
+			"ADENOSINE_HOOK_REPOSITORY_ID="+id.String(),
+		)
+	}
 	if options.Protocol != "" {
 		if options.Protocol != "version=1" && options.Protocol != "version=2" {
 			return fmt.Errorf("unsupported Git protocol %q", options.Protocol)
@@ -194,6 +299,14 @@ func (service *Service) runSessionPack(ctx context.Context, operation string, id
 		return fmt.Errorf("resolve repository path: %w", err)
 	}
 	environment := []string{}
+	if operation == "receive-pack" && service.pushAuth != nil {
+		environment = append(environment,
+			"ADENOSINE_HOOK_EXECUTABLE="+service.pushAuth.Executable,
+			"ADENOSINE_HOOK_DATABASE_URL="+service.pushAuth.DatabaseURL,
+			"ADENOSINE_HOOK_GIT_BINARY="+service.pushAuth.GitBinary,
+			"ADENOSINE_HOOK_REPOSITORY_ID="+id.String(),
+		)
+	}
 	if protocol != "" {
 		if protocol != "version=1" && protocol != "version=2" {
 			return fmt.Errorf("unsupported Git protocol %q", protocol)

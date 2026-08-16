@@ -363,7 +363,7 @@ func (service *Service) Merge(ctx context.Context, actorDID string, input MergeI
 			Strategy: input.Strategy, Message: mergeMessage(target, trailers), Author: identity, Committer: identity,
 		})
 		if err != nil {
-			if errors.Is(err, gitservice.ErrMergeConflict) || errors.Is(err, gitservice.ErrMergeRefConflict) {
+			if errors.Is(err, gitservice.ErrMergeConflict) || errors.Is(err, gitservice.ErrMergeRefConflict) || errors.Is(err, gitservice.ErrMergeRefRejected) {
 				return MergeResult{}, &ConflictError{Err: err}
 			}
 			return MergeResult{}, fmt.Errorf("merge pull request Git ref: %w", err)

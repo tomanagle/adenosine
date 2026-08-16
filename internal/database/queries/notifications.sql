@@ -1,9 +1,19 @@
 -- name: PageNotifications :many
-WITH viewer AS (
+WITH RECURSIVE viewer AS (
   SELECT account.did, coalesce(account.handle_cache, identity.handle, '') AS handle
   FROM core.accounts AS account
   LEFT JOIN network.identities AS identity ON identity.did = account.did AND identity.is_active
   WHERE account.did = sqlc.arg(account_did)
+), viewer_team_lineage AS (
+  SELECT team.id, team.parent_team_id
+  FROM core.organization_team_members AS team_member
+  JOIN core.organization_teams AS team ON team.id = team_member.team_id
+  WHERE team_member.account_did = sqlc.arg(account_did) AND team.deleted_at IS NULL
+  UNION
+  SELECT parent.id, parent.parent_team_id
+  FROM core.organization_teams AS parent
+  JOIN viewer_team_lineage AS child ON child.parent_team_id = parent.id
+  WHERE parent.deleted_at IS NULL
 ), activity AS (
   SELECT md5('issue_comment:' || comment.uri)::uuid AS id,
          'issue_comment'::text AS kind, comment.author_did AS actor_did,
@@ -33,6 +43,18 @@ WITH viewer AS (
   JOIN network.pull_requests AS pull ON pull.uri = review.pull_request_uri
   WHERE pull.author_did = sqlc.arg(account_did) AND review.author_did <> sqlc.arg(account_did)
     AND review.deleted_at IS NULL AND review.cid IS NOT NULL
+    AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL
+  UNION ALL
+  SELECT md5('pull_request_review_request:' || request.uri)::uuid,
+         'pull_request_review_request'::text, request.requested_by_did,
+         pull.target_repository_uri, pull.uri, 'pull_request'::text,
+         pull.title, request.record_updated_at, request.uri
+  FROM network.pull_request_review_requests AS request
+  JOIN network.pull_requests AS pull
+    ON pull.uri = request.pull_request_uri AND pull.cid = request.pull_request_cid
+  WHERE request.reviewer_did = sqlc.arg(account_did)
+    AND request.requested_by_did <> sqlc.arg(account_did)
+    AND request.deleted_at IS NULL AND request.cid IS NOT NULL
     AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL
   UNION ALL
   SELECT md5('mention:' || issue.uri)::uuid,
@@ -89,6 +111,39 @@ WHERE repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (
     SELECT 1 FROM moderation.blocked_dids AS block
     WHERE block.account_did = sqlc.arg(account_did) AND block.blocked_did = activity.actor_did
+  )
+  AND (
+    repository.local_repository_id IS NULL
+    OR EXISTS (
+      SELECT 1
+      FROM core.repositories AS local_repository
+      LEFT JOIN core.repository_collaborators AS collaborator
+        ON collaborator.repository_id = local_repository.id
+       AND collaborator.account_did = sqlc.arg(account_did)
+      LEFT JOIN core.organization_members AS organization_member
+        ON organization_member.organization_id = local_repository.organization_id
+       AND organization_member.account_did = sqlc.arg(account_did)
+      WHERE local_repository.id = repository.local_repository_id
+        AND local_repository.deleted_at IS NULL
+        AND (
+          local_repository.visibility = 'public'
+          OR (local_repository.organization_id IS NULL AND local_repository.owner_did = sqlc.arg(account_did))
+          OR organization_member.role = 'owner'
+          OR collaborator.role IN ('read', 'triage', 'write', 'maintain', 'admin')
+          OR (organization_member.account_did IS NOT NULL AND EXISTS (
+            SELECT 1 FROM core.organizations AS organization
+            WHERE organization.id = local_repository.organization_id
+              AND organization.base_permission IN ('read', 'write')
+          ))
+          OR EXISTS (
+            SELECT 1 FROM viewer_team_lineage
+            JOIN core.organization_team_repositories AS team_repository
+              ON team_repository.team_id = viewer_team_lineage.id
+            WHERE team_repository.repository_id = local_repository.id
+              AND team_repository.role IN ('read', 'triage', 'write', 'maintain', 'admin')
+          )
+        )
+    )
   )
   AND NOT EXISTS (
     SELECT 1 FROM moderation.hidden_records AS hidden

@@ -43,36 +43,6 @@ func (e AccessTokenScopes) Valid() bool {
 	}
 }
 
-// Defines values for BranchProtectionPattern.
-const (
-	BranchProtectionPatternAsterisk BranchProtectionPattern = "*"
-)
-
-// Valid indicates whether the value is a known member of the BranchProtectionPattern enum.
-func (e BranchProtectionPattern) Valid() bool {
-	switch e {
-	case BranchProtectionPatternAsterisk:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for BranchProtectionInputPattern.
-const (
-	BranchProtectionInputPatternAsterisk BranchProtectionInputPattern = "*"
-)
-
-// Valid indicates whether the value is a known member of the BranchProtectionInputPattern enum.
-func (e BranchProtectionInputPattern) Valid() bool {
-	switch e {
-	case BranchProtectionInputPatternAsterisk:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for CheckRunConclusion.
 const (
 	CheckRunConclusionActionRequired CheckRunConclusion = "action_required"
@@ -408,10 +378,11 @@ func (e MergePullRequestRequestStrategy) Valid() bool {
 
 // Defines values for NotificationKind.
 const (
-	NotificationKindIssueComment      NotificationKind = "issue_comment"
-	NotificationKindMention           NotificationKind = "mention"
-	NotificationKindPullRequestMerged NotificationKind = "pull_request_merged"
-	NotificationKindPullRequestReview NotificationKind = "pull_request_review"
+	NotificationKindIssueComment             NotificationKind = "issue_comment"
+	NotificationKindMention                  NotificationKind = "mention"
+	NotificationKindPullRequestMerged        NotificationKind = "pull_request_merged"
+	NotificationKindPullRequestReview        NotificationKind = "pull_request_review"
+	NotificationKindPullRequestReviewRequest NotificationKind = "pull_request_review_request"
 )
 
 // Valid indicates whether the value is a known member of the NotificationKind enum.
@@ -424,6 +395,8 @@ func (e NotificationKind) Valid() bool {
 	case NotificationKindPullRequestMerged:
 		return true
 	case NotificationKindPullRequestReview:
+		return true
+	case NotificationKindPullRequestReviewRequest:
 		return true
 	default:
 		return false
@@ -805,6 +778,21 @@ func (e PullRequestReviewMutationProjected) Valid() bool {
 	}
 }
 
+// Defines values for PullRequestReviewRequestMutationProjected.
+const (
+	PullRequestReviewRequestMutationProjectedFalse PullRequestReviewRequestMutationProjected = false
+)
+
+// Valid indicates whether the value is a known member of the PullRequestReviewRequestMutationProjected enum.
+func (e PullRequestReviewRequestMutationProjected) Valid() bool {
+	switch e {
+	case PullRequestReviewRequestMutationProjectedFalse:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PullRequestStatusEnvelopeState.
 const (
 	PullRequestStatusEnvelopeStateClosed PullRequestStatusEnvelopeState = "closed"
@@ -1047,13 +1035,13 @@ func (e RepositoryWebhookHasSecret) Valid() bool {
 
 // Defines values for StarMutationProjected.
 const (
-	False StarMutationProjected = false
+	StarMutationProjectedFalse StarMutationProjected = false
 )
 
 // Valid indicates whether the value is a known member of the StarMutationProjected enum.
 func (e StarMutationProjected) Valid() bool {
 	switch e {
-	case False:
+	case StarMutationProjectedFalse:
 		return true
 	default:
 		return false
@@ -1901,26 +1889,36 @@ type BranchList struct {
 
 // BranchProtection defines model for BranchProtection.
 type BranchProtection struct {
-	CreatedAt     time.Time               `json:"created_at"`
-	DenyDeletion  bool                    `json:"deny_deletion"`
-	DenyForcePush bool                    `json:"deny_force_push"`
-	Id            openapi_types.UUID      `json:"id"`
-	Pattern       BranchProtectionPattern `json:"pattern"`
-	UpdatedAt     time.Time               `json:"updated_at"`
-}
+	CreatedAt     time.Time `json:"created_at"`
+	DenyDeletion  bool      `json:"deny_deletion"`
+	DenyForcePush bool      `json:"deny_force_push"`
 
-// BranchProtectionPattern defines model for BranchProtection.Pattern.
-type BranchProtectionPattern string
+	// DismissStaleReviews Count approvals only for the pull request's current CID/head revision.
+	DismissStaleReviews bool               `json:"dismiss_stale_reviews"`
+	Id                  openapi_types.UUID `json:"id"`
+
+	// Pattern Exact branch name, namespace prefix ending in /*, or * fallback.
+	Pattern string `json:"pattern"`
+
+	// RequireSignedCommits Require every newly reachable commit to carry a valid SSH signature from an active Adenosine SSH key.
+	RequireSignedCommits bool `json:"require_signed_commits"`
+	RequiredApprovals    int  `json:"required_approvals"`
+
+	// RequiredStatusChecks Case-sensitive commit status contexts that must each have a latest success result.
+	RequiredStatusChecks []string  `json:"required_status_checks"`
+	UpdatedAt            time.Time `json:"updated_at"`
+}
 
 // BranchProtectionInput defines model for BranchProtectionInput.
 type BranchProtectionInput struct {
-	DenyDeletion  bool                         `json:"deny_deletion"`
-	DenyForcePush bool                         `json:"deny_force_push"`
-	Pattern       BranchProtectionInputPattern `json:"pattern"`
+	DenyDeletion         bool     `json:"deny_deletion"`
+	DenyForcePush        bool     `json:"deny_force_push"`
+	DismissStaleReviews  bool     `json:"dismiss_stale_reviews"`
+	Pattern              string   `json:"pattern"`
+	RequireSignedCommits bool     `json:"require_signed_commits"`
+	RequiredApprovals    int      `json:"required_approvals"`
+	RequiredStatusChecks []string `json:"required_status_checks"`
 }
-
-// BranchProtectionInputPattern defines model for BranchProtectionInput.Pattern.
-type BranchProtectionInputPattern string
 
 // BranchProtectionList defines model for BranchProtectionList.
 type BranchProtectionList struct {
@@ -2816,6 +2814,52 @@ type PullRequestReviewMutation struct {
 // PullRequestReviewMutationProjected defines model for PullRequestReviewMutation.Projected.
 type PullRequestReviewMutationProjected bool
 
+// PullRequestReviewRequest defines model for PullRequestReviewRequest.
+type PullRequestReviewRequest struct {
+	AuthorDid           string    `json:"author_did"`
+	Cid                 string    `json:"cid"`
+	CreatedAt           time.Time `json:"created_at"`
+	IndexedAt           time.Time `json:"indexed_at"`
+	PullRequestCid      string    `json:"pull_request_cid"`
+	PullRequestUri      string    `json:"pull_request_uri"`
+	RequestedByDid      string    `json:"requested_by_did"`
+	ReviewerDid         string    `json:"reviewer_did"`
+	TargetRepositoryCid string    `json:"target_repository_cid"`
+	TargetRepositoryUri string    `json:"target_repository_uri"`
+	UpdatedAt           time.Time `json:"updated_at"`
+	Uri                 string    `json:"uri"`
+}
+
+// PullRequestReviewRequestEnvelope defines model for PullRequestReviewRequestEnvelope.
+type PullRequestReviewRequestEnvelope struct {
+	AuthorDid           string    `json:"author_did"`
+	Cid                 string    `json:"cid"`
+	CreatedAt           time.Time `json:"created_at"`
+	PullRequestCid      string    `json:"pull_request_cid"`
+	PullRequestUri      string    `json:"pull_request_uri"`
+	RequestedByDid      string    `json:"requested_by_did"`
+	ReviewerDid         string    `json:"reviewer_did"`
+	TargetRepositoryCid string    `json:"target_repository_cid"`
+	TargetRepositoryUri string    `json:"target_repository_uri"`
+	UpdatedAt           time.Time `json:"updated_at"`
+	Uri                 string    `json:"uri"`
+}
+
+// PullRequestReviewRequestList defines model for PullRequestReviewRequestList.
+type PullRequestReviewRequestList struct {
+	Items []PullRequestReviewRequest `json:"items"`
+	Page  Page                       `json:"page"`
+}
+
+// PullRequestReviewRequestMutation defines model for PullRequestReviewRequestMutation.
+type PullRequestReviewRequestMutation struct {
+	Projected     PullRequestReviewRequestMutationProjected `json:"projected"`
+	ReviewRequest PullRequestReviewRequestEnvelope          `json:"review_request"`
+}
+
+// PullRequestReviewRequestMutationProjected defines model for PullRequestReviewRequestMutation.Projected.
+type PullRequestReviewRequestMutationProjected bool
+
 // PullRequestStatusEnvelope defines model for PullRequestStatusEnvelope.
 type PullRequestStatusEnvelope struct {
 	AuthorDid           string                         `json:"author_did"`
@@ -2885,6 +2929,11 @@ type PutOrganizationTeamRepositoryRequest struct {
 
 // PutOrganizationTeamRepositoryRequestRole defines model for PutOrganizationTeamRepositoryRequest.Role.
 type PutOrganizationTeamRepositoryRequestRole string
+
+// PutPullRequestReviewRequest defines model for PutPullRequestReviewRequest.
+type PutPullRequestReviewRequest struct {
+	PullRequestUri string `json:"pull_request_uri"`
+}
 
 // PutPullRequestStatusRequest defines model for PutPullRequestStatusRequest.
 type PutPullRequestStatusRequest struct {
@@ -3449,6 +3498,9 @@ type RepositorySlugPath = RepositorySlug
 // RepositoryURI defines model for RepositoryURI.
 type RepositoryURI = string
 
+// ReviewerDID defines model for ReviewerDID.
+type ReviewerDID = string
+
 // SearchCursor defines model for SearchCursor.
 type SearchCursor = string
 
@@ -3707,6 +3759,27 @@ type GetPullRequestDiffParams struct {
 
 // MergePullRequestParams defines parameters for MergePullRequest.
 type MergePullRequestParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// ListPullRequestReviewRequestsParams defines parameters for ListPullRequestReviewRequests.
+type ListPullRequestReviewRequestsParams struct {
+	PullRequestUri PullRequestURI `form:"pull_request_uri" json:"pull_request_uri"`
+	Limit          *Limit         `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor         *Cursor        `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// DeletePullRequestReviewRequestParams defines parameters for DeletePullRequestReviewRequest.
+type DeletePullRequestReviewRequestParams struct {
+	PullRequestUri PullRequestURI `form:"pull_request_uri" json:"pull_request_uri"`
+
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// PutPullRequestReviewRequestParams defines parameters for PutPullRequestReviewRequest.
+type PutPullRequestReviewRequestParams struct {
 	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
 	Origin *ExactOrigin `json:"Origin,omitempty"`
 }
@@ -4379,6 +4452,9 @@ type CreatePullRequestJSONRequestBody = CreatePullRequestRequest
 // MergePullRequestJSONRequestBody defines body for MergePullRequest for application/json ContentType.
 type MergePullRequestJSONRequestBody = MergePullRequestRequest
 
+// PutPullRequestReviewRequestJSONRequestBody defines body for PutPullRequestReviewRequest for application/json ContentType.
+type PutPullRequestReviewRequestJSONRequestBody = PutPullRequestReviewRequest
+
 // CreatePullRequestReviewJSONRequestBody defines body for CreatePullRequestReview for application/json ContentType.
 type CreatePullRequestReviewJSONRequestBody = CreatePullRequestReviewRequest
 
@@ -4689,6 +4765,15 @@ type ServerInterface interface {
 	// Merge an open pull request into its local target repository
 	// (POST /api/v1/pull-requests/merge)
 	MergePullRequest(w http.ResponseWriter, r *http.Request, params MergePullRequestParams)
+	// List active reviewer requests for the exact current pull request CID
+	// (GET /api/v1/pull-requests/review-requests)
+	ListPullRequestReviewRequests(w http.ResponseWriter, r *http.Request, params ListPullRequestReviewRequestsParams)
+	// Cancel a requested review
+	// (DELETE /api/v1/pull-requests/review-requests/{reviewer})
+	DeletePullRequestReviewRequest(w http.ResponseWriter, r *http.Request, reviewer ReviewerDID, params DeletePullRequestReviewRequestParams)
+	// Idempotently request a review from one account
+	// (PUT /api/v1/pull-requests/review-requests/{reviewer})
+	PutPullRequestReviewRequest(w http.ResponseWriter, r *http.Request, reviewer ReviewerDID, params PutPullRequestReviewRequestParams)
 	// List reviews for the exact current pull request CID
 	// (GET /api/v1/pull-requests/reviews)
 	ListPullRequestReviews(w http.ResponseWriter, r *http.Request, params ListPullRequestReviewsParams)
@@ -4716,7 +4801,7 @@ type ServerInterface interface {
 	// List repository branch protections
 	// (GET /api/v1/repositories/{owner}/{repo}/branch-protections)
 	ListBranchProtections(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListBranchProtectionsParams)
-	// Create a repository-wide branch protection
+	// Create a branch protection policy
 	// (POST /api/v1/repositories/{owner}/{repo}/branch-protections)
 	CreateBranchProtection(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug)
 	// Delete a branch protection
@@ -7642,6 +7727,196 @@ func (siw *ServerInterfaceWrapper) MergePullRequest(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.MergePullRequest(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListPullRequestReviewRequests operation middleware
+func (siw *ServerInterfaceWrapper) ListPullRequestReviewRequests(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListPullRequestReviewRequestsParams
+
+	// ------------- Required query parameter "pull_request_uri" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "pull_request_uri", r.URL.Query(), &params.PullRequestUri, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pull_request_uri"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pull_request_uri", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListPullRequestReviewRequests(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeletePullRequestReviewRequest operation middleware
+func (siw *ServerInterfaceWrapper) DeletePullRequestReviewRequest(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "reviewer" -------------
+	var reviewer ReviewerDID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reviewer", r.PathValue("reviewer"), &reviewer, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reviewer", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeletePullRequestReviewRequestParams
+
+	// ------------- Required query parameter "pull_request_uri" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "pull_request_uri", r.URL.Query(), &params.PullRequestUri, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pull_request_uri"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pull_request_uri", Err: err})
+		}
+		return
+	}
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePullRequestReviewRequest(w, r, reviewer, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutPullRequestReviewRequest operation middleware
+func (siw *ServerInterfaceWrapper) PutPullRequestReviewRequest(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "reviewer" -------------
+	var reviewer ReviewerDID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "reviewer", r.PathValue("reviewer"), &reviewer, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "reviewer", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutPullRequestReviewRequestParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutPullRequestReviewRequest(w, r, reviewer, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -12392,6 +12667,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/pull-requests/detail", wrapper.GetPullRequest)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/pull-requests/diff", wrapper.GetPullRequestDiff)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/pull-requests/merge", wrapper.MergePullRequest)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/pull-requests/review-requests", wrapper.ListPullRequestReviewRequests)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/pull-requests/review-requests/{reviewer}", wrapper.DeletePullRequestReviewRequest)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/pull-requests/review-requests/{reviewer}", wrapper.PutPullRequestReviewRequest)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/pull-requests/reviews", wrapper.ListPullRequestReviews)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/pull-requests/reviews", wrapper.CreatePullRequestReview)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/pull-requests/status", wrapper.PutPullRequestStatus)

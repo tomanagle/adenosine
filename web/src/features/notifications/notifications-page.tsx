@@ -84,7 +84,9 @@ export function NotificationsPage() {
                 ? 'replied to your issue'
                 : item.kind === 'pull_request_review'
                   ? 'reviewed your pull request'
-                  : 'merged your pull request'
+                  : item.kind === 'pull_request_review_request'
+                    ? 'requested your review'
+                    : 'merged your pull request'
           const record = encodeRecordIdentity(item.subject_uri)
           return (
             <li className={cn('flex gap-3 py-5', !item.read && 'bg-primary/[0.035]')} key={item.id}>

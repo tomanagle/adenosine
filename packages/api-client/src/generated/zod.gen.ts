@@ -355,6 +355,7 @@ export const zNotification = z.object({
         'mention',
         'issue_comment',
         'pull_request_review',
+        'pull_request_review_request',
         'pull_request_merged'
     ]),
     actor_did: z.string(),
@@ -516,17 +517,25 @@ export const zUpdateCheckRunRequest = z.object({
 
 export const zBranchProtection = z.object({
     id: z.uuid(),
-    pattern: z.enum(['*']),
+    pattern: z.string().min(1).max(255),
     deny_force_push: z.boolean(),
     deny_deletion: z.boolean(),
+    required_approvals: z.int().gte(0).lte(100),
+    dismiss_stale_reviews: z.boolean(),
+    required_status_checks: z.array(z.string().min(1).max(100)).max(50),
+    require_signed_commits: z.boolean(),
     created_at: z.iso.datetime({ offset: true }),
     updated_at: z.iso.datetime({ offset: true })
 });
 
 export const zBranchProtectionInput = z.object({
-    pattern: z.enum(['*']),
+    pattern: z.string().min(1).max(255),
     deny_force_push: z.boolean(),
-    deny_deletion: z.boolean()
+    deny_deletion: z.boolean(),
+    required_approvals: z.int().gte(0).lte(100),
+    dismiss_stale_reviews: z.boolean(),
+    required_status_checks: z.array(z.string().min(1).max(100)).max(50),
+    require_signed_commits: z.boolean()
 });
 
 export const zCreateRepositoryForkRequest = z.object({
@@ -978,6 +987,44 @@ export const zPullRequestReviewMutation = z.object({
     projected: z.literal(false)
 });
 
+export const zPullRequestReviewRequest = z.object({
+    uri: z.string(),
+    cid: z.string(),
+    author_did: z.string(),
+    pull_request_uri: z.string(),
+    pull_request_cid: z.string(),
+    target_repository_uri: z.string(),
+    target_repository_cid: z.string(),
+    reviewer_did: z.string(),
+    requested_by_did: z.string(),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true }),
+    indexed_at: z.iso.datetime({ offset: true })
+});
+
+export const zPullRequestReviewRequestEnvelope = z.object({
+    uri: z.string(),
+    cid: z.string(),
+    author_did: z.string(),
+    pull_request_uri: z.string(),
+    pull_request_cid: z.string(),
+    target_repository_uri: z.string(),
+    target_repository_cid: z.string(),
+    reviewer_did: z.string(),
+    requested_by_did: z.string(),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true })
+});
+
+export const zPutPullRequestReviewRequest = z.object({
+    pull_request_uri: z.string().min(1)
+});
+
+export const zPullRequestReviewRequestMutation = z.object({
+    review_request: zPullRequestReviewRequestEnvelope,
+    projected: z.literal(false)
+});
+
 export const zPullRequestStatusEnvelope = z.object({
     uri: z.string(),
     cid: z.string(),
@@ -1299,6 +1346,11 @@ export const zPullRequestReviewList = z.object({
     page: zPage
 });
 
+export const zPullRequestReviewRequestList = z.object({
+    items: z.array(zPullRequestReviewRequest).max(100),
+    page: zPage
+});
+
 export const zCommentList = z.object({
     comment_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
     items: z.array(zComment).max(100),
@@ -1336,6 +1388,11 @@ export const zRepositoryUri = z.string().min(1);
 export const zIssueUri = z.string().min(1);
 
 export const zPullRequestUri = z.string().min(1);
+
+/**
+ * Canonical DID of the requested reviewer.
+ */
+export const zReviewerDid = z.string().min(1).max(2048).regex(/^did:[a-z0-9]+:[A-Za-z0-9._:%-]+$/);
 
 export const zCommentUri = z.string().min(1);
 
@@ -2111,6 +2168,44 @@ export const zCreatePullRequestReviewHeaders = z.object({
  * Review published; projection update is pending
  */
 export const zCreatePullRequestReviewResponse = zPullRequestReviewMutation;
+
+export const zListPullRequestReviewRequestsQuery = z.object({
+    pull_request_uri: z.string().min(1),
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Current keyset-paginated review requests
+ */
+export const zListPullRequestReviewRequestsResponse = zPullRequestReviewRequestList;
+
+export const zDeletePullRequestReviewRequestHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zDeletePullRequestReviewRequestPath = z.object({
+    reviewer: z.string().min(1).max(2048).regex(/^did:[a-z0-9]+:[A-Za-z0-9._:%-]+$/)
+});
+
+export const zDeletePullRequestReviewRequestQuery = z.object({
+    pull_request_uri: z.string().min(1)
+});
+
+export const zPutPullRequestReviewRequestBody = zPutPullRequestReviewRequest;
+
+export const zPutPullRequestReviewRequestHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zPutPullRequestReviewRequestPath = z.object({
+    reviewer: z.string().min(1).max(2048).regex(/^did:[a-z0-9]+:[A-Za-z0-9._:%-]+$/)
+});
+
+/**
+ * Review request published; projection update is pending
+ */
+export const zPutPullRequestReviewRequestResponse = zPullRequestReviewRequestMutation;
 
 export const zPutPullRequestStatusBody = zPutPullRequestStatusRequest;
 

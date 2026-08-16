@@ -2,7 +2,7 @@
 
 [`../lexicons/`](../lexicons/) is the implementation-independent source of truth for
 `dev.adenosine.*` records: profile, repository, star, issue/status/comment, and pull
-request/status/review. A DID is the record author; record fields do not duplicate mutable
+request/status/review/review-request. A DID is the record author; record fields do not duplicate mutable
 handles or claim a different author. Repository and collaboration references use canonical
 AT URIs and CIDs.
 
@@ -38,6 +38,10 @@ state. Duplicate event IDs are no-ops; per-record source event IDs prevent stale
 from replacing newer state. Invalid events with a usable event ID are durably rejected so
 they do not block the stream. Target repository owners, rather than arbitrary record
 authors, control derived issue and pull request status.
+Pull request review requests use the same target-owner authority rule and a deterministic
+key over the pull request URI and reviewer DID. Consumers reject mismatched authors or
+keys, and only project requests whose exact pull request CID remains current. Notifications
+derived from those requests stay local and are never ingested as federation records.
 
 The black-box federation suite uses authenticated Tap-shaped fixtures and a deterministic
 publication boundary. It proves projection, isolation, and real Git clone behavior, but

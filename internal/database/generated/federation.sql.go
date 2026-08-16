@@ -90,6 +90,17 @@ func (q *Queries) GetFederationIssueStatusTarget(ctx context.Context, uri string
 	return i, err
 }
 
+const getFederationPullRequestReviewRequestSubject = `-- name: GetFederationPullRequestReviewRequestSubject :one
+SELECT pull_request_uri FROM network.pull_request_review_requests WHERE uri = $1
+`
+
+func (q *Queries) GetFederationPullRequestReviewRequestSubject(ctx context.Context, uri string) (string, error) {
+	row := q.db.QueryRow(ctx, getFederationPullRequestReviewRequestSubject, uri)
+	var pull_request_uri string
+	err := row.Scan(&pull_request_uri)
+	return pull_request_uri, err
+}
+
 const getFederationPullRequestReviewSubject = `-- name: GetFederationPullRequestReviewSubject :one
 SELECT pull_request_uri FROM network.pull_request_reviews WHERE uri = $1
 `
@@ -1335,6 +1346,106 @@ func (q *Queries) LockFederationRepositoryStars(ctx context.Context, repositoryU
 	return err
 }
 
+const pageProjectedPullRequestReviewRequests = `-- name: PageProjectedPullRequestReviewRequests :many
+SELECT request.uri, request.cid, request.author_did, request.pull_request_uri,
+       request.pull_request_cid, request.target_repository_uri, request.target_repository_cid,
+       request.reviewer_did, request.requested_by_did, request.record_created_at,
+       request.record_updated_at, request.indexed_at
+FROM network.pull_request_review_requests AS request
+JOIN network.pull_requests AS pull_request
+  ON pull_request.uri = request.pull_request_uri
+ AND pull_request.cid = request.pull_request_cid
+ AND pull_request.deleted_at IS NULL
+ AND pull_request.cid IS NOT NULL
+WHERE pull_request.uri = $1
+  AND request.deleted_at IS NULL
+  AND request.cid IS NOT NULL
+  AND (
+    $2::text IS NULL
+    OR (
+      NOT EXISTS (
+        SELECT 1 FROM moderation.blocked_dids AS block
+        WHERE block.account_did = $2::text
+          AND block.blocked_did IN (request.author_did, request.requested_by_did, request.reviewer_did)
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM moderation.hidden_records AS hidden
+        WHERE hidden.account_did = $2::text
+          AND hidden.record_uri IN (request.uri, request.pull_request_uri, request.target_repository_uri)
+      )
+    )
+  )
+  AND (
+    $3::timestamptz IS NULL
+    OR (request.record_updated_at, request.uri) <
+       ($3::timestamptz, $4::text)
+  )
+ORDER BY request.record_updated_at DESC, request.uri DESC
+LIMIT $5
+`
+
+type PageProjectedPullRequestReviewRequestsParams struct {
+	PullRequestUri string             `json:"pull_request_uri"`
+	ViewerDid      pgtype.Text        `json:"viewer_did"`
+	AfterTime      pgtype.Timestamptz `json:"after_time"`
+	AfterUri       pgtype.Text        `json:"after_uri"`
+	ResultLimit    int32              `json:"result_limit"`
+}
+
+type PageProjectedPullRequestReviewRequestsRow struct {
+	Uri                 string             `json:"uri"`
+	Cid                 pgtype.Text        `json:"cid"`
+	AuthorDid           string             `json:"author_did"`
+	PullRequestUri      string             `json:"pull_request_uri"`
+	PullRequestCid      string             `json:"pull_request_cid"`
+	TargetRepositoryUri string             `json:"target_repository_uri"`
+	TargetRepositoryCid string             `json:"target_repository_cid"`
+	ReviewerDid         string             `json:"reviewer_did"`
+	RequestedByDid      string             `json:"requested_by_did"`
+	RecordCreatedAt     pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt     pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt           pgtype.Timestamptz `json:"indexed_at"`
+}
+
+func (q *Queries) PageProjectedPullRequestReviewRequests(ctx context.Context, arg PageProjectedPullRequestReviewRequestsParams) ([]PageProjectedPullRequestReviewRequestsRow, error) {
+	rows, err := q.db.Query(ctx, pageProjectedPullRequestReviewRequests,
+		arg.PullRequestUri,
+		arg.ViewerDid,
+		arg.AfterTime,
+		arg.AfterUri,
+		arg.ResultLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PageProjectedPullRequestReviewRequestsRow{}
+	for rows.Next() {
+		var i PageProjectedPullRequestReviewRequestsRow
+		if err := rows.Scan(
+			&i.Uri,
+			&i.Cid,
+			&i.AuthorDid,
+			&i.PullRequestUri,
+			&i.PullRequestCid,
+			&i.TargetRepositoryUri,
+			&i.TargetRepositoryCid,
+			&i.ReviewerDid,
+			&i.RequestedByDid,
+			&i.RecordCreatedAt,
+			&i.RecordUpdatedAt,
+			&i.IndexedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const projectIdentityHandle = `-- name: ProjectIdentityHandle :exec
 UPDATE network.profiles SET handle = $2, indexed_at = $3, handle_source_event_id = $4
 WHERE did = $1 AND (handle_source_event_id IS NULL OR handle_source_event_id < $4)
@@ -1355,6 +1466,38 @@ func (q *Queries) ProjectIdentityHandle(ctx context.Context, arg ProjectIdentity
 		arg.HandleSourceEventID,
 	)
 	return err
+}
+
+const pullRequestReviewRequestModerationAllowed = `-- name: PullRequestReviewRequestModerationAllowed :one
+SELECT NOT EXISTS (
+         SELECT 1 FROM moderation.blocked_dids AS block
+         WHERE (block.account_did = $1 AND block.blocked_did = $2)
+            OR (block.account_did = $2 AND block.blocked_did = $1)
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM moderation.hidden_records AS hidden
+         WHERE hidden.account_did = $2
+           AND hidden.record_uri IN ($3, $4)
+       ) AS allowed
+`
+
+type PullRequestReviewRequestModerationAllowedParams struct {
+	ActorDid       string `json:"actor_did"`
+	ReviewerDid    string `json:"reviewer_did"`
+	PullRequestUri string `json:"pull_request_uri"`
+	RepositoryUri  string `json:"repository_uri"`
+}
+
+func (q *Queries) PullRequestReviewRequestModerationAllowed(ctx context.Context, arg PullRequestReviewRequestModerationAllowedParams) (pgtype.Bool, error) {
+	row := q.db.QueryRow(ctx, pullRequestReviewRequestModerationAllowed,
+		arg.ActorDid,
+		arg.ReviewerDid,
+		arg.PullRequestUri,
+		arg.RepositoryUri,
+	)
+	var allowed pgtype.Bool
+	err := row.Scan(&allowed)
+	return allowed, err
 }
 
 const recomputeFederationForkCount = `-- name: RecomputeFederationForkCount :exec
@@ -1765,6 +1908,31 @@ type TombstoneFederationPullRequestReviewParams struct {
 
 func (q *Queries) TombstoneFederationPullRequestReview(ctx context.Context, arg TombstoneFederationPullRequestReviewParams) (string, error) {
 	row := q.db.QueryRow(ctx, tombstoneFederationPullRequestReview, arg.Uri, arg.IndexedAt, arg.SourceEventID)
+	var pull_request_uri string
+	err := row.Scan(&pull_request_uri)
+	return pull_request_uri, err
+}
+
+const tombstoneFederationPullRequestReviewRequest = `-- name: TombstoneFederationPullRequestReviewRequest :one
+UPDATE network.pull_request_review_requests AS request SET
+    cid = NULL, indexed_at = $2, deleted_at = $2, source_event_id = $3
+WHERE request.uri = $1
+  AND request.source_event_id < $3
+  AND EXISTS (
+      SELECT 1 FROM network.records AS current_record
+      WHERE current_record.uri = $1 AND current_record.source_event_id = $3 AND current_record.deleted_at IS NOT NULL
+  )
+RETURNING pull_request_uri
+`
+
+type TombstoneFederationPullRequestReviewRequestParams struct {
+	Uri           string             `json:"uri"`
+	IndexedAt     pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID int64              `json:"source_event_id"`
+}
+
+func (q *Queries) TombstoneFederationPullRequestReviewRequest(ctx context.Context, arg TombstoneFederationPullRequestReviewRequestParams) (string, error) {
+	row := q.db.QueryRow(ctx, tombstoneFederationPullRequestReviewRequest, arg.Uri, arg.IndexedAt, arg.SourceEventID)
 	var pull_request_uri string
 	err := row.Scan(&pull_request_uri)
 	return pull_request_uri, err
@@ -2350,6 +2518,79 @@ func (q *Queries) UpsertFederationPullRequestReview(ctx context.Context, arg Ups
 		arg.PullRequestCid,
 		arg.Body,
 		arg.Verdict,
+		arg.RecordCreatedAt,
+		arg.RecordUpdatedAt,
+		arg.IndexedAt,
+		arg.SourceEventID,
+	)
+	var pull_request_uri string
+	err := row.Scan(&pull_request_uri)
+	return pull_request_uri, err
+}
+
+const upsertFederationPullRequestReviewRequest = `-- name: UpsertFederationPullRequestReviewRequest :one
+INSERT INTO network.pull_request_review_requests (
+    uri, cid, author_did, rkey, pull_request_uri, pull_request_cid,
+    target_repository_uri, target_repository_cid, reviewer_did, requested_by_did,
+    record_created_at, record_updated_at, indexed_at, deleted_at, source_event_id
+)
+SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NULL, $14
+FROM network.records AS source_record
+WHERE source_record.uri = $1 AND source_record.source_event_id = $14 AND source_record.deleted_at IS NULL
+ON CONFLICT (uri) DO UPDATE SET
+    cid = EXCLUDED.cid,
+    pull_request_cid = EXCLUDED.pull_request_cid,
+    target_repository_cid = EXCLUDED.target_repository_cid,
+    reviewer_did = EXCLUDED.reviewer_did,
+    requested_by_did = EXCLUDED.requested_by_did,
+    record_created_at = EXCLUDED.record_created_at,
+    record_updated_at = EXCLUDED.record_updated_at,
+    indexed_at = EXCLUDED.indexed_at,
+    deleted_at = NULL,
+    source_event_id = EXCLUDED.source_event_id
+WHERE network.pull_request_review_requests.source_event_id < EXCLUDED.source_event_id
+  AND network.pull_request_review_requests.author_did = EXCLUDED.author_did
+  AND network.pull_request_review_requests.rkey = EXCLUDED.rkey
+  AND network.pull_request_review_requests.pull_request_uri = EXCLUDED.pull_request_uri
+  AND network.pull_request_review_requests.target_repository_uri = EXCLUDED.target_repository_uri
+  AND EXISTS (
+      SELECT 1 FROM network.records AS current_record
+      WHERE current_record.uri = EXCLUDED.uri
+        AND current_record.source_event_id = EXCLUDED.source_event_id
+        AND current_record.deleted_at IS NULL
+  )
+RETURNING pull_request_uri
+`
+
+type UpsertFederationPullRequestReviewRequestParams struct {
+	Uri                 string             `json:"uri"`
+	Cid                 pgtype.Text        `json:"cid"`
+	AuthorDid           string             `json:"author_did"`
+	Rkey                string             `json:"rkey"`
+	PullRequestUri      string             `json:"pull_request_uri"`
+	PullRequestCid      string             `json:"pull_request_cid"`
+	TargetRepositoryUri string             `json:"target_repository_uri"`
+	TargetRepositoryCid string             `json:"target_repository_cid"`
+	ReviewerDid         string             `json:"reviewer_did"`
+	RequestedByDid      string             `json:"requested_by_did"`
+	RecordCreatedAt     pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt     pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt           pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID       int64              `json:"source_event_id"`
+}
+
+func (q *Queries) UpsertFederationPullRequestReviewRequest(ctx context.Context, arg UpsertFederationPullRequestReviewRequestParams) (string, error) {
+	row := q.db.QueryRow(ctx, upsertFederationPullRequestReviewRequest,
+		arg.Uri,
+		arg.Cid,
+		arg.AuthorDid,
+		arg.Rkey,
+		arg.PullRequestUri,
+		arg.PullRequestCid,
+		arg.TargetRepositoryUri,
+		arg.TargetRepositoryCid,
+		arg.ReviewerDid,
+		arg.RequestedByDid,
 		arg.RecordCreatedAt,
 		arg.RecordUpdatedAt,
 		arg.IndexedAt,

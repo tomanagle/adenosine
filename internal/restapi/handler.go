@@ -274,6 +274,9 @@ type PullRequestManager interface {
 	Refresh(context.Context, string) (pullrequest.Result, error)
 	Reviews(context.Context, string) ([]pullrequest.ProjectedReview, error)
 	CreateReview(context.Context, string, pullrequest.ReviewInput) (pullrequest.Review, error)
+	ReviewRequests(context.Context, string, string, string, int) (pullrequest.ReviewRequestPage, error)
+	PutReviewRequest(context.Context, string, pullrequest.ReviewRequestInput) (pullrequest.ReviewRequest, error)
+	DeleteReviewRequest(context.Context, string, pullrequest.ReviewRequestInput) error
 	PutStatus(context.Context, string, pullrequest.StatusInput) (pullrequest.Status, error)
 	Merge(context.Context, string, pullrequest.MergeInput) (pullrequest.MergeResult, error)
 }
@@ -3273,6 +3276,69 @@ func (handler *apiHandler) CreatePullRequestReview(w http.ResponseWriter, r *htt
 	writeJSON(w, http.StatusAccepted, generated.PullRequestReviewMutation{Review: pullRequestReviewEnvelopeResponse(value), Projected: false})
 }
 
+func (handler *apiHandler) ListPullRequestReviewRequests(w http.ResponseWriter, r *http.Request, params generated.ListPullRequestReviewRequestsParams) {
+	viewerDID, err := handler.optionalSessionViewer(r)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	if reader, ok := handler.deps.Search.(collaborationReader); ok {
+		if _, err := reader.ResolvePullRequest(r.Context(), params.PullRequestUri, viewerDID); err != nil {
+			handler.writeError(w, r, err)
+			return
+		}
+	}
+	limit, cursor := collectionParameters(params.Limit, params.Cursor)
+	page, err := handler.deps.PullRequests.ReviewRequests(r.Context(), params.PullRequestUri, viewerDID, cursor, limit)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.PullRequestReviewRequest, len(page.Items))
+	for index, value := range page.Items {
+		items[index] = projectedPullRequestReviewRequestResponse(value)
+	}
+	var next *string
+	if page.NextCursor != "" {
+		next = &page.NextCursor
+	}
+	w.Header().Set("Vary", "Cookie")
+	writeJSON(w, http.StatusOK, generated.PullRequestReviewRequestList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) PutPullRequestReviewRequest(w http.ResponseWriter, r *http.Request, reviewer generated.ReviewerDID, _ generated.PutPullRequestReviewRequestParams) {
+	identity, err := handler.requireSession(r, true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.PutPullRequestReviewRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	value, err := handler.deps.PullRequests.PutReviewRequest(r.Context(), identity.accountDID, pullrequest.ReviewRequestInput{PullRequestURI: request.PullRequestUri, ReviewerDID: string(reviewer)})
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	handler.recordRepositoryActivity(r, "review.requested", request.PullRequestUri, map[string]any{"review_request_uri": value.URI, "pull_request_uri": request.PullRequestUri, "reviewer_did": reviewer, "actor_did": identity.accountDID})
+	writeJSON(w, http.StatusAccepted, generated.PullRequestReviewRequestMutation{ReviewRequest: pullRequestReviewRequestEnvelopeResponse(value), Projected: false})
+}
+
+func (handler *apiHandler) DeletePullRequestReviewRequest(w http.ResponseWriter, r *http.Request, reviewer generated.ReviewerDID, params generated.DeletePullRequestReviewRequestParams) {
+	identity, err := handler.requireSession(r, true)
+	if err == nil {
+		err = handler.deps.PullRequests.DeleteReviewRequest(r.Context(), identity.accountDID, pullrequest.ReviewRequestInput{PullRequestURI: params.PullRequestUri, ReviewerDID: string(reviewer)})
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	handler.recordRepositoryActivity(r, "review.request_cancelled", params.PullRequestUri, map[string]any{"pull_request_uri": params.PullRequestUri, "reviewer_did": reviewer, "actor_did": identity.accountDID})
+	w.WriteHeader(http.StatusAccepted)
+}
+
 func (handler *apiHandler) PutPullRequestStatus(w http.ResponseWriter, r *http.Request, _ generated.PutPullRequestStatusParams) {
 	identity, err := handler.requireSession(r, true)
 	if err != nil {
@@ -4184,11 +4250,20 @@ func webhookEventStrings(values []generated.WebhookEvent) []string {
 }
 
 func branchProtectionInput(value generated.BranchProtectionInput) branchprotection.Input {
-	return branchprotection.Input{Pattern: string(value.Pattern), DenyForcePush: value.DenyForcePush, DenyDeletion: value.DenyDeletion}
+	return branchprotection.Input{
+		Pattern: value.Pattern, DenyForcePush: value.DenyForcePush, DenyDeletion: value.DenyDeletion,
+		RequiredApprovals: value.RequiredApprovals, DismissStaleReviews: value.DismissStaleReviews,
+		RequiredStatusChecks: append([]string(nil), value.RequiredStatusChecks...), RequireSignedCommits: value.RequireSignedCommits,
+	}
 }
 
 func branchProtectionResponse(value branchprotection.Protection) generated.BranchProtection {
-	return generated.BranchProtection{Id: openapi_types.UUID(value.ID), Pattern: generated.BranchProtectionPattern(value.Pattern), DenyForcePush: value.DenyForcePush, DenyDeletion: value.DenyDeletion, CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
+	return generated.BranchProtection{
+		Id: openapi_types.UUID(value.ID), Pattern: value.Pattern, DenyForcePush: value.DenyForcePush, DenyDeletion: value.DenyDeletion,
+		RequiredApprovals: value.RequiredApprovals, DismissStaleReviews: value.DismissStaleReviews,
+		RequiredStatusChecks: append([]string(nil), value.RequiredStatusChecks...), RequireSignedCommits: value.RequireSignedCommits,
+		CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt,
+	}
 }
 
 func commitStatusResponse(value commitstatus.CommitStatus) generated.CommitStatus {
@@ -4381,6 +4456,24 @@ func pullRequestReviewEnvelopeResponse(value pullrequest.Review) generated.PullR
 	return generated.PullRequestReviewEnvelope{Uri: value.URI, Cid: value.CID, AuthorDid: value.AuthorDID, PullRequestUri: value.Subject.URI,
 		PullRequestCid: value.Subject.CID, Verdict: generated.PullRequestReviewEnvelopeVerdict(value.Verdict), Body: value.Body,
 		CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
+}
+
+func projectedPullRequestReviewRequestResponse(value pullrequest.ProjectedReviewRequest) generated.PullRequestReviewRequest {
+	return generated.PullRequestReviewRequest{
+		Uri: value.URI, Cid: value.CID, AuthorDid: value.AuthorDID, PullRequestUri: value.Subject.URI, PullRequestCid: value.Subject.CID,
+		TargetRepositoryUri: value.TargetRepository.URI, TargetRepositoryCid: value.TargetRepository.CID,
+		ReviewerDid: value.ReviewerDID, RequestedByDid: value.RequestedByDID,
+		CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt, IndexedAt: value.IndexedAt,
+	}
+}
+
+func pullRequestReviewRequestEnvelopeResponse(value pullrequest.ReviewRequest) generated.PullRequestReviewRequestEnvelope {
+	return generated.PullRequestReviewRequestEnvelope{
+		Uri: value.URI, Cid: value.CID, AuthorDid: value.AuthorDID, PullRequestUri: value.Subject.URI, PullRequestCid: value.Subject.CID,
+		TargetRepositoryUri: value.TargetRepository.URI, TargetRepositoryCid: value.TargetRepository.CID,
+		ReviewerDid: value.ReviewerDID, RequestedByDid: value.RequestedByDID,
+		CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt,
+	}
 }
 
 func pullRequestStatusEnvelopeResponse(value pullrequest.Status) generated.PullRequestStatusEnvelope {

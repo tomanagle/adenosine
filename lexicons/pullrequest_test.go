@@ -18,6 +18,7 @@ func TestPullRequestLexicons(t *testing.T) {
 		{name: "pull request", file: "dev.adenosine.pullRequest.json", id: "dev.adenosine.pullRequest", required: []string{"sourceRepository", "targetRepository", "sourceBranch", "targetBranch", "headSHA", "title", "body", "createdAt", "updatedAt"}, properties: []string{"body", "createdAt", "headSHA", "sourceBranch", "sourceRepository", "targetBranch", "targetRepository", "title", "updatedAt"}},
 		{name: "pull request status", file: "dev.adenosine.pullRequestStatus.json", id: "dev.adenosine.pullRequestStatus", required: []string{"subject", "targetRepository", "state", "createdAt", "updatedAt"}, properties: []string{"createdAt", "mergeCommitSHA", "state", "subject", "targetRepository", "updatedAt"}},
 		{name: "pull request review", file: "dev.adenosine.pullRequestReview.json", id: "dev.adenosine.pullRequestReview", required: []string{"subject", "verdict", "body", "createdAt", "updatedAt"}, properties: []string{"body", "createdAt", "subject", "updatedAt", "verdict"}},
+		{name: "pull request review request", file: "dev.adenosine.pullRequestReviewRequest.json", id: "dev.adenosine.pullRequestReviewRequest", required: []string{"subject", "targetRepository", "reviewer", "requestedBy", "createdAt", "updatedAt"}, properties: []string{"createdAt", "requestedBy", "reviewer", "subject", "targetRepository", "updatedAt"}},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -93,6 +94,10 @@ func TestPullRequestLexiconConstraints(t *testing.T) {
 		{name: "review body bound", file: "dev.adenosine.pullRequestReview.json", field: "body", want: property{Type: "string", MaxLength: 65535}},
 		{name: "created timestamp", file: "dev.adenosine.pullRequestReview.json", field: "createdAt", want: property{Type: "string", Format: "datetime"}},
 		{name: "updated timestamp", file: "dev.adenosine.pullRequestReview.json", field: "updatedAt", want: property{Type: "string", Format: "datetime"}},
+		{name: "review request subject", file: "dev.adenosine.pullRequestReviewRequest.json", field: "subject", want: property{Type: "ref", Ref: "com.atproto.repo.strongRef"}},
+		{name: "review request target", file: "dev.adenosine.pullRequestReviewRequest.json", field: "targetRepository", want: property{Type: "ref", Ref: "com.atproto.repo.strongRef"}},
+		{name: "reviewer DID", file: "dev.adenosine.pullRequestReviewRequest.json", field: "reviewer", want: property{Type: "string", Format: "did"}},
+		{name: "requester DID", file: "dev.adenosine.pullRequestReviewRequest.json", field: "requestedBy", want: property{Type: "string", Format: "did"}},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {

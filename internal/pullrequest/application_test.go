@@ -11,14 +11,16 @@ import (
 )
 
 type applicationStore struct {
-	projection   Projection
-	pullRequest  ProjectedPullRequest
-	targets      repositoryTargets
-	reviews      []ProjectedReview
-	reviewTarget StrongRef
-	status       statusTarget
-	err          error
-	limit        int
+	projection        Projection
+	pullRequest       ProjectedPullRequest
+	targets           repositoryTargets
+	reviews           []ProjectedReview
+	reviewTarget      StrongRef
+	status            statusTarget
+	reviewRequests    []ProjectedReviewRequest
+	moderationAllowed bool
+	err               error
+	limit             int
 }
 
 func (store *applicationStore) GetFetchTarget(context.Context, string) (fetchTarget, error) {
@@ -47,15 +49,24 @@ func (store *applicationStore) GetReviewTarget(context.Context, string) (StrongR
 func (store *applicationStore) GetStatusTarget(context.Context, string) (statusTarget, error) {
 	return store.status, store.err
 }
+func (store *applicationStore) PageReviewRequests(context.Context, string, string, time.Time, string, int) ([]ProjectedReviewRequest, error) {
+	return store.reviewRequests, store.err
+}
+func (store *applicationStore) ReviewRequestModerationAllowed(context.Context, string, string, string, string) (bool, error) {
+	return store.moderationAllowed, store.err
+}
 
 type applicationPublisher struct {
-	pullRequest  PullRequest
-	review       Review
-	status       Status
-	record       Record
-	reviewRecord ReviewRecord
-	statusRecord StatusRecord
-	author       string
+	pullRequest          PullRequest
+	review               Review
+	status               Status
+	record               Record
+	reviewRecord         ReviewRecord
+	statusRecord         StatusRecord
+	reviewRequest        ReviewRequest
+	reviewRequestRecord  ReviewRequestRecord
+	deletedReviewRequest string
+	author               string
 }
 
 func (publisher *applicationPublisher) CreatePullRequest(_ context.Context, author, _ string, record Record) (PullRequest, error) {
@@ -70,14 +81,23 @@ func (publisher *applicationPublisher) PutPullRequestStatus(_ context.Context, a
 	publisher.author, publisher.statusRecord = author, record
 	return publisher.status, nil
 }
+func (publisher *applicationPublisher) PutPullRequestReviewRequest(_ context.Context, author string, record ReviewRequestRecord) (ReviewRequest, error) {
+	publisher.author, publisher.reviewRequestRecord = author, record
+	return publisher.reviewRequest, nil
+}
+func (publisher *applicationPublisher) DeletePullRequestReviewRequest(_ context.Context, author, pullRequestURI, reviewerDID string) error {
+	publisher.author, publisher.deletedReviewRequest = author, pullRequestURI+"\n"+reviewerDID
+	return nil
+}
 
 type applicationClock struct{ now time.Time }
 
 func (clock applicationClock) Now() time.Time { return clock.now }
 
 type applicationAuthorizer struct {
-	allowed bool
-	calls   int
+	allowed  bool
+	readable bool
+	calls    int
 }
 
 func (*applicationAuthorizer) CanWriteRepository(context.Context, string, repository.ID) (bool, error) {
@@ -87,6 +107,10 @@ func (*applicationAuthorizer) CanWriteRepository(context.Context, string, reposi
 func (authorizer *applicationAuthorizer) CanTriageRepository(context.Context, string, repository.ID) (bool, error) {
 	authorizer.calls++
 	return authorizer.allowed, nil
+}
+
+func (authorizer *applicationAuthorizer) CanReadRepository(context.Context, string, repository.ID) (bool, error) {
+	return authorizer.readable, nil
 }
 
 func TestApplicationServiceUsesCurrentTargetsAndBoundsReads(t *testing.T) {
