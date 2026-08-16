@@ -23,6 +23,14 @@ import {
   listBranchProtectionsOptions,
   createBranchProtectionMutation,
   deleteBranchProtectionMutation,
+  listRepositoryReleasesOptions,
+  getRepositoryReleaseOptions,
+  createRepositoryReleaseMutation,
+  updateRepositoryReleaseMutation,
+  deleteRepositoryReleaseMutation,
+  listRepositoryReleaseAssetsOptions,
+  uploadRepositoryReleaseAssetMutation,
+  deleteRepositoryReleaseAssetMutation,
 } from '@adenosine/api-client/query'
 
 import { browserApiClient } from '@/api/browser-client'
@@ -76,6 +84,33 @@ export const createBranchProtectionMutationOptions = () =>
   createBranchProtectionMutation({ client: browserApiClient })
 export const deleteBranchProtectionMutationOptions = () =>
   deleteBranchProtectionMutation({ client: browserApiClient })
+export const releasesQueryOptions = (params: RepositoryRouteParams) =>
+  listRepositoryReleasesOptions({
+    client: browserApiClient,
+    path: path(params),
+    query: { limit: 100 },
+  })
+export const releaseQueryOptions = (params: RepositoryRouteParams, release: string) =>
+  getRepositoryReleaseOptions({
+    client: browserApiClient,
+    path: { ...path(params), release },
+  })
+export const createReleaseMutationOptions = () =>
+  createRepositoryReleaseMutation({ client: browserApiClient })
+export const updateReleaseMutationOptions = () =>
+  updateRepositoryReleaseMutation({ client: browserApiClient })
+export const deleteReleaseMutationOptions = () =>
+  deleteRepositoryReleaseMutation({ client: browserApiClient })
+export const releaseAssetsQueryOptions = (params: RepositoryRouteParams, release: string) =>
+  listRepositoryReleaseAssetsOptions({
+    client: browserApiClient,
+    path: { ...path(params), release },
+    query: { limit: 100 },
+  })
+export const uploadReleaseAssetMutationOptions = () =>
+  uploadRepositoryReleaseAssetMutation({ client: browserApiClient })
+export const deleteReleaseAssetMutationOptions = () =>
+  deleteRepositoryReleaseAssetMutation({ client: browserApiClient })
 
 export const branchesQueryOptions = (params: RepositoryRouteParams) => ({
   ...listRepositoryBranchesOptions({ client: browserApiClient, path: path(params) }),

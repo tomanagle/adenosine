@@ -26,6 +26,7 @@ done
 need_tools docker tar
 load_env
 validate_environment
+require_portable_release_asset_backend
 compose exec -T postgres pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null || die "PostgreSQL is not ready"
 
 umask 077
@@ -65,6 +66,7 @@ cat > "$work/manifest.json" <<EOF
   "release": "$ADENOSINE_VERSION",
   "schema": "$schema_version",
   "consistency": "maintenance-window",
+  "release_asset_backend": "filesystem",
   "rpo": "state committed before maintenance began",
   "contents": ["manifest.json", "postgresql.dump", "repositories.tar.gz", "instance-state.tar.gz", "instance.env"]
 }

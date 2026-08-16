@@ -40,6 +40,14 @@ RDS span two availability zones, but this is not a zero-downtime application arc
 Set RDS Multi-AZ and increase host capacity only after testing task replacement and Git lock
 behavior. Do not run multiple writers merely by increasing desired count.
 
+The maintained single-task stack may keep release assets beneath instance state. Before increasing
+the application task count, configure every task to use one private S3 bucket through the selectable
+release-asset backend; never mount S3 as the Git repository filesystem. Grant only the bucket and
+object operations documented in [Repository Releases](repository-releases.md#storage-backends-and-capacity),
+keep public access blocked, and validate cross-task upload/download behavior before adding writers.
+Treat RDS and the release bucket as one recovery set: use a write barrier, capture both at a matched
+recovery point, and drill a paired restore before relying on the replicated topology.
+
 RDS uses a PostgreSQL 17 parameter group with logical replication settings when Electric is
 enabled. A migration container must complete successfully before the application starts; it
 also idempotently creates the Electric replication role, grants, replica identities, and
@@ -50,7 +58,9 @@ RDS retains automated snapshots for `backupRetentionDays` and takes a final snap
 destroy. The same retention config drives a daily AWS Backup plan covering RDS and EFS. Both
 RDS and EFS are Pulumi-protected against accidental destroy. Those native
 snapshots complement, but do not replace, a portable backup of PostgreSQL, the EFS access
-point, SSH host key, required secrets, and release manifest. Restore into a clean stack,
+point, SSH host key, required secrets, and release manifest. If S3 release storage is selected,
+the portable backup deliberately fails closed; provider recovery must also preserve and restore the
+bucket with PostgreSQL. Restore into a clean stack,
 preserve the SSH key, run migrations, then run doctor/conformance and clone a repository.
 
 Rollback requires the prior immutable image and a compatible database. Forward-only

@@ -251,6 +251,33 @@ type CoreOwnerRoute struct {
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
+type CoreRelease struct {
+	ID           pgtype.UUID        `json:"id"`
+	RepositoryID pgtype.UUID        `json:"repository_id"`
+	TagName      string             `json:"tag_name"`
+	TargetSha    string             `json:"target_sha"`
+	Name         string             `json:"name"`
+	Body         string             `json:"body"`
+	State        string             `json:"state"`
+	Prerelease   bool               `json:"prerelease"`
+	CreatedByDid string             `json:"created_by_did"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	PublishedAt  pgtype.Timestamptz `json:"published_at"`
+}
+
+type CoreReleaseAsset struct {
+	ID           pgtype.UUID        `json:"id"`
+	ReleaseID    pgtype.UUID        `json:"release_id"`
+	RepositoryID pgtype.UUID        `json:"repository_id"`
+	Name         string             `json:"name"`
+	ContentType  string             `json:"content_type"`
+	SizeBytes    int64              `json:"size_bytes"`
+	Sha256       string             `json:"sha256"`
+	StorageKey   string             `json:"storage_key"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
 type CoreRepository struct {
 	ID                          pgtype.UUID        `json:"id"`
 	OwnerDid                    string             `json:"owner_did"`

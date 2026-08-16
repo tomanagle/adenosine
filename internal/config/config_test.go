@@ -11,23 +11,28 @@ func TestConfigValidate(t *testing.T) {
 	t.Parallel()
 
 	valid := Config{
-		BaseURL:            "https://code.example.com",
-		ListenAddr:         ":8080",
-		DatabaseURL:        "postgres://postgres:postgres@localhost/adenosine",
-		ElectricURL:        "https://electric.example.com/sync",
-		ElectricSecret:     "electric-secret",
-		RepositoryRoot:     "/var/lib/adenosine/repos",
-		GitBinary:          "git",
-		SSHListenAddr:      ":2222",
-		SSHHost:            "code.example.com",
-		SSHPort:            22,
-		SSHHostKeyPath:     "/var/lib/adenosine/state/ssh_host_ed25519_key",
-		OAuthStateKey:      make([]byte, 32),
-		OAuthCredentialKey: make([]byte, 32),
-		TapConsumer:        "tap:dev.adenosine:v1",
-		TapAdminPassword:   "tap-secret",
-		SessionLifetime:    time.Hour,
-		ShutdownTimeout:    time.Second,
+		BaseURL:                   "https://code.example.com",
+		ListenAddr:                ":8080",
+		DatabaseURL:               "postgres://postgres:postgres@localhost/adenosine",
+		ElectricURL:               "https://electric.example.com/sync",
+		ElectricSecret:            "electric-secret",
+		RepositoryRoot:            "/var/lib/adenosine/repos",
+		ReleaseAssetBackend:       "filesystem",
+		ReleaseAssetRoot:          "/var/lib/adenosine/state/release-assets",
+		ReleaseAssetMaxBytes:      100,
+		ReleaseMaxBytes:           1000,
+		RepositoryReleaseMaxBytes: 10000,
+		GitBinary:                 "git",
+		SSHListenAddr:             ":2222",
+		SSHHost:                   "code.example.com",
+		SSHPort:                   22,
+		SSHHostKeyPath:            "/var/lib/adenosine/state/ssh_host_ed25519_key",
+		OAuthStateKey:             make([]byte, 32),
+		OAuthCredentialKey:        make([]byte, 32),
+		TapConsumer:               "tap:dev.adenosine:v1",
+		TapAdminPassword:          "tap-secret",
+		SessionLifetime:           time.Hour,
+		ShutdownTimeout:           time.Second,
 	}
 
 	testCases := []struct {
@@ -58,6 +63,29 @@ func TestConfigValidate(t *testing.T) {
 		{name: "noncanonical Electric URL", mutate: func(c *Config) { c.ElectricURL = "https://ELECTRIC.example.com/sync/" }, wantErr: true},
 		{name: "Electric secret whitespace", mutate: func(c *Config) { c.ElectricSecret = " secret" }, wantErr: true},
 		{name: "empty repository root", mutate: func(c *Config) { c.RepositoryRoot = "" }, wantErr: true},
+		{name: "unknown release asset backend", mutate: func(c *Config) { c.ReleaseAssetBackend = "database" }, wantErr: true},
+		{name: "empty release asset root", mutate: func(c *Config) { c.ReleaseAssetRoot = "" }, wantErr: true},
+		{name: "filesystem backend rejects S3 settings", mutate: func(c *Config) { c.ReleaseAssetS3Region = "us-east-1" }, wantErr: true},
+		{name: "valid S3 release asset backend", mutate: func(c *Config) {
+			c.ReleaseAssetBackend = "s3"
+			c.ReleaseAssetS3Endpoint = "https://objects.example.com"
+			c.ReleaseAssetS3Region = "us-east-1"
+			c.ReleaseAssetS3Bucket = "release-assets"
+			c.ReleaseAssetS3AccessKeyID = "access-key"
+			c.ReleaseAssetS3SecretKey = "secret-key"
+		}},
+		{name: "S3 backend requires endpoint", mutate: func(c *Config) { c.ReleaseAssetBackend = "s3" }, wantErr: true},
+		{name: "S3 backend rejects endpoint credentials", mutate: func(c *Config) {
+			c.ReleaseAssetBackend = "s3"
+			c.ReleaseAssetS3Endpoint = "https://user@objects.example.com"
+			c.ReleaseAssetS3Region = "us-east-1"
+			c.ReleaseAssetS3Bucket = "release-assets"
+			c.ReleaseAssetS3AccessKeyID = "access-key"
+			c.ReleaseAssetS3SecretKey = "secret-key"
+		}, wantErr: true},
+		{name: "invalid per-asset release limit", mutate: func(c *Config) { c.ReleaseAssetMaxBytes = 0 }, wantErr: true},
+		{name: "release limit below asset limit", mutate: func(c *Config) { c.ReleaseMaxBytes = 99 }, wantErr: true},
+		{name: "repository limit below release limit", mutate: func(c *Config) { c.RepositoryReleaseMaxBytes = 999 }, wantErr: true},
 		{name: "empty Git binary", mutate: func(c *Config) { c.GitBinary = "" }, wantErr: true},
 		{name: "empty SSH listen address", mutate: func(c *Config) { c.SSHListenAddr = "" }, wantError: "ADENOSINE_SSH_LISTEN_ADDR"},
 		{name: "SSH listen address missing port", mutate: func(c *Config) { c.SSHListenAddr = "127.0.0.1" }, wantError: "ADENOSINE_SSH_LISTEN_ADDR"},
@@ -129,13 +157,74 @@ func TestConfigValidateAllowsElectricDisabled(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			valid := Config{
 				BaseURL: "https://code.example.com", ListenAddr: ":8080", DatabaseURL: "postgres://localhost/adenosine",
-				RepositoryRoot: "/repos", GitBinary: "git", SSHListenAddr: ":2222", SSHHost: "code.example.com",
+				RepositoryRoot: "/repos", ReleaseAssetBackend: "filesystem", GitBinary: "git", SSHListenAddr: ":2222", SSHHost: "code.example.com",
+				ReleaseAssetRoot: "/release-assets", ReleaseAssetMaxBytes: 100, ReleaseMaxBytes: 1000, RepositoryReleaseMaxBytes: 10000,
 				SSHPort: 22, SSHHostKeyPath: "/host-key", OAuthStateKey: make([]byte, 32), OAuthCredentialKey: make([]byte, 32),
 				SessionLifetime: time.Hour, ShutdownTimeout: time.Second,
 			}
 			if err := valid.Validate(); err != nil {
 				t.Fatalf("disabled Electric rejected: %v", err)
 			}
+		})
+	}
+}
+
+func TestLoadReleaseAssetStorageConfiguration(t *testing.T) {
+	key := base64.StdEncoding.EncodeToString(make([]byte, 32))
+	t.Setenv("DATABASE_URL", "postgres://localhost/adenosine")
+	t.Setenv("ADENOSINE_OAUTH_STATE_KEY", key)
+	t.Setenv("ADENOSINE_OAUTH_CREDENTIAL_KEY", key)
+	testCases := []struct {
+		name      string
+		values    map[string]string
+		wantError string
+		check     func(*testing.T, Config)
+	}{
+		{
+			name: "filesystem default",
+			check: func(t *testing.T, cfg Config) {
+				if cfg.ReleaseAssetBackend != "filesystem" || cfg.ReleaseAssetRoot == "" {
+					t.Fatalf("filesystem config = %#v", cfg)
+				}
+			},
+		},
+		{
+			name: "S3 path style",
+			values: map[string]string{
+				"ADENOSINE_RELEASE_ASSET_BACKEND":              "s3",
+				"ADENOSINE_RELEASE_ASSET_S3_ENDPOINT":          "http://OBJECTS.EXAMPLE.COM/",
+				"ADENOSINE_RELEASE_ASSET_S3_REGION":            "us-east-1",
+				"ADENOSINE_RELEASE_ASSET_S3_BUCKET":            "release-assets",
+				"ADENOSINE_RELEASE_ASSET_S3_ACCESS_KEY_ID":     "access-key",
+				"ADENOSINE_RELEASE_ASSET_S3_SECRET_ACCESS_KEY": "secret-key",
+				"ADENOSINE_RELEASE_ASSET_S3_SESSION_TOKEN":     "session-token",
+				"ADENOSINE_RELEASE_ASSET_S3_PATH_STYLE":        "true",
+			},
+			check: func(t *testing.T, cfg Config) {
+				if cfg.ReleaseAssetS3Endpoint != "http://objects.example.com" || !cfg.ReleaseAssetS3PathStyle || cfg.ReleaseAssetS3SessionToken != "session-token" {
+					t.Fatalf("S3 config = %#v", cfg)
+				}
+			},
+		},
+		{name: "invalid path style", values: map[string]string{"ADENOSINE_RELEASE_ASSET_S3_PATH_STYLE": "sometimes"}, wantError: "ADENOSINE_RELEASE_ASSET_S3_PATH_STYLE"},
+		{name: "ignored S3 credentials rejected", values: map[string]string{"ADENOSINE_RELEASE_ASSET_S3_ACCESS_KEY_ID": "access-key"}, wantError: "require ADENOSINE_RELEASE_ASSET_BACKEND=s3"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			for name, value := range testCase.values {
+				t.Setenv(name, value)
+			}
+			cfg, err := load()
+			if testCase.wantError != "" {
+				if err == nil || !strings.Contains(err.Error(), testCase.wantError) {
+					t.Fatalf("load() error = %v, want containing %q", err, testCase.wantError)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("load(): %v", err)
+			}
+			testCase.check(t, cfg)
 		})
 	}
 }

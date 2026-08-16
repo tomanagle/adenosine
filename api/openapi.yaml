@@ -1261,6 +1261,68 @@
         "responses": { "201": { "description": "Redelivery queued", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WebhookDelivery" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
       }
     },
+    "/api/v1/repositories/{owner}/{repo}/releases": {
+      "get": {
+        "operationId": "listRepositoryReleases", "tags": ["Releases"], "summary": "List visible repository releases",
+        "description": "Returns published releases newest first. Repository maintainers also receive drafts. Pagination uses an opaque keyset cursor.",
+        "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "Release page", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReleaseList" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "post": {
+        "operationId": "createRepositoryRelease", "tags": ["Releases"], "summary": "Create a release for an existing tag",
+        "description": "Snapshots the tag's current peeled target SHA. Later tag movement does not change the release target.",
+        "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateReleaseRequest" } } } },
+        "responses": { "201": { "description": "Release created", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Release" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/releases/{release}": {
+      "get": {
+        "operationId": "getRepositoryRelease", "tags": ["Releases"], "summary": "Get a visible repository release", "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "$ref": "#/components/parameters/ReleaseID" }],
+        "responses": { "200": { "description": "Release", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Release" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "patch": {
+        "operationId": "updateRepositoryRelease", "tags": ["Releases"], "summary": "Update release notes or publication state", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "$ref": "#/components/parameters/ReleaseID" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateReleaseRequest" } } } },
+        "responses": { "200": { "description": "Release updated", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Release" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      },
+      "delete": {
+        "operationId": "deleteRepositoryRelease", "tags": ["Releases"], "summary": "Delete a release and its hosted assets", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "$ref": "#/components/parameters/ReleaseID" }],
+        "responses": { "204": { "description": "Release deleted", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/releases/{release}/assets": {
+      "get": {
+        "operationId": "listRepositoryReleaseAssets", "tags": ["Releases"], "summary": "List release assets", "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "$ref": "#/components/parameters/ReleaseID" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "Release asset page", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReleaseAssetList" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "post": {
+        "operationId": "uploadRepositoryReleaseAsset", "tags": ["Releases"], "summary": "Stream a release asset upload", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "description": "Requires a known Content-Length and Content-Type. The server streams the body, verifies the byte count, computes SHA-256, and atomically publishes the blob. Instance-configured per-asset, per-release, and per-repository quotas apply.",
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "$ref": "#/components/parameters/ReleaseID" }, { "name": "name", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 255 } }, { "name": "X-Asset-Content-Type", "in": "header", "required": true, "description": "Original media type stored and returned for the asset.", "schema": { "type": "string", "minLength": 3, "maxLength": 255 } }],
+        "requestBody": { "required": true, "content": { "application/octet-stream": { "schema": { "type": "string", "format": "binary" } } } },
+        "responses": { "201": { "description": "Asset uploaded", "headers": { "Location": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReleaseAsset" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "413": { "description": "Configured asset quota exceeded", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/releases/{release}/assets/{asset}": {
+      "get": {
+        "operationId": "downloadRepositoryReleaseAsset", "tags": ["Releases"], "summary": "Stream an immutable release asset", "security": [{}, { "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "description": "Returns a strong SHA-256 ETag. Public assets are cacheable for one year as immutable; private assets use the same lifetime with private caching.",
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "$ref": "#/components/parameters/ReleaseID" }, { "$ref": "#/components/parameters/ReleaseAssetID" }],
+        "responses": { "200": { "description": "Raw asset bytes", "headers": { "Content-Length": { "schema": { "type": "integer", "format": "int64" } }, "Content-Disposition": { "schema": { "type": "string" } }, "ETag": { "schema": { "type": "string" } }, "X-Checksum-SHA256": { "schema": { "type": "string" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/octet-stream": { "schema": { "type": "string", "format": "binary" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "delete": {
+        "operationId": "deleteRepositoryReleaseAsset", "tags": ["Releases"], "summary": "Delete a hosted release asset", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "owner", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } }, { "$ref": "#/components/parameters/ReleaseID" }, { "$ref": "#/components/parameters/ReleaseAssetID" }],
+        "responses": { "204": { "description": "Asset deleted", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
     "/api/v1/repositories/{owner}/{repo}/branches": {
       "get": {
         "operationId": "listRepositoryBranches",
@@ -1556,6 +1618,8 @@
       "IdempotencyKey": { "name": "Idempotency-Key", "in": "header", "required": false, "schema": { "type": "string", "minLength": 1, "maxLength": 255 } },
       "Limit": { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 } },
       "Cursor": { "name": "cursor", "in": "query", "required": false, "schema": { "type": "string" } },
+      "ReleaseID": { "name": "release", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+      "ReleaseAssetID": { "name": "asset", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
       "SearchQuery": { "name": "q", "in": "query", "required": true, "description": "UTF-8 text matched against fields documented by the operation", "schema": { "type": "string", "minLength": 1, "maxLength": 200 } },
       "SearchSort": { "name": "sort", "in": "query", "required": false, "schema": { "type": "string", "enum": ["relevance", "recent"], "default": "relevance" } },
       "SearchLimit": { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 50, "default": 20 } },
@@ -2447,6 +2511,41 @@
       },
       "PutHiddenRecordRequest": {
         "type": "object", "additionalProperties": false, "required": ["record_uri"], "properties": { "record_uri": { "type": "string", "minLength": 1 } }
+      },
+      "Release": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "tag_name", "target_sha", "name", "body", "state", "prerelease", "created_by_did", "created_at", "updated_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "tag_name": { "type": "string" }, "target_sha": { "type": "string" },
+          "name": { "type": "string" }, "body": { "type": "string" },
+          "state": { "type": "string", "enum": ["draft", "published"] },
+          "prerelease": { "type": "boolean" }, "created_by_did": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "published_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "ReleaseList": {
+        "type": "object", "additionalProperties": false, "required": ["items", "page", "viewer_can_manage"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Release" } }, "page": { "$ref": "#/components/schemas/Page" }, "viewer_can_manage": { "type": "boolean" } }
+      },
+      "CreateReleaseRequest": {
+        "type": "object", "additionalProperties": false, "required": ["tag_name", "name", "body", "draft", "prerelease"],
+        "properties": { "tag_name": { "type": "string", "minLength": 1, "maxLength": 1024 }, "name": { "type": "string", "minLength": 1, "maxLength": 255 }, "body": { "type": "string", "maxLength": 1048576 }, "draft": { "type": "boolean" }, "prerelease": { "type": "boolean" } }
+      },
+      "UpdateReleaseRequest": {
+        "type": "object", "additionalProperties": false, "required": ["name", "body", "draft", "prerelease"],
+        "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 255 }, "body": { "type": "string", "maxLength": 1048576 }, "draft": { "type": "boolean" }, "prerelease": { "type": "boolean" } }
+      },
+      "ReleaseAsset": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "name", "content_type", "size_bytes", "sha256", "download_url", "created_at"],
+        "properties": { "id": { "type": "string", "format": "uuid" }, "name": { "type": "string" }, "content_type": { "type": "string" }, "size_bytes": { "type": "integer", "format": "int64", "minimum": 0 }, "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "download_url": { "type": "string" }, "created_at": { "type": "string", "format": "date-time" } }
+      },
+      "ReleaseAssetList": {
+        "type": "object", "additionalProperties": false, "required": ["items", "page"],
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/ReleaseAsset" } }, "page": { "$ref": "#/components/schemas/Page" } }
       },
       "Branch": {
         "type": "object",

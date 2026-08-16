@@ -41,9 +41,17 @@ else
 fi
 check "native Git is available" "${app_command[@]}" git --version
 check "repository volume is writable" "${app_command[@]}" sh -ec 'test -d "$ADENOSINE_REPO_ROOT" && test -w "$ADENOSINE_REPO_ROOT"'
+if [[ "${ADENOSINE_RELEASE_ASSET_BACKEND:-filesystem}" == filesystem ]]; then
+  check "release asset volume is writable" "${app_command[@]}" sh -ec 'test -d "$ADENOSINE_RELEASE_ASSET_ROOT" && test -w "$ADENOSINE_RELEASE_ASSET_ROOT"'
+else
+  check "S3 release asset backend passed startup validation" "${app_command[@]}" sh -ec 'test "$ADENOSINE_RELEASE_ASSET_BACKEND" = s3'
+fi
 check "SSH host key exists with private permissions" "${app_command[@]}" sh -ec 'test -s "$ADENOSINE_SSH_HOST_KEY_PATH" && test "$(stat -c %a "$ADENOSINE_SSH_HOST_KEY_PATH")" = 600'
 check "public URL matches configuration" "${app_command[@]}" sh -ec 'test "$ADENOSINE_BASE_URL" = "https://$ADENOSINE_SSH_HOST"'
 check "disk space remains above 10 percent" "${app_command[@]}" sh -ec 'test "$(df -P "$ADENOSINE_REPO_ROOT" | tail -1 | tr -s " " | cut -d " " -f 5 | tr -d "%")" -lt 90'
+if [[ "${ADENOSINE_RELEASE_ASSET_BACKEND:-filesystem}" == filesystem ]]; then
+  check "release asset disk space remains above 10 percent" "${app_command[@]}" sh -ec 'test "$(df -P "$ADENOSINE_RELEASE_ASSET_ROOT" | tail -1 | tr -s " " | cut -d " " -f 5 | tr -d "%")" -lt 90'
+fi
 warn "OpenTelemetry Collector is reachable" "${app_command[@]}" wget -q --spider http://otel-collector:13133/
 warn "outbound ATProto federation is reachable" "${app_command[@]}" wget -q --spider https://bsky.network/
 

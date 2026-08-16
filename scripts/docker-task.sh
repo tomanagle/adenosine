@@ -129,6 +129,89 @@ case "$task" in
       echo "after:  $identity_after" >&2
       false
     fi
+
+    command -v jq >/dev/null 2>&1 || { echo "jq is required for release lifecycle e2e" >&2; exit 1; }
+    release_repository_id="0198aaaa-0000-7000-8000-00000000ee10"
+    release_token="adn_pat_release_e2e"
+    release_token_hash=$(printf '%s' "$release_token" | openssl dgst -sha256 | awk '{print $NF}')
+    "${compose[@]}" exec -T postgres sh -ec 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<SQL
+INSERT INTO core.accounts (did, handle_cache) VALUES ('did:plc:releasee2e', 'release-e2e')
+ON CONFLICT DO NOTHING;
+INSERT INTO core.owner_routes (alias, kind, account_did, created_at)
+VALUES ('release-e2e', 'account', 'did:plc:releasee2e', now())
+ON CONFLICT DO NOTHING;
+INSERT INTO core.repositories (
+  id, owner_did, slug, display_name, visibility, state, default_branch, storage_key, created_at, updated_at
+) VALUES (
+  '$release_repository_id', 'did:plc:releasee2e', 'project', 'Release fixture', 'public', 'active', 'main',
+  '$release_repository_id', now(), now()
+)
+ON CONFLICT DO NOTHING;
+INSERT INTO auth.access_tokens (
+  id, account_did, name, token_prefix, token_hash, scopes, repository_id, created_at
+) VALUES (
+  '0198aaaa-0000-7000-8000-00000000ee11', 'did:plc:releasee2e', 'release e2e', 'adn_pat_release',
+  decode('$release_token_hash', 'hex'), ARRAY['repository:write'], '$release_repository_id', now()
+)
+ON CONFLICT DO NOTHING;
+SQL
+    "${compose[@]}" exec -T adenosine sh -ec '
+      repository_id="$1"
+      compact=$(printf "%s" "$repository_id" | tr -d -)
+      repository_path="$ADENOSINE_REPO_ROOT/${compact%${compact#??}}"
+      remainder=${compact#??}
+      repository_path="$repository_path/${remainder%${remainder#??}}/$repository_id.git"
+      if test -f "$repository_path/HEAD"; then
+        exit 0
+      fi
+      mkdir -p "$(dirname "$repository_path")"
+      git init --bare "$repository_path" >/dev/null
+      work=$(mktemp -d /tmp/adenosine-release-e2e.XXXXXX)
+      git -C "$work" init -b main >/dev/null
+      git -C "$work" config user.name "Release E2E"
+      git -C "$work" config user.email "release-e2e@example.invalid"
+      printf "release fixture\n" > "$work/README.md"
+      git -C "$work" add README.md
+      git -C "$work" commit -m "release fixture" >/dev/null
+      git -C "$work" tag v1.0.0
+      git -C "$work" tag v2.0.0
+      git -C "$work" remote add target "$repository_path"
+      git -C "$work" push target main --tags >/dev/null
+    ' _ "$release_repository_id"
+
+    release_base="$public_url/api/v1/repositories/release-e2e/project/releases"
+    while read -r stale_release_id; do
+      test -n "$stale_release_id" || continue
+      curl -fsS -o /dev/null -X DELETE -H "Authorization: Bearer $release_token" "$release_base/$stale_release_id"
+    done < <(curl -fsS -H "Authorization: Bearer $release_token" "$release_base?limit=100" | jq -r '.items[].id')
+    release_response=$(curl -fsS -H "Authorization: Bearer $release_token" -H 'Content-Type: application/json' \
+      --data '{"tag_name":"v1.0.0","name":"Version 1","body":"## Changes","draft":false,"prerelease":false}' "$release_base")
+    release_id=$(jq -er '.id' <<<"$release_response")
+    [[ "$(jq -r '.target_sha | test("^[0-9a-f]{40}$")' <<<"$release_response")" == true ]]
+    draft_response=$(curl -fsS -H "Authorization: Bearer $release_token" -H 'Content-Type: application/json' \
+      --data '{"tag_name":"v2.0.0","name":"Version 2","body":"private notes","draft":true,"prerelease":true}' "$release_base")
+    draft_id=$(jq -er '.id' <<<"$draft_response")
+    [[ "$(curl -sS -o /dev/null -w '%{http_code}' "$release_base/$draft_id")" == 404 ]]
+    [[ "$(curl -fsS "$release_base" | jq '.items | length')" == 1 ]]
+
+    asset_response=$(curl -fsS -H "Authorization: Bearer $release_token" -H 'Content-Type: application/octet-stream' \
+      -H 'X-Asset-Content-Type: text/plain' --data-binary 'release asset bytes' \
+      "$release_base/$release_id/assets?name=checksums.txt")
+    asset_id=$(jq -er '.id' <<<"$asset_response")
+    asset_checksum=$(printf 'release asset bytes' | openssl dgst -sha256 | awk '{print $NF}')
+    [[ "$(jq -r '.sha256' <<<"$asset_response")" == "$asset_checksum" ]]
+    release_header_file=$(mktemp /tmp/adenosine-release-headers.XXXXXX)
+    release_body_file=$(mktemp /tmp/adenosine-release-body.XXXXXX)
+    curl -fsS -D "$release_header_file" -o "$release_body_file" "$release_base/$release_id/assets/$asset_id"
+    [[ "$(cat "$release_body_file")" == 'release asset bytes' ]]
+    tr -d '\r' < "$release_header_file" | grep -qi "^X-Checksum-Sha256: $asset_checksum$"
+    tr -d '\r' < "$release_header_file" | grep -qi '^Cache-Control: public, max-age=31536000, immutable$'
+    rm -f "$release_header_file" "$release_body_file"
+    [[ "$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $release_token" "$release_base/$release_id/assets/$asset_id")" == 204 ]]
+    [[ "$(curl -sS -o /dev/null -w '%{http_code}' "$release_base/$release_id/assets/$asset_id")" == 404 ]]
+    [[ "$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $release_token" "$release_base/$release_id")" == 204 ]]
+    [[ "$(curl -sS -o /dev/null -w '%{http_code}' "$release_base/$release_id")" == 404 ]]
+    [[ "$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $release_token" "$release_base/$draft_id")" == 204 ]]
     ;;
   e2e-federation)
     project="adenosine-federation-$PPID-$$"

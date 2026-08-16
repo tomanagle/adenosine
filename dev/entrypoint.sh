@@ -9,9 +9,14 @@ fi
 
 test -n "${DATABASE_URL:-}" || { echo "DATABASE_URL is required." >&2; exit 1; }
 test -n "${ADENOSINE_REPO_ROOT:-}" || { echo "ADENOSINE_REPO_ROOT is required." >&2; exit 1; }
+export ADENOSINE_RELEASE_ASSET_ROOT="${ADENOSINE_RELEASE_ASSET_ROOT:-/var/lib/adenosine/state/release-assets}"
+export ADENOSINE_RELEASE_ASSET_BACKEND="${ADENOSINE_RELEASE_ASSET_BACKEND:-filesystem}"
 test -n "${ADENOSINE_SSH_HOST_KEY_PATH:-}" || { echo "ADENOSINE_SSH_HOST_KEY_PATH is required." >&2; exit 1; }
 
 mkdir -p "$ADENOSINE_REPO_ROOT"
+if [[ "$ADENOSINE_RELEASE_ASSET_BACKEND" == "filesystem" ]]; then
+  mkdir -p "$ADENOSINE_RELEASE_ASSET_ROOT"
+fi
 mkdir -p "$(dirname "$ADENOSINE_SSH_HOST_KEY_PATH")"
 if [[ ! -f "$ADENOSINE_SSH_HOST_KEY_PATH" ]]; then
   ssh-keygen -q -t ed25519 -N "" -f "$ADENOSINE_SSH_HOST_KEY_PATH"

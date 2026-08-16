@@ -953,6 +953,24 @@ func (e PutPullRequestStatusRequestState) Valid() bool {
 	}
 }
 
+// Defines values for ReleaseState.
+const (
+	Draft     ReleaseState = "draft"
+	Published ReleaseState = "published"
+)
+
+// Valid indicates whether the value is a known member of the ReleaseState enum.
+func (e ReleaseState) Valid() bool {
+	switch e {
+	case Draft:
+		return true
+	case Published:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RepositoryState.
 const (
 	RepositoryStateActive   RepositoryState = "active"
@@ -2373,6 +2391,15 @@ type CreatePullRequestReviewRequest struct {
 // CreatePullRequestReviewRequestVerdict defines model for CreatePullRequestReviewRequest.Verdict.
 type CreatePullRequestReviewRequestVerdict string
 
+// CreateReleaseRequest defines model for CreateReleaseRequest.
+type CreateReleaseRequest struct {
+	Body       string `json:"body"`
+	Draft      bool   `json:"draft"`
+	Name       string `json:"name"`
+	Prerelease bool   `json:"prerelease"`
+	TagName    string `json:"tag_name"`
+}
+
 // CreateRepositoryForkRequest defines model for CreateRepositoryForkRequest.
 type CreateRepositoryForkRequest struct {
 	Organization *OrganizationSlug `json:"organization,omitempty"`
@@ -3115,6 +3142,48 @@ type PutPullRequestStatusRequest struct {
 // PutPullRequestStatusRequestState defines model for PutPullRequestStatusRequest.State.
 type PutPullRequestStatusRequestState string
 
+// Release defines model for Release.
+type Release struct {
+	Body         string             `json:"body"`
+	CreatedAt    time.Time          `json:"created_at"`
+	CreatedByDid string             `json:"created_by_did"`
+	Id           openapi_types.UUID `json:"id"`
+	Name         string             `json:"name"`
+	Prerelease   bool               `json:"prerelease"`
+	PublishedAt  *time.Time         `json:"published_at,omitempty"`
+	State        ReleaseState       `json:"state"`
+	TagName      string             `json:"tag_name"`
+	TargetSha    string             `json:"target_sha"`
+	UpdatedAt    time.Time          `json:"updated_at"`
+}
+
+// ReleaseState defines model for Release.State.
+type ReleaseState string
+
+// ReleaseAsset defines model for ReleaseAsset.
+type ReleaseAsset struct {
+	ContentType string             `json:"content_type"`
+	CreatedAt   time.Time          `json:"created_at"`
+	DownloadUrl string             `json:"download_url"`
+	Id          openapi_types.UUID `json:"id"`
+	Name        string             `json:"name"`
+	Sha256      string             `json:"sha256"`
+	SizeBytes   int64              `json:"size_bytes"`
+}
+
+// ReleaseAssetList defines model for ReleaseAssetList.
+type ReleaseAssetList struct {
+	Items []ReleaseAsset `json:"items"`
+	Page  Page           `json:"page"`
+}
+
+// ReleaseList defines model for ReleaseList.
+type ReleaseList struct {
+	Items           []Release `json:"items"`
+	Page            Page      `json:"page"`
+	ViewerCanManage bool      `json:"viewer_can_manage"`
+}
+
 // Repository defines model for Repository.
 type Repository struct {
 	Archived      bool                 `json:"archived"`
@@ -3714,6 +3783,14 @@ type UpdateOrganizationTeamRequest struct {
 // UpdateOrganizationTeamRequestVisibility defines model for UpdateOrganizationTeamRequest.Visibility.
 type UpdateOrganizationTeamRequestVisibility string
 
+// UpdateReleaseRequest defines model for UpdateReleaseRequest.
+type UpdateReleaseRequest struct {
+	Body       string `json:"body"`
+	Draft      bool   `json:"draft"`
+	Name       string `json:"name"`
+	Prerelease bool   `json:"prerelease"`
+}
+
 // UpdateRepositoryRequest defines model for UpdateRepositoryRequest.
 type UpdateRepositoryRequest struct {
 	Archived      *bool                              `json:"archived,omitempty"`
@@ -3846,6 +3923,12 @@ type PullRequestURI = string
 
 // RecordURI defines model for RecordURI.
 type RecordURI = string
+
+// ReleaseAssetID defines model for ReleaseAssetID.
+type ReleaseAssetID = openapi_types.UUID
+
+// ReleaseID defines model for ReleaseID.
+type ReleaseID = openapi_types.UUID
 
 // RepositoryOwnerPath defines model for RepositoryOwnerPath.
 type RepositoryOwnerPath = string
@@ -4307,6 +4390,26 @@ type DeletePullRequestTriageParams struct {
 type PutPullRequestTriageParams struct {
 	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
 	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// ListRepositoryReleasesParams defines parameters for ListRepositoryReleases.
+type ListRepositoryReleasesParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListRepositoryReleaseAssetsParams defines parameters for ListRepositoryReleaseAssets.
+type ListRepositoryReleaseAssetsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// UploadRepositoryReleaseAssetParams defines parameters for UploadRepositoryReleaseAsset.
+type UploadRepositoryReleaseAssetParams struct {
+	Name string `form:"name" json:"name"`
+
+	// XAssetContentType Original media type stored and returned for the asset.
+	XAssetContentType string `json:"X-Asset-Content-Type"`
 }
 
 // ListRepositoryTagsParams defines parameters for ListRepositoryTags.
@@ -4971,6 +5074,12 @@ type UpdateRepositoryMilestoneJSONRequestBody = RepositoryMilestoneInput
 // PutPullRequestTriageJSONRequestBody defines body for PutPullRequestTriage for application/json ContentType.
 type PutPullRequestTriageJSONRequestBody = SubjectTriageInput
 
+// CreateRepositoryReleaseJSONRequestBody defines body for CreateRepositoryRelease for application/json ContentType.
+type CreateRepositoryReleaseJSONRequestBody = CreateReleaseRequest
+
+// UpdateRepositoryReleaseJSONRequestBody defines body for UpdateRepositoryRelease for application/json ContentType.
+type UpdateRepositoryReleaseJSONRequestBody = UpdateReleaseRequest
+
 // CreateRepositoryTransferJSONRequestBody defines body for CreateRepositoryTransfer for application/json ContentType.
 type CreateRepositoryTransferJSONRequestBody = CreateRepositoryTransferRequest
 
@@ -5532,6 +5641,37 @@ type ClientInterface interface {
 	PutPullRequestTriageWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	PutPullRequestTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, body PutPullRequestTriageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListRepositoryReleases request
+	ListRepositoryReleases(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryReleasesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateRepositoryReleaseWithBody request with any body
+	CreateRepositoryReleaseWithBody(ctx context.Context, owner string, repo RepositorySlug, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateRepositoryRelease(ctx context.Context, owner string, repo RepositorySlug, body CreateRepositoryReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteRepositoryRelease request
+	DeleteRepositoryRelease(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetRepositoryRelease request
+	GetRepositoryRelease(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateRepositoryReleaseWithBody request with any body
+	UpdateRepositoryReleaseWithBody(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateRepositoryRelease(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, body UpdateRepositoryReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListRepositoryReleaseAssets request
+	ListRepositoryReleaseAssets(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, params *ListRepositoryReleaseAssetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UploadRepositoryReleaseAssetWithBody request with any body
+	UploadRepositoryReleaseAssetWithBody(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, params *UploadRepositoryReleaseAssetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteRepositoryReleaseAsset request
+	DeleteRepositoryReleaseAsset(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DownloadRepositoryReleaseAsset request
+	DownloadRepositoryReleaseAsset(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SyncRepositoryFork request
 	SyncRepositoryFork(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -7392,6 +7532,138 @@ func (c *Client) PutPullRequestTriageWithBody(ctx context.Context, owner Reposit
 
 func (c *Client) PutPullRequestTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, body PutPullRequestTriageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewPutPullRequestTriageRequest(c.Server, owner, repo, subject, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListRepositoryReleases(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryReleasesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRepositoryReleasesRequest(c.Server, owner, repo, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRepositoryReleaseWithBody(ctx context.Context, owner string, repo RepositorySlug, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRepositoryReleaseRequestWithBody(c.Server, owner, repo, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRepositoryRelease(ctx context.Context, owner string, repo RepositorySlug, body CreateRepositoryReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRepositoryReleaseRequest(c.Server, owner, repo, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteRepositoryRelease(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRepositoryReleaseRequest(c.Server, owner, repo, release)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetRepositoryRelease(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRepositoryReleaseRequest(c.Server, owner, repo, release)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRepositoryReleaseWithBody(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRepositoryReleaseRequestWithBody(c.Server, owner, repo, release, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRepositoryRelease(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, body UpdateRepositoryReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRepositoryReleaseRequest(c.Server, owner, repo, release, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListRepositoryReleaseAssets(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, params *ListRepositoryReleaseAssetsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRepositoryReleaseAssetsRequest(c.Server, owner, repo, release, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UploadRepositoryReleaseAssetWithBody(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, params *UploadRepositoryReleaseAssetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadRepositoryReleaseAssetRequestWithBody(c.Server, owner, repo, release, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteRepositoryReleaseAsset(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRepositoryReleaseAssetRequest(c.Server, owner, repo, release, asset)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DownloadRepositoryReleaseAsset(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDownloadRepositoryReleaseAssetRequest(c.Server, owner, repo, release, asset)
 	if err != nil {
 		return nil, err
 	}
@@ -14262,6 +14534,580 @@ func NewPutPullRequestTriageRequestWithBody(server string, owner RepositoryOwner
 	return req, nil
 }
 
+// NewListRepositoryReleasesRequest generates requests for ListRepositoryReleases
+func NewListRepositoryReleasesRequest(server string, owner string, repo RepositorySlug, params *ListRepositoryReleasesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/releases", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateRepositoryReleaseRequest calls the generic CreateRepositoryRelease builder with application/json body
+func NewCreateRepositoryReleaseRequest(server string, owner string, repo RepositorySlug, body CreateRepositoryReleaseJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateRepositoryReleaseRequestWithBody(server, owner, repo, "application/json", bodyReader)
+}
+
+// NewCreateRepositoryReleaseRequestWithBody generates requests for CreateRepositoryRelease with any type of body
+func NewCreateRepositoryReleaseRequestWithBody(server string, owner string, repo RepositorySlug, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/releases", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteRepositoryReleaseRequest generates requests for DeleteRepositoryRelease
+func NewDeleteRepositoryReleaseRequest(server string, owner string, repo RepositorySlug, release ReleaseID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "release", release, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/releases/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetRepositoryReleaseRequest generates requests for GetRepositoryRelease
+func NewGetRepositoryReleaseRequest(server string, owner string, repo RepositorySlug, release ReleaseID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "release", release, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/releases/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateRepositoryReleaseRequest calls the generic UpdateRepositoryRelease builder with application/json body
+func NewUpdateRepositoryReleaseRequest(server string, owner string, repo RepositorySlug, release ReleaseID, body UpdateRepositoryReleaseJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateRepositoryReleaseRequestWithBody(server, owner, repo, release, "application/json", bodyReader)
+}
+
+// NewUpdateRepositoryReleaseRequestWithBody generates requests for UpdateRepositoryRelease with any type of body
+func NewUpdateRepositoryReleaseRequestWithBody(server string, owner string, repo RepositorySlug, release ReleaseID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "release", release, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/releases/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListRepositoryReleaseAssetsRequest generates requests for ListRepositoryReleaseAssets
+func NewListRepositoryReleaseAssetsRequest(server string, owner string, repo RepositorySlug, release ReleaseID, params *ListRepositoryReleaseAssetsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "release", release, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/releases/%s/assets", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUploadRepositoryReleaseAssetRequestWithBody generates requests for UploadRepositoryReleaseAsset with any type of body
+func NewUploadRepositoryReleaseAssetRequestWithBody(server string, owner string, repo RepositorySlug, release ReleaseID, params *UploadRepositoryReleaseAssetParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "release", release, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/releases/%s/assets", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "name", params.Name, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithOptions("simple", false, "X-Asset-Content-Type", params.XAssetContentType, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Asset-Content-Type", headerParam0)
+
+	}
+
+	return req, nil
+}
+
+// NewDeleteRepositoryReleaseAssetRequest generates requests for DeleteRepositoryReleaseAsset
+func NewDeleteRepositoryReleaseAssetRequest(server string, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "release", release, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "asset", asset, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/releases/%s/assets/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDownloadRepositoryReleaseAssetRequest generates requests for DownloadRepositoryReleaseAsset
+func NewDownloadRepositoryReleaseAssetRequest(server string, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "release", release, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam3 string
+
+	pathParam3, err = runtime.StyleParamWithOptions("simple", false, "asset", asset, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/releases/%s/assets/%s", pathParam0, pathParam1, pathParam2, pathParam3)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSyncRepositoryForkRequest generates requests for SyncRepositoryFork
 func NewSyncRepositoryForkRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath) (*http.Request, error) {
 	var err error
@@ -18416,6 +19262,37 @@ type ClientWithResponsesInterface interface {
 
 	PutPullRequestTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, body PutPullRequestTriageJSONRequestBody, reqEditors ...RequestEditorFn) (*PutPullRequestTriageResponse, error)
 
+	// ListRepositoryReleasesWithResponse request
+	ListRepositoryReleasesWithResponse(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryReleasesParams, reqEditors ...RequestEditorFn) (*ListRepositoryReleasesResponse, error)
+
+	// CreateRepositoryReleaseWithBodyWithResponse request with any body
+	CreateRepositoryReleaseWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRepositoryReleaseResponse, error)
+
+	CreateRepositoryReleaseWithResponse(ctx context.Context, owner string, repo RepositorySlug, body CreateRepositoryReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRepositoryReleaseResponse, error)
+
+	// DeleteRepositoryReleaseWithResponse request
+	DeleteRepositoryReleaseWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, reqEditors ...RequestEditorFn) (*DeleteRepositoryReleaseResponse, error)
+
+	// GetRepositoryReleaseWithResponse request
+	GetRepositoryReleaseWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, reqEditors ...RequestEditorFn) (*GetRepositoryReleaseResponse, error)
+
+	// UpdateRepositoryReleaseWithBodyWithResponse request with any body
+	UpdateRepositoryReleaseWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRepositoryReleaseResponse, error)
+
+	UpdateRepositoryReleaseWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, body UpdateRepositoryReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRepositoryReleaseResponse, error)
+
+	// ListRepositoryReleaseAssetsWithResponse request
+	ListRepositoryReleaseAssetsWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, params *ListRepositoryReleaseAssetsParams, reqEditors ...RequestEditorFn) (*ListRepositoryReleaseAssetsResponse, error)
+
+	// UploadRepositoryReleaseAssetWithBodyWithResponse request with any body
+	UploadRepositoryReleaseAssetWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, params *UploadRepositoryReleaseAssetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadRepositoryReleaseAssetResponse, error)
+
+	// DeleteRepositoryReleaseAssetWithResponse request
+	DeleteRepositoryReleaseAssetWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID, reqEditors ...RequestEditorFn) (*DeleteRepositoryReleaseAssetResponse, error)
+
+	// DownloadRepositoryReleaseAssetWithResponse request
+	DownloadRepositoryReleaseAssetWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID, reqEditors ...RequestEditorFn) (*DownloadRepositoryReleaseAssetResponse, error)
+
 	// SyncRepositoryForkWithResponse request
 	SyncRepositoryForkWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, reqEditors ...RequestEditorFn) (*SyncRepositoryForkResponse, error)
 
@@ -22116,6 +22993,307 @@ func (r PutPullRequestTriageResponse) ContentType() string {
 	return ""
 }
 
+type ListRepositoryReleasesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ReleaseList
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r ListRepositoryReleasesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListRepositoryReleasesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListRepositoryReleasesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateRepositoryReleaseResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *Release
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateRepositoryReleaseResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateRepositoryReleaseResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateRepositoryReleaseResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteRepositoryReleaseResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteRepositoryReleaseResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteRepositoryReleaseResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteRepositoryReleaseResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetRepositoryReleaseResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Release
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r GetRepositoryReleaseResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetRepositoryReleaseResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetRepositoryReleaseResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateRepositoryReleaseResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Release
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON422      *UnprocessableEntity
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateRepositoryReleaseResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateRepositoryReleaseResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateRepositoryReleaseResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListRepositoryReleaseAssetsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ReleaseAssetList
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r ListRepositoryReleaseAssetsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListRepositoryReleaseAssetsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListRepositoryReleaseAssetsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UploadRepositoryReleaseAssetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ReleaseAsset
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON413      *ErrorResponse
+	JSON422      *UnprocessableEntity
+}
+
+// Status returns HTTPResponse.Status
+func (r UploadRepositoryReleaseAssetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UploadRepositoryReleaseAssetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UploadRepositoryReleaseAssetResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteRepositoryReleaseAssetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteRepositoryReleaseAssetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteRepositoryReleaseAssetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteRepositoryReleaseAssetResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DownloadRepositoryReleaseAssetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r DownloadRepositoryReleaseAssetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DownloadRepositoryReleaseAssetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DownloadRepositoryReleaseAssetResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type SyncRepositoryForkResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -24890,6 +26068,103 @@ func (c *ClientWithResponses) PutPullRequestTriageWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParsePutPullRequestTriageResponse(rsp)
+}
+
+// ListRepositoryReleasesWithResponse request returning *ListRepositoryReleasesResponse
+func (c *ClientWithResponses) ListRepositoryReleasesWithResponse(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryReleasesParams, reqEditors ...RequestEditorFn) (*ListRepositoryReleasesResponse, error) {
+	rsp, err := c.ListRepositoryReleases(ctx, owner, repo, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListRepositoryReleasesResponse(rsp)
+}
+
+// CreateRepositoryReleaseWithBodyWithResponse request with arbitrary body returning *CreateRepositoryReleaseResponse
+func (c *ClientWithResponses) CreateRepositoryReleaseWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRepositoryReleaseResponse, error) {
+	rsp, err := c.CreateRepositoryReleaseWithBody(ctx, owner, repo, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRepositoryReleaseResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateRepositoryReleaseWithResponse(ctx context.Context, owner string, repo RepositorySlug, body CreateRepositoryReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRepositoryReleaseResponse, error) {
+	rsp, err := c.CreateRepositoryRelease(ctx, owner, repo, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRepositoryReleaseResponse(rsp)
+}
+
+// DeleteRepositoryReleaseWithResponse request returning *DeleteRepositoryReleaseResponse
+func (c *ClientWithResponses) DeleteRepositoryReleaseWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, reqEditors ...RequestEditorFn) (*DeleteRepositoryReleaseResponse, error) {
+	rsp, err := c.DeleteRepositoryRelease(ctx, owner, repo, release, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteRepositoryReleaseResponse(rsp)
+}
+
+// GetRepositoryReleaseWithResponse request returning *GetRepositoryReleaseResponse
+func (c *ClientWithResponses) GetRepositoryReleaseWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, reqEditors ...RequestEditorFn) (*GetRepositoryReleaseResponse, error) {
+	rsp, err := c.GetRepositoryRelease(ctx, owner, repo, release, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetRepositoryReleaseResponse(rsp)
+}
+
+// UpdateRepositoryReleaseWithBodyWithResponse request with arbitrary body returning *UpdateRepositoryReleaseResponse
+func (c *ClientWithResponses) UpdateRepositoryReleaseWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRepositoryReleaseResponse, error) {
+	rsp, err := c.UpdateRepositoryReleaseWithBody(ctx, owner, repo, release, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRepositoryReleaseResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateRepositoryReleaseWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, body UpdateRepositoryReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRepositoryReleaseResponse, error) {
+	rsp, err := c.UpdateRepositoryRelease(ctx, owner, repo, release, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRepositoryReleaseResponse(rsp)
+}
+
+// ListRepositoryReleaseAssetsWithResponse request returning *ListRepositoryReleaseAssetsResponse
+func (c *ClientWithResponses) ListRepositoryReleaseAssetsWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, params *ListRepositoryReleaseAssetsParams, reqEditors ...RequestEditorFn) (*ListRepositoryReleaseAssetsResponse, error) {
+	rsp, err := c.ListRepositoryReleaseAssets(ctx, owner, repo, release, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListRepositoryReleaseAssetsResponse(rsp)
+}
+
+// UploadRepositoryReleaseAssetWithBodyWithResponse request with arbitrary body returning *UploadRepositoryReleaseAssetResponse
+func (c *ClientWithResponses) UploadRepositoryReleaseAssetWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, params *UploadRepositoryReleaseAssetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadRepositoryReleaseAssetResponse, error) {
+	rsp, err := c.UploadRepositoryReleaseAssetWithBody(ctx, owner, repo, release, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUploadRepositoryReleaseAssetResponse(rsp)
+}
+
+// DeleteRepositoryReleaseAssetWithResponse request returning *DeleteRepositoryReleaseAssetResponse
+func (c *ClientWithResponses) DeleteRepositoryReleaseAssetWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID, reqEditors ...RequestEditorFn) (*DeleteRepositoryReleaseAssetResponse, error) {
+	rsp, err := c.DeleteRepositoryReleaseAsset(ctx, owner, repo, release, asset, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteRepositoryReleaseAssetResponse(rsp)
+}
+
+// DownloadRepositoryReleaseAssetWithResponse request returning *DownloadRepositoryReleaseAssetResponse
+func (c *ClientWithResponses) DownloadRepositoryReleaseAssetWithResponse(ctx context.Context, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID, reqEditors ...RequestEditorFn) (*DownloadRepositoryReleaseAssetResponse, error) {
+	rsp, err := c.DownloadRepositoryReleaseAsset(ctx, owner, repo, release, asset, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDownloadRepositoryReleaseAssetResponse(rsp)
 }
 
 // SyncRepositoryForkWithResponse request returning *SyncRepositoryForkResponse
@@ -31019,6 +32294,457 @@ func ParsePutPullRequestTriageResponse(rsp *http.Response) (*PutPullRequestTriag
 	return response, nil
 }
 
+// ParseListRepositoryReleasesResponse parses an HTTP response from a ListRepositoryReleasesWithResponse call
+func ParseListRepositoryReleasesResponse(rsp *http.Response) (*ListRepositoryReleasesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListRepositoryReleasesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReleaseList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateRepositoryReleaseResponse parses an HTTP response from a CreateRepositoryReleaseWithResponse call
+func ParseCreateRepositoryReleaseResponse(rsp *http.Response) (*CreateRepositoryReleaseResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateRepositoryReleaseResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Release
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteRepositoryReleaseResponse parses an HTTP response from a DeleteRepositoryReleaseWithResponse call
+func ParseDeleteRepositoryReleaseResponse(rsp *http.Response) (*DeleteRepositoryReleaseResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteRepositoryReleaseResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetRepositoryReleaseResponse parses an HTTP response from a GetRepositoryReleaseWithResponse call
+func ParseGetRepositoryReleaseResponse(rsp *http.Response) (*GetRepositoryReleaseResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetRepositoryReleaseResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Release
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateRepositoryReleaseResponse parses an HTTP response from a UpdateRepositoryReleaseWithResponse call
+func ParseUpdateRepositoryReleaseResponse(rsp *http.Response) (*UpdateRepositoryReleaseResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateRepositoryReleaseResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Release
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListRepositoryReleaseAssetsResponse parses an HTTP response from a ListRepositoryReleaseAssetsWithResponse call
+func ParseListRepositoryReleaseAssetsResponse(rsp *http.Response) (*ListRepositoryReleaseAssetsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListRepositoryReleaseAssetsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReleaseAssetList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUploadRepositoryReleaseAssetResponse parses an HTTP response from a UploadRepositoryReleaseAssetWithResponse call
+func ParseUploadRepositoryReleaseAssetResponse(rsp *http.Response) (*UploadRepositoryReleaseAssetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UploadRepositoryReleaseAssetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ReleaseAsset
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 413:
+		var dest ErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON413 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteRepositoryReleaseAssetResponse parses an HTTP response from a DeleteRepositoryReleaseAssetWithResponse call
+func ParseDeleteRepositoryReleaseAssetResponse(rsp *http.Response) (*DeleteRepositoryReleaseAssetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteRepositoryReleaseAssetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDownloadRepositoryReleaseAssetResponse parses an HTTP response from a DownloadRepositoryReleaseAssetWithResponse call
+func ParseDownloadRepositoryReleaseAssetResponse(rsp *http.Response) (*DownloadRepositoryReleaseAssetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DownloadRepositoryReleaseAssetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseSyncRepositoryForkResponse parses an HTTP response from a SyncRepositoryForkWithResponse call
 func ParseSyncRepositoryForkResponse(rsp *http.Response) (*SyncRepositoryForkResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -33663,6 +35389,33 @@ type ServerInterface interface {
 	// Replace pull request labels, assignees, and milestone
 	// (PUT /api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage)
 	PutPullRequestTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params PutPullRequestTriageParams)
+	// List visible repository releases
+	// (GET /api/v1/repositories/{owner}/{repo}/releases)
+	ListRepositoryReleases(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryReleasesParams)
+	// Create a release for an existing tag
+	// (POST /api/v1/repositories/{owner}/{repo}/releases)
+	CreateRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug)
+	// Delete a release and its hosted assets
+	// (DELETE /api/v1/repositories/{owner}/{repo}/releases/{release})
+	DeleteRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID)
+	// Get a visible repository release
+	// (GET /api/v1/repositories/{owner}/{repo}/releases/{release})
+	GetRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID)
+	// Update release notes or publication state
+	// (PATCH /api/v1/repositories/{owner}/{repo}/releases/{release})
+	UpdateRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID)
+	// List release assets
+	// (GET /api/v1/repositories/{owner}/{repo}/releases/{release}/assets)
+	ListRepositoryReleaseAssets(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID, params ListRepositoryReleaseAssetsParams)
+	// Stream a release asset upload
+	// (POST /api/v1/repositories/{owner}/{repo}/releases/{release}/assets)
+	UploadRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID, params UploadRepositoryReleaseAssetParams)
+	// Delete a hosted release asset
+	// (DELETE /api/v1/repositories/{owner}/{repo}/releases/{release}/assets/{asset})
+	DeleteRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID)
+	// Stream an immutable release asset
+	// (GET /api/v1/repositories/{owner}/{repo}/releases/{release}/assets/{asset})
+	DownloadRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID)
 	// Fast-forward a local fork's default branch from its current upstream
 	// (POST /api/v1/repositories/{owner}/{repo}/sync-fork)
 	SyncRepositoryFork(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath)
@@ -39334,6 +41087,573 @@ func (siw *ServerInterfaceWrapper) PutPullRequestTriage(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// ListRepositoryReleases operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryReleases(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryReleasesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryReleases(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryRelease operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryRelease(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryRelease(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRepositoryRelease operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepositoryRelease(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepositoryRelease(w, r, owner, repo, release)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryRelease operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryRelease(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryRelease(w, r, owner, repo, release)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateRepositoryRelease operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRepositoryRelease(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateRepositoryRelease(w, r, owner, repo, release)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRepositoryReleaseAssets operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryReleaseAssets(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryReleaseAssetsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryReleaseAssets(w, r, owner, repo, release, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UploadRepositoryReleaseAsset operation middleware
+func (siw *ServerInterfaceWrapper) UploadRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UploadRepositoryReleaseAssetParams
+
+	// ------------- Required query parameter "name" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "name", r.URL.Query(), &params.Name, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "name"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		}
+		return
+	}
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-Asset-Content-Type" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Asset-Content-Type")]; found {
+		var XAssetContentType string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Asset-Content-Type", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Asset-Content-Type", valueList[0], &XAssetContentType, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Asset-Content-Type", Err: err})
+			return
+		}
+
+		params.XAssetContentType = XAssetContentType
+
+	} else {
+		err := fmt.Errorf("Header parameter X-Asset-Content-Type is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-Asset-Content-Type", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadRepositoryReleaseAsset(w, r, owner, repo, release, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRepositoryReleaseAsset operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "asset" -------------
+	var asset ReleaseAssetID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "asset", r.PathValue("asset"), &asset, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "asset", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepositoryReleaseAsset(w, r, owner, repo, release, asset)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DownloadRepositoryReleaseAsset operation middleware
+func (siw *ServerInterfaceWrapper) DownloadRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "asset" -------------
+	var asset ReleaseAssetID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "asset", r.PathValue("asset"), &asset, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "asset", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DownloadRepositoryReleaseAsset(w, r, owner, repo, release, asset)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SyncRepositoryFork operation middleware
 func (siw *ServerInterfaceWrapper) SyncRepositoryFork(w http.ResponseWriter, r *http.Request) {
 
@@ -42838,6 +45158,15 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage", wrapper.DeletePullRequestTriage)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage", wrapper.GetPullRequestTriage)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage", wrapper.PutPullRequestTriage)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases", wrapper.ListRepositoryReleases)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases", wrapper.CreateRepositoryRelease)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}", wrapper.DeleteRepositoryRelease)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}", wrapper.GetRepositoryRelease)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}", wrapper.UpdateRepositoryRelease)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}/assets", wrapper.ListRepositoryReleaseAssets)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}/assets", wrapper.UploadRepositoryReleaseAsset)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}/assets/{asset}", wrapper.DeleteRepositoryReleaseAsset)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}/assets/{asset}", wrapper.DownloadRepositoryReleaseAsset)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/sync-fork", wrapper.SyncRepositoryFork)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tags", wrapper.ListRepositoryTags)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/transfers", wrapper.ListRepositoryTransfers)

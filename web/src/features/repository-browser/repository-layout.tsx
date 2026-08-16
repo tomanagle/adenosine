@@ -14,6 +14,7 @@ import {
   GitPullRequest,
   History,
   Lock,
+  PackageOpen,
   Star,
   Settings,
 } from 'lucide-react'
@@ -262,6 +263,14 @@ export function RepositoryLayout({
               params={params}
               to="/$owner/$repo/activity"
             />
+            {repository.hosting.source_browsing === 'local' ? (
+              <RepositoryNavLink
+                icon={PackageOpen}
+                label="Releases"
+                params={params}
+                to="/$owner/$repo/releases"
+              />
+            ) : null}
             {repository.viewer_can_admin ? (
               <RepositoryNavLink
                 icon={Settings}
@@ -392,6 +401,7 @@ function RepositoryNavLink({
     | '/$owner/$repo/issues'
     | '/$owner/$repo/pulls'
     | '/$owner/$repo/activity'
+    | '/$owner/$repo/releases'
     | '/$owner/$repo/settings'
 }) {
   return (

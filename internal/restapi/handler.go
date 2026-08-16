@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
@@ -32,6 +33,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/passkey"
 	"github.com/adenosine-dev/adenosine/internal/profile"
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
+	releaseservice "github.com/adenosine-dev/adenosine/internal/release"
 	"github.com/adenosine-dev/adenosine/internal/repository"
 	searchservice "github.com/adenosine-dev/adenosine/internal/search"
 	"github.com/adenosine-dev/adenosine/internal/star"
@@ -47,6 +49,7 @@ import (
 const (
 	maxJSONBody           = 32 * 1024
 	maxWebAuthnVerifyBody = 128 * 1024
+	maxReleaseRequestBody = 2 * 1024 * 1024
 )
 
 type SessionAuthenticator interface {
@@ -360,6 +363,19 @@ type BranchProtectionManager interface {
 	Delete(context.Context, repository.ID, uuid.UUID) error
 }
 
+type ReleaseManager interface {
+	Create(context.Context, repository.ID, releaseservice.CreateInput) (releaseservice.Release, error)
+	Get(context.Context, repository.ID, uuid.UUID) (releaseservice.Release, error)
+	Page(context.Context, repository.ID, bool, *uuid.UUID, int) (releaseservice.Page[releaseservice.Release], error)
+	Update(context.Context, repository.ID, uuid.UUID, releaseservice.UpdateInput) (releaseservice.Release, error)
+	Delete(context.Context, repository.ID, uuid.UUID) error
+	UploadAsset(context.Context, repository.ID, uuid.UUID, releaseservice.AssetInput) (releaseservice.Asset, error)
+	GetAsset(context.Context, repository.ID, uuid.UUID, uuid.UUID) (releaseservice.Asset, error)
+	PageAssets(context.Context, repository.ID, uuid.UUID, *uuid.UUID, int) (releaseservice.Page[releaseservice.Asset], error)
+	OpenAsset(context.Context, releaseservice.Asset) (io.ReadCloser, error)
+	DeleteAsset(context.Context, repository.ID, uuid.UUID, uuid.UUID) error
+}
+
 type CommitStatusManager interface {
 	CreateStatus(context.Context, repository.ID, string, string, commitstatus.StatusInput, time.Time) (commitstatus.CommitStatus, bool, error)
 	PageStatuses(context.Context, repository.ID, string, *uuid.UUID, int) (commitstatus.Page[commitstatus.CommitStatus], error)
@@ -498,6 +514,7 @@ type Dependencies struct {
 	Notifications               NotificationManager
 	Webhooks                    WebhookManager
 	BranchProtections           BranchProtectionManager
+	Releases                    ReleaseManager
 	CommitStatuses              CommitStatusManager
 	Activity                    RepositoryActivityWriter
 	Authorization               RepositoryAuthorizer
@@ -3618,6 +3635,318 @@ func (handler *apiHandler) DeleteHiddenRecord(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (handler *apiHandler) ListRepositoryReleases(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, params generated.ListRepositoryReleasesParams) {
+	repo, err := handler.readableRepository(r, owner, string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	canManage, err := handler.canManageRepository(r, repo.ID)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "repository-releases:" + repo.ID.String()
+	after, err := decodeUUIDCollectionCursor(encoded, scope)
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	page, err := handler.deps.Releases.Page(r.Context(), repo.ID, canManage, after, limit)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.Release, len(page.Items))
+	for index, value := range page.Items {
+		items[index] = releaseResponse(value)
+	}
+	var next *string
+	if page.NextCursor != nil {
+		next, err = encodeCollectionCursor(scope, page.NextCursor.String())
+		if err != nil {
+			handler.writeError(w, r, err)
+			return
+		}
+	}
+	w.Header().Set("Vary", "Cookie, Authorization")
+	writeJSON(w, http.StatusOK, generated.ReleaseList{Items: items, Page: generated.Page{NextCursor: next}, ViewerCanManage: canManage})
+}
+
+func (handler *apiHandler) CreateRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
+	identity, repo, err := handler.requireRepositoryPathWrite(r, owner, string(slug), true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.CreateReleaseRequest
+	if err := decodeJSONLimit(w, r, &request, maxReleaseRequestBody); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	created, err := handler.deps.Releases.Create(r.Context(), repo.ID, releaseservice.CreateInput{
+		TagName: request.TagName, Name: request.Name, Body: request.Body, Draft: request.Draft,
+		Prerelease: request.Prerelease, CreatedByDID: identity.accountDID,
+	})
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	location := releasePath(owner, string(slug), created.ID)
+	w.Header().Set("Location", location)
+	writeJSON(w, http.StatusCreated, releaseResponse(created))
+}
+
+func (handler *apiHandler) GetRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, releaseID generated.ReleaseID) {
+	_, value, _, err := handler.visibleRelease(r, owner, string(slug), uuid.UUID(releaseID))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.Header().Set("Vary", "Cookie, Authorization")
+	writeJSON(w, http.StatusOK, releaseResponse(value))
+}
+
+func (handler *apiHandler) UpdateRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, releaseID generated.ReleaseID) {
+	_, repo, err := handler.requireRepositoryPathWrite(r, owner, string(slug), true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.UpdateReleaseRequest
+	if err := decodeJSONLimit(w, r, &request, maxReleaseRequestBody); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	updated, err := handler.deps.Releases.Update(r.Context(), repo.ID, uuid.UUID(releaseID), releaseservice.UpdateInput{
+		Name: request.Name, Body: request.Body, Draft: request.Draft, Prerelease: request.Prerelease,
+	})
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, releaseResponse(updated))
+}
+
+func (handler *apiHandler) DeleteRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, releaseID generated.ReleaseID) {
+	_, repo, err := handler.requireRepositoryPathWrite(r, owner, string(slug), true)
+	if err == nil {
+		err = handler.deps.Releases.Delete(r.Context(), repo.ID, uuid.UUID(releaseID))
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (handler *apiHandler) ListRepositoryReleaseAssets(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, releaseID generated.ReleaseID, params generated.ListRepositoryReleaseAssetsParams) {
+	repo, _, _, err := handler.visibleRelease(r, owner, string(slug), uuid.UUID(releaseID))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "release-assets:" + uuid.UUID(releaseID).String()
+	after, err := decodeUUIDCollectionCursor(encoded, scope)
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	page, err := handler.deps.Releases.PageAssets(r.Context(), repo.ID, uuid.UUID(releaseID), after, limit)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.ReleaseAsset, len(page.Items))
+	for index, value := range page.Items {
+		items[index] = releaseAssetResponse(owner, string(slug), value)
+	}
+	var next *string
+	if page.NextCursor != nil {
+		next, err = encodeCollectionCursor(scope, page.NextCursor.String())
+		if err != nil {
+			handler.writeError(w, r, err)
+			return
+		}
+	}
+	w.Header().Set("Vary", "Cookie, Authorization")
+	writeJSON(w, http.StatusOK, generated.ReleaseAssetList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) UploadRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, releaseID generated.ReleaseID, params generated.UploadRepositoryReleaseAssetParams) {
+	_, repo, err := handler.requireRepositoryPathWrite(r, owner, string(slug), true)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	if r.ContentLength < 0 {
+		handler.writeMalformed(w, r, errors.New("Content-Length is required"))
+		return
+	}
+	created, err := handler.deps.Releases.UploadAsset(r.Context(), repo.ID, uuid.UUID(releaseID), releaseservice.AssetInput{
+		Name: params.Name, ContentType: params.XAssetContentType, SizeBytes: r.ContentLength, Body: r.Body,
+	})
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	location := releaseAssetPath(owner, string(slug), created.ReleaseID, created.ID)
+	w.Header().Set("Location", location)
+	writeJSON(w, http.StatusCreated, releaseAssetResponse(owner, string(slug), created))
+}
+
+func (handler *apiHandler) DownloadRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, releaseID generated.ReleaseID, assetID generated.ReleaseAssetID) {
+	repo, _, _, err := handler.visibleRelease(r, owner, string(slug), uuid.UUID(releaseID))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	asset, err := handler.deps.Releases.GetAsset(r.Context(), repo.ID, uuid.UUID(releaseID), uuid.UUID(assetID))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	reader, err := handler.deps.Releases.OpenAsset(r.Context(), asset)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	defer func() { _ = reader.Close() }()
+	etag := `"sha256:` + asset.SHA256 + `"`
+	w.Header().Set("Content-Type", asset.ContentType)
+	w.Header().Set("Content-Length", strconv.FormatInt(asset.SizeBytes, 10))
+	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": asset.Name}))
+	w.Header().Set("ETag", etag)
+	w.Header().Set("X-Checksum-SHA256", asset.SHA256)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	if repo.Visibility == repository.VisibilityPublic {
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	} else {
+		w.Header().Set("Cache-Control", "private, max-age=31536000, immutable")
+	}
+	if r.Header.Get("If-None-Match") == etag {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	written, copyErr := io.Copy(w, reader)
+	if copyErr != nil || written != asset.SizeBytes {
+		if copyErr == nil {
+			copyErr = fmt.Errorf("streamed %d bytes, expected %d", written, asset.SizeBytes)
+		}
+		handler.logger.ErrorContext(r.Context(), "stream release asset", "request_id", requestIDFromContext(r.Context()), "error", copyErr)
+		trace.SpanFromContext(r.Context()).RecordError(copyErr)
+	}
+}
+
+func (handler *apiHandler) DeleteRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, releaseID generated.ReleaseID, assetID generated.ReleaseAssetID) {
+	_, repo, err := handler.requireRepositoryPathWrite(r, owner, string(slug), true)
+	if err == nil {
+		err = handler.deps.Releases.DeleteAsset(r.Context(), repo.ID, uuid.UUID(releaseID), uuid.UUID(assetID))
+	}
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (handler *apiHandler) visibleRelease(r *http.Request, owner, slug string, id uuid.UUID) (repository.Repository, releaseservice.Release, bool, error) {
+	repo, err := handler.readableRepository(r, owner, slug)
+	if err != nil {
+		return repository.Repository{}, releaseservice.Release{}, false, err
+	}
+	canManage, err := handler.canManageRepository(r, repo.ID)
+	if err != nil {
+		return repository.Repository{}, releaseservice.Release{}, false, err
+	}
+	value, err := handler.deps.Releases.Get(r.Context(), repo.ID, id)
+	if err != nil {
+		return repository.Repository{}, releaseservice.Release{}, false, err
+	}
+	if !releaseservice.IsPublic(value) && !canManage {
+		return repository.Repository{}, releaseservice.Release{}, false, releaseservice.ErrNotFound
+	}
+	return repo, value, canManage, nil
+}
+
+func (handler *apiHandler) canManageRepository(r *http.Request, repositoryID repository.ID) (bool, error) {
+	_, cookieErr := r.Cookie("adenosine_session")
+	_, bearer := bearerToken(r)
+	if errors.Is(cookieErr, http.ErrNoCookie) && !bearer {
+		return false, nil
+	}
+	identity, err := handler.authenticate(r)
+	if err != nil {
+		return false, err
+	}
+	if !identity.session && (!slices.Contains(identity.scopes, auth.ScopeRepositoryWrite) || (identity.repositoryID != nil && *identity.repositoryID != repositoryID)) {
+		return false, nil
+	}
+	authorizer, ok := handler.deps.Authorization.(repositoryWriteAuthorizer)
+	if !ok {
+		return false, nil
+	}
+	allowed, err := authorizer.CanWriteRepository(r.Context(), identity.accountDID, repositoryID)
+	if err != nil {
+		return false, fmt.Errorf("authorize release management: %w", err)
+	}
+	return allowed, nil
+}
+
+func (handler *apiHandler) requireRepositoryPathWrite(r *http.Request, owner, slug string, mutation bool) (principal, repository.Repository, error) {
+	identity, err := handler.authenticate(r)
+	if err != nil {
+		return principal{}, repository.Repository{}, err
+	}
+	if mutation && identity.session && !handler.validOrigin(r) {
+		return principal{}, repository.Repository{}, auth.ErrForbidden
+	}
+	repo, err := handler.deps.Repositories.GetByOwnerSlug(r.Context(), owner, slug)
+	if err != nil || repo.State != repository.StateActive {
+		return principal{}, repository.Repository{}, repository.ErrNotFound
+	}
+	if repo.ArchivedAt != nil {
+		return principal{}, repository.Repository{}, auth.ErrForbidden
+	}
+	if !identity.session && (!slices.Contains(identity.scopes, auth.ScopeRepositoryWrite) || (identity.repositoryID != nil && *identity.repositoryID != repo.ID)) {
+		return principal{}, repository.Repository{}, auth.ErrForbidden
+	}
+	authorizer, ok := handler.deps.Authorization.(repositoryWriteAuthorizer)
+	if !ok {
+		return principal{}, repository.Repository{}, auth.ErrForbidden
+	}
+	allowed, err := authorizer.CanWriteRepository(r.Context(), identity.accountDID, repo.ID)
+	if err != nil {
+		return principal{}, repository.Repository{}, fmt.Errorf("authorize repository write: %w", err)
+	}
+	if !allowed {
+		return principal{}, repository.Repository{}, auth.ErrForbidden
+	}
+	return identity, repo, nil
+}
+
+func releaseResponse(value releaseservice.Release) generated.Release {
+	return generated.Release{Id: value.ID, TagName: value.TagName, TargetSha: value.TargetSHA, Name: value.Name,
+		Body: value.Body, State: generated.ReleaseState(value.State), Prerelease: value.Prerelease,
+		CreatedByDid: value.CreatedByDID, CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt, PublishedAt: value.PublishedAt}
+}
+
+func releaseAssetResponse(owner, slug string, value releaseservice.Asset) generated.ReleaseAsset {
+	return generated.ReleaseAsset{Id: value.ID, Name: value.Name, ContentType: value.ContentType, SizeBytes: value.SizeBytes,
+		Sha256: value.SHA256, DownloadUrl: releaseAssetPath(owner, slug, value.ReleaseID, value.ID), CreatedAt: value.CreatedAt}
+}
+
+func releasePath(owner, slug string, id uuid.UUID) string {
+	return "/api/v1/repositories/" + url.PathEscape(owner) + "/" + url.PathEscape(slug) + "/releases/" + id.String()
+}
+
+func releaseAssetPath(owner, slug string, releaseID, assetID uuid.UUID) string {
+	return releasePath(owner, slug, releaseID) + "/assets/" + assetID.String()
+}
+
 func (handler *apiHandler) ListRepositoryBranches(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, params generated.ListRepositoryBranchesParams) {
 	repo, err := handler.readableRepository(r, owner, slug)
 	if err != nil {
@@ -3992,6 +4321,14 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusConflict, "branch_protection_conflict", "The branch protection already exists", err)
 	case errors.Is(err, branchprotection.ErrValidation):
 		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The branch protection request is invalid", err)
+	case errors.Is(err, releaseservice.ErrNotFound):
+		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested release resource was not found", err)
+	case errors.Is(err, releaseservice.ErrConflict):
+		handler.writeAPIError(w, r, http.StatusConflict, "release_conflict", "The tag or asset already has a release resource", err)
+	case errors.Is(err, releaseservice.ErrQuotaExceeded):
+		handler.writeAPIError(w, r, http.StatusRequestEntityTooLarge, "release_asset_quota_exceeded", "The release asset exceeds an instance quota", err)
+	case errors.Is(err, releaseservice.ErrValidation), errors.Is(err, releaseservice.ErrSizeMismatch):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The release request is invalid", err)
 	case errors.Is(err, commitstatus.ErrNotFound):
 		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested commit status resource was not found", err)
 	case errors.Is(err, commitstatus.ErrConflict):

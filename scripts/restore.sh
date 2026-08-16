@@ -81,6 +81,7 @@ jq -e '
   (.release | type == "string" and test("^v[0-9]+\\.[0-9]+\\.[0-9]+([.-][A-Za-z0-9.-]+)?$")) and
   (.schema | type == "string" and test("^[0-9]{6}_[A-Za-z0-9_]+\\.sql$")) and
   .consistency == "maintenance-window" and
+  .release_asset_backend == "filesystem" and
   .contents == ["manifest.json", "postgresql.dump", "repositories.tar.gz", "instance-state.tar.gz", "instance.env"]
 ' "$work/manifest.json" >/dev/null || die "backup manifest is malformed or unsupported"
 checksum_files="$(while read -r digest file extra; do
@@ -99,6 +100,7 @@ done
 ENV_FILE="$work/instance.env"
 load_env
 validate_environment
+require_portable_release_asset_backend
 manifest_release="$(jq -r .release "$work/manifest.json")"
 manifest_schema="$(jq -r .schema "$work/manifest.json")"
 [[ "$manifest_release" == "$ADENOSINE_VERSION" ]] || die "manifest release does not match instance.env"

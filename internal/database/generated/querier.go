@@ -55,6 +55,8 @@ type Querier interface {
 	CreateOutboxEventIfAbsent(ctx context.Context, arg CreateOutboxEventIfAbsentParams) error
 	CreatePasskeyCeremony(ctx context.Context, arg CreatePasskeyCeremonyParams) (CreatePasskeyCeremonyRow, error)
 	CreatePasskeyCredential(ctx context.Context, arg CreatePasskeyCredentialParams) (AuthPasskeyCredential, error)
+	CreateRelease(ctx context.Context, arg CreateReleaseParams) (CoreRelease, error)
+	CreateReleaseAsset(ctx context.Context, arg CreateReleaseAssetParams) (CoreReleaseAsset, error)
 	CreateRepository(ctx context.Context, arg CreateRepositoryParams) (CoreRepository, error)
 	CreateRepositoryActivityEvent(ctx context.Context, arg CreateRepositoryActivityEventParams) error
 	CreateRepositoryTransfer(ctx context.Context, arg CreateRepositoryTransferParams) (CoreRepositoryTransfer, error)
@@ -73,6 +75,8 @@ type Querier interface {
 	DeleteOrganizationTeamHierarchy(ctx context.Context, arg DeleteOrganizationTeamHierarchyParams) (int64, error)
 	DeleteOrganizationTeamMember(ctx context.Context, arg DeleteOrganizationTeamMemberParams) (int64, error)
 	DeleteOrganizationTeamRepository(ctx context.Context, arg DeleteOrganizationTeamRepositoryParams) (int64, error)
+	DeleteRelease(ctx context.Context, arg DeleteReleaseParams) (int64, error)
+	DeleteReleaseAsset(ctx context.Context, arg DeleteReleaseAssetParams) (int64, error)
 	DeleteRepositoryWebhook(ctx context.Context, arg DeleteRepositoryWebhookParams) (int64, error)
 	DismissNotification(ctx context.Context, arg DismissNotificationParams) error
 	EnsureAccount(ctx context.Context, arg EnsureAccountParams) error
@@ -123,6 +127,9 @@ type Querier interface {
 	GetProjectedPullRequestRepositoryTargets(ctx context.Context, arg GetProjectedPullRequestRepositoryTargetsParams) (GetProjectedPullRequestRepositoryTargetsRow, error)
 	GetProjectedPullRequestReviewTarget(ctx context.Context, pullRequestUri string) (GetProjectedPullRequestReviewTargetRow, error)
 	GetProjectedPullRequestStatusTarget(ctx context.Context, pullRequestUri string) (GetProjectedPullRequestStatusTargetRow, error)
+	GetRelease(ctx context.Context, arg GetReleaseParams) (CoreRelease, error)
+	GetReleaseAsset(ctx context.Context, arg GetReleaseAssetParams) (CoreReleaseAsset, error)
+	GetReleaseAssetUsage(ctx context.Context, arg GetReleaseAssetUsageParams) (GetReleaseAssetUsageRow, error)
 	GetRepository(ctx context.Context, id pgtype.UUID) (CoreRepository, error)
 	GetRepositoryByOwnerSlug(ctx context.Context, arg GetRepositoryByOwnerSlugParams) (CoreRepository, error)
 	GetRepositoryCollaborator(ctx context.Context, arg GetRepositoryCollaboratorParams) (CoreRepositoryCollaborator, error)
@@ -164,6 +171,7 @@ type Querier interface {
 	ListPendingOrganizationInvitationsForAccount(ctx context.Context, arg ListPendingOrganizationInvitationsForAccountParams) ([]ListPendingOrganizationInvitationsForAccountRow, error)
 	ListProjectedPullRequestReviews(ctx context.Context, arg ListProjectedPullRequestReviewsParams) ([]ListProjectedPullRequestReviewsRow, error)
 	ListProjectedPullRequests(ctx context.Context, arg ListProjectedPullRequestsParams) ([]ListProjectedPullRequestsRow, error)
+	ListReleaseAssetsForDeletion(ctx context.Context, arg ListReleaseAssetsForDeletionParams) ([]CoreReleaseAsset, error)
 	ListRepositoriesByOrganization(ctx context.Context, organizationID pgtype.UUID) ([]CoreRepository, error)
 	ListRepositoriesByOwner(ctx context.Context, arg ListRepositoriesByOwnerParams) ([]CoreRepository, error)
 	ListRepositoryLabels(ctx context.Context, arg ListRepositoryLabelsParams) ([]NetworkRepositoryLabel, error)
@@ -184,6 +192,8 @@ type Querier interface {
 	LockFederationRepositoryTransferLineages(ctx context.Context) error
 	LockOrganizationInvitation(ctx context.Context, id pgtype.UUID) (CoreOrganizationInvitation, error)
 	LockOrganizationOwners(ctx context.Context, organizationID pgtype.UUID) ([]string, error)
+	LockReleaseAssetQuota(ctx context.Context, repositoryID string) error
+	MarkReleaseDeleting(ctx context.Context, arg MarkReleaseDeletingParams) (CoreRelease, error)
 	MarkRepositoryPurged(ctx context.Context, arg MarkRepositoryPurgedParams) error
 	OrganizationTeamHasChildren(ctx context.Context, arg OrganizationTeamHasChildrenParams) (bool, error)
 	PageBranchProtections(ctx context.Context, arg PageBranchProtectionsParams) ([]CoreBranchProtection, error)
@@ -197,6 +207,8 @@ type Querier interface {
 	PageOrganizationTeams(ctx context.Context, arg PageOrganizationTeamsParams) ([]PageOrganizationTeamsRow, error)
 	PageOrganizationsForAccount(ctx context.Context, arg PageOrganizationsForAccountParams) ([]CoreOrganization, error)
 	PagePendingOrganizationInvitationsForAccount(ctx context.Context, arg PagePendingOrganizationInvitationsForAccountParams) ([]PagePendingOrganizationInvitationsForAccountRow, error)
+	PageReleaseAssets(ctx context.Context, arg PageReleaseAssetsParams) ([]CoreReleaseAsset, error)
+	PageReleases(ctx context.Context, arg PageReleasesParams) ([]CoreRelease, error)
 	PageRepositoriesByOrganization(ctx context.Context, arg PageRepositoriesByOrganizationParams) ([]PageRepositoriesByOrganizationRow, error)
 	PageRepositoryTransfers(ctx context.Context, arg PageRepositoryTransfersParams) ([]CoreRepositoryTransfer, error)
 	PageRepositoryWebhooks(ctx context.Context, arg PageRepositoryWebhooksParams) ([]CoreRepositoryWebhook, error)
@@ -280,6 +292,7 @@ type Querier interface {
 	UpdateOrganizationMembershipVisibility(ctx context.Context, arg UpdateOrganizationMembershipVisibilityParams) (CoreOrganizationMember, error)
 	UpdateOrganizationTeam(ctx context.Context, arg UpdateOrganizationTeamParams) (CoreOrganizationTeam, error)
 	UpdatePasskeyCredential(ctx context.Context, arg UpdatePasskeyCredentialParams) (AuthPasskeyCredential, error)
+	UpdateRelease(ctx context.Context, arg UpdateReleaseParams) (CoreRelease, error)
 	UpdateRepositorySettings(ctx context.Context, arg UpdateRepositorySettingsParams) (CoreRepository, error)
 	UpdateRepositoryState(ctx context.Context, arg UpdateRepositoryStateParams) (CoreRepository, error)
 	UpdateRepositoryWebhook(ctx context.Context, arg UpdateRepositoryWebhookParams) (CoreRepositoryWebhook, error)
