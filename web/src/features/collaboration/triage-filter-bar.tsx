@@ -11,6 +11,17 @@ import type { RepositoryRouteParams } from '@/features/repository-browser/querie
 import { repositoryLabelsQueryOptions, repositoryMilestonesQueryOptions } from './queries'
 import type { IssueFilters, PullRequestFilters } from './validation'
 
+function pullRequestState(value: string): PullRequestFilters['state'] {
+  switch (value) {
+    case 'open':
+    case 'closed':
+    case 'merged':
+      return value
+    default:
+      return undefined
+  }
+}
+
 export function IssueFilterBar({
   filters,
   params,
@@ -83,7 +94,7 @@ function FilterBar({
           onChange={(event) =>
             void onChange({
               ...filters,
-              state: (event.target.value || undefined) as 'open' | 'closed' | 'merged' | undefined,
+              state: pullRequestState(event.target.value),
             })
           }
           value={filters.state ?? ''}

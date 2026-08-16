@@ -42,6 +42,8 @@ type Querier interface {
 	CountVisibleTriageAssignees(ctx context.Context, assigneeDids []string) (int64, error)
 	CreateAccessToken(ctx context.Context, arg CreateAccessTokenParams) (AuthAccessToken, error)
 	CreateBranchProtection(ctx context.Context, arg CreateBranchProtectionParams) (CoreBranchProtection, error)
+	CreateCheckRun(ctx context.Context, arg CreateCheckRunParams) (CoreCheckRun, error)
+	CreateCommitStatus(ctx context.Context, arg CreateCommitStatusParams) (CoreCommitStatus, error)
 	CreateOAuthState(ctx context.Context, arg CreateOAuthStateParams) error
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (CoreOrganization, error)
 	CreateOrganizationInvitation(ctx context.Context, arg CreateOrganizationInvitationParams) (CoreOrganizationInvitation, error)
@@ -62,6 +64,8 @@ type Querier interface {
 	CreateWebAuthnUser(ctx context.Context, arg CreateWebAuthnUserParams) (AuthWebauthnUser, error)
 	CreateWebhookDeliveriesForEvent(ctx context.Context, arg CreateWebhookDeliveriesForEventParams) error
 	DeleteBranchProtection(ctx context.Context, arg DeleteBranchProtectionParams) (int64, error)
+	DeleteExpiredCheckRuns(ctx context.Context, expiredBefore pgtype.Timestamptz) (int64, error)
+	DeleteExpiredCommitStatuses(ctx context.Context, expiredBefore pgtype.Timestamptz) (int64, error)
 	DeleteOAuthCredential(ctx context.Context, arg DeleteOAuthCredentialParams) error
 	DeleteOAuthState(ctx context.Context, stateHash []byte) error
 	DeleteOrganizationMember(ctx context.Context, arg DeleteOrganizationMemberParams) (CoreOrganizationMember, error)
@@ -79,6 +83,9 @@ type Querier interface {
 	GetActivePasskeyCredentialByCredentialID(ctx context.Context, arg GetActivePasskeyCredentialByCredentialIDParams) (AuthPasskeyCredential, error)
 	GetActiveSSHKeyByFingerprint(ctx context.Context, fingerprint string) (AuthSshKey, error)
 	GetBranchProtection(ctx context.Context, arg GetBranchProtectionParams) (CoreBranchProtection, error)
+	GetCheckRun(ctx context.Context, arg GetCheckRunParams) (CoreCheckRun, error)
+	GetCheckRunByExternalID(ctx context.Context, arg GetCheckRunByExternalIDParams) (CoreCheckRun, error)
+	GetCommitStatusByExternalID(ctx context.Context, arg GetCommitStatusByExternalIDParams) (CoreCommitStatus, error)
 	GetEffectiveReceiveProtection(ctx context.Context, repositoryID pgtype.UUID) (GetEffectiveReceiveProtectionRow, error)
 	GetFederationIssueCommentIssueURI(ctx context.Context, uri string) (string, error)
 	GetFederationIssueRepositoryForComment(ctx context.Context, uri string) (string, error)
@@ -134,6 +141,7 @@ type Querier interface {
 	InsertOrganizationAuditEvent(ctx context.Context, arg InsertOrganizationAuditEventParams) error
 	IsDIDBlocked(ctx context.Context, arg IsDIDBlockedParams) (bool, error)
 	IsRecordHidden(ctx context.Context, arg IsRecordHiddenParams) (bool, error)
+	LatestCommitStatuses(ctx context.Context, arg LatestCommitStatusesParams) ([]CoreCommitStatus, error)
 	ListActiveAccessTokensByAccountDID(ctx context.Context, arg ListActiveAccessTokensByAccountDIDParams) ([]ListActiveAccessTokensByAccountDIDRow, error)
 	ListActivePasskeyCredentials(ctx context.Context, arg ListActivePasskeyCredentialsParams) ([]AuthPasskeyCredential, error)
 	ListActiveSSHKeysByAccountDID(ctx context.Context, accountDid string) ([]AuthSshKey, error)
@@ -179,6 +187,8 @@ type Querier interface {
 	MarkRepositoryPurged(ctx context.Context, arg MarkRepositoryPurgedParams) error
 	OrganizationTeamHasChildren(ctx context.Context, arg OrganizationTeamHasChildrenParams) (bool, error)
 	PageBranchProtections(ctx context.Context, arg PageBranchProtectionsParams) ([]CoreBranchProtection, error)
+	PageCheckRuns(ctx context.Context, arg PageCheckRunsParams) ([]CoreCheckRun, error)
+	PageCommitStatuses(ctx context.Context, arg PageCommitStatusesParams) ([]CoreCommitStatus, error)
 	PageNotifications(ctx context.Context, arg PageNotificationsParams) ([]PageNotificationsRow, error)
 	PageOrganizationInvitations(ctx context.Context, arg PageOrganizationInvitationsParams) ([]CoreOrganizationInvitation, error)
 	PageOrganizationMembers(ctx context.Context, arg PageOrganizationMembersParams) ([]PageOrganizationMembersRow, error)
@@ -264,6 +274,7 @@ type Querier interface {
 	UnblockDID(ctx context.Context, arg UnblockDIDParams) error
 	UnhideRecord(ctx context.Context, arg UnhideRecordParams) error
 	UpdateBranchProtection(ctx context.Context, arg UpdateBranchProtectionParams) (CoreBranchProtection, error)
+	UpdateCheckRun(ctx context.Context, arg UpdateCheckRunParams) (CoreCheckRun, error)
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (CoreOrganization, error)
 	UpdateOrganizationMemberRole(ctx context.Context, arg UpdateOrganizationMemberRoleParams) (CoreOrganizationMember, error)
 	UpdateOrganizationMembershipVisibility(ctx context.Context, arg UpdateOrganizationMembershipVisibilityParams) (CoreOrganizationMember, error)

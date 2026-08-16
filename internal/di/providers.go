@@ -11,6 +11,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/auth"
 	"github.com/adenosine-dev/adenosine/internal/branchprotection"
 	"github.com/adenosine-dev/adenosine/internal/comment"
+	"github.com/adenosine-dev/adenosine/internal/commitstatus"
 	"github.com/adenosine-dev/adenosine/internal/config"
 	"github.com/adenosine-dev/adenosine/internal/database"
 	"github.com/adenosine-dev/adenosine/internal/event"
@@ -108,6 +109,8 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	webhookWorker := webhook.NewWorker(db.Queries(), webhooks)
 	repositoryPurgeWorker := repository.NewPurgeWorker(repositoryStore, git)
 	branchProtections := branchprotection.NewService(db.Queries(), git)
+	commitStatuses := commitstatus.NewService(db.Queries())
+	commitStatusRetentionWorker := commitstatus.NewRetentionWorker(db.Queries())
 	organizations := organization.NewService(
 		organization.NewPostgresStore(db, db.Queries()),
 		organization.SystemClock{},
@@ -167,6 +170,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		Notifications:               notifications,
 		Webhooks:                    webhooks,
 		BranchProtections:           branchProtections,
+		CommitStatuses:              commitStatuses,
 		Activity:                    eventWriter,
 		Authorization:               authStore,
 		Git:                         git,
@@ -179,7 +183,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		return nil, fmt.Errorf("create REST server: %w", err)
 	}
 
-	return app.NewWithWorkers(server, sshServer, logger, cfg.ShutdownTimeout, []app.Worker{webhookWorker, repositoryPurgeWorker},
+	return app.NewWithWorkers(server, sshServer, logger, cfg.ShutdownTimeout, []app.Worker{webhookWorker, repositoryPurgeWorker, commitStatusRetentionWorker},
 		shutdownTelemetry,
 		func(context.Context) error {
 			db.Close()

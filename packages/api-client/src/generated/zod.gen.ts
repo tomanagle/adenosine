@@ -281,7 +281,11 @@ export const zAccessToken = z.object({
     id: z.uuid(),
     name: z.string(),
     prefix: z.string(),
-    scopes: z.array(z.enum(['repository:read', 'repository:write'])),
+    scopes: z.array(z.enum([
+        'repository:read',
+        'repository:write',
+        'repository:status'
+    ])),
     repository_id: z.uuid().nullish(),
     created_at: z.iso.datetime({ offset: true }),
     expires_at: z.iso.datetime({ offset: true }).nullish(),
@@ -294,7 +298,11 @@ export const zCreatedAccessToken = zAccessToken.and(z.object({
 
 export const zCreateAccessTokenRequest = z.object({
     name: z.string().min(1).max(255),
-    scopes: z.array(z.enum(['repository:read', 'repository:write'])).min(1),
+    scopes: z.array(z.enum([
+        'repository:read',
+        'repository:write',
+        'repository:status'
+    ])).min(1),
     repository_id: z.uuid().nullish(),
     expires_at: z.iso.datetime({ offset: true }).nullish()
 });
@@ -368,7 +376,9 @@ export const zWebhookEvent = z.enum([
     'push',
     'issue',
     'pull_request',
-    'review'
+    'review',
+    'status',
+    'check_run'
 ]);
 
 export const zRepositoryWebhook = z.object({
@@ -410,6 +420,98 @@ export const zWebhookDelivery = z.object({
 
 export const zCreateWebhookRedeliveryRequest = z.object({
     delivery_id: z.uuid()
+});
+
+export const zCommitSha = z.string().regex(/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/);
+
+export const zCommitStatusState = z.enum([
+    'pending',
+    'success',
+    'failure',
+    'error'
+]);
+
+export const zCommitStatus = z.object({
+    id: z.uuid(),
+    sha: zCommitSha,
+    context: z.string().max(100),
+    state: zCommitStatusState,
+    description: z.string().max(140),
+    target_url: z.url().nullish(),
+    creator_did: z.string(),
+    external_id: z.string(),
+    created_at: z.iso.datetime({ offset: true })
+});
+
+export const zCreateCommitStatusRequest = z.object({
+    context: z.string().min(1).max(100),
+    state: zCommitStatusState,
+    description: z.string().max(140).optional().default(''),
+    target_url: z.url().nullish(),
+    external_id: z.string().min(1).max(255)
+});
+
+export const zCombinedCommitStatus = z.object({
+    sha: zCommitSha,
+    state: zCommitStatusState,
+    statuses: z.array(zCommitStatus)
+});
+
+export const zCheckRunStatus = z.enum([
+    'queued',
+    'in_progress',
+    'completed'
+]);
+
+export const zCheckRunConclusion = z.enum([
+    'success',
+    'failure',
+    'neutral',
+    'cancelled',
+    'skipped',
+    'timed_out',
+    'action_required'
+]);
+
+export const zCheckRun = z.object({
+    id: z.uuid(),
+    sha: zCommitSha,
+    name: z.string(),
+    external_id: z.string(),
+    creator_did: z.string(),
+    status: zCheckRunStatus,
+    conclusion: zCheckRunConclusion.nullish(),
+    details_url: z.url().nullish(),
+    output_title: z.string(),
+    output_summary: z.string(),
+    version: z.coerce.bigint().gte(BigInt(1)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    started_at: z.iso.datetime({ offset: true }).nullish(),
+    completed_at: z.iso.datetime({ offset: true }).nullish(),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true })
+});
+
+export const zCreateCheckRunRequest = z.object({
+    name: z.string().min(1).max(100),
+    external_id: z.string().min(1).max(255),
+    status: zCheckRunStatus.optional(),
+    conclusion: zCheckRunConclusion.nullish(),
+    details_url: z.url().nullish(),
+    output_title: z.string().max(255).optional().default(''),
+    output_summary: z.string().max(65535).optional().default(''),
+    started_at: z.iso.datetime({ offset: true }).nullish(),
+    completed_at: z.iso.datetime({ offset: true }).nullish()
+});
+
+export const zUpdateCheckRunRequest = z.object({
+    expected_version: z.coerce.bigint().gte(BigInt(1)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    status: zCheckRunStatus,
+    conclusion: zCheckRunConclusion.nullish(),
+    details_url: z.url().nullish(),
+    output_title: z.string().max(255).optional().default(''),
+    output_summary: z.string().max(65535).optional().default(''),
+    started_at: z.iso.datetime({ offset: true }).nullish(),
+    completed_at: z.iso.datetime({ offset: true }).nullish()
 });
 
 export const zBranchProtection = z.object({
@@ -1252,6 +1354,16 @@ export const zRepositoryWebhookList = z.object({
 
 export const zWebhookDeliveryList = z.object({
     items: z.array(zWebhookDelivery),
+    page: zPage
+});
+
+export const zCommitStatusList = z.object({
+    items: z.array(zCommitStatus),
+    page: zPage
+});
+
+export const zCheckRunList = z.object({
+    items: z.array(zCheckRun),
     page: zPage
 });
 
@@ -2933,6 +3045,99 @@ export const zCreateRepositoryWebhookPath = z.object({
  * Webhook created
  */
 export const zCreateRepositoryWebhookResponse = zRepositoryWebhook;
+
+export const zListCommitStatusesPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    sha: zCommitSha
+});
+
+export const zListCommitStatusesQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Commit status history page
+ */
+export const zListCommitStatusesResponse = zCommitStatusList;
+
+export const zCreateCommitStatusBody = zCreateCommitStatusRequest;
+
+export const zCreateCommitStatusPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    sha: zCommitSha
+});
+
+/**
+ * Idempotent replay of the existing status
+ */
+export const zCreateCommitStatusResponse = zCommitStatus;
+
+export const zGetCombinedCommitStatusPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    sha: zCommitSha
+});
+
+/**
+ * Combined commit status
+ */
+export const zGetCombinedCommitStatusResponse = zCombinedCommitStatus;
+
+export const zListCheckRunsPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    sha: zCommitSha
+});
+
+export const zListCheckRunsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Check run page
+ */
+export const zListCheckRunsResponse = zCheckRunList;
+
+export const zCreateCheckRunBody = zCreateCheckRunRequest;
+
+export const zCreateCheckRunPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    sha: zCommitSha
+});
+
+/**
+ * Idempotent replay of the existing check run
+ */
+export const zCreateCheckRunResponse = zCheckRun;
+
+export const zGetCheckRunPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    check_run: z.uuid()
+});
+
+/**
+ * Check run
+ */
+export const zGetCheckRunResponse = zCheckRun;
+
+export const zUpdateCheckRunBody = zUpdateCheckRunRequest;
+
+export const zUpdateCheckRunPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    check_run: z.uuid()
+});
+
+/**
+ * Check run updated or idempotently replayed
+ */
+export const zUpdateCheckRunResponse = zCheckRun;
 
 export const zListBranchProtectionsPath = z.object({
     owner: z.string(),

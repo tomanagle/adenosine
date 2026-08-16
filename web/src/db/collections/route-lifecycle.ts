@@ -15,6 +15,15 @@ type CollectionFactory = <R extends RouteElectricResource>(
   resource: R,
 ) => RouteElectricCollection<R>
 
+function bindLifecycleCollections<
+  R extends readonly RouteElectricResource[],
+  TCollections extends object = object,
+>(collections: TCollections): RouteElectricCollections<R> {
+  // SAFETY: createRouteCollectionLifecycle creates exactly one correctly typed collection for
+  // every requested resource before rebuilding this mapped object from its entries.
+  return collections as RouteElectricCollections<R>
+}
+
 export type RouteCollectionLifecycle<R extends readonly RouteElectricResource[]> = {
   routeScope: string
   resources: R
@@ -27,13 +36,13 @@ export function createRouteCollectionLifecycle<R extends readonly RouteElectricR
   resources: R,
   factory: CollectionFactory = createRouteElectricCollection,
 ): RouteCollectionLifecycle<R> {
-  const collections: Record<string, unknown> = {}
+  const entries: Array<[RouteElectricResource, RouteElectricCollection<RouteElectricResource>]> = []
   const created: Array<{ cleanup: () => Promise<void> }> = []
 
   try {
     for (const resource of new Set(resources)) {
       const collection = factory(routeScope, resource)
-      collections[resource] = collection
+      entries.push([resource, collection])
       created.push(collection)
     }
   } catch (error) {
@@ -41,10 +50,12 @@ export function createRouteCollectionLifecycle<R extends readonly RouteElectricR
     throw error
   }
 
+  const collections = bindLifecycleCollections<R>(Object.fromEntries(entries))
+
   return {
     routeScope,
     resources,
-    collections: collections as RouteElectricCollections<R>,
+    collections,
     cleanup: async () => {
       await Promise.all(created.map((collection) => collection.cleanup()))
     },

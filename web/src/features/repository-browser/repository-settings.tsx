@@ -26,6 +26,10 @@ import {
 } from './queries'
 import type { RepositoryRouteParams } from './queries'
 
+function repositoryVisibility(value: string): 'public' | 'private' {
+  return value === 'private' ? 'private' : 'public'
+}
+
 export function RepositorySettings({ params }: { params: RepositoryRouteParams }) {
   const { data: repository } = useSuspenseQuery(repositoryQueryOptions(params))
   if (!repository.viewer_can_admin) {
@@ -161,9 +165,7 @@ function GeneralSettings({ params }: { params: RepositoryRouteParams }) {
                 <Select
                   id="repository-visibility"
                   value={field.state.value}
-                  onChange={(event) =>
-                    field.handleChange(event.target.value as 'public' | 'private')
-                  }
+                  onChange={(event) => field.handleChange(repositoryVisibility(event.target.value))}
                 >
                   <option value="public">Public</option>
                   <option value="private">Private</option>

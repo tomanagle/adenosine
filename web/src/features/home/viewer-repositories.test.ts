@@ -45,10 +45,15 @@ function repository(overrides: Partial<Repository> = {}): Repository {
 }
 
 describe('ownedRepositories', () => {
-  const testCases = [
+  const testCases: Array<{
+    name: string
+    did: string | undefined
+    repositories: Repository[]
+    want: string[]
+  }> = [
     {
       name: 'keeps only the signed-in identity and orders by most recent update',
-      did: 'did:plc:viewer' as string | undefined,
+      did: 'did:plc:viewer',
       repositories: [
         repository({ slug: 'older', updated_at: '2026-01-01T00:00:00Z' }),
         repository({ slug: 'other', owner: { did: 'did:plc:other', handle: 'other.example' } }),

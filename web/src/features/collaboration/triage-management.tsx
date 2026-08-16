@@ -34,6 +34,10 @@ import {
   updateRepositoryMilestoneMutationOptions,
 } from './queries'
 
+function milestoneState(value: string): RepositoryMilestone['state'] {
+  return value === 'closed' ? 'closed' : 'open'
+}
+
 export function LabelsPage({ params }: { params: RepositoryRouteParams }) {
   const { data: repository } = useSuspenseQuery(repositoryQueryOptions(params))
   const { data } = useSuspenseQuery(repositoryLabelsQueryOptions(params.owner, params.repo))
@@ -501,7 +505,7 @@ function MilestoneActions({
               <Select
                 id={`milestone-${milestone.id}-state`}
                 value={field.state.value}
-                onChange={(event) => field.handleChange(event.target.value as 'open' | 'closed')}
+                onChange={(event) => field.handleChange(milestoneState(event.target.value))}
               >
                 <option value="open">Open</option>
                 <option value="closed">Closed</option>

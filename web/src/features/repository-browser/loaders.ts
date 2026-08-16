@@ -36,7 +36,7 @@ export async function loadOverview(queryClient: QueryClient, params: RepositoryR
   if (repository.hosting.source_browsing !== 'local') return
   const tree = await queryClient
     .ensureQueryData(treeQueryOptions(params, repository.default_branch))
-    .catch((error: unknown) => {
+    .catch((error) => {
       if (classifyBrowserError(error) === 'missing') return undefined
       throw error
     })

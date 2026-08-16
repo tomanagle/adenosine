@@ -61,7 +61,7 @@ describe('label presentation', () => {
     const badge = screen.getByText('<script>bug</script>')
     expect(badge.getAttribute('style')).toContain('background-color: rgba(215, 58, 74, 0.133)')
     expect(badge.getAttribute('style')).toContain('border-color: rgba(215, 58, 74, 0.533)')
-    expect((badge as HTMLElement).style.color).toBe('rgb(215, 58, 74)')
+    expect(badge.style.color).toBe('rgb(215, 58, 74)')
     expect(document.querySelector('script')).toBeNull()
   })
 })

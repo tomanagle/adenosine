@@ -64,6 +64,38 @@ import {
   updateOrganizationTeamMutationOptions,
 } from './queries'
 
+type RepositoryRole = OrganizationRepositoryCollaborator['role']
+
+function organizationBasePermission(value: string): Organization['base_permission'] {
+  switch (value) {
+    case 'read':
+    case 'write':
+      return value
+    default:
+      return 'none'
+  }
+}
+
+function repositoryRole(value: string): RepositoryRole {
+  switch (value) {
+    case 'triage':
+    case 'write':
+    case 'maintain':
+    case 'admin':
+      return value
+    default:
+      return 'read'
+  }
+}
+
+function organizationMemberRole(value: string): OrganizationMember['role'] {
+  return value === 'owner' ? 'owner' : 'member'
+}
+
+function teamVisibility(value: string): OrganizationTeam['visibility'] {
+  return value === 'secret' ? 'secret' : 'visible'
+}
+
 export function OrganizationPage({
   identity,
   slug,
@@ -290,7 +322,7 @@ function OrganizationSettings({
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(event) =>
-                    field.handleChange(event.target.value as 'none' | 'read' | 'write')
+                    field.handleChange(organizationBasePermission(event.target.value))
                   }
                   value={field.state.value}
                 >
@@ -525,7 +557,7 @@ function RepositoryCollaborators({
   const form = useForm({
     defaultValues: {
       did: '',
-      role: 'read' as 'read' | 'triage' | 'write' | 'maintain' | 'admin',
+      role: repositoryRole('read'),
     },
     onSubmit: async ({ value, formApi }) => {
       if (!value.did.trim()) return
@@ -570,10 +602,7 @@ function RepositoryCollaborators({
                   className="h-8 w-32"
                   disabled={put.isPending}
                   onChange={(event) =>
-                    void updateRole(
-                      collaborator,
-                      event.target.value as typeof form.state.values.role,
-                    )
+                    void updateRole(collaborator, repositoryRole(event.target.value))
                   }
                   value={collaborator.role}
                 >
@@ -637,9 +666,7 @@ function RepositoryCollaborators({
                   aria-label={`New collaborator role for ${repositorySlug}`}
                   name={field.name}
                   onBlur={field.handleBlur}
-                  onChange={(event) =>
-                    field.handleChange(event.target.value as typeof field.state.value)
-                  }
+                  onChange={(event) => field.handleChange(repositoryRole(event.target.value))}
                   value={field.state.value}
                 >
                   <option value="read">Read</option>
@@ -664,14 +691,14 @@ function auditActionLabel(action: string) {
   return action.replaceAll('.', ' ').replaceAll('_', ' ')
 }
 
-function LoadMoreButton({
+function LoadMoreButton<TResult>({
   isFetching,
   label,
   onClick,
 }: {
   isFetching: boolean
   label: string
-  onClick: () => Promise<unknown>
+  onClick: () => Promise<TResult>
 }) {
   return (
     <div className="mt-4 flex justify-center">
@@ -682,7 +709,7 @@ function LoadMoreButton({
   )
 }
 
-function MembersSection({
+function MembersSection<TPageResult>({
   creatorDID,
   fetchNextPage,
   hasNextPage,
@@ -693,7 +720,7 @@ function MembersSection({
   slug,
 }: {
   creatorDID: string
-  fetchNextPage: () => Promise<unknown>
+  fetchNextPage: () => Promise<TPageResult>
   hasNextPage: boolean
   identity?: CurrentIdentity | null
   isFetchingNextPage: boolean
@@ -741,7 +768,7 @@ function InviteForm({ onDone, slug }: { onDone: () => void; slug: string }) {
   const queryClient = useQueryClient()
   const mutation = useMutation(inviteOrganizationMemberMutationOptions())
   const form = useForm({
-    defaultValues: { did: '', role: 'member' as 'member' | 'owner' },
+    defaultValues: { did: '', role: organizationMemberRole('member') },
     onSubmit: async ({ value }) => {
       await mutation.mutateAsync({
         path: { organization: slug },
@@ -1002,7 +1029,7 @@ function CreateTeamForm({
     defaultValues: {
       name: '',
       slug: '',
-      visibility: 'visible' as 'visible' | 'secret',
+      visibility: teamVisibility('visible'),
       parentTeamID: '',
     },
     onSubmit: async ({ value }) => {
@@ -1183,7 +1210,7 @@ function TeamCard({
   const repositoryForm = useForm({
     defaultValues: {
       repository: '',
-      role: 'read' as 'read' | 'triage' | 'write' | 'maintain' | 'admin',
+      role: repositoryRole('read'),
     },
     onSubmit: async ({ value, formApi }) => {
       if (!value.repository) return
@@ -1549,9 +1576,7 @@ function TeamCard({
                       aria-label={`Repository role for ${team.name}`}
                       name={field.name}
                       onBlur={field.handleBlur}
-                      onChange={(event) =>
-                        field.handleChange(event.target.value as typeof field.state.value)
-                      }
+                      onChange={(event) => field.handleChange(repositoryRole(event.target.value))}
                       value={field.state.value}
                     >
                       <option value="read">Read</option>

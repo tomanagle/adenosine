@@ -124,6 +124,42 @@ type CoreBranchProtection struct {
 	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
 }
 
+type CoreCheckRun struct {
+	ID                pgtype.UUID        `json:"id"`
+	RepositoryID      pgtype.UUID        `json:"repository_id"`
+	CommitSha         string             `json:"commit_sha"`
+	Name              string             `json:"name"`
+	ExternalID        string             `json:"external_id"`
+	CreatorDid        string             `json:"creator_did"`
+	Status            string             `json:"status"`
+	Conclusion        pgtype.Text        `json:"conclusion"`
+	DetailsUrl        pgtype.Text        `json:"details_url"`
+	OutputTitle       string             `json:"output_title"`
+	OutputSummary     string             `json:"output_summary"`
+	Version           int64              `json:"version"`
+	CreateRequestHash []byte             `json:"create_request_hash"`
+	StartedAt         pgtype.Timestamptz `json:"started_at"`
+	CompletedAt       pgtype.Timestamptz `json:"completed_at"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+	ExpiresAt         pgtype.Timestamptz `json:"expires_at"`
+}
+
+type CoreCommitStatus struct {
+	ID           pgtype.UUID        `json:"id"`
+	RepositoryID pgtype.UUID        `json:"repository_id"`
+	CommitSha    string             `json:"commit_sha"`
+	Context      string             `json:"context"`
+	State        string             `json:"state"`
+	Description  string             `json:"description"`
+	TargetUrl    pgtype.Text        `json:"target_url"`
+	CreatorDid   string             `json:"creator_did"`
+	ExternalID   string             `json:"external_id"`
+	RequestHash  []byte             `json:"request_hash"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt    pgtype.Timestamptz `json:"expires_at"`
+}
+
 type CoreNotificationState struct {
 	AccountDid      string             `json:"account_did"`
 	NotificationKey pgtype.UUID        `json:"notification_key"`

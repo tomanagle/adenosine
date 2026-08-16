@@ -28,7 +28,7 @@ var (
 	ErrValidation = errors.New("webhook validation failed")
 )
 
-var allowedEvents = []string{"issue", "pull_request", "push", "review"}
+var allowedEvents = []string{"check_run", "issue", "pull_request", "push", "review", "status"}
 
 type Webhook struct {
 	ID           uuid.UUID
