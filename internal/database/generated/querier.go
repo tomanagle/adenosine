@@ -84,6 +84,7 @@ type Querier interface {
 	GetFederationIssueRepositoryForComment(ctx context.Context, uri string) (string, error)
 	GetFederationIssueRepositoryURI(ctx context.Context, uri string) (string, error)
 	GetFederationIssueStatusTarget(ctx context.Context, uri string) (GetFederationIssueStatusTargetRow, error)
+	GetFederationPullRequestReviewRequestSubject(ctx context.Context, uri string) (string, error)
 	GetFederationPullRequestReviewSubject(ctx context.Context, uri string) (string, error)
 	GetFederationPullRequestStatusTarget(ctx context.Context, uri string) (GetFederationPullRequestStatusTargetRow, error)
 	GetFederationPullRequestTargetRepositoryURI(ctx context.Context, uri string) (string, error)
@@ -181,10 +182,12 @@ type Querier interface {
 	PageOrganizationTeams(ctx context.Context, arg PageOrganizationTeamsParams) ([]PageOrganizationTeamsRow, error)
 	PageOrganizationsForAccount(ctx context.Context, arg PageOrganizationsForAccountParams) ([]CoreOrganization, error)
 	PagePendingOrganizationInvitationsForAccount(ctx context.Context, arg PagePendingOrganizationInvitationsForAccountParams) ([]PagePendingOrganizationInvitationsForAccountRow, error)
+	PageProjectedPullRequestReviewRequests(ctx context.Context, arg PageProjectedPullRequestReviewRequestsParams) ([]PageProjectedPullRequestReviewRequestsRow, error)
 	PageRepositoriesByOrganization(ctx context.Context, arg PageRepositoriesByOrganizationParams) ([]PageRepositoriesByOrganizationRow, error)
 	PageRepositoryWebhooks(ctx context.Context, arg PageRepositoryWebhooksParams) ([]CoreRepositoryWebhook, error)
 	PageWebhookDeliveries(ctx context.Context, arg PageWebhookDeliveriesParams) ([]OpsWebhookDelivery, error)
 	ProjectIdentityHandle(ctx context.Context, arg ProjectIdentityHandleParams) error
+	PullRequestReviewRequestModerationAllowed(ctx context.Context, arg PullRequestReviewRequestModerationAllowedParams) (pgtype.Bool, error)
 	PurgeExpiredPasskeyCeremonies(ctx context.Context, expiresAt pgtype.Timestamptz) (int64, error)
 	PutNotificationReadState(ctx context.Context, arg PutNotificationReadStateParams) error
 	PutOrganizationRepositoryCollaborator(ctx context.Context, arg PutOrganizationRepositoryCollaboratorParams) (CoreRepositoryCollaborator, error)
@@ -227,6 +230,7 @@ type Querier interface {
 	TombstoneFederationProfile(ctx context.Context, arg TombstoneFederationProfileParams) error
 	TombstoneFederationPullRequest(ctx context.Context, arg TombstoneFederationPullRequestParams) (string, error)
 	TombstoneFederationPullRequestReview(ctx context.Context, arg TombstoneFederationPullRequestReviewParams) (string, error)
+	TombstoneFederationPullRequestReviewRequest(ctx context.Context, arg TombstoneFederationPullRequestReviewRequestParams) (string, error)
 	TombstoneFederationPullRequestStatus(ctx context.Context, arg TombstoneFederationPullRequestStatusParams) (TombstoneFederationPullRequestStatusRow, error)
 	TombstoneFederationRecord(ctx context.Context, arg TombstoneFederationRecordParams) error
 	TombstoneFederationRepository(ctx context.Context, arg TombstoneFederationRepositoryParams) error
@@ -258,6 +262,7 @@ type Querier interface {
 	UpsertFederationProfile(ctx context.Context, arg UpsertFederationProfileParams) error
 	UpsertFederationPullRequest(ctx context.Context, arg UpsertFederationPullRequestParams) (string, error)
 	UpsertFederationPullRequestReview(ctx context.Context, arg UpsertFederationPullRequestReviewParams) (string, error)
+	UpsertFederationPullRequestReviewRequest(ctx context.Context, arg UpsertFederationPullRequestReviewRequestParams) (string, error)
 	UpsertFederationPullRequestStatus(ctx context.Context, arg UpsertFederationPullRequestStatusParams) (UpsertFederationPullRequestStatusRow, error)
 	UpsertFederationRecord(ctx context.Context, arg UpsertFederationRecordParams) error
 	UpsertFederationRepository(ctx context.Context, arg UpsertFederationRepositoryParams) error

@@ -26,19 +26,20 @@ import (
 )
 
 const (
-	ProfileCollection                = "dev.adenosine.profile"
-	RepositoryCollection             = "dev.adenosine.repo"
-	StarCollection                   = star.Collection
-	IssueCollection                  = issue.Collection
-	IssueStatusCollection            = issue.StatusCollection
-	PullRequestCollection            = pullrequest.Collection
-	PullRequestStatusCollection      = pullrequest.StatusCollection
-	PullRequestReviewCollection      = pullrequest.ReviewCollection
-	OrganizationCollection           = "dev.adenosine.organization"
-	OrganizationGrantCollection      = "dev.adenosine.organizationGrant"
-	OrganizationMembershipCollection = "dev.adenosine.organizationMembership"
-	OrganizationRevocationCollection = "dev.adenosine.organizationRevocation"
-	maxEventBytes                    = 1 << 20
+	ProfileCollection                  = "dev.adenosine.profile"
+	RepositoryCollection               = "dev.adenosine.repo"
+	StarCollection                     = star.Collection
+	IssueCollection                    = issue.Collection
+	IssueStatusCollection              = issue.StatusCollection
+	PullRequestCollection              = pullrequest.Collection
+	PullRequestStatusCollection        = pullrequest.StatusCollection
+	PullRequestReviewCollection        = pullrequest.ReviewCollection
+	PullRequestReviewRequestCollection = pullrequest.ReviewRequestCollection
+	OrganizationCollection             = "dev.adenosine.organization"
+	OrganizationGrantCollection        = "dev.adenosine.organizationGrant"
+	OrganizationMembershipCollection   = "dev.adenosine.organizationMembership"
+	OrganizationRevocationCollection   = "dev.adenosine.organizationRevocation"
+	maxEventBytes                      = 1 << 20
 )
 
 var (
@@ -60,26 +61,27 @@ type Event struct {
 
 // RecordEvent is a validated Tap record mutation.
 type RecordEvent struct {
-	DID                    string
-	Collection             string
-	RKey                   string
-	URI                    string
-	Action                 string
-	CID                    string
-	Raw                    []byte
-	Profile                *ProfileRecord
-	Repository             *RepositoryRecord
-	Star                   *StarRecord
-	Issue                  *issue.Record
-	IssueComment           *issue.CommentRecord
-	IssueStatus            *issue.StatusRecord
-	PullRequest            *pullrequest.Record
-	PullRequestStatus      *pullrequest.StatusRecord
-	PullRequestReview      *pullrequest.ReviewRecord
-	Organization           *OrganizationRecord
-	OrganizationGrant      *OrganizationGrantRecord
-	OrganizationMembership *OrganizationMembershipRecord
-	OrganizationRevocation *OrganizationRevocationRecord
+	DID                      string
+	Collection               string
+	RKey                     string
+	URI                      string
+	Action                   string
+	CID                      string
+	Raw                      []byte
+	Profile                  *ProfileRecord
+	Repository               *RepositoryRecord
+	Star                     *StarRecord
+	Issue                    *issue.Record
+	IssueComment             *issue.CommentRecord
+	IssueStatus              *issue.StatusRecord
+	PullRequest              *pullrequest.Record
+	PullRequestStatus        *pullrequest.StatusRecord
+	PullRequestReview        *pullrequest.ReviewRecord
+	PullRequestReviewRequest *pullrequest.ReviewRequestRecord
+	Organization             *OrganizationRecord
+	OrganizationGrant        *OrganizationGrantRecord
+	OrganizationMembership   *OrganizationMembershipRecord
+	OrganizationRevocation   *OrganizationRevocationRecord
 }
 
 // IdentityEvent is a validated Tap identity projection.
@@ -244,7 +246,7 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 	if err != nil || collection.String() != wire.Collection {
 		return RecordEvent{}, invalid("collection is not a canonical NSID")
 	}
-	if wire.Collection != ProfileCollection && wire.Collection != RepositoryCollection && wire.Collection != StarCollection && wire.Collection != IssueCollection && wire.Collection != issue.CommentCollection && wire.Collection != IssueStatusCollection && wire.Collection != PullRequestCollection && wire.Collection != PullRequestStatusCollection && wire.Collection != PullRequestReviewCollection && wire.Collection != OrganizationCollection && wire.Collection != OrganizationGrantCollection && wire.Collection != OrganizationMembershipCollection && wire.Collection != OrganizationRevocationCollection {
+	if wire.Collection != ProfileCollection && wire.Collection != RepositoryCollection && wire.Collection != StarCollection && wire.Collection != IssueCollection && wire.Collection != issue.CommentCollection && wire.Collection != IssueStatusCollection && wire.Collection != PullRequestCollection && wire.Collection != PullRequestStatusCollection && wire.Collection != PullRequestReviewCollection && wire.Collection != PullRequestReviewRequestCollection && wire.Collection != OrganizationCollection && wire.Collection != OrganizationGrantCollection && wire.Collection != OrganizationMembershipCollection && wire.Collection != OrganizationRevocationCollection {
 		return RecordEvent{}, invalid("unsupported collection %q", wire.Collection)
 	}
 	rkey, err := syntax.ParseRecordKey(wire.RKey)
@@ -280,6 +282,9 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 	}
 	if wire.Collection == PullRequestStatusCollection && !starRKeyPattern.MatchString(wire.RKey) {
 		return RecordEvent{}, invalid("pull request status rkey is not deterministic key shaped")
+	}
+	if wire.Collection == PullRequestReviewRequestCollection && !starRKeyPattern.MatchString(wire.RKey) {
+		return RecordEvent{}, invalid("pull request review request rkey is not deterministic key shaped")
 	}
 	if wire.Collection == PullRequestCollection || wire.Collection == PullRequestReviewCollection {
 		if err := pullrequest.ValidateRecordKey(wire.RKey); err != nil {
@@ -386,6 +391,19 @@ func decodeRecordEvent(raw []byte) (RecordEvent, error) {
 			return RecordEvent{}, invalid("pull request review: %v", err)
 		}
 		result.PullRequestReview = &value
+	} else if wire.Collection == PullRequestReviewRequestCollection {
+		value, err := decodePullRequestReviewRequestRecord(wire.Record)
+		if err != nil {
+			return RecordEvent{}, err
+		}
+		expectedRKey, err := pullrequest.ReviewRequestRecordKey(value.Subject.URI, value.ReviewerDID)
+		if err != nil || wire.RKey != expectedRKey {
+			return RecordEvent{}, invalid("pull request review request rkey does not match subject and reviewer")
+		}
+		if err := (pullrequest.ReviewRequest{URI: result.URI, CID: result.CID, AuthorDID: result.DID, ReviewRequestRecord: value}).Validate(); err != nil {
+			return RecordEvent{}, invalid("pull request review request: %v", err)
+		}
+		result.PullRequestReviewRequest = &value
 	} else if wire.Collection == OrganizationCollection {
 		value, err := decodeOrganizationRecord(wire.Record)
 		if err != nil {
@@ -517,6 +535,40 @@ func decodePullRequestReviewRecord(raw []byte) (pullrequest.ReviewRecord, error)
 	value := pullrequest.ReviewRecord{Subject: wire.Subject, Verdict: wire.Verdict, Body: wire.Body, CreatedAt: createdAt, UpdatedAt: updatedAt}
 	if err := value.Validate(); err != nil {
 		return pullrequest.ReviewRecord{}, invalid("pull request review record: %v", err)
+	}
+	return value, nil
+}
+
+func decodePullRequestReviewRequestRecord(raw []byte) (pullrequest.ReviewRequestRecord, error) {
+	var wire struct {
+		Type             string                `json:"$type"`
+		Subject          pullrequest.StrongRef `json:"subject"`
+		TargetRepository pullrequest.StrongRef `json:"targetRepository"`
+		Reviewer         string                `json:"reviewer"`
+		RequestedBy      string                `json:"requestedBy"`
+		CreatedAt        string                `json:"createdAt"`
+		UpdatedAt        string                `json:"updatedAt"`
+	}
+	if err := decodeStrict(raw, &wire); err != nil {
+		return pullrequest.ReviewRequestRecord{}, invalid("decode pull request review request record: %v", err)
+	}
+	if wire.Type != PullRequestReviewRequestCollection {
+		return pullrequest.ReviewRequestRecord{}, invalid("pull request review request record type is invalid")
+	}
+	createdAt, err := canonicalDatetime(wire.CreatedAt)
+	if err != nil {
+		return pullrequest.ReviewRequestRecord{}, err
+	}
+	updatedAt, err := canonicalDatetime(wire.UpdatedAt)
+	if err != nil {
+		return pullrequest.ReviewRequestRecord{}, err
+	}
+	value := pullrequest.ReviewRequestRecord{
+		Subject: wire.Subject, TargetRepository: wire.TargetRepository, ReviewerDID: wire.Reviewer,
+		RequestedByDID: wire.RequestedBy, CreatedAt: createdAt, UpdatedAt: updatedAt,
+	}
+	if err := value.Validate(); err != nil {
+		return pullrequest.ReviewRequestRecord{}, invalid("pull request review request record: %v", err)
 	}
 	return value, nil
 }

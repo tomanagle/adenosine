@@ -22,11 +22,13 @@ const (
 	// StatusCollection is the NSID of target-repository-owner-authored status records.
 	StatusCollection = "dev.adenosine.pullRequestStatus"
 	// ReviewCollection is the NSID of reviewer-authored review records.
-	ReviewCollection     = "dev.adenosine.pullRequestReview"
-	repositoryCollection = "dev.adenosine.repo"
-	maximumBranchLength  = 255
-	maximumTitleLength   = 255
-	maximumBodyLength    = 65535
+	ReviewCollection = "dev.adenosine.pullRequestReview"
+	// ReviewRequestCollection is the NSID of target-authoritative reviewer requests.
+	ReviewRequestCollection = "dev.adenosine.pullRequestReviewRequest"
+	repositoryCollection    = "dev.adenosine.repo"
+	maximumBranchLength     = 255
+	maximumTitleLength      = 255
+	maximumBodyLength       = 65535
 )
 
 var (
@@ -121,6 +123,25 @@ type Review struct {
 	CID       string
 	AuthorDID string
 	ReviewRecord
+}
+
+// ReviewRequestRecord is a target-authoritative request for one DID to review
+// the exact current pull request observation.
+type ReviewRequestRecord struct {
+	Subject          StrongRef
+	TargetRepository StrongRef
+	ReviewerDID      string
+	RequestedByDID   string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
+// ReviewRequest combines a target-authoritative request with its AT Protocol envelope.
+type ReviewRequest struct {
+	URI       string
+	CID       string
+	AuthorDID string
+	ReviewRequestRecord
 }
 
 // ConflictError reports incompatible or concurrently changed provider state without exposing details.
@@ -234,6 +255,23 @@ func (record ReviewRecord) Validate() error {
 	return validateTimes(record.CreatedAt, record.UpdatedAt)
 }
 
+// Validate checks target-authoritative reviewer-request content.
+func (record ReviewRequestRecord) Validate() error {
+	if err := validateStrongRef(record.Subject, Collection, "subject"); err != nil {
+		return err
+	}
+	if err := validateStrongRef(record.TargetRepository, repositoryCollection, "targetRepository"); err != nil {
+		return err
+	}
+	if err := validateDID(record.ReviewerDID, "reviewer"); err != nil {
+		return err
+	}
+	if err := validateDID(record.RequestedByDID, "requestedBy"); err != nil {
+		return err
+	}
+	return validateTimes(record.CreatedAt, record.UpdatedAt)
+}
+
 // Validate checks pull request content and proves that the contributor owns its envelope.
 func (value PullRequest) Validate() error {
 	if err := value.Record.Validate(); err != nil {
@@ -284,6 +322,32 @@ func (value Review) Validate() error {
 	return ValidateRecordKey(uri.RecordKey().String())
 }
 
+// Validate checks deterministic identity and target-repository-owner authority.
+func (value ReviewRequest) Validate() error {
+	if err := value.ReviewRequestRecord.Validate(); err != nil {
+		return err
+	}
+	uri, err := validateEnvelope(value.URI, value.CID, value.AuthorDID, ReviewRequestCollection)
+	if err != nil {
+		return err
+	}
+	owner, err := RepositoryOwnerDID(value.TargetRepository.URI)
+	if err != nil {
+		return err
+	}
+	if owner != value.AuthorDID {
+		return &AuthorizationError{Err: errors.New("review request author is not target repository owner")}
+	}
+	wantRKey, err := ReviewRequestRecordKey(value.Subject.URI, value.ReviewerDID)
+	if err != nil {
+		return err
+	}
+	if uri.RecordKey().String() != wantRKey {
+		return &ValidationError{Field: "URI", Problem: "must use the deterministic review request record key"}
+	}
+	return nil
+}
+
 // RepositoryOwnerDID returns the canonical DID authority of a repository reference.
 func RepositoryOwnerDID(repositoryURI string) (string, error) {
 	uri, err := validateATURI(repositoryURI, repositoryCollection, "targetRepository.uri")
@@ -299,6 +363,18 @@ func StatusRecordKey(pullRequestURI string) (string, error) {
 		return "", err
 	}
 	digest := sha256.Sum256([]byte(StatusCollection + "\x00" + pullRequestURI))
+	return strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(digest[:])), nil
+}
+
+// ReviewRequestRecordKey derives the stable target-owner slot for one requested reviewer.
+func ReviewRequestRecordKey(pullRequestURI, reviewerDID string) (string, error) {
+	if _, err := validateATURI(pullRequestURI, Collection, "subject.uri"); err != nil {
+		return "", err
+	}
+	if err := validateDID(reviewerDID, "reviewer"); err != nil {
+		return "", err
+	}
+	digest := sha256.Sum256([]byte(ReviewRequestCollection + "\x00" + pullRequestURI + "\x00" + reviewerDID))
 	return strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(digest[:])), nil
 }
 
@@ -325,6 +401,14 @@ func ValidateCID(value string) error {
 	cid, err := syntax.ParseCID(value)
 	if err != nil || cid.String() != value || value != strings.ToLower(value) || !strings.HasPrefix(value, "b") {
 		return &ValidationError{Field: "CID", Problem: "must be a canonical CID"}
+	}
+	return nil
+}
+
+func validateDID(value, field string) error {
+	did, err := syntax.ParseDID(value)
+	if err != nil || did.String() != value {
+		return &ValidationError{Field: field, Problem: "must be a canonical DID"}
 	}
 	return nil
 }

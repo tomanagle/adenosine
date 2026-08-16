@@ -22,21 +22,24 @@ const (
 )
 
 type fakePullRequests struct {
-	projection        pullrequest.Projection
-	pullRequest       pullrequest.ProjectedPullRequest
-	created           pullrequest.PullRequest
-	diff              pullrequest.Result
-	reviews           []pullrequest.ProjectedReview
-	review            pullrequest.Review
-	status            pullrequest.Status
-	merge             pullrequest.MergeResult
-	err               error
-	operation, author string
-	createInput       pullrequest.CreateInput
-	reviewInput       pullrequest.ReviewInput
-	statusInput       pullrequest.StatusInput
-	mergeInput        pullrequest.MergeInput
-	calls             int
+	projection         pullrequest.Projection
+	pullRequest        pullrequest.ProjectedPullRequest
+	created            pullrequest.PullRequest
+	diff               pullrequest.Result
+	reviews            []pullrequest.ProjectedReview
+	review             pullrequest.Review
+	reviewRequests     pullrequest.ReviewRequestPage
+	reviewRequest      pullrequest.ReviewRequest
+	status             pullrequest.Status
+	merge              pullrequest.MergeResult
+	err                error
+	operation, author  string
+	createInput        pullrequest.CreateInput
+	reviewInput        pullrequest.ReviewInput
+	reviewRequestInput pullrequest.ReviewRequestInput
+	statusInput        pullrequest.StatusInput
+	mergeInput         pullrequest.MergeInput
+	calls              int
 }
 
 func (fake *fakePullRequests) List(context.Context, string) (pullrequest.Projection, error) {
@@ -69,6 +72,21 @@ func (fake *fakePullRequests) CreateReview(_ context.Context, did string, input 
 	fake.operation, fake.author, fake.reviewInput = "review", did, input
 	return fake.review, fake.err
 }
+func (fake *fakePullRequests) ReviewRequests(context.Context, string, string, string, int) (pullrequest.ReviewRequestPage, error) {
+	fake.calls++
+	fake.operation = "review requests"
+	return fake.reviewRequests, fake.err
+}
+func (fake *fakePullRequests) PutReviewRequest(_ context.Context, did string, input pullrequest.ReviewRequestInput) (pullrequest.ReviewRequest, error) {
+	fake.calls++
+	fake.operation, fake.author, fake.reviewRequestInput = "put review request", did, input
+	return fake.reviewRequest, fake.err
+}
+func (fake *fakePullRequests) DeleteReviewRequest(_ context.Context, did string, input pullrequest.ReviewRequestInput) error {
+	fake.calls++
+	fake.operation, fake.author, fake.reviewRequestInput = "delete review request", did, input
+	return fake.err
+}
 func (fake *fakePullRequests) PutStatus(_ context.Context, did string, input pullrequest.StatusInput) (pullrequest.Status, error) {
 	fake.calls++
 	fake.operation, fake.author, fake.statusInput = "status", did, input
@@ -89,6 +107,17 @@ func TestPullRequestEndpoints(t *testing.T) {
 	}}
 	projected := pullrequest.ProjectedPullRequest{PullRequest: base, State: pullrequest.StateOpen, ReviewCount: 1, IndexedAt: createdAt.Add(time.Minute)}
 	review := pullrequest.Review{URI: "at://did:plc:alice/dev.adenosine.pullRequestReview/review", CID: restIssueCID, AuthorDID: "did:plc:alice", ReviewRecord: pullrequest.ReviewRecord{Subject: pullrequest.StrongRef{URI: restPullRequestURI, CID: restIssueCID}, Verdict: pullrequest.VerdictApprove, Body: "ok", CreatedAt: createdAt, UpdatedAt: createdAt}}
+	reviewRequestRKey, err := pullrequest.ReviewRequestRecordKey(restPullRequestURI, "did:plc:reviewer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reviewRequest := pullrequest.ReviewRequest{
+		URI: "at://did:plc:alice/" + pullrequest.ReviewRequestCollection + "/" + reviewRequestRKey, CID: restIssueCID, AuthorDID: "did:plc:alice",
+		ReviewRequestRecord: pullrequest.ReviewRequestRecord{
+			Subject: pullrequest.StrongRef{URI: restPullRequestURI, CID: restIssueCID}, TargetRepository: base.TargetRepository,
+			ReviewerDID: "did:plc:reviewer", RequestedByDID: "did:plc:alice", CreatedAt: createdAt, UpdatedAt: createdAt,
+		},
+	}
 	status := pullrequest.Status{URI: "at://did:plc:alice/dev.adenosine.pullRequestStatus/status", CID: restIssueCID, AuthorDID: "did:plc:alice", StatusRecord: pullrequest.StatusRecord{Subject: pullrequest.StrongRef{URI: restPullRequestURI, CID: restIssueCID}, TargetRepository: base.TargetRepository, State: pullrequest.StateClosed, CreatedAt: createdAt, UpdatedAt: createdAt}}
 	diff := pullrequest.Result{HeadRef: "refs/adenosine/pull/key/head", MergeBase: strings.Repeat("b", 40), Diff: gitservice.Diff{BaseSHA: strings.Repeat("b", 40), HeadSHA: strings.Repeat("a", 40), Patch: "patch", Files: []gitservice.DiffFile{}}}
 	createBody := `{"source_repository_uri":"` + restPRSourceURI + `","target_repository_uri":"` + restPRTargetURI + `","source_branch":"feature","target_branch":"main","head_sha":"` + strings.Repeat("a", 40) + `","title":"title","body":"body"}`
@@ -102,8 +131,11 @@ func TestPullRequestEndpoints(t *testing.T) {
 		{name: "anonymous detail", method: http.MethodGet, path: "/api/v1/pull-requests/detail?pull_request_uri=" + restPullRequestURI, operation: "get", manager: &fakePullRequests{pullRequest: projected}, wantStatus: http.StatusOK, wantCalls: 1},
 		{name: "anonymous diff", method: http.MethodGet, path: "/api/v1/pull-requests/diff?pull_request_uri=" + restPullRequestURI, operation: "diff", manager: &fakePullRequests{diff: diff}, wantStatus: http.StatusOK, wantCalls: 1},
 		{name: "anonymous reviews", method: http.MethodGet, path: "/api/v1/pull-requests/reviews?pull_request_uri=" + restPullRequestURI, operation: "reviews", manager: &fakePullRequests{reviews: []pullrequest.ProjectedReview{{Review: review, IndexedAt: createdAt.Add(time.Minute)}}}, wantStatus: http.StatusOK, wantCalls: 1},
+		{name: "anonymous review requests", method: http.MethodGet, path: "/api/v1/pull-requests/review-requests?pull_request_uri=" + restPullRequestURI, operation: "review requests", manager: &fakePullRequests{reviewRequests: pullrequest.ReviewRequestPage{Items: []pullrequest.ProjectedReviewRequest{{ReviewRequest: reviewRequest, IndexedAt: createdAt.Add(time.Minute)}}}}, wantStatus: http.StatusOK, wantCalls: 1},
 		{name: "create derives session author", method: http.MethodPost, path: "/api/v1/pull-requests", body: createBody, operation: "create", session: true, manager: &fakePullRequests{created: base}, wantStatus: http.StatusAccepted, wantCalls: 1},
 		{name: "review derives session author", method: http.MethodPost, path: "/api/v1/pull-requests/reviews", body: `{"pull_request_uri":"` + restPullRequestURI + `","verdict":"approve","body":"ok"}`, operation: "review", session: true, manager: &fakePullRequests{review: review}, wantStatus: http.StatusAccepted, wantCalls: 1},
+		{name: "review request derives session author and path reviewer", method: http.MethodPut, path: "/api/v1/pull-requests/review-requests/did:plc:reviewer", body: `{"pull_request_uri":"` + restPullRequestURI + `"}`, operation: "put review request", session: true, manager: &fakePullRequests{reviewRequest: reviewRequest}, wantStatus: http.StatusAccepted, wantCalls: 1},
+		{name: "review request cancellation derives session author and path reviewer", method: http.MethodDelete, path: "/api/v1/pull-requests/review-requests/did:plc:reviewer?pull_request_uri=" + restPullRequestURI, operation: "delete review request", session: true, manager: &fakePullRequests{}, wantStatus: http.StatusAccepted, wantCalls: 1},
 		{name: "status derives target owner", method: http.MethodPut, path: "/api/v1/pull-requests/status", body: `{"pull_request_uri":"` + restPullRequestURI + `","state":"closed"}`, operation: "status", session: true, manager: &fakePullRequests{status: status}, wantStatus: http.StatusAccepted, wantCalls: 1},
 		{name: "merged generic status is rejected", method: http.MethodPut, path: "/api/v1/pull-requests/status", body: `{"pull_request_uri":"` + restPullRequestURI + `","state":"merged"}`, session: true, manager: &fakePullRequests{}, wantStatus: http.StatusUnprocessableEntity},
 		{name: "mutation rejects PAT", method: http.MethodPost, path: "/api/v1/pull-requests", body: createBody, pat: true, manager: &fakePullRequests{}, wantStatus: http.StatusForbidden, wantCode: "permission_denied"},
@@ -133,8 +165,11 @@ func TestPullRequestEndpoints(t *testing.T) {
 			if testCase.method == http.MethodGet && testCase.wantStatus == http.StatusOK && response.Header().Get("Vary") != "Cookie" {
 				t.Fatalf("Vary = %q, want Cookie", response.Header().Get("Vary"))
 			}
-			if testCase.wantStatus == http.StatusAccepted && (testCase.manager.author != "did:plc:alice" || !strings.Contains(response.Body.String(), `"projected":false`)) {
+			if testCase.wantStatus == http.StatusAccepted && testCase.manager.author != "did:plc:alice" {
 				t.Fatalf("mutation response/author = %s/%q", response.Body.String(), testCase.manager.author)
+			}
+			if testCase.wantStatus == http.StatusAccepted && response.Body.Len() > 0 && !strings.Contains(response.Body.String(), `"projected":false`) {
+				t.Fatalf("mutation response = %s", response.Body.String())
 			}
 			if testCase.name == "anonymous list" {
 				var body generated.PullRequestList
@@ -146,6 +181,17 @@ func TestPullRequestEndpoints(t *testing.T) {
 				var body generated.PullRequestDiff
 				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || body.MergeBase != diff.MergeBase || body.HeadRef != diff.HeadRef || body.Diff.Patch != "patch" {
 					t.Fatalf("diff response = %#v, %v", body, err)
+				}
+			}
+			if testCase.name == "anonymous review requests" {
+				var body generated.PullRequestReviewRequestList
+				if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil || len(body.Items) != 1 || body.Items[0].ReviewerDid != "did:plc:reviewer" || body.Items[0].RequestedByDid != "did:plc:alice" {
+					t.Fatalf("review request response = %#v, %v", body, err)
+				}
+			}
+			if strings.Contains(testCase.name, "review request derives") || strings.Contains(testCase.name, "review request cancellation") {
+				if testCase.manager.reviewRequestInput.PullRequestURI != restPullRequestURI || testCase.manager.reviewRequestInput.ReviewerDID != "did:plc:reviewer" {
+					t.Fatalf("review request input = %#v", testCase.manager.reviewRequestInput)
 				}
 			}
 			if testCase.wantCode != "" {

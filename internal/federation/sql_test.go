@@ -211,6 +211,36 @@ func TestFederationSQLGuardsReplayAndAtomicStateShape(t *testing.T) {
 				"-- name: GetProjectedPullRequestStatusTarget :one",
 			},
 		},
+		{
+			name: "pull request review request migration",
+			path: "../../migrations/000023_pull_request_review_requests.sql",
+			required: []string{
+				"CREATE TABLE network.pull_request_review_requests",
+				"pull_request_cid       TEXT NOT NULL",
+				"target_repository_uri  TEXT NOT NULL",
+				"reviewer_did           TEXT NOT NULL",
+				"requested_by_did       TEXT NOT NULL",
+				"network_pull_request_review_requests_subject_idx",
+				"network_pull_request_review_requests_reviewer_idx",
+			},
+			forbidden: []string{"REFERENCES network.pull_requests", "REFERENCES network.repositories"},
+		},
+		{
+			name: "review request projection is authoritative moderated and keyset paginated",
+			path: "../database/queries/federation.sql",
+			required: []string{
+				"-- name: PageProjectedPullRequestReviewRequests :many",
+				"pull_request.cid = request.pull_request_cid",
+				"(request.record_updated_at, request.uri) <",
+				"FROM moderation.blocked_dids AS block",
+				"FROM moderation.hidden_records AS hidden",
+				"-- name: PullRequestReviewRequestModerationAllowed :one",
+				"-- name: UpsertFederationPullRequestReviewRequest :one",
+				"network.pull_request_review_requests.author_did = EXCLUDED.author_did",
+				"network.pull_request_review_requests.target_repository_uri = EXCLUDED.target_repository_uri",
+				"-- name: TombstoneFederationPullRequestReviewRequest :one",
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {

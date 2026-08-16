@@ -526,6 +526,24 @@ type NetworkPullRequestReview struct {
 	SourceEventID   int64              `json:"source_event_id"`
 }
 
+type NetworkPullRequestReviewRequest struct {
+	Uri                 string             `json:"uri"`
+	Cid                 pgtype.Text        `json:"cid"`
+	AuthorDid           string             `json:"author_did"`
+	Rkey                string             `json:"rkey"`
+	PullRequestUri      string             `json:"pull_request_uri"`
+	PullRequestCid      string             `json:"pull_request_cid"`
+	TargetRepositoryUri string             `json:"target_repository_uri"`
+	TargetRepositoryCid string             `json:"target_repository_cid"`
+	ReviewerDid         string             `json:"reviewer_did"`
+	RequestedByDid      string             `json:"requested_by_did"`
+	RecordCreatedAt     pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt     pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt           pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt           pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID       int64              `json:"source_event_id"`
+}
+
 type NetworkPullRequestStatus struct {
 	Uri                 string             `json:"uri"`
 	Cid                 pgtype.Text        `json:"cid"`

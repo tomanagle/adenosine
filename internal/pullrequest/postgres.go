@@ -9,6 +9,7 @@ import (
 	dbgen "github.com/adenosine-dev/adenosine/internal/database/generated"
 	"github.com/adenosine-dev/adenosine/internal/repository"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // PostgresStore reads live projected pull request fetch targets.
@@ -89,6 +90,43 @@ func (store *PostgresStore) GetReviewTarget(ctx context.Context, pullRequestURI 
 		return StrongRef{}, fmt.Errorf("query projected pull request review target: %w", err)
 	}
 	return StrongRef{URI: row.Uri, CID: row.Cid.String}, nil
+}
+
+func (store *PostgresStore) PageReviewRequests(ctx context.Context, pullRequestURI, viewerDID string, afterTime time.Time, afterURI string, limit int) ([]ProjectedReviewRequest, error) {
+	rows, err := store.queries.PageProjectedPullRequestReviewRequests(ctx, dbgen.PageProjectedPullRequestReviewRequestsParams{
+		PullRequestUri: pullRequestURI, ViewerDid: optionalText(viewerDID), AfterTime: optionalTime(afterTime),
+		AfterUri: optionalText(afterURI), ResultLimit: int32(limit),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("query projected review requests: %w", err)
+	}
+	values := make([]ProjectedReviewRequest, len(rows))
+	for index, row := range rows {
+		values[index] = ProjectedReviewRequest{ReviewRequest: ReviewRequest{
+			URI: row.Uri, CID: row.Cid.String, AuthorDID: row.AuthorDid, ReviewRequestRecord: ReviewRequestRecord{
+				Subject:          StrongRef{URI: row.PullRequestUri, CID: row.PullRequestCid},
+				TargetRepository: StrongRef{URI: row.TargetRepositoryUri, CID: row.TargetRepositoryCid},
+				ReviewerDID:      row.ReviewerDid, RequestedByDID: row.RequestedByDid,
+				CreatedAt: row.RecordCreatedAt.Time, UpdatedAt: row.RecordUpdatedAt.Time,
+			},
+		}, IndexedAt: row.IndexedAt.Time}
+	}
+	return values, nil
+}
+
+func (store *PostgresStore) ReviewRequestModerationAllowed(ctx context.Context, actorDID, reviewerDID, pullRequestURI, repositoryURI string) (bool, error) {
+	allowed, err := store.queries.PullRequestReviewRequestModerationAllowed(ctx, dbgen.PullRequestReviewRequestModerationAllowedParams{
+		ActorDid: actorDID, ReviewerDid: reviewerDID, PullRequestUri: pullRequestURI, RepositoryUri: repositoryURI,
+	})
+	return allowed.Valid && allowed.Bool, err
+}
+
+func optionalText(value string) pgtype.Text {
+	return pgtype.Text{String: value, Valid: value != ""}
+}
+
+func optionalTime(value time.Time) pgtype.Timestamptz {
+	return pgtype.Timestamptz{Time: value.UTC(), Valid: !value.IsZero()}
 }
 
 func (store *PostgresStore) GetStatusTarget(ctx context.Context, pullRequestURI string) (statusTarget, error) {
