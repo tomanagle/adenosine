@@ -1,22 +1,11 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { AppShell } from './app-shell'
 import { notificationsQueryOptions } from '@/features/notifications/queries'
-
-vi.mock('@adenosine/api-client', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@adenosine/api-client')>()),
-  logout: vi.fn(),
-}))
-
-vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
-  useNavigate: () => vi.fn(),
-}))
+import { createTestQueryClient, renderWithAppProviders } from '@/test/render'
 
 afterEach(cleanup)
 
@@ -40,17 +29,16 @@ describe('AppShell', () => {
 
   for (const testCase of testCases) {
     it(testCase.name, () => {
-      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      const client = createTestQueryClient()
       client.setQueryData(notificationsQueryOptions(true).queryKey, {
         items: [],
         page: { next_cursor: null },
       })
-      const { container } = render(
-        <QueryClientProvider client={client}>
-          <AppShell identity={testCase.identity}>
-            <main>Page content</main>
-          </AppShell>
-        </QueryClientProvider>,
+      const { container } = renderWithAppProviders(
+        <AppShell identity={testCase.identity}>
+          <main>Page content</main>
+        </AppShell>,
+        { queryClient: client },
       )
 
       const brandMarks = container.querySelectorAll('picture img')

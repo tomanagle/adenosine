@@ -1,5 +1,10 @@
 import type { StarEnvelope, StarList } from '@adenosine/api-client'
 
+export type OptimisticStarState = {
+  starCount: number
+  starred: boolean
+}
+
 export function optimisticStarState({
   deleting,
   putting,
@@ -10,7 +15,7 @@ export function optimisticStarState({
   putting: boolean
   starCount: number
   starred: boolean
-}): { starCount: number; starred: boolean } {
+}): OptimisticStarState {
   if (putting && !starred) return { starCount: starCount + 1, starred: true }
   if (deleting && starred) return { starCount: Math.max(0, starCount - 1), starred: false }
   return { starCount, starred }
