@@ -46,7 +46,7 @@ type shapeDefinition struct {
 var shapes = map[Shape]shapeDefinition{
 	Repositories: {
 		table:        "network.repositories",
-		columns:      "uri,cid,owner_did,slug,name,description,default_branch,git_https,git_ssh,web,forked_from_uri,forked_from_cid,record_created_at,record_updated_at,indexed_at,star_count,issue_count,open_issue_count,comment_count,pull_request_count,open_pull_request_count,fork_count",
+		columns:      "uri,cid,owner_did,slug,name,description,default_branch,git_https,git_ssh,web,forked_from_uri,forked_from_cid,transferred_from_uri,transferred_from_cid,transferred_to_uri,transferred_to_cid,lineage_uri,canonical_uri,record_created_at,record_updated_at,indexed_at,star_count,issue_count,open_issue_count,comment_count,pull_request_count,open_pull_request_count,fork_count",
 		where:        "deleted_at IS NULL AND cid IS NOT NULL",
 		actorColumn:  "owner_did",
 		recordColumn: "uri",

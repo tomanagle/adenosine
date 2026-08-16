@@ -436,18 +436,19 @@ services:
     build:
       context: ..
       dockerfile: dev/Dockerfile
-      target: dev-go
+      target: federation-test
     entrypoint: []
     working_dir: /workspace
-    command: ["go", "run", "./test/federation", "-phase=seed"]
+    command: ["federation-acceptance", "-phase=seed"]
     environment:
       ADENOSINE_A_URL: http://adenosine-a:8080
       ADENOSINE_B_URL: http://adenosine-b:8080
       ADENOSINE_TAP_ADMIN_PASSWORD: federation-test-secret
+      DATABASE_URL: postgres://adenosine:federation-a@postgres-a:5432/adenosine?sslmode=disable
       GIT_SSL_CAINFO: /caddy-data/caddy/pki/authorities/local/root.crt
     volumes:
       - federation_caddy_data_a:/caddy-data:ro
-    networks: [federation-http-a, federation-http-b]
+    networks: [federation-data-a, federation-http-a, federation-http-b]
     depends_on:
       adenosine-a:
         condition: service_healthy

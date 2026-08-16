@@ -35,6 +35,8 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/storage"
 	"github.com/adenosine-dev/adenosine/internal/syncproxy"
+	"github.com/adenosine-dev/adenosine/internal/transfer"
+	"github.com/adenosine-dev/adenosine/internal/triage"
 	"github.com/adenosine-dev/adenosine/internal/webhook"
 )
 
@@ -75,7 +77,16 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		oauthClient,
 		repositoryEndpoints,
 	)
+	repositoryTransfers := transfer.NewService(
+		transfer.NewPostgresStore(db.Queries()),
+		oauthClient,
+		oauthClient,
+		repositoryEndpoints,
+		auth.UUIDv7Generator{},
+		auth.SystemClock{},
+	)
 	authStore := auth.NewPostgresStore(db.Queries())
+	repositoryTriage := triage.NewService(triage.NewPostgresStore(db.Queries()), oauthClient, authStore, atproto.SystemClock{})
 	clock := auth.SystemClock{}
 	sessionService := auth.NewSessionService(authStore, clock, auth.UUIDv7Generator{}, auth.RandomSessionSecretGenerator{}, cfg.SessionLifetime)
 	passkeys := passkey.Must(cfg.BaseURL, passkey.NewPostgresStore(db.Queries()), sessionService, auth.SystemClock{}, auth.UUIDv7Generator{}, passkey.RandomSecretGenerator{})
@@ -150,6 +161,8 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		Collaborators:               organizationCollaborators,
 		Federation:                  federationDependencies,
 		Repositories:                repositories,
+		Transfers:                   repositoryTransfers,
+		Triage:                      repositoryTriage,
 		Endpoints:                   repositoryEndpoints,
 		Discovery:                   discovery,
 		Search:                      searchService,

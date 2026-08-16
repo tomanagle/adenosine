@@ -1,0 +1,23 @@
+{
+  "lexicon": 1,
+  "id": "dev.adenosine.repositoryTransfer",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A current repository owner proposes transferring a specific repository record to another owner.",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["repository", "destinationDID", "destinationOwner", "createdAt", "expiresAt"],
+        "properties": {
+          "repository": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+          "destinationDID": { "type": "string", "format": "did" },
+          "destinationOrganization": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+          "destinationOwner": { "type": "string", "maxLength": 253, "maxGraphemes": 253 },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "expiresAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

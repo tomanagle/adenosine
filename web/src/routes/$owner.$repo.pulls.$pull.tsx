@@ -1,11 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { decodeRecordIdentity } from '@/features/collaboration/identity'
+import { decodeRecordIdentity, encodeRecordIdentity } from '@/features/collaboration/identity'
 import { PullRequestPage } from '@/features/collaboration/pages'
 import { shouldLoadVerifiedPullRequestDiff } from '@/features/collaboration/remote-pr'
 import {
   pullRequestDiffQueryOptions,
   pullRequestQueryOptions,
+  pullRequestTriageQueryOptions,
+  repositoryLabelsQueryOptions,
+  repositoryMilestonesQueryOptions,
   reviewsQueryOptions,
 } from '@/features/collaboration/queries'
 import { RepositoryError, RepositoryPending } from '@/features/repository-browser/states'
@@ -19,6 +22,13 @@ export const Route = createFileRoute('/$owner/$repo/pulls/$pull')({
     const reads: Array<Promise<unknown>> = [
       context.queryClient.ensureQueryData(pullRequestQueryOptions(params.pull)),
       context.queryClient.ensureQueryData(reviewsQueryOptions(params.pull)),
+      context.queryClient.ensureQueryData(
+        pullRequestTriageQueryOptions(params.owner, params.repo, encodeRecordIdentity(params.pull)),
+      ),
+      context.queryClient.ensureQueryData(repositoryLabelsQueryOptions(params.owner, params.repo)),
+      context.queryClient.ensureQueryData(
+        repositoryMilestonesQueryOptions(params.owner, params.repo),
+      ),
     ]
     if (shouldLoadVerifiedPullRequestDiff(repository.hosting.source_browsing))
       reads.push(context.queryClient.ensureQueryData(pullRequestDiffQueryOptions(params.pull)))

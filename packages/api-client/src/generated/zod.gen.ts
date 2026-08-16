@@ -595,6 +595,124 @@ export const zRepository = z.object({
     updated_at: z.iso.datetime({ offset: true })
 });
 
+export const zCreateRepositoryTransferRequest = z.object({
+    destination_owner: z.string().min(1).max(253)
+});
+
+export const zRepositoryTransfer = z.object({
+    id: z.uuid(),
+    repository_id: z.uuid(),
+    source_owner: z.string(),
+    destination_owner: z.string(),
+    source_repository: zRepositoryStrongRef.optional(),
+    proposal: zRepositoryStrongRef.optional(),
+    successor: zRepositoryStrongRef.optional(),
+    acceptance: zRepositoryStrongRef.optional(),
+    status: z.enum([
+        'pending',
+        'completed',
+        'cancelled'
+    ]),
+    created_at: z.iso.datetime({ offset: true }),
+    expires_at: z.iso.datetime({ offset: true }),
+    acceptance_started_at: z.iso.datetime({ offset: true }).nullish(),
+    accepted_at: z.iso.datetime({ offset: true }).nullish(),
+    accepted_by: z.string().nullish(),
+    cancelled_at: z.iso.datetime({ offset: true }).nullish()
+});
+
+export const zRepositoryLabel = z.object({
+    id: z.string(),
+    uri: z.string(),
+    cid: z.string(),
+    author_did: z.string(),
+    repository_uri: z.string(),
+    repository_cid: z.string(),
+    name: z.string().min(1).max(50),
+    color: z.string().regex(/^[0-9a-f]{6}$/),
+    description: z.string().max(255),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true }),
+    indexed_at: z.iso.datetime({ offset: true }).nullable()
+});
+
+export const zRepositoryLabelInput = z.object({
+    name: z.string().min(1).max(50),
+    color: z.string().regex(/^#?[0-9A-Fa-f]{6}$/),
+    description: z.string().max(255)
+});
+
+export const zRepositoryLabelMutation = z.object({
+    label: zRepositoryLabel,
+    projected: z.literal(false)
+});
+
+export const zRepositoryMilestone = z.object({
+    id: z.string(),
+    uri: z.string(),
+    cid: z.string(),
+    author_did: z.string(),
+    repository_uri: z.string(),
+    repository_cid: z.string(),
+    title: z.string().min(1).max(255),
+    description: z.string().max(65535),
+    state: z.enum(['open', 'closed']),
+    due_at: z.iso.datetime({ offset: true }).nullable(),
+    closed_at: z.iso.datetime({ offset: true }).nullable(),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true }),
+    indexed_at: z.iso.datetime({ offset: true }).nullable()
+});
+
+export const zRepositoryMilestoneInput = z.object({
+    title: z.string().min(1).max(255),
+    description: z.string().max(65535),
+    state: z.enum(['open', 'closed']),
+    due_at: z.iso.datetime({ offset: true }).nullable()
+});
+
+export const zRepositoryMilestoneMutation = z.object({
+    milestone: zRepositoryMilestone,
+    projected: z.literal(false)
+});
+
+export const zTriageAssignee = z.object({
+    did: z.string(),
+    handle: z.string(),
+    display_name: z.string()
+});
+
+export const zSubjectTriageInput = z.object({
+    label_ids: z.array(z.string().min(1).max(512)).max(20),
+    assignee_dids: z.array(z.string().min(1).max(2048)).max(10),
+    milestone_id: z.string().min(1).max(512).nullable()
+});
+
+export const zSubjectTriage = z.object({
+    uri: z.string().nullable(),
+    cid: z.string().nullable(),
+    author_did: z.string().nullable(),
+    subject_uri: z.string(),
+    subject_cid: z.string(),
+    subject_kind: z.enum(['issue', 'pull_request']),
+    repository_uri: z.string(),
+    repository_cid: z.string(),
+    label_ids: z.array(z.string()).max(20),
+    assignee_dids: z.array(z.string()).max(10),
+    milestone_id: z.string().nullable(),
+    labels: z.array(zRepositoryLabel).max(20),
+    assignees: z.array(zTriageAssignee).max(10),
+    milestone: zRepositoryMilestone.nullable(),
+    created_at: z.iso.datetime({ offset: true }).nullable(),
+    updated_at: z.iso.datetime({ offset: true }).nullable(),
+    indexed_at: z.iso.datetime({ offset: true }).nullable()
+});
+
+export const zSubjectTriageMutation = z.object({
+    triage: zSubjectTriage,
+    projected: z.literal(false)
+});
+
 /**
  * Flat approved network.repositories projection materialized from Electric insert rows. This is intentionally distinct from the nested REST Repository model.
  */
@@ -611,6 +729,12 @@ export const zSyncRepository = z.object({
     web: z.string().nullish(),
     forked_from_uri: z.string().nullish(),
     forked_from_cid: z.string().nullish(),
+    transferred_from_uri: z.string().nullish(),
+    transferred_from_cid: z.string().nullish(),
+    transferred_to_uri: z.string().nullish(),
+    transferred_to_cid: z.string().nullish(),
+    lineage_uri: z.string(),
+    canonical_uri: z.string(),
     record_created_at: z.iso.datetime({ offset: true }).nullish(),
     record_updated_at: z.iso.datetime({ offset: true }).nullish(),
     indexed_at: z.iso.datetime({ offset: true }),
@@ -1265,6 +1389,21 @@ export const zRepositoryForkList = z.object({
     fork_count: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' })
 });
 
+export const zRepositoryTransferList = z.object({
+    items: z.array(zRepositoryTransfer),
+    page: zPage
+});
+
+export const zRepositoryLabelList = z.object({
+    items: z.array(zRepositoryLabel).max(100),
+    page: zPage
+});
+
+export const zRepositoryMilestoneList = z.object({
+    items: z.array(zRepositoryMilestone).max(100),
+    page: zPage
+});
+
 export const zNetworkRepositoryList = z.object({
     items: z.array(zRepository),
     page: zPage
@@ -1336,6 +1475,50 @@ export const zOrganizationSlug2 = zOrganizationSlug;
 export const zRepositoryOwnerPath = z.string().min(1);
 
 export const zRepositorySlugPath = zRepositorySlug;
+
+/**
+ * Stable AT Protocol record key for a repository label.
+ */
+export const zLabelPath = z.string().min(1).max(512).regex(/^[A-Za-z0-9._:~-]+$/);
+
+/**
+ * Stable AT Protocol record key for a repository milestone.
+ */
+export const zMilestonePath = z.string().min(1).max(512).regex(/^[A-Za-z0-9._:~-]+$/);
+
+/**
+ * Unpadded base64url encoding of the issue or pull-request AT URI.
+ */
+export const zSubjectPath = z.string().min(1).max(4096).regex(/^[A-Za-z0-9_-]+$/);
+
+/**
+ * Filter by effective repository-authoritative issue state.
+ */
+export const zIssueStateFilter = z.enum(['open', 'closed']);
+
+/**
+ * Filter by effective target-repository-authoritative pull request state.
+ */
+export const zPullRequestStateFilter = z.enum([
+    'open',
+    'closed',
+    'merged'
+]);
+
+/**
+ * Filter by stable repository label record key.
+ */
+export const zLabelFilter = z.string().min(1).max(512);
+
+/**
+ * Filter by canonical assignee DID.
+ */
+export const zAssigneeFilter = z.string().min(1).max(2048);
+
+/**
+ * Filter by stable repository milestone record key.
+ */
+export const zMilestoneFilter = z.string().min(1).max(512);
 
 export const zRepositoryUri = z.string().min(1);
 
@@ -1956,6 +2139,286 @@ export const zSyncRepositoryForkPath = z.object({
  */
 export const zSyncRepositoryForkResponse = zRepositoryForkSync;
 
+export const zListRepositoryTransfersPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+export const zListRepositoryTransfersQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * A cursor page of repository transfers
+ */
+export const zListRepositoryTransfersResponse = zRepositoryTransferList;
+
+export const zCreateRepositoryTransferBody = zCreateRepositoryTransferRequest;
+
+export const zCreateRepositoryTransferHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zCreateRepositoryTransferPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+/**
+ * Transfer proposal created or resumed
+ */
+export const zCreateRepositoryTransferResponse = zRepositoryTransfer;
+
+export const zDeleteRepositoryTransferHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zDeleteRepositoryTransferPath = z.object({
+    transfer: z.uuid()
+});
+
+/**
+ * Transfer cancelled
+ */
+export const zDeleteRepositoryTransferResponse = z.void();
+
+export const zGetRepositoryTransferPath = z.object({
+    transfer: z.uuid()
+});
+
+/**
+ * Repository transfer state
+ */
+export const zGetRepositoryTransferResponse = zRepositoryTransfer;
+
+export const zCreateRepositoryTransferAcceptanceHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zCreateRepositoryTransferAcceptancePath = z.object({
+    transfer: z.uuid()
+});
+
+/**
+ * Transfer completed
+ */
+export const zCreateRepositoryTransferAcceptanceResponse = zRepositoryTransfer;
+
+export const zListRepositoryLabelsPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+export const zListRepositoryLabelsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * A cursor page of labels
+ */
+export const zListRepositoryLabelsResponse = zRepositoryLabelList;
+
+export const zCreateRepositoryLabelBody = zRepositoryLabelInput;
+
+export const zCreateRepositoryLabelHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zCreateRepositoryLabelPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+/**
+ * Label published; projection update is pending
+ */
+export const zCreateRepositoryLabelResponse = zRepositoryLabelMutation;
+
+export const zDeleteRepositoryLabelHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zDeleteRepositoryLabelPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    label: z.string().min(1).max(512).regex(/^[A-Za-z0-9._:~-]+$/)
+});
+
+export const zGetRepositoryLabelPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    label: z.string().min(1).max(512).regex(/^[A-Za-z0-9._:~-]+$/)
+});
+
+/**
+ * Repository label
+ */
+export const zGetRepositoryLabelResponse = zRepositoryLabel;
+
+export const zUpdateRepositoryLabelBody = zRepositoryLabelInput;
+
+export const zUpdateRepositoryLabelHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zUpdateRepositoryLabelPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    label: z.string().min(1).max(512).regex(/^[A-Za-z0-9._:~-]+$/)
+});
+
+/**
+ * Label update published; projection update is pending
+ */
+export const zUpdateRepositoryLabelResponse = zRepositoryLabelMutation;
+
+export const zListRepositoryMilestonesPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+export const zListRepositoryMilestonesQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * A cursor page of milestones
+ */
+export const zListRepositoryMilestonesResponse = zRepositoryMilestoneList;
+
+export const zCreateRepositoryMilestoneBody = zRepositoryMilestoneInput;
+
+export const zCreateRepositoryMilestoneHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zCreateRepositoryMilestonePath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+/**
+ * Milestone published; projection update is pending
+ */
+export const zCreateRepositoryMilestoneResponse = zRepositoryMilestoneMutation;
+
+export const zDeleteRepositoryMilestoneHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zDeleteRepositoryMilestonePath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    milestone: z.string().min(1).max(512).regex(/^[A-Za-z0-9._:~-]+$/)
+});
+
+export const zGetRepositoryMilestonePath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    milestone: z.string().min(1).max(512).regex(/^[A-Za-z0-9._:~-]+$/)
+});
+
+/**
+ * Repository milestone
+ */
+export const zGetRepositoryMilestoneResponse = zRepositoryMilestone;
+
+export const zUpdateRepositoryMilestoneBody = zRepositoryMilestoneInput;
+
+export const zUpdateRepositoryMilestoneHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zUpdateRepositoryMilestonePath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    milestone: z.string().min(1).max(512).regex(/^[A-Za-z0-9._:~-]+$/)
+});
+
+/**
+ * Milestone update published; projection update is pending
+ */
+export const zUpdateRepositoryMilestoneResponse = zRepositoryMilestoneMutation;
+
+export const zDeleteIssueTriageHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zDeleteIssueTriagePath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    subject: z.string().min(1).max(4096).regex(/^[A-Za-z0-9_-]+$/)
+});
+
+export const zGetIssueTriagePath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    subject: z.string().min(1).max(4096).regex(/^[A-Za-z0-9_-]+$/)
+});
+
+/**
+ * Issue triage metadata
+ */
+export const zGetIssueTriageResponse = zSubjectTriage;
+
+export const zPutIssueTriageBody = zSubjectTriageInput;
+
+export const zPutIssueTriageHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zPutIssueTriagePath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    subject: z.string().min(1).max(4096).regex(/^[A-Za-z0-9_-]+$/)
+});
+
+/**
+ * Issue triage published; projection update is pending
+ */
+export const zPutIssueTriageResponse = zSubjectTriageMutation;
+
+export const zDeletePullRequestTriageHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zDeletePullRequestTriagePath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    subject: z.string().min(1).max(4096).regex(/^[A-Za-z0-9_-]+$/)
+});
+
+export const zGetPullRequestTriagePath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    subject: z.string().min(1).max(4096).regex(/^[A-Za-z0-9_-]+$/)
+});
+
+/**
+ * Pull request triage metadata
+ */
+export const zGetPullRequestTriageResponse = zSubjectTriage;
+
+export const zPutPullRequestTriageBody = zSubjectTriageInput;
+
+export const zPutPullRequestTriageHeaders = z.object({
+    Origin: z.url().optional()
+});
+
+export const zPutPullRequestTriagePath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug,
+    subject: z.string().min(1).max(4096).regex(/^[A-Za-z0-9_-]+$/)
+});
+
+/**
+ * Pull request triage published; projection update is pending
+ */
+export const zPutPullRequestTriageResponse = zSubjectTriageMutation;
+
 export const zDeleteStarHeaders = z.object({
     Origin: z.url().optional()
 });
@@ -1990,6 +2453,10 @@ export const zPutStarResponse = zStarMutation;
 
 export const zGetIssuesQuery = z.object({
     repository_uri: z.string().min(1),
+    state: z.enum(['open', 'closed']).optional(),
+    label: z.string().min(1).max(512).optional(),
+    assignee: z.string().min(1).max(2048).optional(),
+    milestone: z.string().min(1).max(512).optional(),
     limit: z.int().gte(1).lte(100).optional().default(30),
     cursor: z.string().optional()
 });
@@ -2063,6 +2530,14 @@ export const zCreateIssueCommentResponse = zCommentMutation;
 
 export const zListPullRequestsQuery = z.object({
     repository_uri: z.string().min(1),
+    state: z.enum([
+        'open',
+        'closed',
+        'merged'
+    ]).optional(),
+    label: z.string().min(1).max(512).optional(),
+    assignee: z.string().min(1).max(2048).optional(),
+    milestone: z.string().min(1).max(512).optional(),
     limit: z.int().gte(1).lte(100).optional().default(30),
     cursor: z.string().optional()
 });

@@ -112,19 +112,19 @@ func (e CheckRunConclusion) Valid() bool {
 
 // Defines values for CheckRunStatus.
 const (
-	Completed  CheckRunStatus = "completed"
-	InProgress CheckRunStatus = "in_progress"
-	Queued     CheckRunStatus = "queued"
+	CheckRunStatusCompleted  CheckRunStatus = "completed"
+	CheckRunStatusInProgress CheckRunStatus = "in_progress"
+	CheckRunStatusQueued     CheckRunStatus = "queued"
 )
 
 // Valid indicates whether the value is a known member of the CheckRunStatus enum.
 func (e CheckRunStatus) Valid() bool {
 	switch e {
-	case Completed:
+	case CheckRunStatusCompleted:
 		return true
-	case InProgress:
+	case CheckRunStatusInProgress:
 		return true
-	case Queued:
+	case CheckRunStatusQueued:
 		return true
 	default:
 		return false
@@ -1016,6 +1016,72 @@ func (e RepositoryHostingSourceBrowsing) Valid() bool {
 	}
 }
 
+// Defines values for RepositoryLabelMutationProjected.
+const (
+	RepositoryLabelMutationProjectedFalse RepositoryLabelMutationProjected = false
+)
+
+// Valid indicates whether the value is a known member of the RepositoryLabelMutationProjected enum.
+func (e RepositoryLabelMutationProjected) Valid() bool {
+	switch e {
+	case RepositoryLabelMutationProjectedFalse:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RepositoryMilestoneState.
+const (
+	RepositoryMilestoneStateClosed RepositoryMilestoneState = "closed"
+	RepositoryMilestoneStateOpen   RepositoryMilestoneState = "open"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryMilestoneState enum.
+func (e RepositoryMilestoneState) Valid() bool {
+	switch e {
+	case RepositoryMilestoneStateClosed:
+		return true
+	case RepositoryMilestoneStateOpen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RepositoryMilestoneInputState.
+const (
+	RepositoryMilestoneInputStateClosed RepositoryMilestoneInputState = "closed"
+	RepositoryMilestoneInputStateOpen   RepositoryMilestoneInputState = "open"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryMilestoneInputState enum.
+func (e RepositoryMilestoneInputState) Valid() bool {
+	switch e {
+	case RepositoryMilestoneInputStateClosed:
+		return true
+	case RepositoryMilestoneInputStateOpen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RepositoryMilestoneMutationProjected.
+const (
+	RepositoryMilestoneMutationProjectedFalse RepositoryMilestoneMutationProjected = false
+)
+
+// Valid indicates whether the value is a known member of the RepositoryMilestoneMutationProjected enum.
+func (e RepositoryMilestoneMutationProjected) Valid() bool {
+	switch e {
+	case RepositoryMilestoneMutationProjectedFalse:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RepositoryOwnerKind.
 const (
 	RepositoryOwnerKindAccount      RepositoryOwnerKind = "account"
@@ -1028,6 +1094,27 @@ func (e RepositoryOwnerKind) Valid() bool {
 	case RepositoryOwnerKindAccount:
 		return true
 	case RepositoryOwnerKindOrganization:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RepositoryTransferStatus.
+const (
+	RepositoryTransferStatusCancelled RepositoryTransferStatus = "cancelled"
+	RepositoryTransferStatusCompleted RepositoryTransferStatus = "completed"
+	RepositoryTransferStatusPending   RepositoryTransferStatus = "pending"
+)
+
+// Valid indicates whether the value is a known member of the RepositoryTransferStatus enum.
+func (e RepositoryTransferStatus) Valid() bool {
+	switch e {
+	case RepositoryTransferStatusCancelled:
+		return true
+	case RepositoryTransferStatusCompleted:
+		return true
+	case RepositoryTransferStatusPending:
 		return true
 	default:
 		return false
@@ -1051,13 +1138,46 @@ func (e RepositoryWebhookHasSecret) Valid() bool {
 
 // Defines values for StarMutationProjected.
 const (
-	False StarMutationProjected = false
+	StarMutationProjectedFalse StarMutationProjected = false
 )
 
 // Valid indicates whether the value is a known member of the StarMutationProjected enum.
 func (e StarMutationProjected) Valid() bool {
 	switch e {
-	case False:
+	case StarMutationProjectedFalse:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SubjectTriageSubjectKind.
+const (
+	SubjectTriageSubjectKindIssue       SubjectTriageSubjectKind = "issue"
+	SubjectTriageSubjectKindPullRequest SubjectTriageSubjectKind = "pull_request"
+)
+
+// Valid indicates whether the value is a known member of the SubjectTriageSubjectKind enum.
+func (e SubjectTriageSubjectKind) Valid() bool {
+	switch e {
+	case SubjectTriageSubjectKindIssue:
+		return true
+	case SubjectTriageSubjectKindPullRequest:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SubjectTriageMutationProjected.
+const (
+	SubjectTriageMutationProjectedFalse SubjectTriageMutationProjected = false
+)
+
+// Valid indicates whether the value is a known member of the SubjectTriageMutationProjected enum.
+func (e SubjectTriageMutationProjected) Valid() bool {
+	switch e {
+	case SubjectTriageMutationProjectedFalse:
 		return true
 	default:
 		return false
@@ -1304,6 +1424,45 @@ func (e ElectricReplica) Valid() bool {
 	}
 }
 
+// Defines values for IssueStateFilter.
+const (
+	IssueStateFilterClosed IssueStateFilter = "closed"
+	IssueStateFilterOpen   IssueStateFilter = "open"
+)
+
+// Valid indicates whether the value is a known member of the IssueStateFilter enum.
+func (e IssueStateFilter) Valid() bool {
+	switch e {
+	case IssueStateFilterClosed:
+		return true
+	case IssueStateFilterOpen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PullRequestStateFilter.
+const (
+	PullRequestStateFilterClosed PullRequestStateFilter = "closed"
+	PullRequestStateFilterMerged PullRequestStateFilter = "merged"
+	PullRequestStateFilterOpen   PullRequestStateFilter = "open"
+)
+
+// Valid indicates whether the value is a known member of the PullRequestStateFilter enum.
+func (e PullRequestStateFilter) Valid() bool {
+	switch e {
+	case PullRequestStateFilterClosed:
+		return true
+	case PullRequestStateFilterMerged:
+		return true
+	case PullRequestStateFilterOpen:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SearchSort.
 const (
 	SearchSortRecent    SearchSort = "recent"
@@ -1316,6 +1475,45 @@ func (e SearchSort) Valid() bool {
 	case SearchSortRecent:
 		return true
 	case SearchSortRelevance:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for GetIssuesParamsState.
+const (
+	GetIssuesParamsStateClosed GetIssuesParamsState = "closed"
+	GetIssuesParamsStateOpen   GetIssuesParamsState = "open"
+)
+
+// Valid indicates whether the value is a known member of the GetIssuesParamsState enum.
+func (e GetIssuesParamsState) Valid() bool {
+	switch e {
+	case GetIssuesParamsStateClosed:
+		return true
+	case GetIssuesParamsStateOpen:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListPullRequestsParamsState.
+const (
+	ListPullRequestsParamsStateClosed ListPullRequestsParamsState = "closed"
+	ListPullRequestsParamsStateMerged ListPullRequestsParamsState = "merged"
+	ListPullRequestsParamsStateOpen   ListPullRequestsParamsState = "open"
+)
+
+// Valid indicates whether the value is a known member of the ListPullRequestsParamsState enum.
+func (e ListPullRequestsParamsState) Valid() bool {
+	switch e {
+	case ListPullRequestsParamsStateClosed:
+		return true
+	case ListPullRequestsParamsStateMerged:
+		return true
+	case ListPullRequestsParamsStateOpen:
 		return true
 	default:
 		return false
@@ -2194,6 +2392,12 @@ type CreateRepositoryRequest struct {
 // CreateRepositoryRequestVisibility defines model for CreateRepositoryRequest.Visibility.
 type CreateRepositoryRequestVisibility string
 
+// CreateRepositoryTransferRequest defines model for CreateRepositoryTransferRequest.
+type CreateRepositoryTransferRequest struct {
+	// DestinationOwner Account handle, DID, or organization slug in the shared owner namespace.
+	DestinationOwner string `json:"destination_owner"`
+}
+
 // CreateRepositoryWebhookRequest defines model for CreateRepositoryWebhookRequest.
 type CreateRepositoryWebhookRequest struct {
 	Enabled *bool          `json:"enabled,omitempty"`
@@ -2984,11 +3188,96 @@ type RepositoryHosting struct {
 // RepositoryHostingSourceBrowsing defines model for RepositoryHosting.SourceBrowsing.
 type RepositoryHostingSourceBrowsing string
 
+// RepositoryLabel defines model for RepositoryLabel.
+type RepositoryLabel struct {
+	AuthorDid     string     `json:"author_did"`
+	Cid           string     `json:"cid"`
+	Color         string     `json:"color"`
+	CreatedAt     time.Time  `json:"created_at"`
+	Description   string     `json:"description"`
+	Id            string     `json:"id"`
+	IndexedAt     *time.Time `json:"indexed_at"`
+	Name          string     `json:"name"`
+	RepositoryCid string     `json:"repository_cid"`
+	RepositoryUri string     `json:"repository_uri"`
+	UpdatedAt     time.Time  `json:"updated_at"`
+	Uri           string     `json:"uri"`
+}
+
+// RepositoryLabelInput defines model for RepositoryLabelInput.
+type RepositoryLabelInput struct {
+	Color       string `json:"color"`
+	Description string `json:"description"`
+	Name        string `json:"name"`
+}
+
+// RepositoryLabelList defines model for RepositoryLabelList.
+type RepositoryLabelList struct {
+	Items []RepositoryLabel `json:"items"`
+	Page  Page              `json:"page"`
+}
+
+// RepositoryLabelMutation defines model for RepositoryLabelMutation.
+type RepositoryLabelMutation struct {
+	Label     RepositoryLabel                  `json:"label"`
+	Projected RepositoryLabelMutationProjected `json:"projected"`
+}
+
+// RepositoryLabelMutationProjected defines model for RepositoryLabelMutation.Projected.
+type RepositoryLabelMutationProjected bool
+
 // RepositoryList defines model for RepositoryList.
 type RepositoryList struct {
 	Items []Repository `json:"items"`
 	Page  Page         `json:"page"`
 }
+
+// RepositoryMilestone defines model for RepositoryMilestone.
+type RepositoryMilestone struct {
+	AuthorDid     string                   `json:"author_did"`
+	Cid           string                   `json:"cid"`
+	ClosedAt      *time.Time               `json:"closed_at"`
+	CreatedAt     time.Time                `json:"created_at"`
+	Description   string                   `json:"description"`
+	DueAt         *time.Time               `json:"due_at"`
+	Id            string                   `json:"id"`
+	IndexedAt     *time.Time               `json:"indexed_at"`
+	RepositoryCid string                   `json:"repository_cid"`
+	RepositoryUri string                   `json:"repository_uri"`
+	State         RepositoryMilestoneState `json:"state"`
+	Title         string                   `json:"title"`
+	UpdatedAt     time.Time                `json:"updated_at"`
+	Uri           string                   `json:"uri"`
+}
+
+// RepositoryMilestoneState defines model for RepositoryMilestone.State.
+type RepositoryMilestoneState string
+
+// RepositoryMilestoneInput defines model for RepositoryMilestoneInput.
+type RepositoryMilestoneInput struct {
+	Description string                        `json:"description"`
+	DueAt       *time.Time                    `json:"due_at"`
+	State       RepositoryMilestoneInputState `json:"state"`
+	Title       string                        `json:"title"`
+}
+
+// RepositoryMilestoneInputState defines model for RepositoryMilestoneInput.State.
+type RepositoryMilestoneInputState string
+
+// RepositoryMilestoneList defines model for RepositoryMilestoneList.
+type RepositoryMilestoneList struct {
+	Items []RepositoryMilestone `json:"items"`
+	Page  Page                  `json:"page"`
+}
+
+// RepositoryMilestoneMutation defines model for RepositoryMilestoneMutation.
+type RepositoryMilestoneMutation struct {
+	Milestone RepositoryMilestone                  `json:"milestone"`
+	Projected RepositoryMilestoneMutationProjected `json:"projected"`
+}
+
+// RepositoryMilestoneMutationProjected defines model for RepositoryMilestoneMutation.Projected.
+type RepositoryMilestoneMutationProjected bool
 
 // RepositoryOwner defines model for RepositoryOwner.
 type RepositoryOwner struct {
@@ -3014,6 +3303,36 @@ type RepositorySlug = string
 type RepositoryStrongRef struct {
 	Cid string `json:"cid"`
 	Uri string `json:"uri"`
+}
+
+// RepositoryTransfer defines model for RepositoryTransfer.
+type RepositoryTransfer struct {
+	Acceptance *RepositoryStrongRef `json:"acceptance,omitempty"`
+
+	// AcceptanceStartedAt Durable start of the retryable acceptance workflow. Once set, cancellation is no longer safe.
+	AcceptanceStartedAt *time.Time               `json:"acceptance_started_at,omitempty"`
+	AcceptedAt          *time.Time               `json:"accepted_at,omitempty"`
+	AcceptedBy          *string                  `json:"accepted_by,omitempty"`
+	CancelledAt         *time.Time               `json:"cancelled_at,omitempty"`
+	CreatedAt           time.Time                `json:"created_at"`
+	DestinationOwner    string                   `json:"destination_owner"`
+	ExpiresAt           time.Time                `json:"expires_at"`
+	Id                  openapi_types.UUID       `json:"id"`
+	Proposal            *RepositoryStrongRef     `json:"proposal,omitempty"`
+	RepositoryId        openapi_types.UUID       `json:"repository_id"`
+	SourceOwner         string                   `json:"source_owner"`
+	SourceRepository    *RepositoryStrongRef     `json:"source_repository,omitempty"`
+	Status              RepositoryTransferStatus `json:"status"`
+	Successor           *RepositoryStrongRef     `json:"successor,omitempty"`
+}
+
+// RepositoryTransferStatus defines model for RepositoryTransfer.Status.
+type RepositoryTransferStatus string
+
+// RepositoryTransferList defines model for RepositoryTransferList.
+type RepositoryTransferList struct {
+	Items []RepositoryTransfer `json:"items"`
+	Page  Page                 `json:"page"`
 }
 
 // RepositoryWebhook defines model for RepositoryWebhook.
@@ -3094,6 +3413,46 @@ type StarMutationProjected bool
 type StartATProtoLoginRequest struct {
 	Identifier string `json:"identifier"`
 }
+
+// SubjectTriage defines model for SubjectTriage.
+type SubjectTriage struct {
+	AssigneeDids  []string                 `json:"assignee_dids"`
+	Assignees     []TriageAssignee         `json:"assignees"`
+	AuthorDid     *string                  `json:"author_did"`
+	Cid           *string                  `json:"cid"`
+	CreatedAt     *time.Time               `json:"created_at"`
+	IndexedAt     *time.Time               `json:"indexed_at"`
+	LabelIds      []string                 `json:"label_ids"`
+	Labels        []RepositoryLabel        `json:"labels"`
+	Milestone     *RepositoryMilestone     `json:"milestone"`
+	MilestoneId   *string                  `json:"milestone_id"`
+	RepositoryCid string                   `json:"repository_cid"`
+	RepositoryUri string                   `json:"repository_uri"`
+	SubjectCid    string                   `json:"subject_cid"`
+	SubjectKind   SubjectTriageSubjectKind `json:"subject_kind"`
+	SubjectUri    string                   `json:"subject_uri"`
+	UpdatedAt     *time.Time               `json:"updated_at"`
+	Uri           *string                  `json:"uri"`
+}
+
+// SubjectTriageSubjectKind defines model for SubjectTriage.SubjectKind.
+type SubjectTriageSubjectKind string
+
+// SubjectTriageInput defines model for SubjectTriageInput.
+type SubjectTriageInput struct {
+	AssigneeDids []string `json:"assignee_dids"`
+	LabelIds     []string `json:"label_ids"`
+	MilestoneId  *string  `json:"milestone_id"`
+}
+
+// SubjectTriageMutation defines model for SubjectTriageMutation.
+type SubjectTriageMutation struct {
+	Projected SubjectTriageMutationProjected `json:"projected"`
+	Triage    SubjectTriage                  `json:"triage"`
+}
+
+// SubjectTriageMutationProjected defines model for SubjectTriageMutation.Projected.
+type SubjectTriageMutationProjected bool
 
 // SyncIssue Flat approved network.issues projection including repository-authoritative resolved state.
 type SyncIssue struct {
@@ -3196,17 +3555,22 @@ type SyncPullRequestReviewVerdict string
 
 // SyncRepository Flat approved network.repositories projection materialized from Electric insert rows. This is intentionally distinct from the nested REST Repository model.
 type SyncRepository struct {
-	Cid                  string     `json:"cid"`
-	CommentCount         int64      `json:"comment_count"`
-	DefaultBranch        *string    `json:"default_branch,omitempty"`
-	Description          *string    `json:"description,omitempty"`
-	ForkCount            int64      `json:"fork_count"`
-	ForkedFromCid        *string    `json:"forked_from_cid,omitempty"`
-	ForkedFromUri        *string    `json:"forked_from_uri,omitempty"`
-	GitHttps             *string    `json:"git_https,omitempty"`
-	GitSsh               *string    `json:"git_ssh,omitempty"`
-	IndexedAt            time.Time  `json:"indexed_at"`
-	IssueCount           int64      `json:"issue_count"`
+	// CanonicalUri Current repository URI selected by a complete bilateral transfer chain.
+	CanonicalUri  string    `json:"canonical_uri"`
+	Cid           string    `json:"cid"`
+	CommentCount  int64     `json:"comment_count"`
+	DefaultBranch *string   `json:"default_branch,omitempty"`
+	Description   *string   `json:"description,omitempty"`
+	ForkCount     int64     `json:"fork_count"`
+	ForkedFromCid *string   `json:"forked_from_cid,omitempty"`
+	ForkedFromUri *string   `json:"forked_from_uri,omitempty"`
+	GitHttps      *string   `json:"git_https,omitempty"`
+	GitSsh        *string   `json:"git_ssh,omitempty"`
+	IndexedAt     time.Time `json:"indexed_at"`
+	IssueCount    int64     `json:"issue_count"`
+
+	// LineageUri Immutable first repository URI in this transfer lineage.
+	LineageUri           string     `json:"lineage_uri"`
 	Name                 *string    `json:"name,omitempty"`
 	OpenIssueCount       int64      `json:"open_issue_count"`
 	OpenPullRequestCount int64      `json:"open_pull_request_count"`
@@ -3216,6 +3580,10 @@ type SyncRepository struct {
 	RecordUpdatedAt      *time.Time `json:"record_updated_at,omitempty"`
 	Slug                 *string    `json:"slug,omitempty"`
 	StarCount            int64      `json:"star_count"`
+	TransferredFromCid   *string    `json:"transferred_from_cid,omitempty"`
+	TransferredFromUri   *string    `json:"transferred_from_uri,omitempty"`
+	TransferredToCid     *string    `json:"transferred_to_cid,omitempty"`
+	TransferredToUri     *string    `json:"transferred_to_uri,omitempty"`
 	Uri                  string     `json:"uri"`
 	Web                  *string    `json:"web,omitempty"`
 }
@@ -3275,6 +3643,13 @@ type TreeEntry struct {
 
 // TreeEntryType defines model for TreeEntry.Type.
 type TreeEntryType string
+
+// TriageAssignee defines model for TriageAssignee.
+type TriageAssignee struct {
+	Did         string `json:"did"`
+	DisplayName string `json:"display_name"`
+	Handle      string `json:"handle"`
+}
 
 // UpdateCheckRunRequest defines model for UpdateCheckRunRequest.
 type UpdateCheckRunRequest struct {
@@ -3391,6 +3766,9 @@ type WebhookDeliveryList struct {
 // WebhookEvent defines model for WebhookEvent.
 type WebhookEvent string
 
+// AssigneeFilter defines model for AssigneeFilter.
+type AssigneeFilter = string
+
 // BlockedDID defines model for BlockedDID.
 type BlockedDID = string
 
@@ -3433,17 +3811,35 @@ type ExactOrigin = string
 // IdempotencyKey defines model for IdempotencyKey.
 type IdempotencyKey = string
 
+// IssueStateFilter defines model for IssueStateFilter.
+type IssueStateFilter string
+
 // IssueURI defines model for IssueURI.
 type IssueURI = string
 
+// LabelFilter defines model for LabelFilter.
+type LabelFilter = string
+
+// LabelPath defines model for LabelPath.
+type LabelPath = string
+
 // Limit defines model for Limit.
 type Limit = int
+
+// MilestoneFilter defines model for MilestoneFilter.
+type MilestoneFilter = string
+
+// MilestonePath defines model for MilestonePath.
+type MilestonePath = string
 
 // MutationOrigin defines model for MutationOrigin.
 type MutationOrigin = string
 
 // OwnerNamePath defines model for OwnerNamePath.
 type OwnerNamePath = OwnerName
+
+// PullRequestStateFilter defines model for PullRequestStateFilter.
+type PullRequestStateFilter string
 
 // PullRequestURI defines model for PullRequestURI.
 type PullRequestURI = string
@@ -3474,6 +3870,9 @@ type SearchSort string
 
 // SessionMutationOrigin defines model for SessionMutationOrigin.
 type SessionMutationOrigin = string
+
+// SubjectPath defines model for SubjectPath.
+type SubjectPath = string
 
 // BadGateway defines model for BadGateway.
 type BadGateway = ErrorResponse
@@ -3516,9 +3915,24 @@ type sessionCookieContextKey string
 // GetIssuesParams defines parameters for GetIssues.
 type GetIssuesParams struct {
 	RepositoryUri RepositoryURI `form:"repository_uri" json:"repository_uri"`
-	Limit         *Limit        `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor        *Cursor       `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// State Filter by effective repository-authoritative issue state.
+	State *GetIssuesParamsState `form:"state,omitempty" json:"state,omitempty"`
+
+	// Label Filter by stable repository label record key.
+	Label *LabelFilter `form:"label,omitempty" json:"label,omitempty"`
+
+	// Assignee Filter by canonical assignee DID.
+	Assignee *AssigneeFilter `form:"assignee,omitempty" json:"assignee,omitempty"`
+
+	// Milestone Filter by stable repository milestone record key.
+	Milestone *MilestoneFilter `form:"milestone,omitempty" json:"milestone,omitempty"`
+	Limit     *Limit           `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor    *Cursor          `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
+
+// GetIssuesParamsState defines parameters for GetIssues.
+type GetIssuesParamsState string
 
 // CreateIssueParams defines parameters for CreateIssue.
 type CreateIssueParams struct {
@@ -3699,9 +4113,24 @@ type DeletePasskeyParams struct {
 // ListPullRequestsParams defines parameters for ListPullRequests.
 type ListPullRequestsParams struct {
 	RepositoryUri RepositoryURI `form:"repository_uri" json:"repository_uri"`
-	Limit         *Limit        `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor        *Cursor       `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// State Filter by effective target-repository-authoritative pull request state.
+	State *ListPullRequestsParamsState `form:"state,omitempty" json:"state,omitempty"`
+
+	// Label Filter by stable repository label record key.
+	Label *LabelFilter `form:"label,omitempty" json:"label,omitempty"`
+
+	// Assignee Filter by canonical assignee DID.
+	Assignee *AssigneeFilter `form:"assignee,omitempty" json:"assignee,omitempty"`
+
+	// Milestone Filter by stable repository milestone record key.
+	Milestone *MilestoneFilter `form:"milestone,omitempty" json:"milestone,omitempty"`
+	Limit     *Limit           `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor    *Cursor          `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
+
+// ListPullRequestsParamsState defines parameters for ListPullRequests.
+type ListPullRequestsParamsState string
 
 // CreatePullRequestParams defines parameters for CreatePullRequest.
 type CreatePullRequestParams struct {
@@ -3802,16 +4231,100 @@ type CreateRepositoryForkParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// DeleteIssueTriageParams defines parameters for DeleteIssueTriage.
+type DeleteIssueTriageParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// PutIssueTriageParams defines parameters for PutIssueTriage.
+type PutIssueTriageParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// ListRepositoryLabelsParams defines parameters for ListRepositoryLabels.
+type ListRepositoryLabelsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// CreateRepositoryLabelParams defines parameters for CreateRepositoryLabel.
+type CreateRepositoryLabelParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// DeleteRepositoryLabelParams defines parameters for DeleteRepositoryLabel.
+type DeleteRepositoryLabelParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// UpdateRepositoryLabelParams defines parameters for UpdateRepositoryLabel.
+type UpdateRepositoryLabelParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
 // GetRepositoryMergeBaseParams defines parameters for GetRepositoryMergeBase.
 type GetRepositoryMergeBaseParams struct {
 	A string `form:"a" json:"a"`
 	B string `form:"b" json:"b"`
 }
 
+// ListRepositoryMilestonesParams defines parameters for ListRepositoryMilestones.
+type ListRepositoryMilestonesParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// CreateRepositoryMilestoneParams defines parameters for CreateRepositoryMilestone.
+type CreateRepositoryMilestoneParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// DeleteRepositoryMilestoneParams defines parameters for DeleteRepositoryMilestone.
+type DeleteRepositoryMilestoneParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// UpdateRepositoryMilestoneParams defines parameters for UpdateRepositoryMilestone.
+type UpdateRepositoryMilestoneParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// DeletePullRequestTriageParams defines parameters for DeletePullRequestTriage.
+type DeletePullRequestTriageParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
+// PutPullRequestTriageParams defines parameters for PutPullRequestTriage.
+type PutPullRequestTriageParams struct {
+	// Origin Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+	Origin *ExactOrigin `json:"Origin,omitempty"`
+}
+
 // ListRepositoryTagsParams defines parameters for ListRepositoryTags.
 type ListRepositoryTagsParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListRepositoryTransfersParams defines parameters for ListRepositoryTransfers.
+type ListRepositoryTransfersParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// CreateRepositoryTransferParams defines parameters for CreateRepositoryTransfer.
+type CreateRepositoryTransferParams struct {
+	// Origin Required for browser-session mutations and must exactly match the configured Adenosine origin.
+	Origin *MutationOrigin `json:"Origin,omitempty"`
 }
 
 // GetRepositoryTreeParams defines parameters for GetRepositoryTree.
@@ -3830,6 +4343,18 @@ type ListRepositoryWebhooksParams struct {
 type ListWebhookDeliveriesParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// DeleteRepositoryTransferParams defines parameters for DeleteRepositoryTransfer.
+type DeleteRepositoryTransferParams struct {
+	// Origin Required for browser-session mutations and must exactly match the configured Adenosine origin.
+	Origin *MutationOrigin `json:"Origin,omitempty"`
+}
+
+// CreateRepositoryTransferAcceptanceParams defines parameters for CreateRepositoryTransferAcceptance.
+type CreateRepositoryTransferAcceptanceParams struct {
+	// Origin Required for browser-session mutations and must exactly match the configured Adenosine origin.
+	Origin *MutationOrigin `json:"Origin,omitempty"`
 }
 
 // SearchProfilesParams defines parameters for SearchProfiles.
@@ -4428,6 +4953,27 @@ type CreateCommitStatusJSONRequestBody = CreateCommitStatusRequest
 // CreateRepositoryForkJSONRequestBody defines body for CreateRepositoryFork for application/json ContentType.
 type CreateRepositoryForkJSONRequestBody = CreateRepositoryForkRequest
 
+// PutIssueTriageJSONRequestBody defines body for PutIssueTriage for application/json ContentType.
+type PutIssueTriageJSONRequestBody = SubjectTriageInput
+
+// CreateRepositoryLabelJSONRequestBody defines body for CreateRepositoryLabel for application/json ContentType.
+type CreateRepositoryLabelJSONRequestBody = RepositoryLabelInput
+
+// UpdateRepositoryLabelJSONRequestBody defines body for UpdateRepositoryLabel for application/json ContentType.
+type UpdateRepositoryLabelJSONRequestBody = RepositoryLabelInput
+
+// CreateRepositoryMilestoneJSONRequestBody defines body for CreateRepositoryMilestone for application/json ContentType.
+type CreateRepositoryMilestoneJSONRequestBody = RepositoryMilestoneInput
+
+// UpdateRepositoryMilestoneJSONRequestBody defines body for UpdateRepositoryMilestone for application/json ContentType.
+type UpdateRepositoryMilestoneJSONRequestBody = RepositoryMilestoneInput
+
+// PutPullRequestTriageJSONRequestBody defines body for PutPullRequestTriage for application/json ContentType.
+type PutPullRequestTriageJSONRequestBody = SubjectTriageInput
+
+// CreateRepositoryTransferJSONRequestBody defines body for CreateRepositoryTransfer for application/json ContentType.
+type CreateRepositoryTransferJSONRequestBody = CreateRepositoryTransferRequest
+
 // CreateRepositoryWebhookJSONRequestBody defines body for CreateRepositoryWebhook for application/json ContentType.
 type CreateRepositoryWebhookJSONRequestBody = CreateRepositoryWebhookRequest
 
@@ -4924,14 +5470,82 @@ type ClientInterface interface {
 
 	CreateRepositoryFork(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryForkParams, body CreateRepositoryForkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteIssueTriage request
+	DeleteIssueTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *DeleteIssueTriageParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetIssueTriage request
+	GetIssueTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutIssueTriageWithBody request with any body
+	PutIssueTriageWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutIssueTriageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutIssueTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutIssueTriageParams, body PutIssueTriageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListRepositoryLabels request
+	ListRepositoryLabels(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryLabelsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateRepositoryLabelWithBody request with any body
+	CreateRepositoryLabelWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryLabelParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateRepositoryLabel(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryLabelParams, body CreateRepositoryLabelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteRepositoryLabel request
+	DeleteRepositoryLabel(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *DeleteRepositoryLabelParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetRepositoryLabel request
+	GetRepositoryLabel(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateRepositoryLabelWithBody request with any body
+	UpdateRepositoryLabelWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *UpdateRepositoryLabelParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateRepositoryLabel(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *UpdateRepositoryLabelParams, body UpdateRepositoryLabelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetRepositoryMergeBase request
 	GetRepositoryMergeBase(ctx context.Context, owner string, repo RepositorySlug, params *GetRepositoryMergeBaseParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListRepositoryMilestones request
+	ListRepositoryMilestones(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryMilestonesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateRepositoryMilestoneWithBody request with any body
+	CreateRepositoryMilestoneWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryMilestoneParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateRepositoryMilestone(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryMilestoneParams, body CreateRepositoryMilestoneJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteRepositoryMilestone request
+	DeleteRepositoryMilestone(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *DeleteRepositoryMilestoneParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetRepositoryMilestone request
+	GetRepositoryMilestone(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateRepositoryMilestoneWithBody request with any body
+	UpdateRepositoryMilestoneWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *UpdateRepositoryMilestoneParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateRepositoryMilestone(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *UpdateRepositoryMilestoneParams, body UpdateRepositoryMilestoneJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeletePullRequestTriage request
+	DeletePullRequestTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *DeletePullRequestTriageParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetPullRequestTriage request
+	GetPullRequestTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PutPullRequestTriageWithBody request with any body
+	PutPullRequestTriageWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PutPullRequestTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, body PutPullRequestTriageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SyncRepositoryFork request
 	SyncRepositoryFork(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRepositoryTags request
 	ListRepositoryTags(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryTagsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListRepositoryTransfers request
+	ListRepositoryTransfers(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryTransfersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateRepositoryTransferWithBody request with any body
+	CreateRepositoryTransferWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryTransferParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateRepositoryTransfer(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryTransferParams, body CreateRepositoryTransferJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRepositoryTree request
 	GetRepositoryTree(ctx context.Context, owner string, repo RepositorySlug, params *GetRepositoryTreeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -4968,6 +5582,15 @@ type ClientInterface interface {
 
 	// GetRepositoryDeletion request
 	GetRepositoryDeletion(ctx context.Context, deletion openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteRepositoryTransfer request
+	DeleteRepositoryTransfer(ctx context.Context, transfer openapi_types.UUID, params *DeleteRepositoryTransferParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetRepositoryTransfer request
+	GetRepositoryTransfer(ctx context.Context, transfer openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateRepositoryTransferAcceptance request
+	CreateRepositoryTransferAcceptance(ctx context.Context, transfer openapi_types.UUID, params *CreateRepositoryTransferAcceptanceParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SearchProfiles request
 	SearchProfiles(ctx context.Context, params *SearchProfilesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -6503,8 +7126,272 @@ func (c *Client) CreateRepositoryFork(ctx context.Context, owner RepositoryOwner
 	return c.Client.Do(req)
 }
 
+func (c *Client) DeleteIssueTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *DeleteIssueTriageParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteIssueTriageRequest(c.Server, owner, repo, subject, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetIssueTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetIssueTriageRequest(c.Server, owner, repo, subject)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutIssueTriageWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutIssueTriageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutIssueTriageRequestWithBody(c.Server, owner, repo, subject, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutIssueTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutIssueTriageParams, body PutIssueTriageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutIssueTriageRequest(c.Server, owner, repo, subject, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListRepositoryLabels(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryLabelsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRepositoryLabelsRequest(c.Server, owner, repo, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRepositoryLabelWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryLabelParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRepositoryLabelRequestWithBody(c.Server, owner, repo, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRepositoryLabel(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryLabelParams, body CreateRepositoryLabelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRepositoryLabelRequest(c.Server, owner, repo, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteRepositoryLabel(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *DeleteRepositoryLabelParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRepositoryLabelRequest(c.Server, owner, repo, label, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetRepositoryLabel(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRepositoryLabelRequest(c.Server, owner, repo, label)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRepositoryLabelWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *UpdateRepositoryLabelParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRepositoryLabelRequestWithBody(c.Server, owner, repo, label, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRepositoryLabel(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *UpdateRepositoryLabelParams, body UpdateRepositoryLabelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRepositoryLabelRequest(c.Server, owner, repo, label, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetRepositoryMergeBase(ctx context.Context, owner string, repo RepositorySlug, params *GetRepositoryMergeBaseParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetRepositoryMergeBaseRequest(c.Server, owner, repo, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListRepositoryMilestones(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryMilestonesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRepositoryMilestonesRequest(c.Server, owner, repo, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRepositoryMilestoneWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryMilestoneParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRepositoryMilestoneRequestWithBody(c.Server, owner, repo, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRepositoryMilestone(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryMilestoneParams, body CreateRepositoryMilestoneJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRepositoryMilestoneRequest(c.Server, owner, repo, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteRepositoryMilestone(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *DeleteRepositoryMilestoneParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRepositoryMilestoneRequest(c.Server, owner, repo, milestone, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetRepositoryMilestone(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRepositoryMilestoneRequest(c.Server, owner, repo, milestone)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRepositoryMilestoneWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *UpdateRepositoryMilestoneParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRepositoryMilestoneRequestWithBody(c.Server, owner, repo, milestone, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRepositoryMilestone(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *UpdateRepositoryMilestoneParams, body UpdateRepositoryMilestoneJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateRepositoryMilestoneRequest(c.Server, owner, repo, milestone, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeletePullRequestTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *DeletePullRequestTriageParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeletePullRequestTriageRequest(c.Server, owner, repo, subject, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetPullRequestTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetPullRequestTriageRequest(c.Server, owner, repo, subject)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutPullRequestTriageWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutPullRequestTriageRequestWithBody(c.Server, owner, repo, subject, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PutPullRequestTriage(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, body PutPullRequestTriageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPutPullRequestTriageRequest(c.Server, owner, repo, subject, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -6529,6 +7416,42 @@ func (c *Client) SyncRepositoryFork(ctx context.Context, owner RepositoryOwnerPa
 
 func (c *Client) ListRepositoryTags(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryTagsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListRepositoryTagsRequest(c.Server, owner, repo, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListRepositoryTransfers(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryTransfersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRepositoryTransfersRequest(c.Server, owner, repo, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRepositoryTransferWithBody(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryTransferParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRepositoryTransferRequestWithBody(c.Server, owner, repo, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRepositoryTransfer(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryTransferParams, body CreateRepositoryTransferJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRepositoryTransferRequest(c.Server, owner, repo, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -6685,6 +7608,42 @@ func (c *Client) RestoreRepositoryDeletion(ctx context.Context, deletion openapi
 
 func (c *Client) GetRepositoryDeletion(ctx context.Context, deletion openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetRepositoryDeletionRequest(c.Server, deletion)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteRepositoryTransfer(ctx context.Context, transfer openapi_types.UUID, params *DeleteRepositoryTransferParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRepositoryTransferRequest(c.Server, transfer, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetRepositoryTransfer(ctx context.Context, transfer openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRepositoryTransferRequest(c.Server, transfer)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateRepositoryTransferAcceptance(ctx context.Context, transfer openapi_types.UUID, params *CreateRepositoryTransferAcceptanceParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateRepositoryTransferAcceptanceRequest(c.Server, transfer, params)
 	if err != nil {
 		return nil, err
 	}
@@ -7252,6 +8211,54 @@ func NewGetIssuesRequest(server string, params *GetIssuesParams) (*http.Request,
 			for _, qp := range strings.Split(queryFrag, "&") {
 				rawQueryFragments = append(rawQueryFragments, qp)
 			}
+		}
+
+		if params.State != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "state", *params.State, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Label != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "label", *params.Label, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Assignee != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "assignee", *params.Assignee, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Milestone != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "milestone", *params.Milestone, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
 		}
 
 		if params.Limit != nil {
@@ -10183,6 +11190,54 @@ func NewListPullRequestsRequest(server string, params *ListPullRequestsParams) (
 			}
 		}
 
+		if params.State != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "state", *params.State, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Label != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "label", *params.Label, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Assignee != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "assignee", *params.Assignee, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Milestone != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "milestone", *params.Milestone, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.Limit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
@@ -12089,6 +13144,529 @@ func NewCreateRepositoryForkRequestWithBody(server string, owner RepositoryOwner
 	return req, nil
 }
 
+// NewDeleteIssueTriageRequest generates requests for DeleteIssueTriage
+func NewDeleteIssueTriageRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *DeleteIssueTriageParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "subject", subject, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/issues/%s/triage", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewGetIssueTriageRequest generates requests for GetIssueTriage
+func NewGetIssueTriageRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "subject", subject, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/issues/%s/triage", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutIssueTriageRequest calls the generic PutIssueTriage builder with application/json body
+func NewPutIssueTriageRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutIssueTriageParams, body PutIssueTriageJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutIssueTriageRequestWithBody(server, owner, repo, subject, params, "application/json", bodyReader)
+}
+
+// NewPutIssueTriageRequestWithBody generates requests for PutIssueTriage with any type of body
+func NewPutIssueTriageRequestWithBody(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutIssueTriageParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "subject", subject, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/issues/%s/triage", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewListRepositoryLabelsRequest generates requests for ListRepositoryLabels
+func NewListRepositoryLabelsRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryLabelsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/labels", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateRepositoryLabelRequest calls the generic CreateRepositoryLabel builder with application/json body
+func NewCreateRepositoryLabelRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryLabelParams, body CreateRepositoryLabelJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateRepositoryLabelRequestWithBody(server, owner, repo, params, "application/json", bodyReader)
+}
+
+// NewCreateRepositoryLabelRequestWithBody generates requests for CreateRepositoryLabel with any type of body
+func NewCreateRepositoryLabelRequestWithBody(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryLabelParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/labels", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewDeleteRepositoryLabelRequest generates requests for DeleteRepositoryLabel
+func NewDeleteRepositoryLabelRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *DeleteRepositoryLabelParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "label", label, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/labels/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewGetRepositoryLabelRequest generates requests for GetRepositoryLabel
+func NewGetRepositoryLabelRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "label", label, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/labels/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateRepositoryLabelRequest calls the generic UpdateRepositoryLabel builder with application/json body
+func NewUpdateRepositoryLabelRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *UpdateRepositoryLabelParams, body UpdateRepositoryLabelJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateRepositoryLabelRequestWithBody(server, owner, repo, label, params, "application/json", bodyReader)
+}
+
+// NewUpdateRepositoryLabelRequestWithBody generates requests for UpdateRepositoryLabel with any type of body
+func NewUpdateRepositoryLabelRequestWithBody(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *UpdateRepositoryLabelParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "label", label, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/labels/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
 // NewGetRepositoryMergeBaseRequest generates requests for GetRepositoryMergeBase
 func NewGetRepositoryMergeBaseRequest(server string, owner string, repo RepositorySlug, params *GetRepositoryMergeBaseParams) (*http.Request, error) {
 	var err error
@@ -12156,6 +13734,529 @@ func NewGetRepositoryMergeBaseRequest(server string, owner string, repo Reposito
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListRepositoryMilestonesRequest generates requests for ListRepositoryMilestones
+func NewListRepositoryMilestonesRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryMilestonesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/milestones", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateRepositoryMilestoneRequest calls the generic CreateRepositoryMilestone builder with application/json body
+func NewCreateRepositoryMilestoneRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryMilestoneParams, body CreateRepositoryMilestoneJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateRepositoryMilestoneRequestWithBody(server, owner, repo, params, "application/json", bodyReader)
+}
+
+// NewCreateRepositoryMilestoneRequestWithBody generates requests for CreateRepositoryMilestone with any type of body
+func NewCreateRepositoryMilestoneRequestWithBody(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryMilestoneParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/milestones", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewDeleteRepositoryMilestoneRequest generates requests for DeleteRepositoryMilestone
+func NewDeleteRepositoryMilestoneRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *DeleteRepositoryMilestoneParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "milestone", milestone, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/milestones/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewGetRepositoryMilestoneRequest generates requests for GetRepositoryMilestone
+func NewGetRepositoryMilestoneRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "milestone", milestone, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/milestones/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateRepositoryMilestoneRequest calls the generic UpdateRepositoryMilestone builder with application/json body
+func NewUpdateRepositoryMilestoneRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *UpdateRepositoryMilestoneParams, body UpdateRepositoryMilestoneJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateRepositoryMilestoneRequestWithBody(server, owner, repo, milestone, params, "application/json", bodyReader)
+}
+
+// NewUpdateRepositoryMilestoneRequestWithBody generates requests for UpdateRepositoryMilestone with any type of body
+func NewUpdateRepositoryMilestoneRequestWithBody(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *UpdateRepositoryMilestoneParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "milestone", milestone, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/milestones/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewDeletePullRequestTriageRequest generates requests for DeletePullRequestTriage
+func NewDeletePullRequestTriageRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *DeletePullRequestTriageParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "subject", subject, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/pulls/%s/triage", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewGetPullRequestTriageRequest generates requests for GetPullRequestTriage
+func NewGetPullRequestTriageRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "subject", subject, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/pulls/%s/triage", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPutPullRequestTriageRequest calls the generic PutPullRequestTriage builder with application/json body
+func NewPutPullRequestTriageRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, body PutPullRequestTriageJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPutPullRequestTriageRequestWithBody(server, owner, repo, subject, params, "application/json", bodyReader)
+}
+
+// NewPutPullRequestTriageRequestWithBody generates requests for PutPullRequestTriage with any type of body
+func NewPutPullRequestTriageRequestWithBody(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "subject", subject, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/pulls/%s/triage", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
 	}
 
 	return req, nil
@@ -12277,6 +14378,155 @@ func NewListRepositoryTagsRequest(server string, owner string, repo RepositorySl
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListRepositoryTransfersRequest generates requests for ListRepositoryTransfers
+func NewListRepositoryTransfersRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryTransfersParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/transfers", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateRepositoryTransferRequest calls the generic CreateRepositoryTransfer builder with application/json body
+func NewCreateRepositoryTransferRequest(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryTransferParams, body CreateRepositoryTransferJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateRepositoryTransferRequestWithBody(server, owner, repo, params, "application/json", bodyReader)
+}
+
+// NewCreateRepositoryTransferRequestWithBody generates requests for CreateRepositoryTransfer with any type of body
+func NewCreateRepositoryTransferRequestWithBody(server string, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryTransferParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/transfers", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
 	}
 
 	return req, nil
@@ -12864,6 +15114,138 @@ func NewGetRepositoryDeletionRequest(server string, deletion openapi_types.UUID)
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteRepositoryTransferRequest generates requests for DeleteRepositoryTransfer
+func NewDeleteRepositoryTransferRequest(server string, transfer openapi_types.UUID, params *DeleteRepositoryTransferParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "transfer", transfer, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repository-transfers/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewGetRepositoryTransferRequest generates requests for GetRepositoryTransfer
+func NewGetRepositoryTransferRequest(server string, transfer openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "transfer", transfer, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repository-transfers/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateRepositoryTransferAcceptanceRequest generates requests for CreateRepositoryTransferAcceptance
+func NewCreateRepositoryTransferAcceptanceRequest(server string, transfer openapi_types.UUID, params *CreateRepositoryTransferAcceptanceParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "transfer", transfer, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repository-transfers/%s/acceptance", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		if params.Origin != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Origin", *params.Origin, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: "uri"})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Origin", headerParam0)
+		}
+
 	}
 
 	return req, nil
@@ -15971,14 +18353,82 @@ type ClientWithResponsesInterface interface {
 
 	CreateRepositoryForkWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryForkParams, body CreateRepositoryForkJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRepositoryForkResponse, error)
 
+	// DeleteIssueTriageWithResponse request
+	DeleteIssueTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *DeleteIssueTriageParams, reqEditors ...RequestEditorFn) (*DeleteIssueTriageResponse, error)
+
+	// GetIssueTriageWithResponse request
+	GetIssueTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, reqEditors ...RequestEditorFn) (*GetIssueTriageResponse, error)
+
+	// PutIssueTriageWithBodyWithResponse request with any body
+	PutIssueTriageWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutIssueTriageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutIssueTriageResponse, error)
+
+	PutIssueTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutIssueTriageParams, body PutIssueTriageJSONRequestBody, reqEditors ...RequestEditorFn) (*PutIssueTriageResponse, error)
+
+	// ListRepositoryLabelsWithResponse request
+	ListRepositoryLabelsWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryLabelsParams, reqEditors ...RequestEditorFn) (*ListRepositoryLabelsResponse, error)
+
+	// CreateRepositoryLabelWithBodyWithResponse request with any body
+	CreateRepositoryLabelWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryLabelParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRepositoryLabelResponse, error)
+
+	CreateRepositoryLabelWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryLabelParams, body CreateRepositoryLabelJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRepositoryLabelResponse, error)
+
+	// DeleteRepositoryLabelWithResponse request
+	DeleteRepositoryLabelWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *DeleteRepositoryLabelParams, reqEditors ...RequestEditorFn) (*DeleteRepositoryLabelResponse, error)
+
+	// GetRepositoryLabelWithResponse request
+	GetRepositoryLabelWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, reqEditors ...RequestEditorFn) (*GetRepositoryLabelResponse, error)
+
+	// UpdateRepositoryLabelWithBodyWithResponse request with any body
+	UpdateRepositoryLabelWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *UpdateRepositoryLabelParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRepositoryLabelResponse, error)
+
+	UpdateRepositoryLabelWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *UpdateRepositoryLabelParams, body UpdateRepositoryLabelJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRepositoryLabelResponse, error)
+
 	// GetRepositoryMergeBaseWithResponse request
 	GetRepositoryMergeBaseWithResponse(ctx context.Context, owner string, repo RepositorySlug, params *GetRepositoryMergeBaseParams, reqEditors ...RequestEditorFn) (*GetRepositoryMergeBaseResponse, error)
+
+	// ListRepositoryMilestonesWithResponse request
+	ListRepositoryMilestonesWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryMilestonesParams, reqEditors ...RequestEditorFn) (*ListRepositoryMilestonesResponse, error)
+
+	// CreateRepositoryMilestoneWithBodyWithResponse request with any body
+	CreateRepositoryMilestoneWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryMilestoneParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRepositoryMilestoneResponse, error)
+
+	CreateRepositoryMilestoneWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryMilestoneParams, body CreateRepositoryMilestoneJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRepositoryMilestoneResponse, error)
+
+	// DeleteRepositoryMilestoneWithResponse request
+	DeleteRepositoryMilestoneWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *DeleteRepositoryMilestoneParams, reqEditors ...RequestEditorFn) (*DeleteRepositoryMilestoneResponse, error)
+
+	// GetRepositoryMilestoneWithResponse request
+	GetRepositoryMilestoneWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, reqEditors ...RequestEditorFn) (*GetRepositoryMilestoneResponse, error)
+
+	// UpdateRepositoryMilestoneWithBodyWithResponse request with any body
+	UpdateRepositoryMilestoneWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *UpdateRepositoryMilestoneParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRepositoryMilestoneResponse, error)
+
+	UpdateRepositoryMilestoneWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *UpdateRepositoryMilestoneParams, body UpdateRepositoryMilestoneJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRepositoryMilestoneResponse, error)
+
+	// DeletePullRequestTriageWithResponse request
+	DeletePullRequestTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *DeletePullRequestTriageParams, reqEditors ...RequestEditorFn) (*DeletePullRequestTriageResponse, error)
+
+	// GetPullRequestTriageWithResponse request
+	GetPullRequestTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, reqEditors ...RequestEditorFn) (*GetPullRequestTriageResponse, error)
+
+	// PutPullRequestTriageWithBodyWithResponse request with any body
+	PutPullRequestTriageWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutPullRequestTriageResponse, error)
+
+	PutPullRequestTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, body PutPullRequestTriageJSONRequestBody, reqEditors ...RequestEditorFn) (*PutPullRequestTriageResponse, error)
 
 	// SyncRepositoryForkWithResponse request
 	SyncRepositoryForkWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, reqEditors ...RequestEditorFn) (*SyncRepositoryForkResponse, error)
 
 	// ListRepositoryTagsWithResponse request
 	ListRepositoryTagsWithResponse(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryTagsParams, reqEditors ...RequestEditorFn) (*ListRepositoryTagsResponse, error)
+
+	// ListRepositoryTransfersWithResponse request
+	ListRepositoryTransfersWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryTransfersParams, reqEditors ...RequestEditorFn) (*ListRepositoryTransfersResponse, error)
+
+	// CreateRepositoryTransferWithBodyWithResponse request with any body
+	CreateRepositoryTransferWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryTransferParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRepositoryTransferResponse, error)
+
+	CreateRepositoryTransferWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryTransferParams, body CreateRepositoryTransferJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRepositoryTransferResponse, error)
 
 	// GetRepositoryTreeWithResponse request
 	GetRepositoryTreeWithResponse(ctx context.Context, owner string, repo RepositorySlug, params *GetRepositoryTreeParams, reqEditors ...RequestEditorFn) (*GetRepositoryTreeResponse, error)
@@ -16015,6 +18465,15 @@ type ClientWithResponsesInterface interface {
 
 	// GetRepositoryDeletionWithResponse request
 	GetRepositoryDeletionWithResponse(ctx context.Context, deletion openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetRepositoryDeletionResponse, error)
+
+	// DeleteRepositoryTransferWithResponse request
+	DeleteRepositoryTransferWithResponse(ctx context.Context, transfer openapi_types.UUID, params *DeleteRepositoryTransferParams, reqEditors ...RequestEditorFn) (*DeleteRepositoryTransferResponse, error)
+
+	// GetRepositoryTransferWithResponse request
+	GetRepositoryTransferWithResponse(ctx context.Context, transfer openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetRepositoryTransferResponse, error)
+
+	// CreateRepositoryTransferAcceptanceWithResponse request
+	CreateRepositoryTransferAcceptanceWithResponse(ctx context.Context, transfer openapi_types.UUID, params *CreateRepositoryTransferAcceptanceParams, reqEditors ...RequestEditorFn) (*CreateRepositoryTransferAcceptanceResponse, error)
 
 	// SearchProfilesWithResponse request
 	SearchProfilesWithResponse(ctx context.Context, params *SearchProfilesParams, reqEditors ...RequestEditorFn) (*SearchProfilesResponse, error)
@@ -16191,6 +18650,7 @@ type GetIssuesResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *IssueList
+	JSON400      *BadRequest
 	JSON404      *NotFound
 	JSON422      *UnprocessableEntity
 }
@@ -17958,6 +20418,7 @@ type ListPullRequestsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *PullRequestList
+	JSON400      *BadRequest
 	JSON404      *NotFound
 	JSON422      *UnprocessableEntity
 }
@@ -19057,6 +21518,288 @@ func (r CreateRepositoryForkResponse) ContentType() string {
 	return ""
 }
 
+type DeleteIssueTriageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteIssueTriageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteIssueTriageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteIssueTriageResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetIssueTriageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SubjectTriage
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+	JSON422      *UnprocessableEntity
+}
+
+// Status returns HTTPResponse.Status
+func (r GetIssueTriageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetIssueTriageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetIssueTriageResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type PutIssueTriageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *SubjectTriageMutation
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r PutIssueTriageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutIssueTriageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PutIssueTriageResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListRepositoryLabelsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RepositoryLabelList
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r ListRepositoryLabelsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListRepositoryLabelsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListRepositoryLabelsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateRepositoryLabelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *RepositoryLabelMutation
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateRepositoryLabelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateRepositoryLabelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateRepositoryLabelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteRepositoryLabelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteRepositoryLabelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteRepositoryLabelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteRepositoryLabelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetRepositoryLabelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RepositoryLabel
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+	JSON422      *UnprocessableEntity
+}
+
+// Status returns HTTPResponse.Status
+func (r GetRepositoryLabelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetRepositoryLabelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetRepositoryLabelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateRepositoryLabelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *RepositoryLabelMutation
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateRepositoryLabelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateRepositoryLabelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateRepositoryLabelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetRepositoryMergeBaseResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -19085,6 +21828,288 @@ func (r GetRepositoryMergeBaseResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetRepositoryMergeBaseResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListRepositoryMilestonesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RepositoryMilestoneList
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r ListRepositoryMilestonesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListRepositoryMilestonesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListRepositoryMilestonesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateRepositoryMilestoneResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *RepositoryMilestoneMutation
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateRepositoryMilestoneResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateRepositoryMilestoneResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateRepositoryMilestoneResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteRepositoryMilestoneResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteRepositoryMilestoneResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteRepositoryMilestoneResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteRepositoryMilestoneResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetRepositoryMilestoneResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RepositoryMilestone
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+	JSON422      *UnprocessableEntity
+}
+
+// Status returns HTTPResponse.Status
+func (r GetRepositoryMilestoneResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetRepositoryMilestoneResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetRepositoryMilestoneResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateRepositoryMilestoneResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *RepositoryMilestoneMutation
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateRepositoryMilestoneResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateRepositoryMilestoneResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateRepositoryMilestoneResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeletePullRequestTriageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r DeletePullRequestTriageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeletePullRequestTriageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeletePullRequestTriageResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetPullRequestTriageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SubjectTriage
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON404      *NotFound
+	JSON422      *UnprocessableEntity
+}
+
+// Status returns HTTPResponse.Status
+func (r GetPullRequestTriageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetPullRequestTriageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetPullRequestTriageResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type PutPullRequestTriageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *SubjectTriageMutation
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r PutPullRequestTriageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PutPullRequestTriageResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PutPullRequestTriageResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -19153,6 +22178,77 @@ func (r ListRepositoryTagsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListRepositoryTagsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListRepositoryTransfersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RepositoryTransferList
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r ListRepositoryTransfersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListRepositoryTransfersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListRepositoryTransfersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateRepositoryTransferResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *RepositoryTransfer
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateRepositoryTransferResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateRepositoryTransferResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateRepositoryTransferResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -19491,6 +22587,109 @@ func (r GetRepositoryDeletionResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetRepositoryDeletionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type DeleteRepositoryTransferResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteRepositoryTransferResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteRepositoryTransferResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteRepositoryTransferResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetRepositoryTransferResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RepositoryTransfer
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r GetRepositoryTransferResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetRepositoryTransferResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetRepositoryTransferResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateRepositoryTransferAcceptanceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RepositoryTransfer
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON502      *BadGateway
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateRepositoryTransferAcceptanceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateRepositoryTransferAcceptanceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateRepositoryTransferAcceptanceResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -21492,6 +24691,102 @@ func (c *ClientWithResponses) CreateRepositoryForkWithResponse(ctx context.Conte
 	return ParseCreateRepositoryForkResponse(rsp)
 }
 
+// DeleteIssueTriageWithResponse request returning *DeleteIssueTriageResponse
+func (c *ClientWithResponses) DeleteIssueTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *DeleteIssueTriageParams, reqEditors ...RequestEditorFn) (*DeleteIssueTriageResponse, error) {
+	rsp, err := c.DeleteIssueTriage(ctx, owner, repo, subject, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteIssueTriageResponse(rsp)
+}
+
+// GetIssueTriageWithResponse request returning *GetIssueTriageResponse
+func (c *ClientWithResponses) GetIssueTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, reqEditors ...RequestEditorFn) (*GetIssueTriageResponse, error) {
+	rsp, err := c.GetIssueTriage(ctx, owner, repo, subject, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetIssueTriageResponse(rsp)
+}
+
+// PutIssueTriageWithBodyWithResponse request with arbitrary body returning *PutIssueTriageResponse
+func (c *ClientWithResponses) PutIssueTriageWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutIssueTriageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutIssueTriageResponse, error) {
+	rsp, err := c.PutIssueTriageWithBody(ctx, owner, repo, subject, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutIssueTriageResponse(rsp)
+}
+
+func (c *ClientWithResponses) PutIssueTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutIssueTriageParams, body PutIssueTriageJSONRequestBody, reqEditors ...RequestEditorFn) (*PutIssueTriageResponse, error) {
+	rsp, err := c.PutIssueTriage(ctx, owner, repo, subject, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutIssueTriageResponse(rsp)
+}
+
+// ListRepositoryLabelsWithResponse request returning *ListRepositoryLabelsResponse
+func (c *ClientWithResponses) ListRepositoryLabelsWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryLabelsParams, reqEditors ...RequestEditorFn) (*ListRepositoryLabelsResponse, error) {
+	rsp, err := c.ListRepositoryLabels(ctx, owner, repo, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListRepositoryLabelsResponse(rsp)
+}
+
+// CreateRepositoryLabelWithBodyWithResponse request with arbitrary body returning *CreateRepositoryLabelResponse
+func (c *ClientWithResponses) CreateRepositoryLabelWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryLabelParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRepositoryLabelResponse, error) {
+	rsp, err := c.CreateRepositoryLabelWithBody(ctx, owner, repo, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRepositoryLabelResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateRepositoryLabelWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryLabelParams, body CreateRepositoryLabelJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRepositoryLabelResponse, error) {
+	rsp, err := c.CreateRepositoryLabel(ctx, owner, repo, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRepositoryLabelResponse(rsp)
+}
+
+// DeleteRepositoryLabelWithResponse request returning *DeleteRepositoryLabelResponse
+func (c *ClientWithResponses) DeleteRepositoryLabelWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *DeleteRepositoryLabelParams, reqEditors ...RequestEditorFn) (*DeleteRepositoryLabelResponse, error) {
+	rsp, err := c.DeleteRepositoryLabel(ctx, owner, repo, label, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteRepositoryLabelResponse(rsp)
+}
+
+// GetRepositoryLabelWithResponse request returning *GetRepositoryLabelResponse
+func (c *ClientWithResponses) GetRepositoryLabelWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, reqEditors ...RequestEditorFn) (*GetRepositoryLabelResponse, error) {
+	rsp, err := c.GetRepositoryLabel(ctx, owner, repo, label, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetRepositoryLabelResponse(rsp)
+}
+
+// UpdateRepositoryLabelWithBodyWithResponse request with arbitrary body returning *UpdateRepositoryLabelResponse
+func (c *ClientWithResponses) UpdateRepositoryLabelWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *UpdateRepositoryLabelParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRepositoryLabelResponse, error) {
+	rsp, err := c.UpdateRepositoryLabelWithBody(ctx, owner, repo, label, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRepositoryLabelResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateRepositoryLabelWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params *UpdateRepositoryLabelParams, body UpdateRepositoryLabelJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRepositoryLabelResponse, error) {
+	rsp, err := c.UpdateRepositoryLabel(ctx, owner, repo, label, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRepositoryLabelResponse(rsp)
+}
+
 // GetRepositoryMergeBaseWithResponse request returning *GetRepositoryMergeBaseResponse
 func (c *ClientWithResponses) GetRepositoryMergeBaseWithResponse(ctx context.Context, owner string, repo RepositorySlug, params *GetRepositoryMergeBaseParams, reqEditors ...RequestEditorFn) (*GetRepositoryMergeBaseResponse, error) {
 	rsp, err := c.GetRepositoryMergeBase(ctx, owner, repo, params, reqEditors...)
@@ -21499,6 +24794,102 @@ func (c *ClientWithResponses) GetRepositoryMergeBaseWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseGetRepositoryMergeBaseResponse(rsp)
+}
+
+// ListRepositoryMilestonesWithResponse request returning *ListRepositoryMilestonesResponse
+func (c *ClientWithResponses) ListRepositoryMilestonesWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryMilestonesParams, reqEditors ...RequestEditorFn) (*ListRepositoryMilestonesResponse, error) {
+	rsp, err := c.ListRepositoryMilestones(ctx, owner, repo, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListRepositoryMilestonesResponse(rsp)
+}
+
+// CreateRepositoryMilestoneWithBodyWithResponse request with arbitrary body returning *CreateRepositoryMilestoneResponse
+func (c *ClientWithResponses) CreateRepositoryMilestoneWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryMilestoneParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRepositoryMilestoneResponse, error) {
+	rsp, err := c.CreateRepositoryMilestoneWithBody(ctx, owner, repo, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRepositoryMilestoneResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateRepositoryMilestoneWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryMilestoneParams, body CreateRepositoryMilestoneJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRepositoryMilestoneResponse, error) {
+	rsp, err := c.CreateRepositoryMilestone(ctx, owner, repo, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRepositoryMilestoneResponse(rsp)
+}
+
+// DeleteRepositoryMilestoneWithResponse request returning *DeleteRepositoryMilestoneResponse
+func (c *ClientWithResponses) DeleteRepositoryMilestoneWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *DeleteRepositoryMilestoneParams, reqEditors ...RequestEditorFn) (*DeleteRepositoryMilestoneResponse, error) {
+	rsp, err := c.DeleteRepositoryMilestone(ctx, owner, repo, milestone, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteRepositoryMilestoneResponse(rsp)
+}
+
+// GetRepositoryMilestoneWithResponse request returning *GetRepositoryMilestoneResponse
+func (c *ClientWithResponses) GetRepositoryMilestoneWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, reqEditors ...RequestEditorFn) (*GetRepositoryMilestoneResponse, error) {
+	rsp, err := c.GetRepositoryMilestone(ctx, owner, repo, milestone, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetRepositoryMilestoneResponse(rsp)
+}
+
+// UpdateRepositoryMilestoneWithBodyWithResponse request with arbitrary body returning *UpdateRepositoryMilestoneResponse
+func (c *ClientWithResponses) UpdateRepositoryMilestoneWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *UpdateRepositoryMilestoneParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateRepositoryMilestoneResponse, error) {
+	rsp, err := c.UpdateRepositoryMilestoneWithBody(ctx, owner, repo, milestone, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRepositoryMilestoneResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateRepositoryMilestoneWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params *UpdateRepositoryMilestoneParams, body UpdateRepositoryMilestoneJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateRepositoryMilestoneResponse, error) {
+	rsp, err := c.UpdateRepositoryMilestone(ctx, owner, repo, milestone, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateRepositoryMilestoneResponse(rsp)
+}
+
+// DeletePullRequestTriageWithResponse request returning *DeletePullRequestTriageResponse
+func (c *ClientWithResponses) DeletePullRequestTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *DeletePullRequestTriageParams, reqEditors ...RequestEditorFn) (*DeletePullRequestTriageResponse, error) {
+	rsp, err := c.DeletePullRequestTriage(ctx, owner, repo, subject, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeletePullRequestTriageResponse(rsp)
+}
+
+// GetPullRequestTriageWithResponse request returning *GetPullRequestTriageResponse
+func (c *ClientWithResponses) GetPullRequestTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, reqEditors ...RequestEditorFn) (*GetPullRequestTriageResponse, error) {
+	rsp, err := c.GetPullRequestTriage(ctx, owner, repo, subject, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetPullRequestTriageResponse(rsp)
+}
+
+// PutPullRequestTriageWithBodyWithResponse request with arbitrary body returning *PutPullRequestTriageResponse
+func (c *ClientWithResponses) PutPullRequestTriageWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PutPullRequestTriageResponse, error) {
+	rsp, err := c.PutPullRequestTriageWithBody(ctx, owner, repo, subject, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutPullRequestTriageResponse(rsp)
+}
+
+func (c *ClientWithResponses) PutPullRequestTriageWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params *PutPullRequestTriageParams, body PutPullRequestTriageJSONRequestBody, reqEditors ...RequestEditorFn) (*PutPullRequestTriageResponse, error) {
+	rsp, err := c.PutPullRequestTriage(ctx, owner, repo, subject, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePutPullRequestTriageResponse(rsp)
 }
 
 // SyncRepositoryForkWithResponse request returning *SyncRepositoryForkResponse
@@ -21517,6 +24908,32 @@ func (c *ClientWithResponses) ListRepositoryTagsWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseListRepositoryTagsResponse(rsp)
+}
+
+// ListRepositoryTransfersWithResponse request returning *ListRepositoryTransfersResponse
+func (c *ClientWithResponses) ListRepositoryTransfersWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *ListRepositoryTransfersParams, reqEditors ...RequestEditorFn) (*ListRepositoryTransfersResponse, error) {
+	rsp, err := c.ListRepositoryTransfers(ctx, owner, repo, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListRepositoryTransfersResponse(rsp)
+}
+
+// CreateRepositoryTransferWithBodyWithResponse request with arbitrary body returning *CreateRepositoryTransferResponse
+func (c *ClientWithResponses) CreateRepositoryTransferWithBodyWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryTransferParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateRepositoryTransferResponse, error) {
+	rsp, err := c.CreateRepositoryTransferWithBody(ctx, owner, repo, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRepositoryTransferResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateRepositoryTransferWithResponse(ctx context.Context, owner RepositoryOwnerPath, repo RepositorySlugPath, params *CreateRepositoryTransferParams, body CreateRepositoryTransferJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateRepositoryTransferResponse, error) {
+	rsp, err := c.CreateRepositoryTransfer(ctx, owner, repo, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRepositoryTransferResponse(rsp)
 }
 
 // GetRepositoryTreeWithResponse request returning *GetRepositoryTreeResponse
@@ -21631,6 +25048,33 @@ func (c *ClientWithResponses) GetRepositoryDeletionWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseGetRepositoryDeletionResponse(rsp)
+}
+
+// DeleteRepositoryTransferWithResponse request returning *DeleteRepositoryTransferResponse
+func (c *ClientWithResponses) DeleteRepositoryTransferWithResponse(ctx context.Context, transfer openapi_types.UUID, params *DeleteRepositoryTransferParams, reqEditors ...RequestEditorFn) (*DeleteRepositoryTransferResponse, error) {
+	rsp, err := c.DeleteRepositoryTransfer(ctx, transfer, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteRepositoryTransferResponse(rsp)
+}
+
+// GetRepositoryTransferWithResponse request returning *GetRepositoryTransferResponse
+func (c *ClientWithResponses) GetRepositoryTransferWithResponse(ctx context.Context, transfer openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetRepositoryTransferResponse, error) {
+	rsp, err := c.GetRepositoryTransfer(ctx, transfer, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetRepositoryTransferResponse(rsp)
+}
+
+// CreateRepositoryTransferAcceptanceWithResponse request returning *CreateRepositoryTransferAcceptanceResponse
+func (c *ClientWithResponses) CreateRepositoryTransferAcceptanceWithResponse(ctx context.Context, transfer openapi_types.UUID, params *CreateRepositoryTransferAcceptanceParams, reqEditors ...RequestEditorFn) (*CreateRepositoryTransferAcceptanceResponse, error) {
+	rsp, err := c.CreateRepositoryTransferAcceptance(ctx, transfer, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateRepositoryTransferAcceptanceResponse(rsp)
 }
 
 // SearchProfilesWithResponse request returning *SearchProfilesResponse
@@ -22073,6 +25517,13 @@ func ParseGetIssuesResponse(rsp *http.Response) (*GetIssuesResponse, error) {
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest NotFound
@@ -24691,6 +28142,13 @@ func ParseListPullRequestsResponse(rsp *http.Response) (*ListPullRequestsRespons
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest NotFound
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -26503,6 +29961,508 @@ func ParseCreateRepositoryForkResponse(rsp *http.Response) (*CreateRepositoryFor
 	return response, nil
 }
 
+// ParseDeleteIssueTriageResponse parses an HTTP response from a DeleteIssueTriageWithResponse call
+func ParseDeleteIssueTriageResponse(rsp *http.Response) (*DeleteIssueTriageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteIssueTriageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetIssueTriageResponse parses an HTTP response from a GetIssueTriageWithResponse call
+func ParseGetIssueTriageResponse(rsp *http.Response) (*GetIssueTriageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetIssueTriageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SubjectTriage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutIssueTriageResponse parses an HTTP response from a PutIssueTriageWithResponse call
+func ParsePutIssueTriageResponse(rsp *http.Response) (*PutIssueTriageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutIssueTriageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest SubjectTriageMutation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListRepositoryLabelsResponse parses an HTTP response from a ListRepositoryLabelsWithResponse call
+func ParseListRepositoryLabelsResponse(rsp *http.Response) (*ListRepositoryLabelsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListRepositoryLabelsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RepositoryLabelList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateRepositoryLabelResponse parses an HTTP response from a CreateRepositoryLabelWithResponse call
+func ParseCreateRepositoryLabelResponse(rsp *http.Response) (*CreateRepositoryLabelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateRepositoryLabelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest RepositoryLabelMutation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteRepositoryLabelResponse parses an HTTP response from a DeleteRepositoryLabelWithResponse call
+func ParseDeleteRepositoryLabelResponse(rsp *http.Response) (*DeleteRepositoryLabelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteRepositoryLabelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetRepositoryLabelResponse parses an HTTP response from a GetRepositoryLabelWithResponse call
+func ParseGetRepositoryLabelResponse(rsp *http.Response) (*GetRepositoryLabelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetRepositoryLabelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RepositoryLabel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateRepositoryLabelResponse parses an HTTP response from a UpdateRepositoryLabelWithResponse call
+func ParseUpdateRepositoryLabelResponse(rsp *http.Response) (*UpdateRepositoryLabelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateRepositoryLabelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest RepositoryLabelMutation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetRepositoryMergeBaseResponse parses an HTTP response from a GetRepositoryMergeBaseWithResponse call
 func ParseGetRepositoryMergeBaseResponse(rsp *http.Response) (*GetRepositoryMergeBaseResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -26551,6 +30511,508 @@ func ParseGetRepositoryMergeBaseResponse(rsp *http.Response) (*GetRepositoryMerg
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListRepositoryMilestonesResponse parses an HTTP response from a ListRepositoryMilestonesWithResponse call
+func ParseListRepositoryMilestonesResponse(rsp *http.Response) (*ListRepositoryMilestonesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListRepositoryMilestonesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RepositoryMilestoneList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateRepositoryMilestoneResponse parses an HTTP response from a CreateRepositoryMilestoneWithResponse call
+func ParseCreateRepositoryMilestoneResponse(rsp *http.Response) (*CreateRepositoryMilestoneResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateRepositoryMilestoneResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest RepositoryMilestoneMutation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteRepositoryMilestoneResponse parses an HTTP response from a DeleteRepositoryMilestoneWithResponse call
+func ParseDeleteRepositoryMilestoneResponse(rsp *http.Response) (*DeleteRepositoryMilestoneResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteRepositoryMilestoneResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetRepositoryMilestoneResponse parses an HTTP response from a GetRepositoryMilestoneWithResponse call
+func ParseGetRepositoryMilestoneResponse(rsp *http.Response) (*GetRepositoryMilestoneResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetRepositoryMilestoneResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RepositoryMilestone
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateRepositoryMilestoneResponse parses an HTTP response from a UpdateRepositoryMilestoneWithResponse call
+func ParseUpdateRepositoryMilestoneResponse(rsp *http.Response) (*UpdateRepositoryMilestoneResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateRepositoryMilestoneResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest RepositoryMilestoneMutation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeletePullRequestTriageResponse parses an HTTP response from a DeletePullRequestTriageWithResponse call
+func ParseDeletePullRequestTriageResponse(rsp *http.Response) (*DeletePullRequestTriageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeletePullRequestTriageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetPullRequestTriageResponse parses an HTTP response from a GetPullRequestTriageWithResponse call
+func ParseGetPullRequestTriageResponse(rsp *http.Response) (*GetPullRequestTriageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetPullRequestTriageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SubjectTriage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePutPullRequestTriageResponse parses an HTTP response from a PutPullRequestTriageWithResponse call
+func ParsePutPullRequestTriageResponse(rsp *http.Response) (*PutPullRequestTriageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PutPullRequestTriageResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest SubjectTriageMutation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
 
 	}
 
@@ -26659,6 +31121,135 @@ func ParseListRepositoryTagsResponse(rsp *http.Response) (*ListRepositoryTagsRes
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListRepositoryTransfersResponse parses an HTTP response from a ListRepositoryTransfersWithResponse call
+func ParseListRepositoryTransfersResponse(rsp *http.Response) (*ListRepositoryTransfersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListRepositoryTransfersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RepositoryTransferList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateRepositoryTransferResponse parses an HTTP response from a CreateRepositoryTransferWithResponse call
+func ParseCreateRepositoryTransferResponse(rsp *http.Response) (*CreateRepositoryTransferResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateRepositoryTransferResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest RepositoryTransfer
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
 
 	}
 
@@ -27185,6 +31776,175 @@ func ParseGetRepositoryDeletionResponse(rsp *http.Response) (*GetRepositoryDelet
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteRepositoryTransferResponse parses an HTTP response from a DeleteRepositoryTransferWithResponse call
+func ParseDeleteRepositoryTransferResponse(rsp *http.Response) (*DeleteRepositoryTransferResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteRepositoryTransferResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetRepositoryTransferResponse parses an HTTP response from a GetRepositoryTransferWithResponse call
+func ParseGetRepositoryTransferResponse(rsp *http.Response) (*GetRepositoryTransferResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetRepositoryTransferResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RepositoryTransfer
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateRepositoryTransferAcceptanceResponse parses an HTTP response from a CreateRepositoryTransferAcceptanceWithResponse call
+func ParseCreateRepositoryTransferAcceptanceResponse(rsp *http.Response) (*CreateRepositoryTransferAcceptanceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateRepositoryTransferAcceptanceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RepositoryTransfer
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 502:
+		var dest BadGateway
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON502 = &dest
 
 	}
 
@@ -28852,15 +33612,69 @@ type ServerInterface interface {
 	// Fork a public local or federated repository onto this server
 	// (POST /api/v1/repositories/{owner}/{repo}/forks)
 	CreateRepositoryFork(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params CreateRepositoryForkParams)
+	// Remove all issue triage metadata
+	// (DELETE /api/v1/repositories/{owner}/{repo}/issues/{subject}/triage)
+	DeleteIssueTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params DeleteIssueTriageParams)
+	// Get effective issue triage metadata
+	// (GET /api/v1/repositories/{owner}/{repo}/issues/{subject}/triage)
+	GetIssueTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath)
+	// Replace issue labels, assignees, and milestone
+	// (PUT /api/v1/repositories/{owner}/{repo}/issues/{subject}/triage)
+	PutIssueTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params PutIssueTriageParams)
+	// List visible repository labels
+	// (GET /api/v1/repositories/{owner}/{repo}/labels)
+	ListRepositoryLabels(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params ListRepositoryLabelsParams)
+	// Create a repository-authoritative label
+	// (POST /api/v1/repositories/{owner}/{repo}/labels)
+	CreateRepositoryLabel(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params CreateRepositoryLabelParams)
+	// Delete a repository label
+	// (DELETE /api/v1/repositories/{owner}/{repo}/labels/{label})
+	DeleteRepositoryLabel(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params DeleteRepositoryLabelParams)
+	// Get one repository label
+	// (GET /api/v1/repositories/{owner}/{repo}/labels/{label})
+	GetRepositoryLabel(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath)
+	// Replace a repository label
+	// (PUT /api/v1/repositories/{owner}/{repo}/labels/{label})
+	UpdateRepositoryLabel(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, label LabelPath, params UpdateRepositoryLabelParams)
 	// Find a merge base for two commits
 	// (GET /api/v1/repositories/{owner}/{repo}/merge-base)
 	GetRepositoryMergeBase(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryMergeBaseParams)
+	// List visible repository milestones
+	// (GET /api/v1/repositories/{owner}/{repo}/milestones)
+	ListRepositoryMilestones(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params ListRepositoryMilestonesParams)
+	// Create a repository-authoritative milestone
+	// (POST /api/v1/repositories/{owner}/{repo}/milestones)
+	CreateRepositoryMilestone(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params CreateRepositoryMilestoneParams)
+	// Delete a repository milestone
+	// (DELETE /api/v1/repositories/{owner}/{repo}/milestones/{milestone})
+	DeleteRepositoryMilestone(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params DeleteRepositoryMilestoneParams)
+	// Get one repository milestone
+	// (GET /api/v1/repositories/{owner}/{repo}/milestones/{milestone})
+	GetRepositoryMilestone(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath)
+	// Replace a repository milestone
+	// (PUT /api/v1/repositories/{owner}/{repo}/milestones/{milestone})
+	UpdateRepositoryMilestone(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, milestone MilestonePath, params UpdateRepositoryMilestoneParams)
+	// Remove all pull request triage metadata
+	// (DELETE /api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage)
+	DeletePullRequestTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params DeletePullRequestTriageParams)
+	// Get effective pull request triage metadata
+	// (GET /api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage)
+	GetPullRequestTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath)
+	// Replace pull request labels, assignees, and milestone
+	// (PUT /api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage)
+	PutPullRequestTriage(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, subject SubjectPath, params PutPullRequestTriageParams)
 	// Fast-forward a local fork's default branch from its current upstream
 	// (POST /api/v1/repositories/{owner}/{repo}/sync-fork)
 	SyncRepositoryFork(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath)
 	// List repository tags
 	// (GET /api/v1/repositories/{owner}/{repo}/tags)
 	ListRepositoryTags(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryTagsParams)
+	// List repository transfer history visible to the current owner
+	// (GET /api/v1/repositories/{owner}/{repo}/transfers)
+	ListRepositoryTransfers(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params ListRepositoryTransfersParams)
+	// Propose transferring a repository to another owner
+	// (POST /api/v1/repositories/{owner}/{repo}/transfers)
+	CreateRepositoryTransfer(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath, params CreateRepositoryTransferParams)
 	// List one repository tree directory
 	// (GET /api/v1/repositories/{owner}/{repo}/tree)
 	GetRepositoryTree(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryTreeParams)
@@ -28891,6 +33705,15 @@ type ServerInterface interface {
 	// Get a recoverable repository deletion
 	// (GET /api/v1/repository-deletions/{deletion})
 	GetRepositoryDeletion(w http.ResponseWriter, r *http.Request, deletion openapi_types.UUID)
+	// Cancel a pending transfer before acceptance
+	// (DELETE /api/v1/repository-transfers/{transfer})
+	DeleteRepositoryTransfer(w http.ResponseWriter, r *http.Request, transfer openapi_types.UUID, params DeleteRepositoryTransferParams)
+	// Inspect a repository transfer as its source or destination owner
+	// (GET /api/v1/repository-transfers/{transfer})
+	GetRepositoryTransfer(w http.ResponseWriter, r *http.Request, transfer openapi_types.UUID)
+	// Accept a pending transfer as the destination owner
+	// (POST /api/v1/repository-transfers/{transfer}/acceptance)
+	CreateRepositoryTransferAcceptance(w http.ResponseWriter, r *http.Request, transfer openapi_types.UUID, params CreateRepositoryTransferAcceptanceParams)
 	// Search profiles in the local network index
 	// (GET /api/v1/search/profiles)
 	SearchProfiles(w http.ResponseWriter, r *http.Request, params SearchProfilesParams)
@@ -29047,6 +33870,58 @@ func (siw *ServerInterfaceWrapper) GetIssues(w http.ResponseWriter, r *http.Requ
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "repository_uri"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repository_uri", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "label" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "label", r.URL.Query(), &params.Label, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "label"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "label", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "assignee" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "assignee", r.URL.Query(), &params.Assignee, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "assignee"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "assignee", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "milestone" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "milestone", r.URL.Query(), &params.Milestone, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "milestone"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "milestone", Err: err})
 		}
 		return
 	}
@@ -31529,6 +36404,58 @@ func (siw *ServerInterfaceWrapper) ListPullRequests(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "label" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "label", r.URL.Query(), &params.Label, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "label"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "label", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "assignee" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "assignee", r.URL.Query(), &params.Assignee, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "assignee"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "assignee", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "milestone" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "milestone", r.URL.Query(), &params.Milestone, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "milestone"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "milestone", Err: err})
+		}
+		return
+	}
+
 	// ------------- Optional query parameter "limit" -------------
 
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
@@ -33273,6 +38200,537 @@ func (siw *ServerInterfaceWrapper) CreateRepositoryFork(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteIssueTriage operation middleware
+func (siw *ServerInterfaceWrapper) DeleteIssueTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteIssueTriageParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteIssueTriage(w, r, owner, repo, subject, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetIssueTriage operation middleware
+func (siw *ServerInterfaceWrapper) GetIssueTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetIssueTriage(w, r, owner, repo, subject)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutIssueTriage operation middleware
+func (siw *ServerInterfaceWrapper) PutIssueTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutIssueTriageParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutIssueTriage(w, r, owner, repo, subject, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRepositoryLabels operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryLabels(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryLabelsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryLabels(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryLabel operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryLabel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRepositoryLabelParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryLabel(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRepositoryLabel operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepositoryLabel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "label" -------------
+	var label LabelPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "label", r.PathValue("label"), &label, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "label", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteRepositoryLabelParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepositoryLabel(w, r, owner, repo, label, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryLabel operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryLabel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "label" -------------
+	var label LabelPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "label", r.PathValue("label"), &label, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "label", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryLabel(w, r, owner, repo, label)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateRepositoryLabel operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRepositoryLabel(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "label" -------------
+	var label LabelPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "label", r.PathValue("label"), &label, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "label", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateRepositoryLabelParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateRepositoryLabel(w, r, owner, repo, label, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetRepositoryMergeBase operation middleware
 func (siw *ServerInterfaceWrapper) GetRepositoryMergeBase(w http.ResponseWriter, r *http.Request) {
 
@@ -33336,6 +38794,537 @@ func (siw *ServerInterfaceWrapper) GetRepositoryMergeBase(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepositoryMergeBase(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRepositoryMilestones operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryMilestones(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryMilestonesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryMilestones(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryMilestone operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryMilestone(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRepositoryMilestoneParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryMilestone(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRepositoryMilestone operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepositoryMilestone(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "milestone" -------------
+	var milestone MilestonePath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "milestone", r.PathValue("milestone"), &milestone, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "milestone", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteRepositoryMilestoneParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepositoryMilestone(w, r, owner, repo, milestone, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryMilestone operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryMilestone(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "milestone" -------------
+	var milestone MilestonePath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "milestone", r.PathValue("milestone"), &milestone, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "milestone", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryMilestone(w, r, owner, repo, milestone)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateRepositoryMilestone operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRepositoryMilestone(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "milestone" -------------
+	var milestone MilestonePath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "milestone", r.PathValue("milestone"), &milestone, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "milestone", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UpdateRepositoryMilestoneParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateRepositoryMilestone(w, r, owner, repo, milestone, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeletePullRequestTriage operation middleware
+func (siw *ServerInterfaceWrapper) DeletePullRequestTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeletePullRequestTriageParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePullRequestTriage(w, r, owner, repo, subject, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetPullRequestTriage operation middleware
+func (siw *ServerInterfaceWrapper) GetPullRequestTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetPullRequestTriage(w, r, owner, repo, subject)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutPullRequestTriage operation middleware
+func (siw *ServerInterfaceWrapper) PutPullRequestTriage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "subject" -------------
+	var subject SubjectPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subject", r.PathValue("subject"), &subject, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "subject", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PutPullRequestTriageParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin ExactOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutPullRequestTriage(w, r, owner, repo, subject, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33449,6 +39438,145 @@ func (siw *ServerInterfaceWrapper) ListRepositoryTags(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListRepositoryTags(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRepositoryTransfers operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryTransfers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryTransfersParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryTransfers(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryTransfer operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryTransfer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner RepositoryOwnerPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlugPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRepositoryTransferParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin MutationOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryTransfer(w, r, owner, repo, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33993,6 +40121,156 @@ func (siw *ServerInterfaceWrapper) GetRepositoryDeletion(w http.ResponseWriter, 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepositoryDeletion(w, r, deletion)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRepositoryTransfer operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepositoryTransfer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "transfer" -------------
+	var transfer openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "transfer", r.PathValue("transfer"), &transfer, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "transfer", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteRepositoryTransferParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin MutationOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepositoryTransfer(w, r, transfer, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryTransfer operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryTransfer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "transfer" -------------
+	var transfer openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "transfer", r.PathValue("transfer"), &transfer, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "transfer", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryTransfer(w, r, transfer)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryTransferAcceptance operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryTransferAcceptance(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "transfer" -------------
+	var transfer openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "transfer", r.PathValue("transfer"), &transfer, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "transfer", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateRepositoryTransferAcceptanceParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Origin" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Origin")]; found {
+		var Origin MutationOrigin
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Origin", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Origin", valueList[0], &Origin, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: "uri"})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Origin", Err: err})
+			return
+		}
+
+		params.Origin = &Origin
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryTransferAcceptance(w, r, transfer, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -36543,9 +42821,27 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/diff", wrapper.GetRepositoryDiff)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.ListRepositoryForks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.CreateRepositoryFork)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/issues/{subject}/triage", wrapper.DeleteIssueTriage)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/issues/{subject}/triage", wrapper.GetIssueTriage)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/issues/{subject}/triage", wrapper.PutIssueTriage)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/labels", wrapper.ListRepositoryLabels)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/labels", wrapper.CreateRepositoryLabel)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/labels/{label}", wrapper.DeleteRepositoryLabel)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/labels/{label}", wrapper.GetRepositoryLabel)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/labels/{label}", wrapper.UpdateRepositoryLabel)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/merge-base", wrapper.GetRepositoryMergeBase)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/milestones", wrapper.ListRepositoryMilestones)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/milestones", wrapper.CreateRepositoryMilestone)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/milestones/{milestone}", wrapper.DeleteRepositoryMilestone)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/milestones/{milestone}", wrapper.GetRepositoryMilestone)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/milestones/{milestone}", wrapper.UpdateRepositoryMilestone)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage", wrapper.DeletePullRequestTriage)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage", wrapper.GetPullRequestTriage)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage", wrapper.PutPullRequestTriage)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/sync-fork", wrapper.SyncRepositoryFork)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tags", wrapper.ListRepositoryTags)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/transfers", wrapper.ListRepositoryTransfers)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/transfers", wrapper.CreateRepositoryTransfer)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tree", wrapper.GetRepositoryTree)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks", wrapper.ListRepositoryWebhooks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks", wrapper.CreateRepositoryWebhook)
@@ -36556,6 +42852,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/webhooks/{webhook}/deliveries", wrapper.CreateWebhookRedelivery)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repository-deletions/{deletion}", wrapper.RestoreRepositoryDeletion)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repository-deletions/{deletion}", wrapper.GetRepositoryDeletion)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repository-transfers/{transfer}", wrapper.DeleteRepositoryTransfer)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repository-transfers/{transfer}", wrapper.GetRepositoryTransfer)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repository-transfers/{transfer}/acceptance", wrapper.CreateRepositoryTransferAcceptance)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/search/profiles", wrapper.SearchProfiles)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/search/repositories", wrapper.SearchRepositories)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/ssh-keys", wrapper.ListSSHKeys)

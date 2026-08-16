@@ -13,6 +13,8 @@
     { "name": "Profiles" },
     { "name": "Organizations" },
     { "name": "Repositories" },
+    { "name": "Repository Transfers", "description": "Bilateral, retryable repository ownership transfers. Public transfers are represented by portable AT Protocol proposal, successor, and acceptance records." },
+    { "name": "Repository Triage", "description": "Repository-authoritative labels, milestones, assignees, and subject metadata projected from portable AT Protocol records." },
     { "name": "Credentials" },
     { "name": "Passkeys" },
     { "name": "Issues" },
@@ -559,6 +561,116 @@
         }
       }
     },
+    "/api/v1/repositories/{owner}/{repo}/transfers": {
+      "get": {
+        "operationId": "listRepositoryTransfers", "tags": ["Repository Transfers"], "summary": "List repository transfer history visible to the current owner", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": {
+          "200": { "description": "A cursor page of repository transfers", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryTransferList" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "post": {
+        "operationId": "createRepositoryTransfer", "tags": ["Repository Transfers"], "summary": "Propose transferring a repository to another owner", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/MutationOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateRepositoryTransferRequest" } } } },
+        "responses": {
+          "202": { "description": "Transfer proposal created or resumed", "headers": { "Location": { "description": "Canonical API URL for the transfer", "schema": { "type": "string", "format": "uri-reference" } }, "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryTransfer" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" }
+        }
+      }
+    },
+    "/api/v1/repository-transfers/{transfer}": {
+      "get": {
+        "operationId": "getRepositoryTransfer", "tags": ["Repository Transfers"], "summary": "Inspect a repository transfer as its source or destination owner", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "transfer", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "Repository transfer state", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryTransfer" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "delete": {
+        "operationId": "deleteRepositoryTransfer", "tags": ["Repository Transfers"], "summary": "Cancel a pending transfer before acceptance", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "transfer", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "$ref": "#/components/parameters/MutationOrigin" }],
+        "responses": { "204": { "description": "Transfer cancelled", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "502": { "$ref": "#/components/responses/BadGateway" } }
+      }
+    },
+    "/api/v1/repository-transfers/{transfer}/acceptance": {
+      "post": {
+        "operationId": "createRepositoryTransferAcceptance", "tags": ["Repository Transfers"], "summary": "Accept a pending transfer as the destination owner", "security": [{ "sessionCookie": [] }, { "personalAccessToken": [] }],
+        "parameters": [{ "name": "transfer", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "$ref": "#/components/parameters/MutationOrigin" }],
+        "responses": { "200": { "description": "Transfer completed", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryTransfer" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/labels": {
+      "get": {
+        "operationId": "listRepositoryLabels", "tags": ["Repository Triage"], "summary": "List visible repository labels", "security": [{}, { "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "A cursor page of labels", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryLabelList" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "post": {
+        "operationId": "createRepositoryLabel", "tags": ["Repository Triage"], "summary": "Create a repository-authoritative label", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryLabelInput" } } } },
+        "responses": { "202": { "description": "Label published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryLabelMutation" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/labels/{label}": {
+      "get": {
+        "operationId": "getRepositoryLabel", "tags": ["Repository Triage"], "summary": "Get one repository label", "security": [{}, { "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/LabelPath" }],
+        "responses": { "200": { "description": "Repository label", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryLabel" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      },
+      "put": {
+        "operationId": "updateRepositoryLabel", "tags": ["Repository Triage"], "summary": "Replace a repository label", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/LabelPath" }, { "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryLabelInput" } } } },
+        "responses": { "202": { "description": "Label update published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryLabelMutation" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } }
+      },
+      "delete": {
+        "operationId": "deleteRepositoryLabel", "tags": ["Repository Triage"], "summary": "Delete a repository label", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/LabelPath" }, { "$ref": "#/components/parameters/ExactOrigin" }],
+        "responses": { "202": { "description": "Label deletion published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/milestones": {
+      "get": {
+        "operationId": "listRepositoryMilestones", "tags": ["Repository Triage"], "summary": "List visible repository milestones", "security": [{}, { "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "responses": { "200": { "description": "A cursor page of milestones", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryMilestoneList" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "post": {
+        "operationId": "createRepositoryMilestone", "tags": ["Repository Triage"], "summary": "Create a repository-authoritative milestone", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryMilestoneInput" } } } },
+        "responses": { "202": { "description": "Milestone published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryMilestoneMutation" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/milestones/{milestone}": {
+      "get": {
+        "operationId": "getRepositoryMilestone", "tags": ["Repository Triage"], "summary": "Get one repository milestone", "security": [{}, { "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/MilestonePath" }],
+        "responses": { "200": { "description": "Repository milestone", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryMilestone" } } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } }
+      },
+      "put": {
+        "operationId": "updateRepositoryMilestone", "tags": ["Repository Triage"], "summary": "Replace a repository milestone", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/MilestonePath" }, { "$ref": "#/components/parameters/ExactOrigin" }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryMilestoneInput" } } } },
+        "responses": { "202": { "description": "Milestone update published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RepositoryMilestoneMutation" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } }
+      },
+      "delete": {
+        "operationId": "deleteRepositoryMilestone", "tags": ["Repository Triage"], "summary": "Delete a repository milestone", "security": [{ "sessionCookie": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/MilestonePath" }, { "$ref": "#/components/parameters/ExactOrigin" }],
+        "responses": { "202": { "description": "Milestone deletion published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } }
+      }
+    },
+    "/api/v1/repositories/{owner}/{repo}/issues/{subject}/triage": {
+      "get": { "operationId": "getIssueTriage", "tags": ["Repository Triage"], "summary": "Get effective issue triage metadata", "security": [{}, { "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/SubjectPath" }], "responses": { "200": { "description": "Issue triage metadata", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SubjectTriage" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } } },
+      "put": { "operationId": "putIssueTriage", "tags": ["Repository Triage"], "summary": "Replace issue labels, assignees, and milestone", "security": [{ "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/SubjectPath" }, { "$ref": "#/components/parameters/ExactOrigin" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SubjectTriageInput" } } } }, "responses": { "202": { "description": "Issue triage published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SubjectTriageMutation" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } } },
+      "delete": { "operationId": "deleteIssueTriage", "tags": ["Repository Triage"], "summary": "Remove all issue triage metadata", "security": [{ "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/SubjectPath" }, { "$ref": "#/components/parameters/ExactOrigin" }], "responses": { "202": { "description": "Issue triage deletion published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } } }
+    },
+    "/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage": {
+      "get": { "operationId": "getPullRequestTriage", "tags": ["Repository Triage"], "summary": "Get effective pull request triage metadata", "security": [{}, { "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/SubjectPath" }], "responses": { "200": { "description": "Pull request triage metadata", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SubjectTriage" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" } } },
+      "put": { "operationId": "putPullRequestTriage", "tags": ["Repository Triage"], "summary": "Replace pull request labels, assignees, and milestone", "security": [{ "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/SubjectPath" }, { "$ref": "#/components/parameters/ExactOrigin" }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SubjectTriageInput" } } } }, "responses": { "202": { "description": "Pull request triage published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SubjectTriageMutation" } } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } } },
+      "delete": { "operationId": "deletePullRequestTriage", "tags": ["Repository Triage"], "summary": "Remove all pull request triage metadata", "security": [{ "sessionCookie": [] }], "parameters": [{ "$ref": "#/components/parameters/RepositoryOwnerPath" }, { "$ref": "#/components/parameters/RepositorySlugPath" }, { "$ref": "#/components/parameters/SubjectPath" }, { "$ref": "#/components/parameters/ExactOrigin" }], "responses": { "202": { "description": "Pull request triage deletion published; projection update is pending", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } } }, "400": { "$ref": "#/components/responses/BadRequest" }, "401": { "$ref": "#/components/responses/Unauthorized" }, "403": { "$ref": "#/components/responses/Forbidden" }, "404": { "$ref": "#/components/responses/NotFound" }, "409": { "$ref": "#/components/responses/Conflict" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }, "502": { "$ref": "#/components/responses/BadGateway" } } }
+    },
     "/api/v1/stars": {
       "get": {
         "operationId": "getStars", "tags": ["Stars"], "summary": "Get projected stars for a repository", "security": [{}, { "sessionCookie": [] }],
@@ -592,10 +704,10 @@
     "/api/v1/issues": {
       "get": {
         "operationId": "getIssues", "tags": ["Issues"], "summary": "Get projected issues for a repository", "security": [{}, { "sessionCookie": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }, { "$ref": "#/components/parameters/IssueStateFilter" }, { "$ref": "#/components/parameters/LabelFilter" }, { "$ref": "#/components/parameters/AssigneeFilter" }, { "$ref": "#/components/parameters/MilestoneFilter" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
         "responses": {
           "200": { "description": "Current bounded issue projection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/IssueList" } } } },
-          "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+          "400": { "$ref": "#/components/responses/BadRequest" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
         }
       },
       "post": {
@@ -666,10 +778,10 @@
     "/api/v1/pull-requests": {
       "get": {
         "operationId": "listPullRequests", "tags": ["Pull Requests"], "summary": "List projected pull requests targeting a repository", "security": [{}, { "sessionCookie": [] }],
-        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
+        "parameters": [{ "$ref": "#/components/parameters/RepositoryURI" }, { "$ref": "#/components/parameters/PullRequestStateFilter" }, { "$ref": "#/components/parameters/LabelFilter" }, { "$ref": "#/components/parameters/AssigneeFilter" }, { "$ref": "#/components/parameters/MilestoneFilter" }, { "$ref": "#/components/parameters/Limit" }, { "$ref": "#/components/parameters/Cursor" }],
         "responses": {
           "200": { "description": "Current bounded pull request projection", "headers": { "X-Request-ID": { "$ref": "#/components/headers/RequestID" } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PullRequestList" } } } },
-          "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+          "400": { "$ref": "#/components/responses/BadRequest" }, "404": { "$ref": "#/components/responses/NotFound" }, "422": { "$ref": "#/components/responses/UnprocessableEntity" }
         }
       },
       "post": {
@@ -1424,6 +1536,14 @@
       "OrganizationSlug": { "name": "organization", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/OrganizationSlug" } },
       "RepositoryOwnerPath": { "name": "owner", "in": "path", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "RepositorySlugPath": { "name": "repo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/RepositorySlug" } },
+      "LabelPath": { "name": "label", "in": "path", "required": true, "description": "Stable AT Protocol record key for a repository label.", "schema": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[A-Za-z0-9._:~-]+$" } },
+      "MilestonePath": { "name": "milestone", "in": "path", "required": true, "description": "Stable AT Protocol record key for a repository milestone.", "schema": { "type": "string", "minLength": 1, "maxLength": 512, "pattern": "^[A-Za-z0-9._:~-]+$" } },
+      "SubjectPath": { "name": "subject", "in": "path", "required": true, "description": "Unpadded base64url encoding of the issue or pull-request AT URI.", "schema": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^[A-Za-z0-9_-]+$" } },
+      "IssueStateFilter": { "name": "state", "in": "query", "required": false, "description": "Filter by effective repository-authoritative issue state.", "schema": { "type": "string", "enum": ["open", "closed"] } },
+      "PullRequestStateFilter": { "name": "state", "in": "query", "required": false, "description": "Filter by effective target-repository-authoritative pull request state.", "schema": { "type": "string", "enum": ["open", "closed", "merged"] } },
+      "LabelFilter": { "name": "label", "in": "query", "required": false, "description": "Filter by stable repository label record key.", "schema": { "type": "string", "minLength": 1, "maxLength": 512 } },
+      "AssigneeFilter": { "name": "assignee", "in": "query", "required": false, "description": "Filter by canonical assignee DID.", "schema": { "type": "string", "minLength": 1, "maxLength": 2048 } },
+      "MilestoneFilter": { "name": "milestone", "in": "query", "required": false, "description": "Filter by stable repository milestone record key.", "schema": { "type": "string", "minLength": 1, "maxLength": 512 } },
       "RepositoryURI": { "name": "repository_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "IssueURI": { "name": "issue_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
       "PullRequestURI": { "name": "pull_request_uri", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } },
@@ -1924,6 +2044,92 @@
       },
       "RepositoryList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }, "page": { "$ref": "#/components/schemas/Page" } } },
       "RepositoryForkList": { "type": "object", "additionalProperties": false, "required": ["items", "page", "fork_count"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Repository" } }, "page": { "$ref": "#/components/schemas/Page" }, "fork_count": { "type": "integer", "format": "int64", "minimum": 0 } } },
+      "CreateRepositoryTransferRequest": {
+        "type": "object", "additionalProperties": false, "required": ["destination_owner"],
+        "properties": { "destination_owner": { "type": "string", "minLength": 1, "maxLength": 253, "description": "Account handle, DID, or organization slug in the shared owner namespace." } }
+      },
+      "RepositoryTransfer": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "repository_id", "source_owner", "destination_owner", "status", "created_at", "expires_at"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "repository_id": { "type": "string", "format": "uuid" },
+          "source_owner": { "type": "string" },
+          "destination_owner": { "type": "string" },
+          "source_repository": { "$ref": "#/components/schemas/RepositoryStrongRef" },
+          "proposal": { "$ref": "#/components/schemas/RepositoryStrongRef" },
+          "successor": { "$ref": "#/components/schemas/RepositoryStrongRef" },
+          "acceptance": { "$ref": "#/components/schemas/RepositoryStrongRef" },
+          "status": { "type": "string", "enum": ["pending", "completed", "cancelled"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "acceptance_started_at": { "type": "string", "format": "date-time", "nullable": true, "description": "Durable start of the retryable acceptance workflow. Once set, cancellation is no longer safe." },
+          "accepted_at": { "type": "string", "format": "date-time", "nullable": true },
+          "accepted_by": { "type": "string", "nullable": true },
+          "cancelled_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "RepositoryTransferList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/RepositoryTransfer" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "RepositoryLabel": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "uri", "cid", "author_did", "repository_uri", "repository_cid", "name", "color", "description", "created_at", "updated_at", "indexed_at"],
+        "properties": {
+          "id": { "type": "string" }, "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" },
+          "repository_uri": { "type": "string" }, "repository_cid": { "type": "string" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 50 }, "color": { "type": "string", "pattern": "^[0-9a-f]{6}$" },
+          "description": { "type": "string", "maxLength": 255 },
+          "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "RepositoryLabelInput": {
+        "type": "object", "additionalProperties": false, "required": ["name", "color", "description"],
+        "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 50 }, "color": { "type": "string", "pattern": "^#?[0-9A-Fa-f]{6}$" }, "description": { "type": "string", "maxLength": 255 } }
+      },
+      "RepositoryLabelList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/RepositoryLabel" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "RepositoryLabelMutation": { "type": "object", "additionalProperties": false, "required": ["label", "projected"], "properties": { "label": { "$ref": "#/components/schemas/RepositoryLabel" }, "projected": { "type": "boolean", "enum": [false] } } },
+      "RepositoryMilestone": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "uri", "cid", "author_did", "repository_uri", "repository_cid", "title", "description", "state", "due_at", "closed_at", "created_at", "updated_at", "indexed_at"],
+        "properties": {
+          "id": { "type": "string" }, "uri": { "type": "string" }, "cid": { "type": "string" }, "author_did": { "type": "string" },
+          "repository_uri": { "type": "string" }, "repository_cid": { "type": "string" },
+          "title": { "type": "string", "minLength": 1, "maxLength": 255 }, "description": { "type": "string", "maxLength": 65535 },
+          "state": { "type": "string", "enum": ["open", "closed"] }, "due_at": { "type": "string", "format": "date-time", "nullable": true }, "closed_at": { "type": "string", "format": "date-time", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" }, "updated_at": { "type": "string", "format": "date-time" }, "indexed_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "RepositoryMilestoneInput": {
+        "type": "object", "additionalProperties": false, "required": ["title", "description", "state", "due_at"],
+        "properties": { "title": { "type": "string", "minLength": 1, "maxLength": 255 }, "description": { "type": "string", "maxLength": 65535 }, "state": { "type": "string", "enum": ["open", "closed"] }, "due_at": { "type": "string", "format": "date-time", "nullable": true } }
+      },
+      "RepositoryMilestoneList": { "type": "object", "additionalProperties": false, "required": ["items", "page"], "properties": { "items": { "type": "array", "maxItems": 100, "items": { "$ref": "#/components/schemas/RepositoryMilestone" } }, "page": { "$ref": "#/components/schemas/Page" } } },
+      "RepositoryMilestoneMutation": { "type": "object", "additionalProperties": false, "required": ["milestone", "projected"], "properties": { "milestone": { "$ref": "#/components/schemas/RepositoryMilestone" }, "projected": { "type": "boolean", "enum": [false] } } },
+      "TriageAssignee": { "type": "object", "additionalProperties": false, "required": ["did", "handle", "display_name"], "properties": { "did": { "type": "string" }, "handle": { "type": "string" }, "display_name": { "type": "string" } } },
+      "SubjectTriageInput": {
+        "type": "object", "additionalProperties": false, "required": ["label_ids", "assignee_dids", "milestone_id"],
+        "properties": {
+          "label_ids": { "type": "array", "maxItems": 20, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 512 } },
+          "assignee_dids": { "type": "array", "maxItems": 10, "uniqueItems": true, "items": { "type": "string", "minLength": 1, "maxLength": 2048 } },
+          "milestone_id": { "type": "string", "nullable": true, "minLength": 1, "maxLength": 512 }
+        }
+      },
+      "SubjectTriage": {
+        "type": "object", "additionalProperties": false,
+        "required": ["uri", "cid", "author_did", "subject_uri", "subject_cid", "subject_kind", "repository_uri", "repository_cid", "label_ids", "assignee_dids", "milestone_id", "labels", "assignees", "milestone", "created_at", "updated_at", "indexed_at"],
+        "properties": {
+          "uri": { "type": "string", "nullable": true }, "cid": { "type": "string", "nullable": true }, "author_did": { "type": "string", "nullable": true },
+          "subject_uri": { "type": "string" }, "subject_cid": { "type": "string" }, "subject_kind": { "type": "string", "enum": ["issue", "pull_request"] },
+          "repository_uri": { "type": "string" }, "repository_cid": { "type": "string" },
+          "label_ids": { "type": "array", "maxItems": 20, "items": { "type": "string" } },
+          "assignee_dids": { "type": "array", "maxItems": 10, "items": { "type": "string" } },
+          "milestone_id": { "type": "string", "nullable": true },
+          "labels": { "type": "array", "maxItems": 20, "items": { "$ref": "#/components/schemas/RepositoryLabel" } },
+          "assignees": { "type": "array", "maxItems": 10, "items": { "$ref": "#/components/schemas/TriageAssignee" } },
+          "milestone": { "allOf": [{ "$ref": "#/components/schemas/RepositoryMilestone" }], "nullable": true },
+          "created_at": { "type": "string", "format": "date-time", "nullable": true }, "updated_at": { "type": "string", "format": "date-time", "nullable": true }, "indexed_at": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "SubjectTriageMutation": { "type": "object", "additionalProperties": false, "required": ["triage", "projected"], "properties": { "triage": { "$ref": "#/components/schemas/SubjectTriage" }, "projected": { "type": "boolean", "enum": [false] } } },
       "NetworkRepositoryList": {
         "type": "object",
         "required": ["items", "page"],
@@ -1944,7 +2150,7 @@
         "type": "object",
         "additionalProperties": false,
         "description": "Flat approved network.repositories projection materialized from Electric insert rows. This is intentionally distinct from the nested REST Repository model.",
-        "required": ["uri", "cid", "owner_did", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "fork_count", "indexed_at"],
+        "required": ["uri", "cid", "owner_did", "lineage_uri", "canonical_uri", "star_count", "issue_count", "open_issue_count", "comment_count", "pull_request_count", "open_pull_request_count", "fork_count", "indexed_at"],
         "properties": {
           "uri": { "type": "string" },
           "cid": { "type": "string" },
@@ -1958,6 +2164,12 @@
           "web": { "type": "string", "nullable": true },
           "forked_from_uri": { "type": "string", "nullable": true },
           "forked_from_cid": { "type": "string", "nullable": true },
+          "transferred_from_uri": { "type": "string", "nullable": true },
+          "transferred_from_cid": { "type": "string", "nullable": true },
+          "transferred_to_uri": { "type": "string", "nullable": true },
+          "transferred_to_cid": { "type": "string", "nullable": true },
+          "lineage_uri": { "type": "string", "description": "Immutable first repository URI in this transfer lineage." },
+          "canonical_uri": { "type": "string", "description": "Current repository URI selected by a complete bilateral transfer chain." },
           "record_created_at": { "type": "string", "format": "date-time", "nullable": true },
           "record_updated_at": { "type": "string", "format": "date-time", "nullable": true },
           "indexed_at": { "type": "string", "format": "date-time" },

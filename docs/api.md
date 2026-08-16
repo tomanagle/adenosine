@@ -38,6 +38,23 @@ Use the OpenAPI operation rather than guessing behavior. The current conventions
 - Repository lifecycle uses `PATCH /api/v1/repositories/{owner}/{repo}` and recoverable
   deletion resources. `DELETE` returns `202` plus a `/api/v1/repository-deletions/{deletion}`
   resource; deleting that resource restores the quarantined repository before `purge_after`.
+- Repository transfers are explicit resources. Create or list them at
+  `repositories/{owner}/{repo}/transfers`, inspect or cancel one at
+  `repository-transfers/{transfer}`, and accept one through its `/acceptance` subresource.
+  Transfer history uses a bounded `limit` and opaque cursor. A completed public transfer
+  keeps the original URI as immutable lineage identity, makes the successor URI canonical,
+  and resolves both the old and new owner routes to the successor. Pending transfers can be
+  retried or cancelled until `acceptance_started_at` is set. A started acceptance remains
+  retryable after proposal expiry; completed transfers must be reversed with a new transfer.
+- Repository workflow metadata is repository-authoritative and portable. Labels and
+  milestones are repository-scoped resources under `repositories/{owner}/{repo}`. Issue and
+  pull-request metadata is replaced atomically through the subject's `/triage` subresource;
+  the `subject` path value is the unpadded base64url encoding of its AT URI. Label, milestone,
+  issue, and pull-request collection reads accept bounded `limit` and opaque, scope-bound
+  `cursor` parameters. Successful portable mutations return `202 Accepted` with the pending
+  value and `projected: false`, so clients can update optimistically before AppView indexing.
+  Issue and pull-request lists accept `state`, `label`, `assignee`, and `milestone` filters;
+  their cursors are bound to the complete filter scope.
 - Notification reads are private, AppView-derived, cursor-paginated resources. Read and
   dismissal state is local to the host and is never federated.
 - Webhook secrets are write-only and encrypted at rest. Deliveries are public-HTTPS-only,

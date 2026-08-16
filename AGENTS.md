@@ -49,6 +49,12 @@ Container-local startup preparation belongs in `dev/entrypoint.sh`. Do not add a
 
 Use Docker for the local service stack and black-box environments: `make dev`, `make dev-detached`, `make e2e`, and `make e2e-federation`. Run unit tests, linting, type checking, and code generation with the host Go and Bun toolchains through `make test`, `make lint`, and `make generate`; do not wrap those targets in Docker.
 
+## Database Constraints
+
+Never create PostgreSQL enum types. Store finite string states in `TEXT` columns and enforce
+their allowed values with named `CHECK` constraints. This keeps migrations additive and
+rollback-friendly while preserving database-level validation.
+
 ## Go Tests
 
 Every `Test*` function must use a local table named `testCases` and execute every entry with `t.Run`, including tests that currently have only one case. Put case-specific inputs, dependency behavior, and expected results in the table so new scenarios can be added without restructuring the test body.

@@ -15,7 +15,7 @@ import (
 
 const (
 	wantAuthor = "did:plc:dddddddddddddddddddddddd"
-	wantRepo   = "at://did:plc:cccccccccccccccccccccccc/dev.adenosine.repo/0198a8512a897ae2a370dc68883e3af5"
+	wantRepo   = "at://did:plc:bbbbbbbbbbbbbbbbbbbbbbbb/dev.adenosine.repo/0198a8512a897ae2a370dc68883e3af5"
 )
 
 var approved = map[string]bool{

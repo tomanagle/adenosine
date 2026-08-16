@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { acceptOrganizationInvitation, beginPasskeyLogin, beginPasskeyRegistration, completeAtProtoLogin, createAccessToken, createBranchProtection, createCheckRun, createCommitStatus, createIssue, createIssueComment, createOrganization, createOrganizationTeam, createPullRequest, createPullRequestReview, createRepository, createRepositoryFork, createRepositoryWebhook, createSshKey, createWebhookRedelivery, deleteBlockedDid, deleteBranchProtection, deleteHiddenRecord, deleteIssueComment, deleteNotification, deleteOrganizationTeam, deletePasskey, deleteRepository, deleteRepositoryWebhook, deleteStar, getBranchProtection, getCheckRun, getCombinedCommitStatus, getCurrentIdentity, getDeveloperProfile, getIssue, getIssueComments, getIssues, getLiveness, getModeration, getOAuthClientMetadata, getOrganization, getOwner, getPullRequest, getPullRequestCheckout, getPullRequestDiff, getReadiness, getRepository, getRepositoryBlob, getRepositoryCommit, getRepositoryDeletion, getRepositoryDiff, getRepositoryMergeBase, getRepositoryTree, getRepositoryWebhook, getStars, getSyncIssueComments, getSyncIssues, getSyncProfiles, getSyncPullRequestReviews, getSyncPullRequests, getSyncRepositories, getSyncStars, inviteOrganizationMember, listAccessTokens, listBranchProtections, listCheckRuns, listCommitStatuses, listNetworkRepositories, listNotifications, listOrganizationAuditEvents, listOrganizationInvitations, listOrganizationInvitationsForCurrentUser, listOrganizationMembers, listOrganizationRepositories, listOrganizationRepositoryCollaborators, listOrganizations, listOrganizationTeamMembers, listOrganizationTeamRepositories, listOrganizationTeams, listPasskeys, listPullRequestReviews, listPullRequests, listRepositoryBranches, listRepositoryCommits, listRepositoryForks, listRepositoryTags, listRepositoryWebhooks, listSshKeys, listWebhookDeliveries, logout, mergePullRequest, type Options, postSyncIssueComments, postSyncIssues, postSyncProfiles, postSyncPullRequestReviews, postSyncPullRequests, postSyncRepositories, postSyncStars, putBlockedDid, putHiddenRecord, putIssueStatus, putOrganizationRepositoryCollaborator, putOrganizationTeamMember, putOrganizationTeamRepository, putPullRequestStatus, putStar, removeOrganizationMember, removeOrganizationRepositoryCollaborator, removeOrganizationTeamMember, removeOrganizationTeamRepository, restoreRepositoryDeletion, revokeAccessToken, revokeOrganizationInvitation, revokeSshKey, searchProfiles, searchRepositories, startAtProtoLogin, syncRepositoryFork, updateBranchProtection, updateCheckRun, updateDeveloperProfile, updateNotification, updateOrganization, updateOrganizationMember, updateOrganizationTeam, updateRepository, updateRepositoryWebhook, verifyPasskeyLogin, verifyPasskeyRegistration } from '../sdk.gen';
-import type { AcceptOrganizationInvitationData, AcceptOrganizationInvitationError, AcceptOrganizationInvitationResponse, BeginPasskeyLoginData, BeginPasskeyLoginError, BeginPasskeyLoginResponse, BeginPasskeyRegistrationData, BeginPasskeyRegistrationError, BeginPasskeyRegistrationResponse, CompleteAtProtoLoginData, CompleteAtProtoLoginError, CreateAccessTokenData, CreateAccessTokenError, CreateAccessTokenResponse, CreateBranchProtectionData, CreateBranchProtectionError, CreateBranchProtectionResponse, CreateCheckRunData, CreateCheckRunError, CreateCheckRunResponse, CreateCommitStatusData, CreateCommitStatusError, CreateCommitStatusResponse, CreateIssueCommentData, CreateIssueCommentError, CreateIssueCommentResponse, CreateIssueData, CreateIssueError, CreateIssueResponse, CreateOrganizationData, CreateOrganizationError, CreateOrganizationResponse, CreateOrganizationTeamData, CreateOrganizationTeamError, CreateOrganizationTeamResponse, CreatePullRequestData, CreatePullRequestError, CreatePullRequestResponse, CreatePullRequestReviewData, CreatePullRequestReviewError, CreatePullRequestReviewResponse, CreateRepositoryData, CreateRepositoryError, CreateRepositoryForkData, CreateRepositoryForkError, CreateRepositoryForkResponse, CreateRepositoryResponse, CreateRepositoryWebhookData, CreateRepositoryWebhookError, CreateRepositoryWebhookResponse, CreateSshKeyData, CreateSshKeyError, CreateSshKeyResponse, CreateWebhookRedeliveryData, CreateWebhookRedeliveryError, CreateWebhookRedeliveryResponse, DeleteBlockedDidData, DeleteBlockedDidError, DeleteBlockedDidResponse, DeleteBranchProtectionData, DeleteBranchProtectionError, DeleteBranchProtectionResponse, DeleteHiddenRecordData, DeleteHiddenRecordError, DeleteHiddenRecordResponse, DeleteIssueCommentData, DeleteIssueCommentError, DeleteNotificationData, DeleteNotificationError, DeleteNotificationResponse, DeleteOrganizationTeamData, DeleteOrganizationTeamError, DeleteOrganizationTeamResponse, DeletePasskeyData, DeletePasskeyError, DeletePasskeyResponse, DeleteRepositoryData, DeleteRepositoryError, DeleteRepositoryResponse, DeleteRepositoryWebhookData, DeleteRepositoryWebhookError, DeleteRepositoryWebhookResponse, DeleteStarData, DeleteStarError, GetBranchProtectionData, GetBranchProtectionError, GetBranchProtectionResponse, GetCheckRunData, GetCheckRunError, GetCheckRunResponse, GetCombinedCommitStatusData, GetCombinedCommitStatusError, GetCombinedCommitStatusResponse, GetCurrentIdentityData, GetCurrentIdentityError, GetCurrentIdentityResponse, GetDeveloperProfileData, GetDeveloperProfileError, GetDeveloperProfileResponse, GetIssueCommentsData, GetIssueCommentsError, GetIssueCommentsResponse, GetIssueData, GetIssueError, GetIssueResponse, GetIssuesData, GetIssuesError, GetIssuesResponse, GetLivenessData, GetLivenessResponse, GetModerationData, GetModerationError, GetModerationResponse, GetOAuthClientMetadataData, GetOAuthClientMetadataResponse, GetOrganizationData, GetOrganizationError, GetOrganizationResponse, GetOwnerData, GetOwnerError, GetOwnerResponse, GetPullRequestCheckoutData, GetPullRequestCheckoutError, GetPullRequestCheckoutResponse, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffError, GetPullRequestDiffResponse, GetPullRequestError, GetPullRequestResponse, GetReadinessData, GetReadinessError, GetReadinessResponse, GetRepositoryBlobData, GetRepositoryBlobError, GetRepositoryBlobResponse, GetRepositoryCommitData, GetRepositoryCommitError, GetRepositoryCommitResponse, GetRepositoryData, GetRepositoryDeletionData, GetRepositoryDeletionError, GetRepositoryDeletionResponse, GetRepositoryDiffData, GetRepositoryDiffError, GetRepositoryDiffResponse, GetRepositoryError, GetRepositoryMergeBaseData, GetRepositoryMergeBaseError, GetRepositoryMergeBaseResponse, GetRepositoryResponse, GetRepositoryTreeData, GetRepositoryTreeError, GetRepositoryTreeResponse, GetRepositoryWebhookData, GetRepositoryWebhookError, GetRepositoryWebhookResponse, GetStarsData, GetStarsError, GetStarsResponse, GetSyncIssueCommentsData, GetSyncIssueCommentsError, GetSyncIssueCommentsResponse, GetSyncIssuesData, GetSyncIssuesError, GetSyncIssuesResponse, GetSyncProfilesData, GetSyncProfilesError, GetSyncProfilesResponse, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsError, GetSyncPullRequestReviewsResponse, GetSyncPullRequestsData, GetSyncPullRequestsError, GetSyncPullRequestsResponse, GetSyncRepositoriesData, GetSyncRepositoriesError, GetSyncRepositoriesResponse, GetSyncStarsData, GetSyncStarsError, GetSyncStarsResponse, InviteOrganizationMemberData, InviteOrganizationMemberError, InviteOrganizationMemberResponse, ListAccessTokensData, ListAccessTokensError, ListAccessTokensResponse, ListBranchProtectionsData, ListBranchProtectionsError, ListBranchProtectionsResponse, ListCheckRunsData, ListCheckRunsError, ListCheckRunsResponse, ListCommitStatusesData, ListCommitStatusesError, ListCommitStatusesResponse, ListNetworkRepositoriesData, ListNetworkRepositoriesError, ListNetworkRepositoriesResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListOrganizationAuditEventsData, ListOrganizationAuditEventsError, ListOrganizationAuditEventsResponse, ListOrganizationInvitationsData, ListOrganizationInvitationsError, ListOrganizationInvitationsForCurrentUserData, ListOrganizationInvitationsForCurrentUserError, ListOrganizationInvitationsForCurrentUserResponse, ListOrganizationInvitationsResponse, ListOrganizationMembersData, ListOrganizationMembersError, ListOrganizationMembersResponse, ListOrganizationRepositoriesData, ListOrganizationRepositoriesError, ListOrganizationRepositoriesResponse, ListOrganizationRepositoryCollaboratorsData, ListOrganizationRepositoryCollaboratorsError, ListOrganizationRepositoryCollaboratorsResponse, ListOrganizationsData, ListOrganizationsError, ListOrganizationsResponse, ListOrganizationTeamMembersData, ListOrganizationTeamMembersError, ListOrganizationTeamMembersResponse, ListOrganizationTeamRepositoriesData, ListOrganizationTeamRepositoriesError, ListOrganizationTeamRepositoriesResponse, ListOrganizationTeamsData, ListOrganizationTeamsError, ListOrganizationTeamsResponse, ListPasskeysData, ListPasskeysError, ListPasskeysResponse, ListPullRequestReviewsData, ListPullRequestReviewsError, ListPullRequestReviewsResponse, ListPullRequestsData, ListPullRequestsError, ListPullRequestsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRepositoryCommitsData, ListRepositoryCommitsError, ListRepositoryCommitsResponse, ListRepositoryForksData, ListRepositoryForksError, ListRepositoryForksResponse, ListRepositoryTagsData, ListRepositoryTagsError, ListRepositoryTagsResponse, ListRepositoryWebhooksData, ListRepositoryWebhooksError, ListRepositoryWebhooksResponse, ListSshKeysData, ListSshKeysError, ListSshKeysResponse, ListWebhookDeliveriesData, ListWebhookDeliveriesError, ListWebhookDeliveriesResponse, LogoutData, LogoutError, LogoutResponse, MergePullRequestData, MergePullRequestError, MergePullRequestResponse, PostSyncIssueCommentsData, PostSyncIssueCommentsError, PostSyncIssueCommentsResponse, PostSyncIssuesData, PostSyncIssuesError, PostSyncIssuesResponse, PostSyncProfilesData, PostSyncProfilesError, PostSyncProfilesResponse, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsError, PostSyncPullRequestReviewsResponse, PostSyncPullRequestsData, PostSyncPullRequestsError, PostSyncPullRequestsResponse, PostSyncRepositoriesData, PostSyncRepositoriesError, PostSyncRepositoriesResponse, PostSyncStarsData, PostSyncStarsError, PostSyncStarsResponse, PutBlockedDidData, PutBlockedDidError, PutBlockedDidResponse, PutHiddenRecordData, PutHiddenRecordError, PutHiddenRecordResponse, PutIssueStatusData, PutIssueStatusError, PutIssueStatusResponse, PutOrganizationRepositoryCollaboratorData, PutOrganizationRepositoryCollaboratorError, PutOrganizationRepositoryCollaboratorResponse, PutOrganizationTeamMemberData, PutOrganizationTeamMemberError, PutOrganizationTeamMemberResponse, PutOrganizationTeamRepositoryData, PutOrganizationTeamRepositoryError, PutOrganizationTeamRepositoryResponse, PutPullRequestStatusData, PutPullRequestStatusError, PutPullRequestStatusResponse, PutStarData, PutStarError, PutStarResponse, RemoveOrganizationMemberData, RemoveOrganizationMemberError, RemoveOrganizationMemberResponse, RemoveOrganizationRepositoryCollaboratorData, RemoveOrganizationRepositoryCollaboratorError, RemoveOrganizationRepositoryCollaboratorResponse, RemoveOrganizationTeamMemberData, RemoveOrganizationTeamMemberError, RemoveOrganizationTeamMemberResponse, RemoveOrganizationTeamRepositoryData, RemoveOrganizationTeamRepositoryError, RemoveOrganizationTeamRepositoryResponse, RestoreRepositoryDeletionData, RestoreRepositoryDeletionError, RestoreRepositoryDeletionResponse, RevokeAccessTokenData, RevokeAccessTokenError, RevokeAccessTokenResponse, RevokeOrganizationInvitationData, RevokeOrganizationInvitationError, RevokeOrganizationInvitationResponse, RevokeSshKeyData, RevokeSshKeyError, RevokeSshKeyResponse, SearchProfilesData, SearchProfilesError, SearchProfilesResponse, SearchRepositoriesData, SearchRepositoriesError, SearchRepositoriesResponse, StartAtProtoLoginData, StartAtProtoLoginError, StartAtProtoLoginResponse, SyncRepositoryForkData, SyncRepositoryForkError, SyncRepositoryForkResponse, UpdateBranchProtectionData, UpdateBranchProtectionError, UpdateBranchProtectionResponse, UpdateCheckRunData, UpdateCheckRunError, UpdateCheckRunResponse, UpdateDeveloperProfileData, UpdateDeveloperProfileError, UpdateDeveloperProfileResponse, UpdateNotificationData, UpdateNotificationError, UpdateNotificationResponse, UpdateOrganizationData, UpdateOrganizationError, UpdateOrganizationMemberData, UpdateOrganizationMemberError, UpdateOrganizationMemberResponse, UpdateOrganizationResponse, UpdateOrganizationTeamData, UpdateOrganizationTeamError, UpdateOrganizationTeamResponse, UpdateRepositoryData, UpdateRepositoryError, UpdateRepositoryResponse, UpdateRepositoryWebhookData, UpdateRepositoryWebhookError, UpdateRepositoryWebhookResponse, VerifyPasskeyLoginData, VerifyPasskeyLoginError, VerifyPasskeyLoginResponse, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationError, VerifyPasskeyRegistrationResponse } from '../types.gen';
+import { acceptOrganizationInvitation, beginPasskeyLogin, beginPasskeyRegistration, completeAtProtoLogin, createAccessToken, createBranchProtection, createCheckRun, createCommitStatus, createIssue, createIssueComment, createOrganization, createOrganizationTeam, createPullRequest, createPullRequestReview, createRepository, createRepositoryFork, createRepositoryLabel, createRepositoryMilestone, createRepositoryTransfer, createRepositoryTransferAcceptance, createRepositoryWebhook, createSshKey, createWebhookRedelivery, deleteBlockedDid, deleteBranchProtection, deleteHiddenRecord, deleteIssueComment, deleteIssueTriage, deleteNotification, deleteOrganizationTeam, deletePasskey, deletePullRequestTriage, deleteRepository, deleteRepositoryLabel, deleteRepositoryMilestone, deleteRepositoryTransfer, deleteRepositoryWebhook, deleteStar, getBranchProtection, getCheckRun, getCombinedCommitStatus, getCurrentIdentity, getDeveloperProfile, getIssue, getIssueComments, getIssues, getIssueTriage, getLiveness, getModeration, getOAuthClientMetadata, getOrganization, getOwner, getPullRequest, getPullRequestCheckout, getPullRequestDiff, getPullRequestTriage, getReadiness, getRepository, getRepositoryBlob, getRepositoryCommit, getRepositoryDeletion, getRepositoryDiff, getRepositoryLabel, getRepositoryMergeBase, getRepositoryMilestone, getRepositoryTransfer, getRepositoryTree, getRepositoryWebhook, getStars, getSyncIssueComments, getSyncIssues, getSyncProfiles, getSyncPullRequestReviews, getSyncPullRequests, getSyncRepositories, getSyncStars, inviteOrganizationMember, listAccessTokens, listBranchProtections, listCheckRuns, listCommitStatuses, listNetworkRepositories, listNotifications, listOrganizationAuditEvents, listOrganizationInvitations, listOrganizationInvitationsForCurrentUser, listOrganizationMembers, listOrganizationRepositories, listOrganizationRepositoryCollaborators, listOrganizations, listOrganizationTeamMembers, listOrganizationTeamRepositories, listOrganizationTeams, listPasskeys, listPullRequestReviews, listPullRequests, listRepositoryBranches, listRepositoryCommits, listRepositoryForks, listRepositoryLabels, listRepositoryMilestones, listRepositoryTags, listRepositoryTransfers, listRepositoryWebhooks, listSshKeys, listWebhookDeliveries, logout, mergePullRequest, type Options, postSyncIssueComments, postSyncIssues, postSyncProfiles, postSyncPullRequestReviews, postSyncPullRequests, postSyncRepositories, postSyncStars, putBlockedDid, putHiddenRecord, putIssueStatus, putIssueTriage, putOrganizationRepositoryCollaborator, putOrganizationTeamMember, putOrganizationTeamRepository, putPullRequestStatus, putPullRequestTriage, putStar, removeOrganizationMember, removeOrganizationRepositoryCollaborator, removeOrganizationTeamMember, removeOrganizationTeamRepository, restoreRepositoryDeletion, revokeAccessToken, revokeOrganizationInvitation, revokeSshKey, searchProfiles, searchRepositories, startAtProtoLogin, syncRepositoryFork, updateBranchProtection, updateCheckRun, updateDeveloperProfile, updateNotification, updateOrganization, updateOrganizationMember, updateOrganizationTeam, updateRepository, updateRepositoryLabel, updateRepositoryMilestone, updateRepositoryWebhook, verifyPasskeyLogin, verifyPasskeyRegistration } from '../sdk.gen';
+import type { AcceptOrganizationInvitationData, AcceptOrganizationInvitationError, AcceptOrganizationInvitationResponse, BeginPasskeyLoginData, BeginPasskeyLoginError, BeginPasskeyLoginResponse, BeginPasskeyRegistrationData, BeginPasskeyRegistrationError, BeginPasskeyRegistrationResponse, CompleteAtProtoLoginData, CompleteAtProtoLoginError, CreateAccessTokenData, CreateAccessTokenError, CreateAccessTokenResponse, CreateBranchProtectionData, CreateBranchProtectionError, CreateBranchProtectionResponse, CreateCheckRunData, CreateCheckRunError, CreateCheckRunResponse, CreateCommitStatusData, CreateCommitStatusError, CreateCommitStatusResponse, CreateIssueCommentData, CreateIssueCommentError, CreateIssueCommentResponse, CreateIssueData, CreateIssueError, CreateIssueResponse, CreateOrganizationData, CreateOrganizationError, CreateOrganizationResponse, CreateOrganizationTeamData, CreateOrganizationTeamError, CreateOrganizationTeamResponse, CreatePullRequestData, CreatePullRequestError, CreatePullRequestResponse, CreatePullRequestReviewData, CreatePullRequestReviewError, CreatePullRequestReviewResponse, CreateRepositoryData, CreateRepositoryError, CreateRepositoryForkData, CreateRepositoryForkError, CreateRepositoryForkResponse, CreateRepositoryLabelData, CreateRepositoryLabelError, CreateRepositoryLabelResponse, CreateRepositoryMilestoneData, CreateRepositoryMilestoneError, CreateRepositoryMilestoneResponse, CreateRepositoryResponse, CreateRepositoryTransferAcceptanceData, CreateRepositoryTransferAcceptanceError, CreateRepositoryTransferAcceptanceResponse, CreateRepositoryTransferData, CreateRepositoryTransferError, CreateRepositoryTransferResponse, CreateRepositoryWebhookData, CreateRepositoryWebhookError, CreateRepositoryWebhookResponse, CreateSshKeyData, CreateSshKeyError, CreateSshKeyResponse, CreateWebhookRedeliveryData, CreateWebhookRedeliveryError, CreateWebhookRedeliveryResponse, DeleteBlockedDidData, DeleteBlockedDidError, DeleteBlockedDidResponse, DeleteBranchProtectionData, DeleteBranchProtectionError, DeleteBranchProtectionResponse, DeleteHiddenRecordData, DeleteHiddenRecordError, DeleteHiddenRecordResponse, DeleteIssueCommentData, DeleteIssueCommentError, DeleteIssueTriageData, DeleteIssueTriageError, DeleteNotificationData, DeleteNotificationError, DeleteNotificationResponse, DeleteOrganizationTeamData, DeleteOrganizationTeamError, DeleteOrganizationTeamResponse, DeletePasskeyData, DeletePasskeyError, DeletePasskeyResponse, DeletePullRequestTriageData, DeletePullRequestTriageError, DeleteRepositoryData, DeleteRepositoryError, DeleteRepositoryLabelData, DeleteRepositoryLabelError, DeleteRepositoryMilestoneData, DeleteRepositoryMilestoneError, DeleteRepositoryResponse, DeleteRepositoryTransferData, DeleteRepositoryTransferError, DeleteRepositoryTransferResponse, DeleteRepositoryWebhookData, DeleteRepositoryWebhookError, DeleteRepositoryWebhookResponse, DeleteStarData, DeleteStarError, GetBranchProtectionData, GetBranchProtectionError, GetBranchProtectionResponse, GetCheckRunData, GetCheckRunError, GetCheckRunResponse, GetCombinedCommitStatusData, GetCombinedCommitStatusError, GetCombinedCommitStatusResponse, GetCurrentIdentityData, GetCurrentIdentityError, GetCurrentIdentityResponse, GetDeveloperProfileData, GetDeveloperProfileError, GetDeveloperProfileResponse, GetIssueCommentsData, GetIssueCommentsError, GetIssueCommentsResponse, GetIssueData, GetIssueError, GetIssueResponse, GetIssuesData, GetIssuesError, GetIssuesResponse, GetIssueTriageData, GetIssueTriageError, GetIssueTriageResponse, GetLivenessData, GetLivenessResponse, GetModerationData, GetModerationError, GetModerationResponse, GetOAuthClientMetadataData, GetOAuthClientMetadataResponse, GetOrganizationData, GetOrganizationError, GetOrganizationResponse, GetOwnerData, GetOwnerError, GetOwnerResponse, GetPullRequestCheckoutData, GetPullRequestCheckoutError, GetPullRequestCheckoutResponse, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffError, GetPullRequestDiffResponse, GetPullRequestError, GetPullRequestResponse, GetPullRequestTriageData, GetPullRequestTriageError, GetPullRequestTriageResponse, GetReadinessData, GetReadinessError, GetReadinessResponse, GetRepositoryBlobData, GetRepositoryBlobError, GetRepositoryBlobResponse, GetRepositoryCommitData, GetRepositoryCommitError, GetRepositoryCommitResponse, GetRepositoryData, GetRepositoryDeletionData, GetRepositoryDeletionError, GetRepositoryDeletionResponse, GetRepositoryDiffData, GetRepositoryDiffError, GetRepositoryDiffResponse, GetRepositoryError, GetRepositoryLabelData, GetRepositoryLabelError, GetRepositoryLabelResponse, GetRepositoryMergeBaseData, GetRepositoryMergeBaseError, GetRepositoryMergeBaseResponse, GetRepositoryMilestoneData, GetRepositoryMilestoneError, GetRepositoryMilestoneResponse, GetRepositoryResponse, GetRepositoryTransferData, GetRepositoryTransferError, GetRepositoryTransferResponse, GetRepositoryTreeData, GetRepositoryTreeError, GetRepositoryTreeResponse, GetRepositoryWebhookData, GetRepositoryWebhookError, GetRepositoryWebhookResponse, GetStarsData, GetStarsError, GetStarsResponse, GetSyncIssueCommentsData, GetSyncIssueCommentsError, GetSyncIssueCommentsResponse, GetSyncIssuesData, GetSyncIssuesError, GetSyncIssuesResponse, GetSyncProfilesData, GetSyncProfilesError, GetSyncProfilesResponse, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsError, GetSyncPullRequestReviewsResponse, GetSyncPullRequestsData, GetSyncPullRequestsError, GetSyncPullRequestsResponse, GetSyncRepositoriesData, GetSyncRepositoriesError, GetSyncRepositoriesResponse, GetSyncStarsData, GetSyncStarsError, GetSyncStarsResponse, InviteOrganizationMemberData, InviteOrganizationMemberError, InviteOrganizationMemberResponse, ListAccessTokensData, ListAccessTokensError, ListAccessTokensResponse, ListBranchProtectionsData, ListBranchProtectionsError, ListBranchProtectionsResponse, ListCheckRunsData, ListCheckRunsError, ListCheckRunsResponse, ListCommitStatusesData, ListCommitStatusesError, ListCommitStatusesResponse, ListNetworkRepositoriesData, ListNetworkRepositoriesError, ListNetworkRepositoriesResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListOrganizationAuditEventsData, ListOrganizationAuditEventsError, ListOrganizationAuditEventsResponse, ListOrganizationInvitationsData, ListOrganizationInvitationsError, ListOrganizationInvitationsForCurrentUserData, ListOrganizationInvitationsForCurrentUserError, ListOrganizationInvitationsForCurrentUserResponse, ListOrganizationInvitationsResponse, ListOrganizationMembersData, ListOrganizationMembersError, ListOrganizationMembersResponse, ListOrganizationRepositoriesData, ListOrganizationRepositoriesError, ListOrganizationRepositoriesResponse, ListOrganizationRepositoryCollaboratorsData, ListOrganizationRepositoryCollaboratorsError, ListOrganizationRepositoryCollaboratorsResponse, ListOrganizationsData, ListOrganizationsError, ListOrganizationsResponse, ListOrganizationTeamMembersData, ListOrganizationTeamMembersError, ListOrganizationTeamMembersResponse, ListOrganizationTeamRepositoriesData, ListOrganizationTeamRepositoriesError, ListOrganizationTeamRepositoriesResponse, ListOrganizationTeamsData, ListOrganizationTeamsError, ListOrganizationTeamsResponse, ListPasskeysData, ListPasskeysError, ListPasskeysResponse, ListPullRequestReviewsData, ListPullRequestReviewsError, ListPullRequestReviewsResponse, ListPullRequestsData, ListPullRequestsError, ListPullRequestsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRepositoryCommitsData, ListRepositoryCommitsError, ListRepositoryCommitsResponse, ListRepositoryForksData, ListRepositoryForksError, ListRepositoryForksResponse, ListRepositoryLabelsData, ListRepositoryLabelsError, ListRepositoryLabelsResponse, ListRepositoryMilestonesData, ListRepositoryMilestonesError, ListRepositoryMilestonesResponse, ListRepositoryTagsData, ListRepositoryTagsError, ListRepositoryTagsResponse, ListRepositoryTransfersData, ListRepositoryTransfersError, ListRepositoryTransfersResponse, ListRepositoryWebhooksData, ListRepositoryWebhooksError, ListRepositoryWebhooksResponse, ListSshKeysData, ListSshKeysError, ListSshKeysResponse, ListWebhookDeliveriesData, ListWebhookDeliveriesError, ListWebhookDeliveriesResponse, LogoutData, LogoutError, LogoutResponse, MergePullRequestData, MergePullRequestError, MergePullRequestResponse, PostSyncIssueCommentsData, PostSyncIssueCommentsError, PostSyncIssueCommentsResponse, PostSyncIssuesData, PostSyncIssuesError, PostSyncIssuesResponse, PostSyncProfilesData, PostSyncProfilesError, PostSyncProfilesResponse, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsError, PostSyncPullRequestReviewsResponse, PostSyncPullRequestsData, PostSyncPullRequestsError, PostSyncPullRequestsResponse, PostSyncRepositoriesData, PostSyncRepositoriesError, PostSyncRepositoriesResponse, PostSyncStarsData, PostSyncStarsError, PostSyncStarsResponse, PutBlockedDidData, PutBlockedDidError, PutBlockedDidResponse, PutHiddenRecordData, PutHiddenRecordError, PutHiddenRecordResponse, PutIssueStatusData, PutIssueStatusError, PutIssueStatusResponse, PutIssueTriageData, PutIssueTriageError, PutIssueTriageResponse, PutOrganizationRepositoryCollaboratorData, PutOrganizationRepositoryCollaboratorError, PutOrganizationRepositoryCollaboratorResponse, PutOrganizationTeamMemberData, PutOrganizationTeamMemberError, PutOrganizationTeamMemberResponse, PutOrganizationTeamRepositoryData, PutOrganizationTeamRepositoryError, PutOrganizationTeamRepositoryResponse, PutPullRequestStatusData, PutPullRequestStatusError, PutPullRequestStatusResponse, PutPullRequestTriageData, PutPullRequestTriageError, PutPullRequestTriageResponse, PutStarData, PutStarError, PutStarResponse, RemoveOrganizationMemberData, RemoveOrganizationMemberError, RemoveOrganizationMemberResponse, RemoveOrganizationRepositoryCollaboratorData, RemoveOrganizationRepositoryCollaboratorError, RemoveOrganizationRepositoryCollaboratorResponse, RemoveOrganizationTeamMemberData, RemoveOrganizationTeamMemberError, RemoveOrganizationTeamMemberResponse, RemoveOrganizationTeamRepositoryData, RemoveOrganizationTeamRepositoryError, RemoveOrganizationTeamRepositoryResponse, RestoreRepositoryDeletionData, RestoreRepositoryDeletionError, RestoreRepositoryDeletionResponse, RevokeAccessTokenData, RevokeAccessTokenError, RevokeAccessTokenResponse, RevokeOrganizationInvitationData, RevokeOrganizationInvitationError, RevokeOrganizationInvitationResponse, RevokeSshKeyData, RevokeSshKeyError, RevokeSshKeyResponse, SearchProfilesData, SearchProfilesError, SearchProfilesResponse, SearchRepositoriesData, SearchRepositoriesError, SearchRepositoriesResponse, StartAtProtoLoginData, StartAtProtoLoginError, StartAtProtoLoginResponse, SyncRepositoryForkData, SyncRepositoryForkError, SyncRepositoryForkResponse, UpdateBranchProtectionData, UpdateBranchProtectionError, UpdateBranchProtectionResponse, UpdateCheckRunData, UpdateCheckRunError, UpdateCheckRunResponse, UpdateDeveloperProfileData, UpdateDeveloperProfileError, UpdateDeveloperProfileResponse, UpdateNotificationData, UpdateNotificationError, UpdateNotificationResponse, UpdateOrganizationData, UpdateOrganizationError, UpdateOrganizationMemberData, UpdateOrganizationMemberError, UpdateOrganizationMemberResponse, UpdateOrganizationResponse, UpdateOrganizationTeamData, UpdateOrganizationTeamError, UpdateOrganizationTeamResponse, UpdateRepositoryData, UpdateRepositoryError, UpdateRepositoryLabelData, UpdateRepositoryLabelError, UpdateRepositoryLabelResponse, UpdateRepositoryMilestoneData, UpdateRepositoryMilestoneError, UpdateRepositoryMilestoneResponse, UpdateRepositoryResponse, UpdateRepositoryWebhookData, UpdateRepositoryWebhookError, UpdateRepositoryWebhookResponse, VerifyPasskeyLoginData, VerifyPasskeyLoginError, VerifyPasskeyLoginResponse, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationError, VerifyPasskeyRegistrationResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -1325,6 +1325,461 @@ export const syncRepositoryForkMutation = (options?: Partial<Options<SyncReposit
     const mutationOptions: UseMutationOptions<SyncRepositoryForkResponse, SyncRepositoryForkError, Options<SyncRepositoryForkData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await syncRepositoryFork({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listRepositoryTransfersQueryKey = (options: Options<ListRepositoryTransfersData>) => createQueryKey('listRepositoryTransfers', options, false, ['Repository Transfers']);
+
+/**
+ * List repository transfer history visible to the current owner
+ */
+export const listRepositoryTransfersOptions = (options: Options<ListRepositoryTransfersData>) => queryOptions<ListRepositoryTransfersResponse, ListRepositoryTransfersError, ListRepositoryTransfersResponse, ReturnType<typeof listRepositoryTransfersQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRepositoryTransfers({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRepositoryTransfersQueryKey(options)
+});
+
+export const listRepositoryTransfersInfiniteQueryKey = (options: Options<ListRepositoryTransfersData>): QueryKey<Options<ListRepositoryTransfersData>> => createQueryKey('listRepositoryTransfers', options, true);
+
+/**
+ * List repository transfer history visible to the current owner
+ */
+export const listRepositoryTransfersInfiniteOptions = (options: Options<ListRepositoryTransfersData>) => {
+    const opts = infiniteQueryOptions<ListRepositoryTransfersResponse, ListRepositoryTransfersError, InfiniteData<ListRepositoryTransfersResponse>, QueryKey<Options<ListRepositoryTransfersData>>, string | Pick<QueryKey<Options<ListRepositoryTransfersData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListRepositoryTransfersData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listRepositoryTransfers({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listRepositoryTransfersInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Propose transferring a repository to another owner
+ */
+export const createRepositoryTransferMutation = (options?: Partial<Options<CreateRepositoryTransferData>>): UseMutationOptions<CreateRepositoryTransferResponse, CreateRepositoryTransferError, Options<CreateRepositoryTransferData>> => {
+    const mutationOptions: UseMutationOptions<CreateRepositoryTransferResponse, CreateRepositoryTransferError, Options<CreateRepositoryTransferData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createRepositoryTransfer({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Cancel a pending transfer before acceptance
+ */
+export const deleteRepositoryTransferMutation = (options?: Partial<Options<DeleteRepositoryTransferData>>): UseMutationOptions<DeleteRepositoryTransferResponse, DeleteRepositoryTransferError, Options<DeleteRepositoryTransferData>> => {
+    const mutationOptions: UseMutationOptions<DeleteRepositoryTransferResponse, DeleteRepositoryTransferError, Options<DeleteRepositoryTransferData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteRepositoryTransfer({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getRepositoryTransferQueryKey = (options: Options<GetRepositoryTransferData>) => createQueryKey('getRepositoryTransfer', options, false, ['Repository Transfers']);
+
+/**
+ * Inspect a repository transfer as its source or destination owner
+ */
+export const getRepositoryTransferOptions = (options: Options<GetRepositoryTransferData>) => queryOptions<GetRepositoryTransferResponse, GetRepositoryTransferError, GetRepositoryTransferResponse, ReturnType<typeof getRepositoryTransferQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRepositoryTransfer({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRepositoryTransferQueryKey(options)
+});
+
+/**
+ * Accept a pending transfer as the destination owner
+ */
+export const createRepositoryTransferAcceptanceMutation = (options?: Partial<Options<CreateRepositoryTransferAcceptanceData>>): UseMutationOptions<CreateRepositoryTransferAcceptanceResponse, CreateRepositoryTransferAcceptanceError, Options<CreateRepositoryTransferAcceptanceData>> => {
+    const mutationOptions: UseMutationOptions<CreateRepositoryTransferAcceptanceResponse, CreateRepositoryTransferAcceptanceError, Options<CreateRepositoryTransferAcceptanceData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createRepositoryTransferAcceptance({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listRepositoryLabelsQueryKey = (options: Options<ListRepositoryLabelsData>) => createQueryKey('listRepositoryLabels', options, false, ['Repository Triage']);
+
+/**
+ * List visible repository labels
+ */
+export const listRepositoryLabelsOptions = (options: Options<ListRepositoryLabelsData>) => queryOptions<ListRepositoryLabelsResponse, ListRepositoryLabelsError, ListRepositoryLabelsResponse, ReturnType<typeof listRepositoryLabelsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRepositoryLabels({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRepositoryLabelsQueryKey(options)
+});
+
+export const listRepositoryLabelsInfiniteQueryKey = (options: Options<ListRepositoryLabelsData>): QueryKey<Options<ListRepositoryLabelsData>> => createQueryKey('listRepositoryLabels', options, true);
+
+/**
+ * List visible repository labels
+ */
+export const listRepositoryLabelsInfiniteOptions = (options: Options<ListRepositoryLabelsData>) => {
+    const opts = infiniteQueryOptions<ListRepositoryLabelsResponse, ListRepositoryLabelsError, InfiniteData<ListRepositoryLabelsResponse>, QueryKey<Options<ListRepositoryLabelsData>>, string | Pick<QueryKey<Options<ListRepositoryLabelsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListRepositoryLabelsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listRepositoryLabels({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listRepositoryLabelsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Create a repository-authoritative label
+ */
+export const createRepositoryLabelMutation = (options?: Partial<Options<CreateRepositoryLabelData>>): UseMutationOptions<CreateRepositoryLabelResponse, CreateRepositoryLabelError, Options<CreateRepositoryLabelData>> => {
+    const mutationOptions: UseMutationOptions<CreateRepositoryLabelResponse, CreateRepositoryLabelError, Options<CreateRepositoryLabelData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createRepositoryLabel({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete a repository label
+ */
+export const deleteRepositoryLabelMutation = (options?: Partial<Options<DeleteRepositoryLabelData>>): UseMutationOptions<unknown, DeleteRepositoryLabelError, Options<DeleteRepositoryLabelData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DeleteRepositoryLabelError, Options<DeleteRepositoryLabelData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteRepositoryLabel({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getRepositoryLabelQueryKey = (options: Options<GetRepositoryLabelData>) => createQueryKey('getRepositoryLabel', options, false, ['Repository Triage']);
+
+/**
+ * Get one repository label
+ */
+export const getRepositoryLabelOptions = (options: Options<GetRepositoryLabelData>) => queryOptions<GetRepositoryLabelResponse, GetRepositoryLabelError, GetRepositoryLabelResponse, ReturnType<typeof getRepositoryLabelQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRepositoryLabel({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRepositoryLabelQueryKey(options)
+});
+
+/**
+ * Replace a repository label
+ */
+export const updateRepositoryLabelMutation = (options?: Partial<Options<UpdateRepositoryLabelData>>): UseMutationOptions<UpdateRepositoryLabelResponse, UpdateRepositoryLabelError, Options<UpdateRepositoryLabelData>> => {
+    const mutationOptions: UseMutationOptions<UpdateRepositoryLabelResponse, UpdateRepositoryLabelError, Options<UpdateRepositoryLabelData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateRepositoryLabel({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listRepositoryMilestonesQueryKey = (options: Options<ListRepositoryMilestonesData>) => createQueryKey('listRepositoryMilestones', options, false, ['Repository Triage']);
+
+/**
+ * List visible repository milestones
+ */
+export const listRepositoryMilestonesOptions = (options: Options<ListRepositoryMilestonesData>) => queryOptions<ListRepositoryMilestonesResponse, ListRepositoryMilestonesError, ListRepositoryMilestonesResponse, ReturnType<typeof listRepositoryMilestonesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRepositoryMilestones({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRepositoryMilestonesQueryKey(options)
+});
+
+export const listRepositoryMilestonesInfiniteQueryKey = (options: Options<ListRepositoryMilestonesData>): QueryKey<Options<ListRepositoryMilestonesData>> => createQueryKey('listRepositoryMilestones', options, true);
+
+/**
+ * List visible repository milestones
+ */
+export const listRepositoryMilestonesInfiniteOptions = (options: Options<ListRepositoryMilestonesData>) => {
+    const opts = infiniteQueryOptions<ListRepositoryMilestonesResponse, ListRepositoryMilestonesError, InfiniteData<ListRepositoryMilestonesResponse>, QueryKey<Options<ListRepositoryMilestonesData>>, string | Pick<QueryKey<Options<ListRepositoryMilestonesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListRepositoryMilestonesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listRepositoryMilestones({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listRepositoryMilestonesInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Create a repository-authoritative milestone
+ */
+export const createRepositoryMilestoneMutation = (options?: Partial<Options<CreateRepositoryMilestoneData>>): UseMutationOptions<CreateRepositoryMilestoneResponse, CreateRepositoryMilestoneError, Options<CreateRepositoryMilestoneData>> => {
+    const mutationOptions: UseMutationOptions<CreateRepositoryMilestoneResponse, CreateRepositoryMilestoneError, Options<CreateRepositoryMilestoneData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createRepositoryMilestone({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete a repository milestone
+ */
+export const deleteRepositoryMilestoneMutation = (options?: Partial<Options<DeleteRepositoryMilestoneData>>): UseMutationOptions<unknown, DeleteRepositoryMilestoneError, Options<DeleteRepositoryMilestoneData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DeleteRepositoryMilestoneError, Options<DeleteRepositoryMilestoneData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteRepositoryMilestone({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getRepositoryMilestoneQueryKey = (options: Options<GetRepositoryMilestoneData>) => createQueryKey('getRepositoryMilestone', options, false, ['Repository Triage']);
+
+/**
+ * Get one repository milestone
+ */
+export const getRepositoryMilestoneOptions = (options: Options<GetRepositoryMilestoneData>) => queryOptions<GetRepositoryMilestoneResponse, GetRepositoryMilestoneError, GetRepositoryMilestoneResponse, ReturnType<typeof getRepositoryMilestoneQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRepositoryMilestone({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRepositoryMilestoneQueryKey(options)
+});
+
+/**
+ * Replace a repository milestone
+ */
+export const updateRepositoryMilestoneMutation = (options?: Partial<Options<UpdateRepositoryMilestoneData>>): UseMutationOptions<UpdateRepositoryMilestoneResponse, UpdateRepositoryMilestoneError, Options<UpdateRepositoryMilestoneData>> => {
+    const mutationOptions: UseMutationOptions<UpdateRepositoryMilestoneResponse, UpdateRepositoryMilestoneError, Options<UpdateRepositoryMilestoneData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateRepositoryMilestone({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Remove all issue triage metadata
+ */
+export const deleteIssueTriageMutation = (options?: Partial<Options<DeleteIssueTriageData>>): UseMutationOptions<unknown, DeleteIssueTriageError, Options<DeleteIssueTriageData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DeleteIssueTriageError, Options<DeleteIssueTriageData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteIssueTriage({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getIssueTriageQueryKey = (options: Options<GetIssueTriageData>) => createQueryKey('getIssueTriage', options, false, ['Repository Triage']);
+
+/**
+ * Get effective issue triage metadata
+ */
+export const getIssueTriageOptions = (options: Options<GetIssueTriageData>) => queryOptions<GetIssueTriageResponse, GetIssueTriageError, GetIssueTriageResponse, ReturnType<typeof getIssueTriageQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getIssueTriage({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getIssueTriageQueryKey(options)
+});
+
+/**
+ * Replace issue labels, assignees, and milestone
+ */
+export const putIssueTriageMutation = (options?: Partial<Options<PutIssueTriageData>>): UseMutationOptions<PutIssueTriageResponse, PutIssueTriageError, Options<PutIssueTriageData>> => {
+    const mutationOptions: UseMutationOptions<PutIssueTriageResponse, PutIssueTriageError, Options<PutIssueTriageData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putIssueTriage({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Remove all pull request triage metadata
+ */
+export const deletePullRequestTriageMutation = (options?: Partial<Options<DeletePullRequestTriageData>>): UseMutationOptions<unknown, DeletePullRequestTriageError, Options<DeletePullRequestTriageData>> => {
+    const mutationOptions: UseMutationOptions<unknown, DeletePullRequestTriageError, Options<DeletePullRequestTriageData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deletePullRequestTriage({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getPullRequestTriageQueryKey = (options: Options<GetPullRequestTriageData>) => createQueryKey('getPullRequestTriage', options, false, ['Repository Triage']);
+
+/**
+ * Get effective pull request triage metadata
+ */
+export const getPullRequestTriageOptions = (options: Options<GetPullRequestTriageData>) => queryOptions<GetPullRequestTriageResponse, GetPullRequestTriageError, GetPullRequestTriageResponse, ReturnType<typeof getPullRequestTriageQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getPullRequestTriage({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getPullRequestTriageQueryKey(options)
+});
+
+/**
+ * Replace pull request labels, assignees, and milestone
+ */
+export const putPullRequestTriageMutation = (options?: Partial<Options<PutPullRequestTriageData>>): UseMutationOptions<PutPullRequestTriageResponse, PutPullRequestTriageError, Options<PutPullRequestTriageData>> => {
+    const mutationOptions: UseMutationOptions<PutPullRequestTriageResponse, PutPullRequestTriageError, Options<PutPullRequestTriageData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putPullRequestTriage({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

@@ -635,6 +635,141 @@ export type RepositoryForkList = {
     fork_count: number;
 };
 
+export type CreateRepositoryTransferRequest = {
+    /**
+     * Account handle, DID, or organization slug in the shared owner namespace.
+     */
+    destination_owner: string;
+};
+
+export type RepositoryTransfer = {
+    id: string;
+    repository_id: string;
+    source_owner: string;
+    destination_owner: string;
+    source_repository?: RepositoryStrongRef;
+    proposal?: RepositoryStrongRef;
+    successor?: RepositoryStrongRef;
+    acceptance?: RepositoryStrongRef;
+    status: 'pending' | 'completed' | 'cancelled';
+    created_at: string;
+    expires_at: string;
+    /**
+     * Durable start of the retryable acceptance workflow. Once set, cancellation is no longer safe.
+     */
+    acceptance_started_at?: string | null;
+    accepted_at?: string | null;
+    accepted_by?: string | null;
+    cancelled_at?: string | null;
+};
+
+export type RepositoryTransferList = {
+    items: Array<RepositoryTransfer>;
+    page: Page;
+};
+
+export type RepositoryLabel = {
+    id: string;
+    uri: string;
+    cid: string;
+    author_did: string;
+    repository_uri: string;
+    repository_cid: string;
+    name: string;
+    color: string;
+    description: string;
+    created_at: string;
+    updated_at: string;
+    indexed_at: string | null;
+};
+
+export type RepositoryLabelInput = {
+    name: string;
+    color: string;
+    description: string;
+};
+
+export type RepositoryLabelList = {
+    items: Array<RepositoryLabel>;
+    page: Page;
+};
+
+export type RepositoryLabelMutation = {
+    label: RepositoryLabel;
+    projected: false;
+};
+
+export type RepositoryMilestone = {
+    id: string;
+    uri: string;
+    cid: string;
+    author_did: string;
+    repository_uri: string;
+    repository_cid: string;
+    title: string;
+    description: string;
+    state: 'open' | 'closed';
+    due_at: string | null;
+    closed_at: string | null;
+    created_at: string;
+    updated_at: string;
+    indexed_at: string | null;
+};
+
+export type RepositoryMilestoneInput = {
+    title: string;
+    description: string;
+    state: 'open' | 'closed';
+    due_at: string | null;
+};
+
+export type RepositoryMilestoneList = {
+    items: Array<RepositoryMilestone>;
+    page: Page;
+};
+
+export type RepositoryMilestoneMutation = {
+    milestone: RepositoryMilestone;
+    projected: false;
+};
+
+export type TriageAssignee = {
+    did: string;
+    handle: string;
+    display_name: string;
+};
+
+export type SubjectTriageInput = {
+    label_ids: Array<string>;
+    assignee_dids: Array<string>;
+    milestone_id: string | null;
+};
+
+export type SubjectTriage = {
+    uri: string | null;
+    cid: string | null;
+    author_did: string | null;
+    subject_uri: string;
+    subject_cid: string;
+    subject_kind: 'issue' | 'pull_request';
+    repository_uri: string;
+    repository_cid: string;
+    label_ids: Array<string>;
+    assignee_dids: Array<string>;
+    milestone_id: string | null;
+    labels: Array<RepositoryLabel>;
+    assignees: Array<TriageAssignee>;
+    milestone: RepositoryMilestone | null;
+    created_at: string | null;
+    updated_at: string | null;
+    indexed_at: string | null;
+};
+
+export type SubjectTriageMutation = {
+    triage: SubjectTriage;
+    projected: false;
+};
+
 export type NetworkRepositoryList = {
     items: Array<Repository>;
     page: Page;
@@ -666,6 +801,18 @@ export type SyncRepository = {
     web?: string | null;
     forked_from_uri?: string | null;
     forked_from_cid?: string | null;
+    transferred_from_uri?: string | null;
+    transferred_from_cid?: string | null;
+    transferred_to_uri?: string | null;
+    transferred_to_cid?: string | null;
+    /**
+     * Immutable first repository URI in this transfer lineage.
+     */
+    lineage_uri: string;
+    /**
+     * Current repository URI selected by a complete bilateral transfer chain.
+     */
+    canonical_uri: string;
     record_created_at?: string | null;
     record_updated_at?: string | null;
     indexed_at: string;
@@ -1252,6 +1399,46 @@ export type OrganizationSlug2 = OrganizationSlug;
 export type RepositoryOwnerPath = string;
 
 export type RepositorySlugPath = RepositorySlug;
+
+/**
+ * Stable AT Protocol record key for a repository label.
+ */
+export type LabelPath = string;
+
+/**
+ * Stable AT Protocol record key for a repository milestone.
+ */
+export type MilestonePath = string;
+
+/**
+ * Unpadded base64url encoding of the issue or pull-request AT URI.
+ */
+export type SubjectPath = string;
+
+/**
+ * Filter by effective repository-authoritative issue state.
+ */
+export type IssueStateFilter = 'open' | 'closed';
+
+/**
+ * Filter by effective target-repository-authoritative pull request state.
+ */
+export type PullRequestStateFilter = 'open' | 'closed' | 'merged';
+
+/**
+ * Filter by stable repository label record key.
+ */
+export type LabelFilter = string;
+
+/**
+ * Filter by canonical assignee DID.
+ */
+export type AssigneeFilter = string;
+
+/**
+ * Filter by stable repository milestone record key.
+ */
+export type MilestoneFilter = string;
 
 export type RepositoryUri = string;
 
@@ -3211,6 +3398,1086 @@ export type SyncRepositoryForkResponses = {
 
 export type SyncRepositoryForkResponse = SyncRepositoryForkResponses[keyof SyncRepositoryForkResponses];
 
+export type ListRepositoryTransfersData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/transfers';
+};
+
+export type ListRepositoryTransfersErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListRepositoryTransfersError = ListRepositoryTransfersErrors[keyof ListRepositoryTransfersErrors];
+
+export type ListRepositoryTransfersResponses = {
+    /**
+     * A cursor page of repository transfers
+     */
+    200: RepositoryTransferList;
+};
+
+export type ListRepositoryTransfersResponse = ListRepositoryTransfersResponses[keyof ListRepositoryTransfersResponses];
+
+export type CreateRepositoryTransferData = {
+    body: CreateRepositoryTransferRequest;
+    headers?: {
+        /**
+         * Required for browser-session mutations and must exactly match the configured Adenosine origin.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/transfers';
+};
+
+export type CreateRepositoryTransferErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type CreateRepositoryTransferError = CreateRepositoryTransferErrors[keyof CreateRepositoryTransferErrors];
+
+export type CreateRepositoryTransferResponses = {
+    /**
+     * Transfer proposal created or resumed
+     */
+    202: RepositoryTransfer;
+};
+
+export type CreateRepositoryTransferResponse = CreateRepositoryTransferResponses[keyof CreateRepositoryTransferResponses];
+
+export type DeleteRepositoryTransferData = {
+    body?: never;
+    headers?: {
+        /**
+         * Required for browser-session mutations and must exactly match the configured Adenosine origin.
+         */
+        Origin?: string;
+    };
+    path: {
+        transfer: string;
+    };
+    query?: never;
+    url: '/api/v1/repository-transfers/{transfer}';
+};
+
+export type DeleteRepositoryTransferErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type DeleteRepositoryTransferError = DeleteRepositoryTransferErrors[keyof DeleteRepositoryTransferErrors];
+
+export type DeleteRepositoryTransferResponses = {
+    /**
+     * Transfer cancelled
+     */
+    204: void;
+};
+
+export type DeleteRepositoryTransferResponse = DeleteRepositoryTransferResponses[keyof DeleteRepositoryTransferResponses];
+
+export type GetRepositoryTransferData = {
+    body?: never;
+    path: {
+        transfer: string;
+    };
+    query?: never;
+    url: '/api/v1/repository-transfers/{transfer}';
+};
+
+export type GetRepositoryTransferErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetRepositoryTransferError = GetRepositoryTransferErrors[keyof GetRepositoryTransferErrors];
+
+export type GetRepositoryTransferResponses = {
+    /**
+     * Repository transfer state
+     */
+    200: RepositoryTransfer;
+};
+
+export type GetRepositoryTransferResponse = GetRepositoryTransferResponses[keyof GetRepositoryTransferResponses];
+
+export type CreateRepositoryTransferAcceptanceData = {
+    body?: never;
+    headers?: {
+        /**
+         * Required for browser-session mutations and must exactly match the configured Adenosine origin.
+         */
+        Origin?: string;
+    };
+    path: {
+        transfer: string;
+    };
+    query?: never;
+    url: '/api/v1/repository-transfers/{transfer}/acceptance';
+};
+
+export type CreateRepositoryTransferAcceptanceErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type CreateRepositoryTransferAcceptanceError = CreateRepositoryTransferAcceptanceErrors[keyof CreateRepositoryTransferAcceptanceErrors];
+
+export type CreateRepositoryTransferAcceptanceResponses = {
+    /**
+     * Transfer completed
+     */
+    200: RepositoryTransfer;
+};
+
+export type CreateRepositoryTransferAcceptanceResponse = CreateRepositoryTransferAcceptanceResponses[keyof CreateRepositoryTransferAcceptanceResponses];
+
+export type ListRepositoryLabelsData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/labels';
+};
+
+export type ListRepositoryLabelsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListRepositoryLabelsError = ListRepositoryLabelsErrors[keyof ListRepositoryLabelsErrors];
+
+export type ListRepositoryLabelsResponses = {
+    /**
+     * A cursor page of labels
+     */
+    200: RepositoryLabelList;
+};
+
+export type ListRepositoryLabelsResponse = ListRepositoryLabelsResponses[keyof ListRepositoryLabelsResponses];
+
+export type CreateRepositoryLabelData = {
+    body: RepositoryLabelInput;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/labels';
+};
+
+export type CreateRepositoryLabelErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type CreateRepositoryLabelError = CreateRepositoryLabelErrors[keyof CreateRepositoryLabelErrors];
+
+export type CreateRepositoryLabelResponses = {
+    /**
+     * Label published; projection update is pending
+     */
+    202: RepositoryLabelMutation;
+};
+
+export type CreateRepositoryLabelResponse = CreateRepositoryLabelResponses[keyof CreateRepositoryLabelResponses];
+
+export type DeleteRepositoryLabelData = {
+    body?: never;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Stable AT Protocol record key for a repository label.
+         */
+        label: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/labels/{label}';
+};
+
+export type DeleteRepositoryLabelErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type DeleteRepositoryLabelError = DeleteRepositoryLabelErrors[keyof DeleteRepositoryLabelErrors];
+
+export type DeleteRepositoryLabelResponses = {
+    /**
+     * Label deletion published; projection update is pending
+     */
+    202: unknown;
+};
+
+export type GetRepositoryLabelData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Stable AT Protocol record key for a repository label.
+         */
+        label: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/labels/{label}';
+};
+
+export type GetRepositoryLabelErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type GetRepositoryLabelError = GetRepositoryLabelErrors[keyof GetRepositoryLabelErrors];
+
+export type GetRepositoryLabelResponses = {
+    /**
+     * Repository label
+     */
+    200: RepositoryLabel;
+};
+
+export type GetRepositoryLabelResponse = GetRepositoryLabelResponses[keyof GetRepositoryLabelResponses];
+
+export type UpdateRepositoryLabelData = {
+    body: RepositoryLabelInput;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Stable AT Protocol record key for a repository label.
+         */
+        label: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/labels/{label}';
+};
+
+export type UpdateRepositoryLabelErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type UpdateRepositoryLabelError = UpdateRepositoryLabelErrors[keyof UpdateRepositoryLabelErrors];
+
+export type UpdateRepositoryLabelResponses = {
+    /**
+     * Label update published; projection update is pending
+     */
+    202: RepositoryLabelMutation;
+};
+
+export type UpdateRepositoryLabelResponse = UpdateRepositoryLabelResponses[keyof UpdateRepositoryLabelResponses];
+
+export type ListRepositoryMilestonesData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/milestones';
+};
+
+export type ListRepositoryMilestonesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListRepositoryMilestonesError = ListRepositoryMilestonesErrors[keyof ListRepositoryMilestonesErrors];
+
+export type ListRepositoryMilestonesResponses = {
+    /**
+     * A cursor page of milestones
+     */
+    200: RepositoryMilestoneList;
+};
+
+export type ListRepositoryMilestonesResponse = ListRepositoryMilestonesResponses[keyof ListRepositoryMilestonesResponses];
+
+export type CreateRepositoryMilestoneData = {
+    body: RepositoryMilestoneInput;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/milestones';
+};
+
+export type CreateRepositoryMilestoneErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type CreateRepositoryMilestoneError = CreateRepositoryMilestoneErrors[keyof CreateRepositoryMilestoneErrors];
+
+export type CreateRepositoryMilestoneResponses = {
+    /**
+     * Milestone published; projection update is pending
+     */
+    202: RepositoryMilestoneMutation;
+};
+
+export type CreateRepositoryMilestoneResponse = CreateRepositoryMilestoneResponses[keyof CreateRepositoryMilestoneResponses];
+
+export type DeleteRepositoryMilestoneData = {
+    body?: never;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Stable AT Protocol record key for a repository milestone.
+         */
+        milestone: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/milestones/{milestone}';
+};
+
+export type DeleteRepositoryMilestoneErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type DeleteRepositoryMilestoneError = DeleteRepositoryMilestoneErrors[keyof DeleteRepositoryMilestoneErrors];
+
+export type DeleteRepositoryMilestoneResponses = {
+    /**
+     * Milestone deletion published; projection update is pending
+     */
+    202: unknown;
+};
+
+export type GetRepositoryMilestoneData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Stable AT Protocol record key for a repository milestone.
+         */
+        milestone: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/milestones/{milestone}';
+};
+
+export type GetRepositoryMilestoneErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type GetRepositoryMilestoneError = GetRepositoryMilestoneErrors[keyof GetRepositoryMilestoneErrors];
+
+export type GetRepositoryMilestoneResponses = {
+    /**
+     * Repository milestone
+     */
+    200: RepositoryMilestone;
+};
+
+export type GetRepositoryMilestoneResponse = GetRepositoryMilestoneResponses[keyof GetRepositoryMilestoneResponses];
+
+export type UpdateRepositoryMilestoneData = {
+    body: RepositoryMilestoneInput;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Stable AT Protocol record key for a repository milestone.
+         */
+        milestone: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/milestones/{milestone}';
+};
+
+export type UpdateRepositoryMilestoneErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type UpdateRepositoryMilestoneError = UpdateRepositoryMilestoneErrors[keyof UpdateRepositoryMilestoneErrors];
+
+export type UpdateRepositoryMilestoneResponses = {
+    /**
+     * Milestone update published; projection update is pending
+     */
+    202: RepositoryMilestoneMutation;
+};
+
+export type UpdateRepositoryMilestoneResponse = UpdateRepositoryMilestoneResponses[keyof UpdateRepositoryMilestoneResponses];
+
+export type DeleteIssueTriageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Unpadded base64url encoding of the issue or pull-request AT URI.
+         */
+        subject: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/issues/{subject}/triage';
+};
+
+export type DeleteIssueTriageErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type DeleteIssueTriageError = DeleteIssueTriageErrors[keyof DeleteIssueTriageErrors];
+
+export type DeleteIssueTriageResponses = {
+    /**
+     * Issue triage deletion published; projection update is pending
+     */
+    202: unknown;
+};
+
+export type GetIssueTriageData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Unpadded base64url encoding of the issue or pull-request AT URI.
+         */
+        subject: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/issues/{subject}/triage';
+};
+
+export type GetIssueTriageErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type GetIssueTriageError = GetIssueTriageErrors[keyof GetIssueTriageErrors];
+
+export type GetIssueTriageResponses = {
+    /**
+     * Issue triage metadata
+     */
+    200: SubjectTriage;
+};
+
+export type GetIssueTriageResponse = GetIssueTriageResponses[keyof GetIssueTriageResponses];
+
+export type PutIssueTriageData = {
+    body: SubjectTriageInput;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Unpadded base64url encoding of the issue or pull-request AT URI.
+         */
+        subject: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/issues/{subject}/triage';
+};
+
+export type PutIssueTriageErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type PutIssueTriageError = PutIssueTriageErrors[keyof PutIssueTriageErrors];
+
+export type PutIssueTriageResponses = {
+    /**
+     * Issue triage published; projection update is pending
+     */
+    202: SubjectTriageMutation;
+};
+
+export type PutIssueTriageResponse = PutIssueTriageResponses[keyof PutIssueTriageResponses];
+
+export type DeletePullRequestTriageData = {
+    body?: never;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Unpadded base64url encoding of the issue or pull-request AT URI.
+         */
+        subject: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage';
+};
+
+export type DeletePullRequestTriageErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type DeletePullRequestTriageError = DeletePullRequestTriageErrors[keyof DeletePullRequestTriageErrors];
+
+export type DeletePullRequestTriageResponses = {
+    /**
+     * Pull request triage deletion published; projection update is pending
+     */
+    202: unknown;
+};
+
+export type GetPullRequestTriageData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Unpadded base64url encoding of the issue or pull-request AT URI.
+         */
+        subject: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage';
+};
+
+export type GetPullRequestTriageErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type GetPullRequestTriageError = GetPullRequestTriageErrors[keyof GetPullRequestTriageErrors];
+
+export type GetPullRequestTriageResponses = {
+    /**
+     * Pull request triage metadata
+     */
+    200: SubjectTriage;
+};
+
+export type GetPullRequestTriageResponse = GetPullRequestTriageResponses[keyof GetPullRequestTriageResponses];
+
+export type PutPullRequestTriageData = {
+    body: SubjectTriageInput;
+    headers?: {
+        /**
+         * Required by the operation and must exactly match the configured Adenosine origin. The comparison uses the browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+         */
+        Origin?: string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        /**
+         * Unpadded base64url encoding of the issue or pull-request AT URI.
+         */
+        subject: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/pulls/{subject}/triage';
+};
+
+export type PutPullRequestTriageErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+    /**
+     * The canonical upstream or publication provider is unavailable
+     */
+    502: ErrorResponse;
+};
+
+export type PutPullRequestTriageError = PutPullRequestTriageErrors[keyof PutPullRequestTriageErrors];
+
+export type PutPullRequestTriageResponses = {
+    /**
+     * Pull request triage published; projection update is pending
+     */
+    202: SubjectTriageMutation;
+};
+
+export type PutPullRequestTriageResponse = PutPullRequestTriageResponses[keyof PutPullRequestTriageResponses];
+
 export type DeleteStarData = {
     body?: never;
     headers?: {
@@ -3353,6 +4620,22 @@ export type GetIssuesData = {
     path?: never;
     query: {
         repository_uri: string;
+        /**
+         * Filter by effective repository-authoritative issue state.
+         */
+        state?: 'open' | 'closed';
+        /**
+         * Filter by stable repository label record key.
+         */
+        label?: string;
+        /**
+         * Filter by canonical assignee DID.
+         */
+        assignee?: string;
+        /**
+         * Filter by stable repository milestone record key.
+         */
+        milestone?: string;
         limit?: number;
         cursor?: string;
     };
@@ -3360,6 +4643,10 @@ export type GetIssuesData = {
 };
 
 export type GetIssuesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
     /**
      * The requested resource was not found
      */
@@ -3675,6 +4962,22 @@ export type ListPullRequestsData = {
     path?: never;
     query: {
         repository_uri: string;
+        /**
+         * Filter by effective target-repository-authoritative pull request state.
+         */
+        state?: 'open' | 'closed' | 'merged';
+        /**
+         * Filter by stable repository label record key.
+         */
+        label?: string;
+        /**
+         * Filter by canonical assignee DID.
+         */
+        assignee?: string;
+        /**
+         * Filter by stable repository milestone record key.
+         */
+        milestone?: string;
         limit?: number;
         cursor?: string;
     };
@@ -3682,6 +4985,10 @@ export type ListPullRequestsData = {
 };
 
 export type ListPullRequestsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
     /**
      * The requested resource was not found
      */

@@ -1,8 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { decodeRecordIdentity } from '@/features/collaboration/identity'
+import { decodeRecordIdentity, encodeRecordIdentity } from '@/features/collaboration/identity'
 import { IssuePage } from '@/features/collaboration/pages'
-import { commentsQueryOptions, issueQueryOptions } from '@/features/collaboration/queries'
+import {
+  commentsQueryOptions,
+  issueQueryOptions,
+  issueTriageQueryOptions,
+  repositoryLabelsQueryOptions,
+  repositoryMilestonesQueryOptions,
+} from '@/features/collaboration/queries'
 import { repositoryQueryOptions } from '@/features/repository-browser/queries'
 import { RepositoryError, RepositoryPending } from '@/features/repository-browser/states'
 
@@ -14,6 +20,13 @@ export const Route = createFileRoute('/$owner/$repo/issues/$issue')({
     await Promise.all([
       context.queryClient.ensureQueryData(issueQueryOptions(repository.uri ?? '', params.issue)),
       context.queryClient.ensureQueryData(commentsQueryOptions(params.issue)),
+      context.queryClient.ensureQueryData(
+        issueTriageQueryOptions(params.owner, params.repo, encodeRecordIdentity(params.issue)),
+      ),
+      context.queryClient.ensureQueryData(repositoryLabelsQueryOptions(params.owner, params.repo)),
+      context.queryClient.ensureQueryData(
+        repositoryMilestonesQueryOptions(params.owner, params.repo),
+      ),
     ])
   },
   pendingComponent: RepositoryPending,
