@@ -1,0 +1,23 @@
+{
+  "lexicon": 1,
+  "id": "dev.adenosine.repositoryLabel",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A stable repository-authoritative label definition.",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["repository", "name", "color", "description", "createdAt", "updatedAt"],
+        "properties": {
+          "repository": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 50, "maxGraphemes": 50 },
+          "color": { "type": "string", "minLength": 6, "maxLength": 6 },
+          "description": { "type": "string", "maxLength": 255, "maxGraphemes": 255 },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

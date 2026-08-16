@@ -24,6 +24,8 @@ import { Route as OwnerRepoActivityRouteImport } from './routes/$owner.$repo.act
 import { Route as OwnerRepoCommitsRouteImport } from './routes/$owner.$repo.commits'
 import { Route as OwnerRepoCompareRouteImport } from './routes/$owner.$repo.compare'
 import { Route as OwnerRepoIssuesRouteImport } from './routes/$owner.$repo.issues'
+import { Route as OwnerRepoLabelsRouteImport } from './routes/$owner.$repo.labels'
+import { Route as OwnerRepoMilestonesRouteImport } from './routes/$owner.$repo.milestones'
 import { Route as OwnerRepoPullsRouteImport } from './routes/$owner.$repo.pulls'
 import { Route as OwnerRepoReleasesRouteImport } from './routes/$owner.$repo.releases'
 import { Route as OwnerRepoSettingsRouteImport } from './routes/$owner.$repo.settings'
@@ -110,6 +112,16 @@ const OwnerRepoIssuesRoute = OwnerRepoIssuesRouteImport.update({
   path: '/issues',
   getParentRoute: () => OwnerRepoRoute,
 } as any)
+const OwnerRepoLabelsRoute = OwnerRepoLabelsRouteImport.update({
+  id: '/labels',
+  path: '/labels',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
+const OwnerRepoMilestonesRoute = OwnerRepoMilestonesRouteImport.update({
+  id: '/milestones',
+  path: '/milestones',
+  getParentRoute: () => OwnerRepoRoute,
+} as any)
 const OwnerRepoPullsRoute = OwnerRepoPullsRouteImport.update({
   id: '/pulls',
   path: '/pulls',
@@ -172,6 +184,8 @@ export interface FileRoutesByFullPath {
   '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
   '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
   '/$owner/$repo/issues': typeof OwnerRepoIssuesRouteWithChildren
+  '/$owner/$repo/labels': typeof OwnerRepoLabelsRoute
+  '/$owner/$repo/milestones': typeof OwnerRepoMilestonesRoute
   '/$owner/$repo/pulls': typeof OwnerRepoPullsRouteWithChildren
   '/$owner/$repo/releases': typeof OwnerRepoReleasesRouteWithChildren
   '/$owner/$repo/settings': typeof OwnerRepoSettingsRoute
@@ -196,6 +210,8 @@ export interface FileRoutesByTo {
   '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
   '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
   '/$owner/$repo/issues': typeof OwnerRepoIssuesRouteWithChildren
+  '/$owner/$repo/labels': typeof OwnerRepoLabelsRoute
+  '/$owner/$repo/milestones': typeof OwnerRepoMilestonesRoute
   '/$owner/$repo/pulls': typeof OwnerRepoPullsRouteWithChildren
   '/$owner/$repo/releases': typeof OwnerRepoReleasesRouteWithChildren
   '/$owner/$repo/settings': typeof OwnerRepoSettingsRoute
@@ -223,6 +239,8 @@ export interface FileRoutesById {
   '/$owner/$repo/commits': typeof OwnerRepoCommitsRoute
   '/$owner/$repo/compare': typeof OwnerRepoCompareRoute
   '/$owner/$repo/issues': typeof OwnerRepoIssuesRouteWithChildren
+  '/$owner/$repo/labels': typeof OwnerRepoLabelsRoute
+  '/$owner/$repo/milestones': typeof OwnerRepoMilestonesRoute
   '/$owner/$repo/pulls': typeof OwnerRepoPullsRouteWithChildren
   '/$owner/$repo/releases': typeof OwnerRepoReleasesRouteWithChildren
   '/$owner/$repo/settings': typeof OwnerRepoSettingsRoute
@@ -251,6 +269,8 @@ export interface FileRouteTypes {
     | '/$owner/$repo/commits'
     | '/$owner/$repo/compare'
     | '/$owner/$repo/issues'
+    | '/$owner/$repo/labels'
+    | '/$owner/$repo/milestones'
     | '/$owner/$repo/pulls'
     | '/$owner/$repo/releases'
     | '/$owner/$repo/settings'
@@ -275,6 +295,8 @@ export interface FileRouteTypes {
     | '/$owner/$repo/commits'
     | '/$owner/$repo/compare'
     | '/$owner/$repo/issues'
+    | '/$owner/$repo/labels'
+    | '/$owner/$repo/milestones'
     | '/$owner/$repo/pulls'
     | '/$owner/$repo/releases'
     | '/$owner/$repo/settings'
@@ -301,6 +323,8 @@ export interface FileRouteTypes {
     | '/$owner/$repo/commits'
     | '/$owner/$repo/compare'
     | '/$owner/$repo/issues'
+    | '/$owner/$repo/labels'
+    | '/$owner/$repo/milestones'
     | '/$owner/$repo/pulls'
     | '/$owner/$repo/releases'
     | '/$owner/$repo/settings'
@@ -430,6 +454,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerRepoIssuesRouteImport
       parentRoute: typeof OwnerRepoRoute
     }
+    '/$owner/$repo/labels': {
+      id: '/$owner/$repo/labels'
+      path: '/labels'
+      fullPath: '/$owner/$repo/labels'
+      preLoaderRoute: typeof OwnerRepoLabelsRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
+    '/$owner/$repo/milestones': {
+      id: '/$owner/$repo/milestones'
+      path: '/milestones'
+      fullPath: '/$owner/$repo/milestones'
+      preLoaderRoute: typeof OwnerRepoMilestonesRouteImport
+      parentRoute: typeof OwnerRepoRoute
+    }
     '/$owner/$repo/pulls': {
       id: '/$owner/$repo/pulls'
       path: '/pulls'
@@ -536,6 +574,8 @@ interface OwnerRepoRouteChildren {
   OwnerRepoCommitsRoute: typeof OwnerRepoCommitsRoute
   OwnerRepoCompareRoute: typeof OwnerRepoCompareRoute
   OwnerRepoIssuesRoute: typeof OwnerRepoIssuesRouteWithChildren
+  OwnerRepoLabelsRoute: typeof OwnerRepoLabelsRoute
+  OwnerRepoMilestonesRoute: typeof OwnerRepoMilestonesRoute
   OwnerRepoPullsRoute: typeof OwnerRepoPullsRouteWithChildren
   OwnerRepoReleasesRoute: typeof OwnerRepoReleasesRouteWithChildren
   OwnerRepoSettingsRoute: typeof OwnerRepoSettingsRoute
@@ -550,6 +590,8 @@ const OwnerRepoRouteChildren: OwnerRepoRouteChildren = {
   OwnerRepoCommitsRoute: OwnerRepoCommitsRoute,
   OwnerRepoCompareRoute: OwnerRepoCompareRoute,
   OwnerRepoIssuesRoute: OwnerRepoIssuesRouteWithChildren,
+  OwnerRepoLabelsRoute: OwnerRepoLabelsRoute,
+  OwnerRepoMilestonesRoute: OwnerRepoMilestonesRoute,
   OwnerRepoPullsRoute: OwnerRepoPullsRouteWithChildren,
   OwnerRepoReleasesRoute: OwnerRepoReleasesRouteWithChildren,
   OwnerRepoSettingsRoute: OwnerRepoSettingsRoute,

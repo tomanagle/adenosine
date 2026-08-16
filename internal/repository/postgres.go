@@ -257,6 +257,9 @@ func repositoryFromRow(row dbgen.CoreRepository) Repository {
 			value.ForkedFrom.LocalRepositoryID = &id
 		}
 	}
+	if row.TransferredFromUri.Valid && row.TransferredFromCid.Valid {
+		value.TransferredFrom = &ATIdentity{URI: row.TransferredFromUri.String, CID: row.TransferredFromCid.String}
+	}
 	if row.OrganizationID.Valid {
 		id := uuid.UUID(row.OrganizationID.Bytes)
 		value.OrganizationID = &id
@@ -306,6 +309,8 @@ func repositoryFromPageRow(row dbgen.PageRepositoriesByOrganizationRow) Reposito
 		DeletedAt: row.DeletedAt, OrganizationID: row.OrganizationID,
 		ForkedFromUri: row.ForkedFromUri, ForkedFromCid: row.ForkedFromCid,
 		ForkedFromLocalRepositoryID: row.ForkedFromLocalRepositoryID,
+		TransferredFromUri:          row.TransferredFromUri,
+		TransferredFromCid:          row.TransferredFromCid,
 		ForkCount:                   row.ForkCount,
 	})
 	value.ViewerCanAdmin = row.ViewerCanAdmin.Bool

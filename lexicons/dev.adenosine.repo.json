@@ -33,6 +33,16 @@
             "ref": "com.atproto.repo.strongRef",
             "description": "The repository record this repository was originally forked from."
           },
+          "transferredFrom": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The immediately preceding repository record in an accepted ownership-transfer lineage."
+          },
+          "transferredTo": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The immediately succeeding repository record in an accepted ownership-transfer lineage."
+          },
           "defaultBranch": {
             "type": "string",
             "maxLength": 255,

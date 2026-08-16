@@ -64,6 +64,7 @@ services:
       OTEL_SERVICE_NAME: adenosine
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_METRICS_EXPORTER: prometheus
       OTEL_TRACES_SAMPLER: always_on
       OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=development,service.version=dev
     ports:
@@ -178,6 +179,10 @@ services:
       - "${GRAFANA_PORT:-3001}:3000"
       - "${OTEL_GRPC_PORT:-4317}:4317"
       - "${OTEL_HTTP_PORT:-4318}:4318"
+    volumes:
+      - ../infra/observability/prometheus.yaml:/otel-lgtm/prometheus.yaml:ro
+      - ../infra/observability/grafana-dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/adenosine.yaml:ro
+      - ../infra/observability/dashboards:/otel-lgtm/adenosine-dashboards:ro
 
   production-postgres:
     profiles: ["production-smoke"]
@@ -440,18 +445,19 @@ services:
     build:
       context: ..
       dockerfile: dev/Dockerfile
-      target: dev-go
+      target: federation-test
     entrypoint: []
     working_dir: /workspace
-    command: ["go", "run", "./test/federation", "-phase=seed"]
+    command: ["federation-acceptance", "-phase=seed"]
     environment:
       ADENOSINE_A_URL: http://adenosine-a:8080
       ADENOSINE_B_URL: http://adenosine-b:8080
       ADENOSINE_TAP_ADMIN_PASSWORD: federation-test-secret
+      DATABASE_URL: postgres://adenosine:federation-a@postgres-a:5432/adenosine?sslmode=disable
       GIT_SSL_CAINFO: /caddy-data/caddy/pki/authorities/local/root.crt
     volumes:
       - federation_caddy_data_a:/caddy-data:ro
-    networks: [federation-http-a, federation-http-b]
+    networks: [federation-data-a, federation-http-a, federation-http-b]
     depends_on:
       adenosine-a:
         condition: service_healthy

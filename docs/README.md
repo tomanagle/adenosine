@@ -3,8 +3,10 @@
 Start with the document for the boundary you are changing:
 
 - [Architecture and sources of truth](architecture.md)
+- [Architecture decisions](adrs/)
 - [Database, migrations, sqlc, and projections](database.md)
 - [REST API and versioning](api.md)
+- [Command-line client](cli.md)
 - [Public owner routing](owner-routing.md)
 - [API authentication](api-authentication.md)
 - [Lexicons, publication, and Tap](federation.md)

@@ -14,14 +14,31 @@ import (
 const countSearchIssues = `-- name: CountSearchIssues :one
 SELECT count(*) AS visible_issue_count, count(*) FILTER (WHERE issue.state = 'open') AS visible_open_issue_count
 FROM network.issues issue JOIN network.repositories repository ON repository.uri = issue.repository_uri
-WHERE issue.repository_uri = $1::text AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
-  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did IN (repository.owner_did, issue.author_did))
-  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri IN (repository.uri, issue.uri))
+LEFT JOIN LATERAL (
+  SELECT metadata.uri, metadata.cid, metadata.author_did, metadata.rkey, metadata.subject_uri, metadata.subject_cid, metadata.subject_kind, metadata.repository_uri, metadata.repository_cid, metadata.label_uris, metadata.assignee_dids, metadata.milestone_uri, metadata.record_created_at, metadata.record_updated_at, metadata.indexed_at, metadata.deleted_at, metadata.source_event_id FROM network.subject_triage metadata
+  JOIN network.repositories metadata_repository ON metadata_repository.uri = metadata.repository_uri
+  WHERE metadata.subject_uri = issue.uri AND metadata.subject_kind = 'issue'
+    AND metadata_repository.lineage_uri = repository.lineage_uri AND metadata.author_did = metadata_repository.owner_did
+    AND metadata.deleted_at IS NULL AND metadata.cid IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = metadata.uri)
+  ORDER BY metadata.source_event_id DESC, metadata.uri DESC LIMIT 1
+) triage ON true
+WHERE repository.lineage_uri = (SELECT requested.lineage_uri FROM network.repositories AS requested WHERE requested.uri = $2::text) AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, issue.author_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, issue.uri))
+  AND ($3::text IS NULL OR issue.state = $3::text)
+  AND ($4::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_labels label JOIN network.repositories label_repository ON label_repository.uri = label.repository_uri WHERE label.uri = ANY(triage.label_uris) AND label.rkey = $4::text AND label_repository.lineage_uri = repository.lineage_uri AND label.author_did = label_repository.owner_did AND label.deleted_at IS NULL AND label.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = label.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = label.uri)))
+  AND ($5::text IS NULL OR ($5::text = ANY(triage.assignee_dids) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = $5::text)))
+  AND ($6::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_milestones milestone JOIN network.repositories milestone_repository ON milestone_repository.uri = milestone.repository_uri WHERE milestone.uri = triage.milestone_uri AND milestone.rkey = $6::text AND milestone_repository.lineage_uri = repository.lineage_uri AND milestone.author_did = milestone_repository.owner_did AND milestone.deleted_at IS NULL AND milestone.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = milestone.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = milestone.uri)))
 `
 
 type CountSearchIssuesParams struct {
-	RepositoryUri string      `json:"repository_uri"`
-	ViewerDid     pgtype.Text `json:"viewer_did"`
+	ViewerDid       pgtype.Text `json:"viewer_did"`
+	RepositoryUri   string      `json:"repository_uri"`
+	StateFilter     pgtype.Text `json:"state_filter"`
+	LabelFilter     pgtype.Text `json:"label_filter"`
+	AssigneeFilter  pgtype.Text `json:"assignee_filter"`
+	MilestoneFilter pgtype.Text `json:"milestone_filter"`
 }
 
 type CountSearchIssuesRow struct {
@@ -30,7 +47,14 @@ type CountSearchIssuesRow struct {
 }
 
 func (q *Queries) CountSearchIssues(ctx context.Context, arg CountSearchIssuesParams) (CountSearchIssuesRow, error) {
-	row := q.db.QueryRow(ctx, countSearchIssues, arg.RepositoryUri, arg.ViewerDid)
+	row := q.db.QueryRow(ctx, countSearchIssues,
+		arg.ViewerDid,
+		arg.RepositoryUri,
+		arg.StateFilter,
+		arg.LabelFilter,
+		arg.AssigneeFilter,
+		arg.MilestoneFilter,
+	)
 	var i CountSearchIssuesRow
 	err := row.Scan(&i.VisibleIssueCount, &i.VisibleOpenIssueCount)
 	return i, err
@@ -39,14 +63,31 @@ func (q *Queries) CountSearchIssues(ctx context.Context, arg CountSearchIssuesPa
 const countSearchPullRequests = `-- name: CountSearchPullRequests :one
 SELECT count(*) AS visible_pull_request_count, count(*) FILTER (WHERE pull.state = 'open') AS visible_open_pull_request_count
 FROM network.pull_requests pull JOIN network.repositories repository ON repository.uri = pull.target_repository_uri
-WHERE pull.target_repository_uri = $1::text AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
-  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did IN (repository.owner_did, pull.author_did))
-  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri IN (repository.uri, pull.uri))
+LEFT JOIN LATERAL (
+  SELECT metadata.uri, metadata.cid, metadata.author_did, metadata.rkey, metadata.subject_uri, metadata.subject_cid, metadata.subject_kind, metadata.repository_uri, metadata.repository_cid, metadata.label_uris, metadata.assignee_dids, metadata.milestone_uri, metadata.record_created_at, metadata.record_updated_at, metadata.indexed_at, metadata.deleted_at, metadata.source_event_id FROM network.subject_triage metadata
+  JOIN network.repositories metadata_repository ON metadata_repository.uri = metadata.repository_uri
+  WHERE metadata.subject_uri = pull.uri AND metadata.subject_kind = 'pull_request'
+    AND metadata_repository.lineage_uri = repository.lineage_uri AND metadata.author_did = metadata_repository.owner_did
+    AND metadata.deleted_at IS NULL AND metadata.cid IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = metadata.uri)
+  ORDER BY metadata.source_event_id DESC, metadata.uri DESC LIMIT 1
+) triage ON true
+WHERE repository.lineage_uri = (SELECT requested.lineage_uri FROM network.repositories AS requested WHERE requested.uri = $2::text) AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, pull.author_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, pull.uri))
+  AND ($3::text IS NULL OR pull.state = $3::text)
+  AND ($4::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_labels label JOIN network.repositories label_repository ON label_repository.uri = label.repository_uri WHERE label.uri = ANY(triage.label_uris) AND label.rkey = $4::text AND label_repository.lineage_uri = repository.lineage_uri AND label.author_did = label_repository.owner_did AND label.deleted_at IS NULL AND label.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = label.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = label.uri)))
+  AND ($5::text IS NULL OR ($5::text = ANY(triage.assignee_dids) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = $5::text)))
+  AND ($6::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_milestones milestone JOIN network.repositories milestone_repository ON milestone_repository.uri = milestone.repository_uri WHERE milestone.uri = triage.milestone_uri AND milestone.rkey = $6::text AND milestone_repository.lineage_uri = repository.lineage_uri AND milestone.author_did = milestone_repository.owner_did AND milestone.deleted_at IS NULL AND milestone.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = milestone.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = milestone.uri)))
 `
 
 type CountSearchPullRequestsParams struct {
-	RepositoryUri string      `json:"repository_uri"`
-	ViewerDid     pgtype.Text `json:"viewer_did"`
+	ViewerDid       pgtype.Text `json:"viewer_did"`
+	RepositoryUri   string      `json:"repository_uri"`
+	StateFilter     pgtype.Text `json:"state_filter"`
+	LabelFilter     pgtype.Text `json:"label_filter"`
+	AssigneeFilter  pgtype.Text `json:"assignee_filter"`
+	MilestoneFilter pgtype.Text `json:"milestone_filter"`
 }
 
 type CountSearchPullRequestsRow struct {
@@ -55,7 +96,14 @@ type CountSearchPullRequestsRow struct {
 }
 
 func (q *Queries) CountSearchPullRequests(ctx context.Context, arg CountSearchPullRequestsParams) (CountSearchPullRequestsRow, error) {
-	row := q.db.QueryRow(ctx, countSearchPullRequests, arg.RepositoryUri, arg.ViewerDid)
+	row := q.db.QueryRow(ctx, countSearchPullRequests,
+		arg.ViewerDid,
+		arg.RepositoryUri,
+		arg.StateFilter,
+		arg.LabelFilter,
+		arg.AssigneeFilter,
+		arg.MilestoneFilter,
+	)
 	var i CountSearchPullRequestsRow
 	err := row.Scan(&i.VisiblePullRequestCount, &i.VisibleOpenPullRequestCount)
 	return i, err
@@ -65,7 +113,13 @@ const countSearchRepositoryForks = `-- name: CountSearchRepositoryForks :one
 SELECT count(*)
 FROM network.repositories AS repository
 LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
-WHERE repository.forked_from_uri = $1::text
+WHERE EXISTS (
+    SELECT 1 FROM network.repositories AS fork_source, network.repositories AS requested_source
+    WHERE fork_source.uri = repository.forked_from_uri
+      AND requested_source.uri = $1::text
+      AND fork_source.lineage_uri = requested_source.lineage_uri
+  )
+  AND repository.uri = repository.canonical_uri
   AND repository.deleted_at IS NULL
   AND repository.cid IS NOT NULL
   AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
@@ -86,8 +140,8 @@ func (q *Queries) CountSearchRepositoryForks(ctx context.Context, arg CountSearc
 }
 
 const countSearchStars = `-- name: CountSearchStars :one
-SELECT count(*) FROM network.stars star JOIN network.repositories repository ON repository.uri = star.repository_uri
-WHERE star.repository_uri = $1::text AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+SELECT count(DISTINCT star.author_did) FROM network.stars star JOIN network.repositories repository ON repository.uri = star.repository_uri
+WHERE repository.lineage_uri = (SELECT requested.lineage_uri FROM network.repositories AS requested WHERE requested.uri = $1::text) AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did IN (repository.owner_did, star.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri IN (repository.uri, star.uri))
 `
@@ -110,16 +164,53 @@ SELECT issue.uri, issue.cid, issue.author_did, issue.rkey, issue.repository_uri,
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = comment.author_did)
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = comment.uri)) AS visible_comment_count
 FROM network.issues issue JOIN network.repositories repository ON repository.uri = issue.repository_uri
-WHERE issue.repository_uri = $2::text AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+LEFT JOIN LATERAL (
+  SELECT metadata.uri, metadata.cid, metadata.author_did, metadata.rkey, metadata.subject_uri, metadata.subject_cid, metadata.subject_kind, metadata.repository_uri, metadata.repository_cid, metadata.label_uris, metadata.assignee_dids, metadata.milestone_uri, metadata.record_created_at, metadata.record_updated_at, metadata.indexed_at, metadata.deleted_at, metadata.source_event_id
+  FROM network.subject_triage metadata
+  JOIN network.repositories metadata_repository ON metadata_repository.uri = metadata.repository_uri
+  WHERE metadata.subject_uri = issue.uri AND metadata.subject_kind = 'issue'
+    AND metadata_repository.lineage_uri = repository.lineage_uri
+    AND metadata.author_did = metadata_repository.owner_did
+    AND metadata.deleted_at IS NULL AND metadata.cid IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = metadata.uri)
+  ORDER BY metadata.source_event_id DESC, metadata.uri DESC
+  LIMIT 1
+) triage ON true
+WHERE repository.lineage_uri = (SELECT requested.lineage_uri FROM network.repositories AS requested WHERE requested.uri = $2::text) AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, issue.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, issue.uri))
-  AND ($3::text IS NULL OR (issue.record_created_at, issue.uri) < ($4::timestamptz, $3::text))
-ORDER BY issue.record_created_at DESC, issue.uri DESC LIMIT $5
+  AND ($3::text IS NULL OR issue.state = $3::text)
+  AND ($4::text IS NULL OR EXISTS (
+    SELECT 1 FROM network.repository_labels label
+    JOIN network.repositories label_repository ON label_repository.uri = label.repository_uri
+    WHERE label.uri = ANY(triage.label_uris) AND label.rkey = $4::text
+      AND label_repository.lineage_uri = repository.lineage_uri AND label.author_did = label_repository.owner_did
+      AND label.deleted_at IS NULL AND label.cid IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = label.author_did)
+      AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = label.uri)
+  ))
+  AND ($5::text IS NULL OR ($5::text = ANY(triage.assignee_dids)
+    AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = $5::text)))
+  AND ($6::text IS NULL OR EXISTS (
+    SELECT 1 FROM network.repository_milestones milestone
+    JOIN network.repositories milestone_repository ON milestone_repository.uri = milestone.repository_uri
+    WHERE milestone.uri = triage.milestone_uri AND milestone.rkey = $6::text
+      AND milestone_repository.lineage_uri = repository.lineage_uri AND milestone.author_did = milestone_repository.owner_did
+      AND milestone.deleted_at IS NULL AND milestone.cid IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = milestone.author_did)
+      AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = milestone.uri)
+  ))
+  AND ($7::text IS NULL OR (issue.record_created_at, issue.uri) < ($8::timestamptz, $7::text))
+ORDER BY issue.record_created_at DESC, issue.uri DESC LIMIT $9
 `
 
 type ListSearchIssuesParams struct {
 	ViewerDid       pgtype.Text        `json:"viewer_did"`
 	RepositoryUri   string             `json:"repository_uri"`
+	StateFilter     pgtype.Text        `json:"state_filter"`
+	LabelFilter     pgtype.Text        `json:"label_filter"`
+	AssigneeFilter  pgtype.Text        `json:"assignee_filter"`
+	MilestoneFilter pgtype.Text        `json:"milestone_filter"`
 	CursorUri       pgtype.Text        `json:"cursor_uri"`
 	CursorCreatedAt pgtype.Timestamptz `json:"cursor_created_at"`
 	ResultLimit     int32              `json:"result_limit"`
@@ -152,6 +243,10 @@ func (q *Queries) ListSearchIssues(ctx context.Context, arg ListSearchIssuesPara
 	rows, err := q.db.Query(ctx, listSearchIssues,
 		arg.ViewerDid,
 		arg.RepositoryUri,
+		arg.StateFilter,
+		arg.LabelFilter,
+		arg.AssigneeFilter,
+		arg.MilestoneFilter,
 		arg.CursorUri,
 		arg.CursorCreatedAt,
 		arg.ResultLimit,
@@ -260,16 +355,34 @@ SELECT pull.uri, pull.cid, pull.author_did, pull.rkey, pull.source_repository_ur
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = review.author_did)
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = review.uri)) AS visible_review_count
 FROM network.pull_requests pull JOIN network.repositories repository ON repository.uri = pull.target_repository_uri
-WHERE pull.target_repository_uri = $2::text AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+LEFT JOIN LATERAL (
+  SELECT metadata.uri, metadata.cid, metadata.author_did, metadata.rkey, metadata.subject_uri, metadata.subject_cid, metadata.subject_kind, metadata.repository_uri, metadata.repository_cid, metadata.label_uris, metadata.assignee_dids, metadata.milestone_uri, metadata.record_created_at, metadata.record_updated_at, metadata.indexed_at, metadata.deleted_at, metadata.source_event_id
+  FROM network.subject_triage metadata
+  JOIN network.repositories metadata_repository ON metadata_repository.uri = metadata.repository_uri
+  WHERE metadata.subject_uri = pull.uri AND metadata.subject_kind = 'pull_request'
+    AND metadata_repository.lineage_uri = repository.lineage_uri AND metadata.author_did = metadata_repository.owner_did
+    AND metadata.deleted_at IS NULL AND metadata.cid IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = metadata.uri)
+  ORDER BY metadata.source_event_id DESC, metadata.uri DESC LIMIT 1
+) triage ON true
+WHERE repository.lineage_uri = (SELECT requested.lineage_uri FROM network.repositories AS requested WHERE requested.uri = $2::text) AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (repository.owner_did, pull.author_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (repository.uri, pull.uri))
-  AND ($3::text IS NULL OR (pull.record_created_at, pull.uri) < ($4::timestamptz, $3::text))
-ORDER BY pull.record_created_at DESC, pull.uri DESC LIMIT $5
+  AND ($3::text IS NULL OR pull.state = $3::text)
+  AND ($4::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_labels label JOIN network.repositories label_repository ON label_repository.uri = label.repository_uri WHERE label.uri = ANY(triage.label_uris) AND label.rkey = $4::text AND label_repository.lineage_uri = repository.lineage_uri AND label.author_did = label_repository.owner_did AND label.deleted_at IS NULL AND label.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = label.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = label.uri)))
+  AND ($5::text IS NULL OR ($5::text = ANY(triage.assignee_dids) AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = $5::text)))
+  AND ($6::text IS NULL OR EXISTS (SELECT 1 FROM network.repository_milestones milestone JOIN network.repositories milestone_repository ON milestone_repository.uri = milestone.repository_uri WHERE milestone.uri = triage.milestone_uri AND milestone.rkey = $6::text AND milestone_repository.lineage_uri = repository.lineage_uri AND milestone.author_did = milestone_repository.owner_did AND milestone.deleted_at IS NULL AND milestone.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = milestone.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = milestone.uri)))
+  AND ($7::text IS NULL OR (pull.record_created_at, pull.uri) < ($8::timestamptz, $7::text))
+ORDER BY pull.record_created_at DESC, pull.uri DESC LIMIT $9
 `
 
 type ListSearchPullRequestsParams struct {
 	ViewerDid       pgtype.Text        `json:"viewer_did"`
 	RepositoryUri   string             `json:"repository_uri"`
+	StateFilter     pgtype.Text        `json:"state_filter"`
+	LabelFilter     pgtype.Text        `json:"label_filter"`
+	AssigneeFilter  pgtype.Text        `json:"assignee_filter"`
+	MilestoneFilter pgtype.Text        `json:"milestone_filter"`
 	CursorUri       pgtype.Text        `json:"cursor_uri"`
 	CursorCreatedAt pgtype.Timestamptz `json:"cursor_created_at"`
 	ResultLimit     int32              `json:"result_limit"`
@@ -308,6 +421,10 @@ func (q *Queries) ListSearchPullRequests(ctx context.Context, arg ListSearchPull
 	rows, err := q.db.Query(ctx, listSearchPullRequests,
 		arg.ViewerDid,
 		arg.RepositoryUri,
+		arg.StateFilter,
+		arg.LabelFilter,
+		arg.AssigneeFilter,
+		arg.MilestoneFilter,
 		arg.CursorUri,
 		arg.CursorCreatedAt,
 		arg.ResultLimit,
@@ -371,7 +488,13 @@ LEFT JOIN network.profiles AS profile ON profile.did = repository.owner_did AND 
 LEFT JOIN network.identities AS identity ON identity.did = repository.owner_did AND identity.is_active
 LEFT JOIN network.organizations AS organization ON organization.uri = repository.organization_uri AND organization.deleted_at IS NULL
 LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
-WHERE repository.forked_from_uri = $1::text
+WHERE EXISTS (
+    SELECT 1 FROM network.repositories AS fork_source, network.repositories AS requested_source
+    WHERE fork_source.uri = repository.forked_from_uri
+      AND requested_source.uri = $1::text
+      AND fork_source.lineage_uri = requested_source.lineage_uri
+  )
+  AND repository.uri = repository.canonical_uri
   AND repository.deleted_at IS NULL
   AND repository.cid IS NOT NULL
   AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
@@ -471,38 +594,55 @@ func (q *Queries) ListSearchRepositoryForks(ctx context.Context, arg ListSearchR
 }
 
 const listSearchStars = `-- name: ListSearchStars :many
-SELECT star.uri, star.cid, star.author_did, star.rkey, star.repository_uri, star.repository_cid, star.record_created_at, star.indexed_at, star.deleted_at, star.source_event_id
-FROM network.stars star JOIN network.repositories repository ON repository.uri = star.repository_uri
-WHERE star.repository_uri = $1::text AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
-  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $2 AND block.blocked_did IN (repository.owner_did, star.author_did))
-  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $2 AND hidden.record_uri IN (repository.uri, star.uri))
-  AND ($3::text IS NULL OR (star.record_created_at, star.uri) < ($4::timestamptz, $3::text))
-ORDER BY star.record_created_at DESC, star.uri DESC LIMIT $5
+WITH candidates AS (
+  SELECT DISTINCT ON (star.author_did) star.uri, star.cid, star.author_did, star.rkey, star.repository_uri, star.repository_cid, star.record_created_at, star.indexed_at, star.deleted_at, star.source_event_id
+  FROM network.stars star JOIN network.repositories repository ON repository.uri = star.repository_uri
+  WHERE repository.lineage_uri = (SELECT requested.lineage_uri FROM network.repositories AS requested WHERE requested.uri = $4::text) AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $5 AND block.blocked_did IN (repository.owner_did, star.author_did))
+    AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $5 AND hidden.record_uri IN (repository.uri, star.uri))
+  ORDER BY star.author_did, star.record_created_at DESC, star.uri DESC
+)
+SELECT uri, cid, author_did, rkey, repository_uri, repository_cid, record_created_at, indexed_at, deleted_at, source_event_id FROM candidates AS star
+WHERE $1::text IS NULL OR (star.record_created_at, star.uri) < ($2::timestamptz, $1::text)
+ORDER BY star.record_created_at DESC, star.uri DESC LIMIT $3
 `
 
 type ListSearchStarsParams struct {
-	RepositoryUri   string             `json:"repository_uri"`
-	ViewerDid       pgtype.Text        `json:"viewer_did"`
 	CursorUri       pgtype.Text        `json:"cursor_uri"`
 	CursorCreatedAt pgtype.Timestamptz `json:"cursor_created_at"`
 	ResultLimit     int32              `json:"result_limit"`
+	RepositoryUri   string             `json:"repository_uri"`
+	ViewerDid       pgtype.Text        `json:"viewer_did"`
 }
 
-func (q *Queries) ListSearchStars(ctx context.Context, arg ListSearchStarsParams) ([]NetworkStar, error) {
+type ListSearchStarsRow struct {
+	Uri             string             `json:"uri"`
+	Cid             pgtype.Text        `json:"cid"`
+	AuthorDid       string             `json:"author_did"`
+	Rkey            string             `json:"rkey"`
+	RepositoryUri   string             `json:"repository_uri"`
+	RepositoryCid   string             `json:"repository_cid"`
+	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID   int64              `json:"source_event_id"`
+}
+
+func (q *Queries) ListSearchStars(ctx context.Context, arg ListSearchStarsParams) ([]ListSearchStarsRow, error) {
 	rows, err := q.db.Query(ctx, listSearchStars,
-		arg.RepositoryUri,
-		arg.ViewerDid,
 		arg.CursorUri,
 		arg.CursorCreatedAt,
 		arg.ResultLimit,
+		arg.RepositoryUri,
+		arg.ViewerDid,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []NetworkStar{}
+	items := []ListSearchStarsRow{}
 	for rows.Next() {
-		var i NetworkStar
+		var i ListSearchStarsRow
 		if err := rows.Scan(
 			&i.Uri,
 			&i.Cid,
@@ -532,7 +672,7 @@ FROM network.issues AS issue
 JOIN network.repositories AS repository ON repository.uri = issue.repository_uri
 LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
 WHERE issue.uri = $2::text
-  AND issue.repository_uri = $3::text
+  AND repository.lineage_uri = (SELECT requested.lineage_uri FROM network.repositories AS requested WHERE requested.uri = $3::text)
   AND issue.deleted_at IS NULL
   AND issue.cid IS NOT NULL
   AND repository.deleted_at IS NULL
@@ -753,44 +893,56 @@ SELECT repository.uri, repository.cid, repository.local_repository_id, repositor
        repository.forked_from_uri, repository.forked_from_cid, repository.fork_count,
        repository.record_updated_at, repository.indexed_at,
        coalesce(profile.handle, identity.handle) AS owner_handle, organization.slug AS organization_slug,
-       (SELECT count(*) FROM network.stars AS star WHERE star.repository_uri = repository.uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL
+       (SELECT count(DISTINCT star.author_did) FROM network.stars AS star JOIN network.repositories AS observed ON observed.uri = star.repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = star.author_did)
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = star.uri)) AS star_count,
-       (SELECT count(*) FROM network.issues AS issue WHERE issue.repository_uri = repository.uri AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL
+       (SELECT count(*) FROM network.issues AS issue JOIN network.repositories AS observed ON observed.uri = issue.repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = issue.author_did)
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = issue.uri)) AS issue_count,
-       (SELECT count(*) FROM network.issues AS issue WHERE issue.repository_uri = repository.uri AND issue.state = 'open' AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL
+       (SELECT count(*) FROM network.issues AS issue JOIN network.repositories AS observed ON observed.uri = issue.repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND issue.state = 'open' AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = issue.author_did)
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = issue.uri)) AS open_issue_count,
-       (SELECT count(*) FROM network.issue_comments comment JOIN network.issues issue ON issue.uri = comment.issue_uri WHERE issue.repository_uri = repository.uri AND comment.deleted_at IS NULL AND comment.cid IS NOT NULL
+       (SELECT count(*) FROM network.issue_comments comment JOIN network.issues issue ON issue.uri = comment.issue_uri JOIN network.repositories AS observed ON observed.uri = issue.repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND comment.deleted_at IS NULL AND comment.cid IS NOT NULL
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did IN (issue.author_did, comment.author_did))
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (issue.uri, comment.uri))) AS comment_count,
-       (SELECT count(*) FROM network.pull_requests pull WHERE pull.target_repository_uri = repository.uri AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL
+       (SELECT count(*) FROM network.pull_requests pull JOIN network.repositories AS observed ON observed.uri = pull.target_repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = pull.author_did)
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = pull.uri)) AS pull_request_count,
-       (SELECT count(*) FROM network.pull_requests pull WHERE pull.target_repository_uri = repository.uri AND pull.state = 'open' AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL
+       (SELECT count(*) FROM network.pull_requests pull JOIN network.repositories AS observed ON observed.uri = pull.target_repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND pull.state = 'open' AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL
           AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $1 AND block.blocked_did = pull.author_did)
           AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $1 AND hidden.record_uri = pull.uri)) AS open_pull_request_count
-FROM network.repositories AS repository
+FROM network.repositories AS requested_repository
+JOIN network.repositories AS repository ON repository.uri = requested_repository.canonical_uri
 LEFT JOIN network.profiles AS profile ON profile.did = repository.owner_did AND profile.deleted_at IS NULL
 LEFT JOIN network.identities AS identity ON identity.did = repository.owner_did AND identity.is_active
 LEFT JOIN network.organizations AS organization ON organization.uri = repository.organization_uri AND organization.deleted_at IS NULL
+LEFT JOIN network.profiles AS requested_profile ON requested_profile.did = requested_repository.owner_did AND requested_profile.deleted_at IS NULL
+LEFT JOIN network.identities AS requested_identity ON requested_identity.did = requested_repository.owner_did AND requested_identity.is_active
+LEFT JOIN network.organizations AS requested_organization ON requested_organization.uri = requested_repository.organization_uri AND requested_organization.deleted_at IS NULL
 LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
-WHERE repository.deleted_at IS NULL
-  AND repository.cid IS NOT NULL
-  AND lower(repository.slug) = lower($2::text)
-  AND (repository.owner_did = $3::text OR lower(coalesce(profile.handle, identity.handle, '')) = lower($3::text) OR lower(coalesce(organization.slug, '')) = lower($3::text))
+WHERE requested_repository.deleted_at IS NULL AND requested_repository.cid IS NOT NULL
+  AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
+  AND (
+    ($2::text IS NOT NULL
+      AND requested_repository.uri = $2::text)
+    OR (
+      $2::text IS NULL
+      AND lower(requested_repository.slug) = lower($3::text)
+      AND (requested_repository.owner_did = $4::text OR lower(coalesce(requested_profile.handle, requested_identity.handle, '')) = lower($4::text) OR lower(coalesce(requested_organization.slug, '')) = lower($4::text))
+    )
+  )
   AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
-  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids AS block WHERE block.account_did = $1 AND block.blocked_did = repository.owner_did)
-  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records AS hidden WHERE hidden.account_did = $1 AND hidden.record_uri = repository.uri)
-ORDER BY repository.indexed_at DESC, repository.uri DESC
+  AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids AS block WHERE block.account_did = $1 AND block.blocked_did IN (requested_repository.owner_did, repository.owner_did))
+  AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records AS hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (requested_repository.uri, repository.uri))
+ORDER BY requested_repository.indexed_at DESC, requested_repository.uri DESC
 LIMIT 1
 `
 
 type ResolveSearchRepositoryParams struct {
-	ViewerDid       pgtype.Text `json:"viewer_did"`
-	RepositorySlug  string      `json:"repository_slug"`
-	RepositoryOwner string      `json:"repository_owner"`
+	ViewerDid              pgtype.Text `json:"viewer_did"`
+	RequestedRepositoryUri pgtype.Text `json:"requested_repository_uri"`
+	RepositorySlug         string      `json:"repository_slug"`
+	RepositoryOwner        string      `json:"repository_owner"`
 }
 
 type ResolveSearchRepositoryRow struct {
@@ -822,7 +974,12 @@ type ResolveSearchRepositoryRow struct {
 }
 
 func (q *Queries) ResolveSearchRepository(ctx context.Context, arg ResolveSearchRepositoryParams) (ResolveSearchRepositoryRow, error) {
-	row := q.db.QueryRow(ctx, resolveSearchRepository, arg.ViewerDid, arg.RepositorySlug, arg.RepositoryOwner)
+	row := q.db.QueryRow(ctx, resolveSearchRepository,
+		arg.ViewerDid,
+		arg.RequestedRepositoryUri,
+		arg.RepositorySlug,
+		arg.RepositoryOwner,
+	)
 	var i ResolveSearchRepositoryRow
 	err := row.Scan(
 		&i.Uri,
@@ -992,12 +1149,12 @@ WITH candidates AS (
            repository.git_https, repository.git_ssh, repository.web,
            repository.forked_from_uri, repository.forked_from_cid, repository.fork_count,
            repository.record_created_at, repository.record_updated_at, repository.indexed_at,
-           (SELECT count(*) FROM network.stars star WHERE star.repository_uri = repository.uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = star.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = star.uri)) AS star_count,
-           (SELECT count(*) FROM network.issues issue WHERE issue.repository_uri = repository.uri AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = issue.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = issue.uri)) AS issue_count,
-           (SELECT count(*) FROM network.issues issue WHERE issue.repository_uri = repository.uri AND issue.state = 'open' AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = issue.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = issue.uri)) AS open_issue_count,
-           (SELECT count(*) FROM network.issue_comments comment JOIN network.issues issue ON issue.uri = comment.issue_uri WHERE issue.repository_uri = repository.uri AND comment.deleted_at IS NULL AND comment.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did IN (issue.author_did, comment.author_did)) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri IN (issue.uri, comment.uri))) AS comment_count,
-           (SELECT count(*) FROM network.pull_requests pull WHERE pull.target_repository_uri = repository.uri AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = pull.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = pull.uri)) AS pull_request_count,
-           (SELECT count(*) FROM network.pull_requests pull WHERE pull.target_repository_uri = repository.uri AND pull.state = 'open' AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = pull.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = pull.uri)) AS open_pull_request_count,
+           (SELECT count(DISTINCT star.author_did) FROM network.stars star JOIN network.repositories observed ON observed.uri = star.repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = star.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = star.uri)) AS star_count,
+           (SELECT count(*) FROM network.issues issue JOIN network.repositories observed ON observed.uri = issue.repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = issue.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = issue.uri)) AS issue_count,
+           (SELECT count(*) FROM network.issues issue JOIN network.repositories observed ON observed.uri = issue.repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND issue.state = 'open' AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = issue.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = issue.uri)) AS open_issue_count,
+           (SELECT count(*) FROM network.issue_comments comment JOIN network.issues issue ON issue.uri = comment.issue_uri JOIN network.repositories observed ON observed.uri = issue.repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND comment.deleted_at IS NULL AND comment.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did IN (issue.author_did, comment.author_did)) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri IN (issue.uri, comment.uri))) AS comment_count,
+           (SELECT count(*) FROM network.pull_requests pull JOIN network.repositories observed ON observed.uri = pull.target_repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = pull.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = pull.uri)) AS pull_request_count,
+           (SELECT count(*) FROM network.pull_requests pull JOIN network.repositories observed ON observed.uri = pull.target_repository_uri WHERE observed.lineage_uri = repository.lineage_uri AND pull.state = 'open' AND pull.deleted_at IS NULL AND pull.cid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids block WHERE block.account_did = $6 AND block.blocked_did = pull.author_did) AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records hidden WHERE hidden.account_did = $6 AND hidden.record_uri = pull.uri)) AS open_pull_request_count,
            GREATEST(
                ts_rank_cd(
                    to_tsvector('simple', coalesce(repository.name, '') || ' ' || coalesce(repository.slug, '') || ' ' || coalesce(repository.description, '')),
@@ -1014,6 +1171,7 @@ WITH candidates AS (
     LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
     WHERE repository.deleted_at IS NULL
       AND repository.cid IS NOT NULL
+      AND repository.uri = repository.canonical_uri
       AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
       AND NOT EXISTS (
           SELECT 1 FROM moderation.blocked_dids AS block

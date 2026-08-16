@@ -36,6 +36,8 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/storage"
 	"github.com/adenosine-dev/adenosine/internal/syncproxy"
+	"github.com/adenosine-dev/adenosine/internal/transfer"
+	"github.com/adenosine-dev/adenosine/internal/triage"
 	"github.com/adenosine-dev/adenosine/internal/webhook"
 )
 
@@ -49,18 +51,19 @@ func Must(ctx context.Context, cfg config.Config) *app.Application {
 }
 
 func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
-	logger, shutdownTelemetry := observability.Must(ctx)
+	telemetry := observability.Must(ctx)
+	logger := telemetry.Logger
 
-	db, err := database.Open(ctx, cfg.DatabaseURL)
+	db, err := database.Open(ctx, cfg.DatabaseURL, telemetry.Metrics)
 	if err != nil {
-		_ = shutdownTelemetry(ctx)
+		_ = telemetry.Shutdown(ctx)
 		return nil, fmt.Errorf("open database: %w", err)
 	}
 
 	repositoryStorage, err := storage.NewFilesystem(cfg.RepositoryRoot)
 	if err != nil {
 		db.Close()
-		_ = shutdownTelemetry(ctx)
+		_ = telemetry.Shutdown(ctx)
 		return nil, fmt.Errorf("open repository storage: %w", err)
 	}
 	releaseAssetStorage := release.MustBlobStore(ctx, release.BlobStoreConfig{
@@ -84,7 +87,16 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		oauthClient,
 		repositoryEndpoints,
 	)
+	repositoryTransfers := transfer.NewService(
+		transfer.NewPostgresStore(db.Queries()),
+		oauthClient,
+		oauthClient,
+		repositoryEndpoints,
+		auth.UUIDv7Generator{},
+		auth.SystemClock{},
+	)
 	authStore := auth.NewPostgresStore(db.Queries())
+	repositoryTriage := triage.NewService(triage.NewPostgresStore(db.Queries()), oauthClient, authStore, atproto.SystemClock{})
 	clock := auth.SystemClock{}
 	sessionService := auth.NewSessionService(authStore, clock, auth.UUIDv7Generator{}, auth.RandomSessionSecretGenerator{}, cfg.SessionLifetime)
 	passkeys := passkey.Must(cfg.BaseURL, passkey.NewPostgresStore(db.Queries()), sessionService, auth.SystemClock{}, auth.UUIDv7Generator{}, passkey.RandomSecretGenerator{})
@@ -102,7 +114,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	webhooks, err := webhook.NewService(db.Queries(), cfg.OAuthCredentialKey)
 	if err != nil {
 		db.Close()
-		_ = shutdownTelemetry(ctx)
+		_ = telemetry.Shutdown(ctx)
 		return nil, fmt.Errorf("create webhook service: %w", err)
 	}
 	webhookWorker := webhook.NewWorker(db.Queries(), webhooks)
@@ -118,7 +130,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	)
 	if err != nil {
 		db.Close()
-		_ = shutdownTelemetry(ctx)
+		_ = telemetry.Shutdown(ctx)
 		return nil, fmt.Errorf("create release service: %w", err)
 	}
 	commitStatuses := commitstatus.NewService(db.Queries())
@@ -152,7 +164,10 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		eventWriter,
 	)
 
-	server, err := restapi.NewServer(cfg.ListenAddr, cfg.BaseURL, db, logger, restapi.Dependencies{
+	server, err := restapi.NewServer(cfg.ListenAddr, cfg.BaseURL, db, logger, restapi.Observability{
+		Requests:   telemetry.Metrics,
+		Prometheus: telemetry.PrometheusHandler,
+	}, restapi.Dependencies{
 		Sessions:                    auth.NewSessionAuthenticator(authStore, clock),
 		Login:                       loginService,
 		LocalSessions:               sessionService,
@@ -169,6 +184,8 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		Collaborators:               organizationCollaborators,
 		Federation:                  federationDependencies,
 		Repositories:                repositories,
+		Transfers:                   repositoryTransfers,
+		Triage:                      repositoryTriage,
 		Endpoints:                   repositoryEndpoints,
 		Discovery:                   discovery,
 		Search:                      searchService,
@@ -190,12 +207,12 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	}, gitHTTP)
 	if err != nil {
 		db.Close()
-		_ = shutdownTelemetry(ctx)
+		_ = telemetry.Shutdown(ctx)
 		return nil, fmt.Errorf("create REST server: %w", err)
 	}
 
 	return app.NewWithWorkers(server, sshServer, logger, cfg.ShutdownTimeout, []app.Worker{webhookWorker, repositoryPurgeWorker, commitStatusRetentionWorker},
-		shutdownTelemetry,
+		telemetry.Shutdown,
 		func(context.Context) error {
 			db.Close()
 			return nil

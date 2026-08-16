@@ -15,7 +15,7 @@ const activateRepository = `-- name: ActivateRepository :one
 UPDATE core.repositories
 SET state = 'active', at_uri = $1, at_cid = $2, updated_at = $3
 WHERE id = $4 AND deleted_at IS NULL
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at, transferred_from_uri, transferred_from_cid
 `
 
 type ActivateRepositoryParams struct {
@@ -54,6 +54,8 @@ func (q *Queries) ActivateRepository(ctx context.Context, arg ActivateRepository
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
 		&i.ArchivedAt,
+		&i.TransferredFromUri,
+		&i.TransferredFromCid,
 	)
 	return i, err
 }
@@ -65,7 +67,7 @@ INSERT INTO core.repositories (
     forked_from_local_repository_id, created_at, updated_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at, transferred_from_uri, transferred_from_cid
 `
 
 type CreateRepositoryParams struct {
@@ -130,6 +132,8 @@ func (q *Queries) CreateRepository(ctx context.Context, arg CreateRepositoryPara
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
 		&i.ArchivedAt,
+		&i.TransferredFromUri,
+		&i.TransferredFromCid,
 	)
 	return i, err
 }
@@ -168,7 +172,7 @@ func (q *Queries) GetForkSourceByURI(ctx context.Context, uri string) (GetForkSo
 }
 
 const getRepository = `-- name: GetRepository :one
-SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at FROM core.repositories WHERE id = $1 AND deleted_at IS NULL
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at, transferred_from_uri, transferred_from_cid FROM core.repositories WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetRepository(ctx context.Context, id pgtype.UUID) (CoreRepository, error) {
@@ -195,12 +199,14 @@ func (q *Queries) GetRepository(ctx context.Context, id pgtype.UUID) (CoreReposi
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
 		&i.ArchivedAt,
+		&i.TransferredFromUri,
+		&i.TransferredFromCid,
 	)
 	return i, err
 }
 
 const getRepositoryByOwnerSlug = `-- name: GetRepositoryByOwnerSlug :one
-SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at
+SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at, repository.transferred_from_uri, repository.transferred_from_cid
 FROM core.repositories AS repository
 LEFT JOIN core.owner_routes AS owner_route ON (
     (repository.organization_id IS NULL AND owner_route.account_did = repository.owner_did)
@@ -253,6 +259,8 @@ func (q *Queries) GetRepositoryByOwnerSlug(ctx context.Context, arg GetRepositor
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
 		&i.ArchivedAt,
+		&i.TransferredFromUri,
+		&i.TransferredFromCid,
 	)
 	return i, err
 }
@@ -334,7 +342,7 @@ func (q *Queries) ListDueRepositoryDeletions(ctx context.Context, arg ListDueRep
 }
 
 const listRepositoriesByOrganization = `-- name: ListRepositoriesByOrganization :many
-SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at, transferred_from_uri, transferred_from_cid
 FROM core.repositories
 WHERE organization_id = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC, id DESC
@@ -370,6 +378,8 @@ func (q *Queries) ListRepositoriesByOrganization(ctx context.Context, organizati
 			&i.ForkedFromLocalRepositoryID,
 			&i.ForkCount,
 			&i.ArchivedAt,
+			&i.TransferredFromUri,
+			&i.TransferredFromCid,
 		); err != nil {
 			return nil, err
 		}
@@ -382,7 +392,7 @@ func (q *Queries) ListRepositoriesByOrganization(ctx context.Context, organizati
 }
 
 const listRepositoriesByOwner = `-- name: ListRepositoriesByOwner :many
-SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at
+SELECT id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at, transferred_from_uri, transferred_from_cid
 FROM core.repositories
 WHERE owner_did = $1 AND deleted_at IS NULL
 ORDER BY created_at DESC, id DESC
@@ -424,6 +434,8 @@ func (q *Queries) ListRepositoriesByOwner(ctx context.Context, arg ListRepositor
 			&i.ForkedFromLocalRepositoryID,
 			&i.ForkCount,
 			&i.ArchivedAt,
+			&i.TransferredFromUri,
+			&i.TransferredFromCid,
 		); err != nil {
 			return nil, err
 		}
@@ -475,7 +487,7 @@ WITH RECURSIVE team_lineage AS (
   WHERE parent.organization_id = $2
     AND parent.deleted_at IS NULL
 )
-SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at,
+SELECT repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at, repository.transferred_from_uri, repository.transferred_from_cid,
   (
     EXISTS (
       SELECT 1 FROM core.organization_members AS member
@@ -542,6 +554,8 @@ type PageRepositoriesByOrganizationRow struct {
 	ForkedFromLocalRepositoryID pgtype.UUID        `json:"forked_from_local_repository_id"`
 	ForkCount                   int64              `json:"fork_count"`
 	ArchivedAt                  pgtype.Timestamptz `json:"archived_at"`
+	TransferredFromUri          pgtype.Text        `json:"transferred_from_uri"`
+	TransferredFromCid          pgtype.Text        `json:"transferred_from_cid"`
 	ViewerCanAdmin              pgtype.Bool        `json:"viewer_can_admin"`
 }
 
@@ -580,6 +594,8 @@ func (q *Queries) PageRepositoriesByOrganization(ctx context.Context, arg PageRe
 			&i.ForkedFromLocalRepositoryID,
 			&i.ForkCount,
 			&i.ArchivedAt,
+			&i.TransferredFromUri,
+			&i.TransferredFromCid,
 			&i.ViewerCanAdmin,
 		); err != nil {
 			return nil, err
@@ -652,7 +668,7 @@ UPDATE core.repositories AS repository
 SET state = 'active', updated_at = $1
 FROM restored
 WHERE repository.id = restored.repository_id
-RETURNING repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at
+RETURNING repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at, repository.transferred_from_uri, repository.transferred_from_cid
 `
 
 type RestoreRepositoryDeletionParams struct {
@@ -684,6 +700,8 @@ func (q *Queries) RestoreRepositoryDeletion(ctx context.Context, arg RestoreRepo
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
 		&i.ArchivedAt,
+		&i.TransferredFromUri,
+		&i.TransferredFromCid,
 	)
 	return i, err
 }
@@ -714,7 +732,7 @@ SET slug = $1,
     updated_at = $9
 FROM previous
 WHERE repository.id = previous.id
-RETURNING repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at
+RETURNING repository.id, repository.owner_did, repository.slug, repository.display_name, repository.description, repository.visibility, repository.state, repository.default_branch, repository.storage_key, repository.at_uri, repository.at_cid, repository.created_at, repository.updated_at, repository.deleted_at, repository.organization_id, repository.forked_from_uri, repository.forked_from_cid, repository.forked_from_local_repository_id, repository.fork_count, repository.archived_at, repository.transferred_from_uri, repository.transferred_from_cid
 `
 
 type UpdateRepositorySettingsParams struct {
@@ -769,6 +787,8 @@ func (q *Queries) UpdateRepositorySettings(ctx context.Context, arg UpdateReposi
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
 		&i.ArchivedAt,
+		&i.TransferredFromUri,
+		&i.TransferredFromCid,
 	)
 	return i, err
 }
@@ -777,7 +797,7 @@ const updateRepositoryState = `-- name: UpdateRepositoryState :one
 UPDATE core.repositories
 SET state = $2, updated_at = $3
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at
+RETURNING id, owner_did, slug, display_name, description, visibility, state, default_branch, storage_key, at_uri, at_cid, created_at, updated_at, deleted_at, organization_id, forked_from_uri, forked_from_cid, forked_from_local_repository_id, fork_count, archived_at, transferred_from_uri, transferred_from_cid
 `
 
 type UpdateRepositoryStateParams struct {
@@ -810,6 +830,8 @@ func (q *Queries) UpdateRepositoryState(ctx context.Context, arg UpdateRepositor
 		&i.ForkedFromLocalRepositoryID,
 		&i.ForkCount,
 		&i.ArchivedAt,
+		&i.TransferredFromUri,
+		&i.TransferredFromCid,
 	)
 	return i, err
 }

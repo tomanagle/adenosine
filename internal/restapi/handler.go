@@ -38,6 +38,8 @@ import (
 	searchservice "github.com/adenosine-dev/adenosine/internal/search"
 	"github.com/adenosine-dev/adenosine/internal/star"
 	"github.com/adenosine-dev/adenosine/internal/syncproxy"
+	"github.com/adenosine-dev/adenosine/internal/transfer"
+	"github.com/adenosine-dev/adenosine/internal/triage"
 	webhookservice "github.com/adenosine-dev/adenosine/internal/webhook"
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -106,6 +108,30 @@ type RepositoryManager interface {
 	ListByOrganization(context.Context, uuid.UUID) ([]repository.Repository, error)
 }
 
+type RepositoryTransferManager interface {
+	Initiate(context.Context, repository.Repository, string, string) (transfer.Transfer, error)
+	Get(context.Context, uuid.UUID, string) (transfer.Transfer, error)
+	Page(context.Context, repository.ID, string, *uuid.UUID, int) (transfer.Page, error)
+	Accept(context.Context, uuid.UUID, string) (transfer.Transfer, error)
+	Cancel(context.Context, uuid.UUID, string) (transfer.Transfer, error)
+}
+
+type TriageManager interface {
+	ListLabels(context.Context, triage.RepositoryRoute, string, int, string) ([]triage.Label, error)
+	GetLabel(context.Context, triage.RepositoryRoute, string, string) (triage.Label, error)
+	CreateLabel(context.Context, string, triage.RepositoryRoute, triage.LabelInput) (triage.Label, error)
+	UpdateLabel(context.Context, string, triage.RepositoryRoute, string, triage.LabelInput) (triage.Label, error)
+	DeleteLabel(context.Context, string, triage.RepositoryRoute, string) error
+	ListMilestones(context.Context, triage.RepositoryRoute, string, int, string) ([]triage.Milestone, error)
+	GetMilestone(context.Context, triage.RepositoryRoute, string, string) (triage.Milestone, error)
+	CreateMilestone(context.Context, string, triage.RepositoryRoute, triage.MilestoneInput) (triage.Milestone, error)
+	UpdateMilestone(context.Context, string, triage.RepositoryRoute, string, triage.MilestoneInput) (triage.Milestone, error)
+	DeleteMilestone(context.Context, string, triage.RepositoryRoute, string) error
+	GetMetadata(context.Context, triage.RepositoryRoute, triage.SubjectKind, string, string) (triage.Metadata, error)
+	PutMetadata(context.Context, string, triage.RepositoryRoute, triage.SubjectKind, string, triage.MetadataInput) (triage.Metadata, error)
+	DeleteMetadata(context.Context, string, triage.RepositoryRoute, triage.SubjectKind, string) error
+}
+
 type repositoryForkManager interface {
 	SyncFork(context.Context, repository.Repository) (repository.ForkSync, error)
 }
@@ -138,6 +164,10 @@ type networkRepositoryResolver interface {
 	ResolveRepository(context.Context, string, string, string) (federation.DiscoveryRepository, error)
 }
 
+type networkRepositoryURIResolver interface {
+	ResolveRepositoryByURI(context.Context, string, string) (federation.DiscoveryRepository, error)
+}
+
 type repositoryForkPager interface {
 	PageForks(context.Context, string, string, int, string) (searchservice.ForkPage, error)
 }
@@ -160,6 +190,11 @@ type collaborationPager interface {
 	PageStars(context.Context, string, string, int, string) (searchservice.StarPage, error)
 	PagePullRequests(context.Context, string, string, int, string) (searchservice.PullRequestPage, error)
 	PagePullRequestReviews(context.Context, string, string, int, string) (searchservice.PullRequestReviewPage, error)
+}
+
+type filteredCollaborationPager interface {
+	PageIssuesFiltered(context.Context, string, string, int, string, searchservice.TriageFilter) (searchservice.IssuePage, error)
+	PagePullRequestsFiltered(context.Context, string, string, int, string, searchservice.TriageFilter) (searchservice.PullRequestPage, error)
 }
 
 func profileReadError(err error) error {
@@ -279,6 +314,10 @@ type PullRequestManager interface {
 	CreateReview(context.Context, string, pullrequest.ReviewInput) (pullrequest.Review, error)
 	PutStatus(context.Context, string, pullrequest.StatusInput) (pullrequest.Status, error)
 	Merge(context.Context, string, pullrequest.MergeInput) (pullrequest.MergeResult, error)
+}
+
+type pullRequestCheckoutReader interface {
+	Checkout(context.Context, string) (pullrequest.Checkout, error)
 }
 
 type CommentManager interface {
@@ -462,6 +501,8 @@ type Dependencies struct {
 	Teams                       OrganizationTeamManager
 	Collaborators               OrganizationCollaboratorManager
 	Repositories                RepositoryManager
+	Transfers                   RepositoryTransferManager
+	Triage                      TriageManager
 	Endpoints                   RepositoryEndpointBuilder
 	Discovery                   NetworkRepositoryDiscovery
 	Search                      SearchManager
@@ -571,7 +612,7 @@ func (handler *apiHandler) StartATProtoLogin(w http.ResponseWriter, r *http.Requ
 		handler.writeError(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, generated.StartATProtoLoginResponse{AuthorizationUrl: authorizationURL})
+	writeJSON(w, http.StatusOK, generated.ATProtoLoginStart{AuthorizationUrl: authorizationURL})
 }
 
 func (handler *apiHandler) CompleteATProtoLogin(w http.ResponseWriter, r *http.Request, _ generated.CompleteATProtoLoginParams) {
@@ -2045,12 +2086,27 @@ func (handler *apiHandler) repositoryOrganization(r *http.Request, actorDID stri
 func (handler *apiHandler) GetRepository(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
 	repo, err := handler.readableRepository(r, owner, slug)
 	if err == nil {
-		if viewerDID, viewerErr := handler.optionalSessionViewer(r); viewerErr == nil && viewerDID != "" {
+		viewerDID, _ := handler.optionalSessionViewer(r)
+		if viewerDID != "" {
 			if authorizer, ok := handler.deps.Authorization.(repositoryAdminAuthorizer); ok {
 				repo.ViewerCanAdmin, _ = authorizer.CanAdminRepository(r.Context(), viewerDID, repo.ID)
 			}
 		}
-		writeJSON(w, http.StatusOK, handler.repositoryResponse(repo))
+		response := handler.repositoryResponse(repo)
+		if repo.Visibility == repository.VisibilityPublic && repo.ATURI != "" {
+			if resolver, ok := handler.deps.Search.(networkRepositoryURIResolver); ok {
+				projected, resolveErr := resolver.ResolveRepositoryByURI(r.Context(), repo.ATURI, viewerDID)
+				if resolveErr != nil && !errors.Is(resolveErr, searchservice.ErrNotFound) {
+					handler.writeError(w, r, resolveErr)
+					return
+				}
+				if resolveErr == nil {
+					applyRepositoryCounters(&response, projected)
+				}
+			}
+		}
+		w.Header().Set("Vary", "Cookie")
+		writeJSON(w, http.StatusOK, response)
 		return
 	}
 	if !errors.Is(err, repository.ErrNotFound) {
@@ -3012,14 +3068,22 @@ func (handler *apiHandler) GetIssues(w http.ResponseWriter, r *http.Request, par
 	}
 	var projection issue.Projection
 	var next *string
-	if pager, ok := handler.deps.Search.(collaborationPager); ok {
+	filter := issueTriageFilter(params)
+	if pager, ok := handler.deps.Search.(filteredCollaborationPager); ok {
 		limit, cursor := collectionParameters(params.Limit, params.Cursor)
-		page, pageErr := pager.PageIssues(r.Context(), params.RepositoryUri, viewerDID, limit, cursor)
+		page, pageErr := pager.PageIssuesFiltered(r.Context(), params.RepositoryUri, viewerDID, limit, cursor, filter)
 		if pageErr != nil {
-			handler.writeMalformed(w, r, pageErr)
+			if errors.Is(pageErr, searchservice.ErrInvalidFilter) {
+				handler.writeError(w, r, pageErr)
+			} else {
+				handler.writeMalformed(w, r, pageErr)
+			}
 			return
 		}
 		projection, next = page.Projection, page.NextCursor
+	} else if !filter.Empty() {
+		handler.writeError(w, r, searchservice.ErrInvalidFilter)
+		return
 	} else if reader, ok := handler.deps.Search.(collaborationReader); ok {
 		projection, err = reader.ListIssues(r.Context(), params.RepositoryUri, viewerDID)
 	} else {
@@ -3034,7 +3098,7 @@ func (handler *apiHandler) GetIssues(w http.ResponseWriter, r *http.Request, par
 		data[index] = projectedIssueResponse(value)
 	}
 	items := data
-	if _, paged := handler.deps.Search.(collaborationPager); !paged {
+	if _, paged := handler.deps.Search.(filteredCollaborationPager); !paged {
 		limit, cursor := paginationInputs(params.Limit, params.Cursor)
 		items, next, err = paginate(data, limit, cursor, "issues:"+params.RepositoryUri+":"+viewerDID, func(value projectedIssueJSON) string { return value.URI })
 		if err != nil {
@@ -3081,7 +3145,7 @@ func (handler *apiHandler) GetIssue(w http.ResponseWriter, r *http.Request, para
 }
 
 func (handler *apiHandler) CreateIssue(w http.ResponseWriter, r *http.Request, _ generated.CreateIssueParams) {
-	identity, err := handler.requireSession(r, true)
+	identity, err := handler.requireRepositoryWrite(r)
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -3130,14 +3194,22 @@ func (handler *apiHandler) ListPullRequests(w http.ResponseWriter, r *http.Reque
 	}
 	var projection pullrequest.Projection
 	var next *string
-	if pager, ok := handler.deps.Search.(collaborationPager); ok {
+	filter := pullRequestTriageFilter(params)
+	if pager, ok := handler.deps.Search.(filteredCollaborationPager); ok {
 		limit, cursor := collectionParameters(params.Limit, params.Cursor)
-		page, pageErr := pager.PagePullRequests(r.Context(), params.RepositoryUri, viewerDID, limit, cursor)
+		page, pageErr := pager.PagePullRequestsFiltered(r.Context(), params.RepositoryUri, viewerDID, limit, cursor, filter)
 		if pageErr != nil {
-			handler.writeMalformed(w, r, pageErr)
+			if errors.Is(pageErr, searchservice.ErrInvalidFilter) {
+				handler.writeError(w, r, pageErr)
+			} else {
+				handler.writeMalformed(w, r, pageErr)
+			}
 			return
 		}
 		projection, next = page.Projection, page.NextCursor
+	} else if !filter.Empty() {
+		handler.writeError(w, r, searchservice.ErrInvalidFilter)
+		return
 	} else if reader, ok := handler.deps.Search.(collaborationReader); ok {
 		projection, err = reader.ListPullRequests(r.Context(), params.RepositoryUri, viewerDID)
 	} else {
@@ -3152,7 +3224,7 @@ func (handler *apiHandler) ListPullRequests(w http.ResponseWriter, r *http.Reque
 		data[index] = projectedPullRequestResponse(value)
 	}
 	items := data
-	if _, paged := handler.deps.Search.(collaborationPager); !paged {
+	if _, paged := handler.deps.Search.(filteredCollaborationPager); !paged {
 		limit, cursor := paginationInputs(params.Limit, params.Cursor)
 		items, next, err = paginate(data, limit, cursor, "pull-requests:"+params.RepositoryUri+":"+viewerDID, func(value generated.PullRequest) string { return value.Uri })
 		if err != nil {
@@ -3184,8 +3256,24 @@ func (handler *apiHandler) GetPullRequest(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, projectedPullRequestResponse(value))
 }
 
+func (handler *apiHandler) GetPullRequestCheckout(w http.ResponseWriter, r *http.Request, params generated.GetPullRequestCheckoutParams) {
+	reader, ok := handler.deps.PullRequests.(pullRequestCheckoutReader)
+	if !ok {
+		handler.writeError(w, r, pullrequest.ErrNotFound)
+		return
+	}
+	value, err := reader.Checkout(r.Context(), params.PullRequestUri)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.PullRequestCheckout{
+		GitHttpsUrl: value.GitHTTPSURL, SourceBranch: value.SourceBranch, HeadSha: value.HeadSHA,
+	})
+}
+
 func (handler *apiHandler) CreatePullRequest(w http.ResponseWriter, r *http.Request, _ generated.CreatePullRequestParams) {
-	identity, err := handler.requireSession(r, true)
+	identity, err := handler.requireRepositoryWrite(r)
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -3315,7 +3403,7 @@ func (handler *apiHandler) PutPullRequestStatus(w http.ResponseWriter, r *http.R
 }
 
 func (handler *apiHandler) MergePullRequest(w http.ResponseWriter, r *http.Request, _ generated.MergePullRequestParams) {
-	identity, err := handler.requireSession(r, true)
+	identity, err := handler.requireRepositoryWrite(r)
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -3587,7 +3675,7 @@ func (handler *apiHandler) ListRepositoryReleases(w http.ResponseWriter, r *http
 }
 
 func (handler *apiHandler) CreateRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug) {
-	identity, repo, err := handler.requireRepositoryWrite(r, owner, string(slug), true)
+	identity, repo, err := handler.requireRepositoryPathWrite(r, owner, string(slug), true)
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -3621,7 +3709,7 @@ func (handler *apiHandler) GetRepositoryRelease(w http.ResponseWriter, r *http.R
 }
 
 func (handler *apiHandler) UpdateRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, releaseID generated.ReleaseID) {
-	_, repo, err := handler.requireRepositoryWrite(r, owner, string(slug), true)
+	_, repo, err := handler.requireRepositoryPathWrite(r, owner, string(slug), true)
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -3642,7 +3730,7 @@ func (handler *apiHandler) UpdateRepositoryRelease(w http.ResponseWriter, r *htt
 }
 
 func (handler *apiHandler) DeleteRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, releaseID generated.ReleaseID) {
-	_, repo, err := handler.requireRepositoryWrite(r, owner, string(slug), true)
+	_, repo, err := handler.requireRepositoryPathWrite(r, owner, string(slug), true)
 	if err == nil {
 		err = handler.deps.Releases.Delete(r.Context(), repo.ID, uuid.UUID(releaseID))
 	}
@@ -3688,7 +3776,7 @@ func (handler *apiHandler) ListRepositoryReleaseAssets(w http.ResponseWriter, r 
 }
 
 func (handler *apiHandler) UploadRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, releaseID generated.ReleaseID, params generated.UploadRepositoryReleaseAssetParams) {
-	_, repo, err := handler.requireRepositoryWrite(r, owner, string(slug), true)
+	_, repo, err := handler.requireRepositoryPathWrite(r, owner, string(slug), true)
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -3754,7 +3842,7 @@ func (handler *apiHandler) DownloadRepositoryReleaseAsset(w http.ResponseWriter,
 }
 
 func (handler *apiHandler) DeleteRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, releaseID generated.ReleaseID, assetID generated.ReleaseAssetID) {
-	_, repo, err := handler.requireRepositoryWrite(r, owner, string(slug), true)
+	_, repo, err := handler.requireRepositoryPathWrite(r, owner, string(slug), true)
 	if err == nil {
 		err = handler.deps.Releases.DeleteAsset(r.Context(), repo.ID, uuid.UUID(releaseID), uuid.UUID(assetID))
 	}
@@ -3808,7 +3896,7 @@ func (handler *apiHandler) canManageRepository(r *http.Request, repositoryID rep
 	return allowed, nil
 }
 
-func (handler *apiHandler) requireRepositoryWrite(r *http.Request, owner, slug string, mutation bool) (principal, repository.Repository, error) {
+func (handler *apiHandler) requireRepositoryPathWrite(r *http.Request, owner, slug string, mutation bool) (principal, repository.Repository, error) {
 	identity, err := handler.authenticate(r)
 	if err != nil {
 		return principal{}, repository.Repository{}, err
@@ -4135,6 +4223,23 @@ func (handler *apiHandler) requireSession(r *http.Request, mutation bool) (princ
 	return identity, nil
 }
 
+func (handler *apiHandler) requireRepositoryWrite(r *http.Request) (principal, error) {
+	identity, err := handler.authenticate(r)
+	if err != nil {
+		return principal{}, err
+	}
+	if identity.session {
+		if !handler.validOrigin(r) {
+			return principal{}, auth.ErrForbidden
+		}
+		return identity, nil
+	}
+	if identity.repositoryID != nil || !slices.Contains(identity.scopes, auth.ScopeRepositoryWrite) {
+		return principal{}, auth.ErrForbidden
+	}
+	return identity, nil
+}
+
 func (handler *apiHandler) validOrigin(r *http.Request) bool {
 	return r.Header.Get("Origin") == handler.origin
 }
@@ -4284,6 +4389,26 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusConflict, "pull_request_conflict", "The pull request conflicts with existing state", err)
 	case errors.Is(err, pullrequest.ErrProvider):
 		handler.writeAPIError(w, r, http.StatusBadGateway, "pull_request_provider_unavailable", "The pull request provider is unavailable", err)
+	case errors.Is(err, transfer.ErrNotFound):
+		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested repository transfer was not found", err)
+	case errors.Is(err, transfer.ErrForbidden):
+		handler.writeAPIError(w, r, http.StatusForbidden, "permission_denied", "Permission denied", err)
+	case errors.Is(err, transfer.ErrConflict):
+		handler.writeAPIError(w, r, http.StatusConflict, "repository_transfer_conflict", "The repository transfer conflicts with existing state", err)
+	case errors.Is(err, transfer.ErrValidation):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The repository transfer request is invalid", err)
+	case errors.Is(err, transfer.ErrProvider):
+		handler.writeAPIError(w, r, http.StatusBadGateway, "repository_transfer_provider_unavailable", "The repository transfer provider is unavailable", err)
+	case errors.Is(err, triage.ErrNotFound):
+		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested triage resource was not found", err)
+	case errors.Is(err, triage.ErrAuthorization):
+		handler.writeAPIError(w, r, http.StatusForbidden, "permission_denied", "You do not have permission to manage repository triage", err)
+	case errors.Is(err, triage.ErrConflict):
+		handler.writeAPIError(w, r, http.StatusConflict, "triage_conflict", "The triage record conflicts with existing state", err)
+	case errors.Is(err, triage.ErrValidation):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The triage request is invalid", err)
+	case errors.Is(err, triage.ErrProvider):
+		handler.writeAPIError(w, r, http.StatusBadGateway, "triage_provider_unavailable", "The triage provider is unavailable", err)
 	case errors.Is(err, gitservice.ErrInvalidInput):
 		handler.writeAPIError(w, r, http.StatusBadRequest, "malformed_request", "The Git revision, path, or object ID is invalid", err)
 	case errors.Is(err, gitservice.ErrObjectNotFound):
@@ -4300,6 +4425,8 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusBadGateway, "fork_upstream_unavailable", "The fork upstream is unavailable", err)
 	case errors.Is(err, searchservice.ErrNotFound):
 		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested resource was not found", err)
+	case errors.Is(err, searchservice.ErrInvalidFilter):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The collaboration filter is invalid", err)
 	case errors.Is(err, localatproto.ErrInvalidIdentifier):
 		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "invalid_atproto_identifier", "The AT Protocol handle or DID is invalid", err)
 	case errors.Is(err, localatproto.ErrProviderFailure):
@@ -4596,6 +4723,16 @@ func networkRepositoryResponse(repo federation.DiscoveryRepository) generated.Re
 			GitHttpsUrl: repo.GitHTTPS, GitSshUrl: pointerUnlessEmpty(repo.GitSSH), SourceBrowsing: sourceBrowsing(repo)},
 		CreatedAt: repo.CreatedAt, UpdatedAt: repo.UpdatedAt,
 	}
+}
+
+func applyRepositoryCounters(response *generated.Repository, projection federation.DiscoveryRepository) {
+	response.ForkCount = projection.ForkCount
+	response.StarCount = projection.StarCount
+	response.IssueCount = projection.IssueCount
+	response.OpenIssueCount = projection.OpenIssueCount
+	response.CommentCount = projection.CommentCount
+	response.PullRequestCount = projection.PullRequestCount
+	response.OpenPullRequestCount = projection.OpenPullRequestCount
 }
 
 func repositoryOwnerResponse(repo repository.Repository) generated.RepositoryOwner {

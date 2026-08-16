@@ -49,6 +49,12 @@ Container-local startup preparation belongs in `dev/entrypoint.sh`. Do not add a
 
 Use Docker for the local service stack and black-box environments: `make dev`, `make dev-detached`, `make e2e`, and `make e2e-federation`. Run unit tests, linting, type checking, and code generation with the host Go and Bun toolchains through `make test`, `make lint`, and `make generate`; do not wrap those targets in Docker.
 
+## Database Constraints
+
+Never create PostgreSQL enum types. Store finite string states in `TEXT` columns and enforce
+their allowed values with named `CHECK` constraints. This keeps migrations additive and
+rollback-friendly while preserving database-level validation.
+
 ## Go Tests
 
 Every `Test*` function must use a local table named `testCases` and execute every entry with `t.Run`, including tests that currently have only one case. Put case-specific inputs, dependency behavior, and expected results in the table so new scenarios can be added without restructuring the test body.
@@ -75,3 +81,9 @@ func TestExample(t *testing.T) {
 Prefer concrete expectation fields such as `wantErr error` over generic booleans when error identity matters. Keep shared arrange/act/assert logic in the loop body; if cases need substantially different control flow, split the behavior into separate `Test*` functions and give each one its own `testCases` table.
 
 Keep small handwritten fakes and spies beside their consumer tests by default. Promote a test double into shared test support only when multiple files need the same stable behavior. Use generated mocks selectively for large interfaces or meaningful interaction ordering, not as the default replacement for state-based assertions.
+
+## Observability Timers
+
+Every HTTP route must remain behind `restapi.requestMiddleware`; do not mount application routes outside the shared server mux. The middleware records `http.server.request.duration` with a route template, status, method, and bounded `outcome`. Never use a raw path, URL, repository identifier, DID, or error text as a metric attribute.
+
+Every runtime PostgreSQL call must flow through `database.DB.Queries`, `database.DB.Begin`, or another wrapper owned by `internal/database`. Do not pass a raw pool or unwrapped transaction to sqlc. The shared wrapper records `db.client.operation.duration` through the consumer-owned `database.CallMetrics` interface, including row scanning/iteration and transaction completion. sqlc's generated `-- name:` comment supplies the bounded caller label automatically; raw SQL uses the fixed `Unmapped` caller. If a new database access mechanism cannot use this boundary, add an equivalent timer at that boundary and tests proving success and error outcomes before merging.

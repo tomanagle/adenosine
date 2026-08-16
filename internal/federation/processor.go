@@ -120,7 +120,9 @@ func boundedCollection(collection string) string {
 	switch collection {
 	case ProfileCollection, RepositoryCollection, StarCollection, IssueCollection, IssueStatusCollection,
 		PullRequestCollection, PullRequestStatusCollection, PullRequestReviewCollection,
-		OrganizationCollection, OrganizationGrantCollection, OrganizationMembershipCollection, OrganizationRevocationCollection:
+		RepositoryLabelCollection, RepositoryMilestoneCollection, SubjectTriageCollection,
+		OrganizationCollection, OrganizationGrantCollection, OrganizationMembershipCollection, OrganizationRevocationCollection,
+		RepositoryTransferCollection, RepositoryTransferAcceptanceCollection:
 		return collection
 	default:
 		return "other"

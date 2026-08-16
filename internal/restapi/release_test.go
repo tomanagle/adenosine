@@ -113,7 +113,7 @@ func TestReleaseRoutes(t *testing.T) {
 				body:          "asset bytes",
 			}
 			repo := repository.Repository{ID: repositoryID, OwnerDID: "alice", Slug: "project", Visibility: repository.VisibilityPublic, State: repository.StateActive}
-			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Dependencies{
+			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Observability{}, Dependencies{
 				Sessions: fakeSessions{}, TokenAuth: fakeTokenAuth{}, Repositories: fixedRepositoryManager{repository: repo},
 				Authorization: fakeAuthorization{}, Releases: manager,
 			}, nil)

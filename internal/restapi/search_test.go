@@ -122,7 +122,7 @@ func TestSearchEndpoints(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			search := &restSearch{}
-			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Dependencies{Sessions: fakeSessions{}, Search: search}, nil)
+			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Observability{}, Dependencies{Sessions: fakeSessions{}, Search: search}, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

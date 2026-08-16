@@ -80,7 +80,7 @@ func TestNetworkRepositoryDiscoveryEndpoint(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			store := &restDiscoveryStore{repositories: testCase.repositories}
-			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Dependencies{Discovery: federation.NewDiscoveryService(store)}, nil)
+			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Observability{}, Dependencies{Discovery: federation.NewDiscoveryService(store)}, nil)
 			if err != nil {
 				t.Fatalf("create server: %v", err)
 			}
@@ -119,13 +119,22 @@ func TestNetworkRepositoryDiscoveryEndpoint(t *testing.T) {
 
 type resolvingRESTSearch struct {
 	restSearch
-	repository federation.DiscoveryRepository
-	viewerDID  string
+	repository   federation.DiscoveryRepository
+	viewerDID    string
+	requestedURI string
 }
 
 func (search *resolvingRESTSearch) ResolveRepository(_ context.Context, owner, slug, viewerDID string) (federation.DiscoveryRepository, error) {
 	search.viewerDID = viewerDID
 	if owner != "alice.test" || slug != search.repository.Slug {
+		return federation.DiscoveryRepository{}, repository.ErrNotFound
+	}
+	return search.repository, nil
+}
+
+func (search *resolvingRESTSearch) ResolveRepositoryByURI(_ context.Context, repositoryURI, viewerDID string) (federation.DiscoveryRepository, error) {
+	search.requestedURI, search.viewerDID = repositoryURI, viewerDID
+	if repositoryURI != search.repository.URI {
 		return federation.DiscoveryRepository{}, repository.ErrNotFound
 	}
 	return search.repository, nil
@@ -187,6 +196,68 @@ func TestLocalRepositoryResponseIdentity(t *testing.T) {
 			}
 			if testCase.endpoints != nil && (response.Hosting.GitHttpsUrl != "https://host.example/project.git" || response.Hosting.GitSshUrl == nil || *response.Hosting.GitSshUrl != "ssh://git@host.example/project.git") {
 				t.Fatalf("repository hosting = %#v", response.Hosting)
+			}
+		})
+	}
+}
+
+type retainedAliasRepositoryManager struct{ repository repository.Repository }
+
+func (manager retainedAliasRepositoryManager) Create(context.Context, repository.CreateInput) (repository.Repository, error) {
+	return manager.repository, nil
+}
+
+func (manager retainedAliasRepositoryManager) GetByOwnerSlug(_ context.Context, owner, slug string) (repository.Repository, error) {
+	if slug != manager.repository.Slug || (owner != "alice.example" && owner != "bob.example") {
+		return repository.Repository{}, repository.ErrNotFound
+	}
+	return manager.repository, nil
+}
+
+func (manager retainedAliasRepositoryManager) ListByOrganization(context.Context, uuid.UUID) ([]repository.Repository, error) {
+	return []repository.Repository{}, nil
+}
+
+func TestLocalRepositoryMetadataCounters(t *testing.T) {
+	t.Parallel()
+	repositoryID := repository.ID(uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af4"))
+	repositoryURI := "at://did:plc:bob/dev.adenosine.repo/project"
+	repo := repository.Repository{ID: repositoryID, OwnerDID: "did:plc:bob", Slug: "project", Visibility: repository.VisibilityPublic, State: repository.StateActive, ATURI: repositoryURI, ForkCount: 1}
+	projection := federation.DiscoveryRepository{URI: repositoryURI, ForkCount: 7, StarCount: 11, IssueCount: 13, OpenIssueCount: 5, CommentCount: 17, PullRequestCount: 19, OpenPullRequestCount: 3}
+	testCases := []struct {
+		name       string
+		owner      string
+		cookie     string
+		wantViewer string
+	}{
+		{name: "canonical owner route", owner: "bob.example"},
+		{name: "retained source owner alias uses canonical lineage", owner: "alice.example", cookie: "valid-session", wantViewer: "did:plc:alice"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			search := &resolvingRESTSearch{repository: projection}
+			server := testAPIServer(t, Dependencies{Repositories: retainedAliasRepositoryManager{repository: repo}, Search: search, Sessions: fakeSessions{}})
+			request := httptest.NewRequest(http.MethodGet, "/api/v1/repositories/"+testCase.owner+"/project", nil)
+			if testCase.cookie != "" {
+				request.AddCookie(&http.Cookie{Name: "adenosine_session", Value: testCase.cookie})
+			}
+			response := httptest.NewRecorder()
+			server.Handler.ServeHTTP(response, request)
+			if response.Code != http.StatusOK {
+				t.Fatalf("status = %d: %s", response.Code, response.Body.String())
+			}
+			var body generated.Repository
+			if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+				t.Fatalf("decode repository: %v", err)
+			}
+			if search.requestedURI != repositoryURI || search.viewerDID != testCase.wantViewer {
+				t.Fatalf("projection input = %q/%q, want %q/%q", search.requestedURI, search.viewerDID, repositoryURI, testCase.wantViewer)
+			}
+			if body.ForkCount != 7 || body.StarCount != 11 || body.IssueCount != 13 || body.OpenIssueCount != 5 || body.CommentCount != 17 || body.PullRequestCount != 19 || body.OpenPullRequestCount != 3 {
+				t.Fatalf("repository counters = %#v", body)
+			}
+			if response.Header().Get("Vary") != "Cookie" {
+				t.Fatalf("Vary = %q, want Cookie", response.Header().Get("Vary"))
 			}
 		})
 	}

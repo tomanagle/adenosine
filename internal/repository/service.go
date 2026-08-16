@@ -404,7 +404,7 @@ func (service *Service) publication(ctx context.Context, value Repository) (Publ
 	if name == "" {
 		name = value.Slug
 	}
-	publication := Publication{ID: value.ID, OwnerDID: value.OwnerDID, ForkedFrom: forkPublicationReference(value.ForkedFrom), Slug: value.Slug, Name: name, Description: value.Description, DefaultBranch: value.DefaultBranch, GitHTTPS: gitHTTPS, GitSSH: gitSSH, Web: web, CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
+	publication := Publication{ID: value.ID, OwnerDID: value.OwnerDID, ForkedFrom: forkPublicationReference(value.ForkedFrom), TransferredFrom: value.TransferredFrom, Slug: value.Slug, Name: name, Description: value.Description, DefaultBranch: value.DefaultBranch, GitHTTPS: gitHTTPS, GitSSH: gitSSH, Web: web, CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
 	if value.OrganizationID != nil {
 		store, ok := service.repositories.(organizationIdentityStore)
 		if !ok {

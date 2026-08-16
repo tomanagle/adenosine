@@ -250,19 +250,22 @@ SQL
     "${federation_compose[@]}" up --detach --wait postgres-a postgres-b adenosine-a adenosine-b adenosine-a-tls adenosine-b-tls electric-a electric-b realtime-boundary realtime-sync-gateway
     "${federation_compose[@]}" exec -T adenosine-a go run ./test/federationhost
     "${federation_compose[@]}" exec -T adenosine-b go run ./test/federationhost -instance=b
-    "${federation_compose[@]}" run --rm federation-acceptance go run ./test/federation -phase=seed
+    "${federation_compose[@]}" run --rm federation-acceptance federation-acceptance -phase=seed
     "${federation_compose[@]}" run --rm federation-star
-    "${federation_compose[@]}" run --rm federation-acceptance go run ./test/federation -phase=star
+    "${federation_compose[@]}" run --rm federation-acceptance federation-acceptance -phase=star
     "${federation_compose[@]}" run --rm federation-issue
-    "${federation_compose[@]}" run --rm federation-acceptance go run ./test/federation -phase=issue
+    "${federation_compose[@]}" run --rm federation-acceptance federation-acceptance -phase=issue
+    "${federation_compose[@]}" run --rm federation-acceptance federation-acceptance -phase=triage
     "${federation_compose[@]}" run --rm federation-comment go run ./test/federationcomment -phase=create
-    "${federation_compose[@]}" run --rm federation-acceptance go run ./test/federation -phase=comments
+    "${federation_compose[@]}" run --rm federation-acceptance federation-acceptance -phase=comments
     "${federation_compose[@]}" run --rm federation-comment go run ./test/federationcomment -phase=moderate
     "${federation_compose[@]}" run --rm federation-comment go run ./test/federationcomment -phase=delete
-    "${federation_compose[@]}" run --rm federation-acceptance go run ./test/federation -phase=comments-deleted
+    "${federation_compose[@]}" run --rm federation-acceptance federation-acceptance -phase=comments-deleted
     "${federation_compose[@]}" run --rm federation-pr go run ./test/federationpr -phase=create
     "${federation_compose[@]}" exec -T adenosine-a go run ./test/federationpr -phase=fetch
     "${federation_compose[@]}" run --rm federation-pr go run ./test/federationpr -phase=merge
+    "${federation_compose[@]}" run --rm federation-acceptance federation-transfer
+    "${federation_compose[@]}" run --rm federation-acceptance federation-acceptance -phase=transfer
     "${federation_compose[@]}" up --detach realtime-observer
     wait_for_marker realtime-sync-gateway /tmp/create-live-ready
     "${federation_compose[@]}" run --rm realtime-producer realtime-producer -phase=create
@@ -278,7 +281,7 @@ SQL
     test "$rest_before" = "$rest_after"
     "${federation_compose[@]}" stop electric-a postgres-a
     "${federation_compose[@]}" run --rm --no-deps federation-pr go run ./test/federationpr -phase=final
-    "${federation_compose[@]}" run --rm --no-deps federation-acceptance go run ./test/federation -phase=final
+    "${federation_compose[@]}" run --rm --no-deps federation-acceptance federation-acceptance -phase=final
     ;;
   *)
     echo "unknown task: $task" >&2

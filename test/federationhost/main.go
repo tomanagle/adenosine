@@ -84,7 +84,7 @@ func run(ctx context.Context, instance string) error {
 	repositoryRoot := valueOrDefault("ADENOSINE_REPO_ROOT", "/var/lib/adenosine/repos")
 	gitBinary := valueOrDefault("ADENOSINE_GIT_BINARY", "git")
 
-	db, err := database.Open(ctx, databaseURL)
+	db, err := database.Open(ctx, databaseURL, nil)
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}

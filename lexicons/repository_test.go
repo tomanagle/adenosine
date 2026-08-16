@@ -8,11 +8,14 @@ import (
 func TestRepositoryLexicon(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
-		name string
-		file string
-		id   string
+		name   string
+		file   string
+		id     string
+		fields []string
 	}{
-		{name: "portable repository record", file: "dev.adenosine.repo.json", id: "dev.adenosine.repo"},
+		{name: "portable repository record", file: "dev.adenosine.repo.json", id: "dev.adenosine.repo", fields: []string{"slug", "name", "description", "defaultBranch", "git", "web", "forkedFrom", "transferredFrom", "transferredTo", "createdAt", "updatedAt"}},
+		{name: "portable repository transfer proposal", file: "dev.adenosine.repositoryTransfer.json", id: "dev.adenosine.repositoryTransfer", fields: []string{"repository", "destinationDID", "destinationOrganization", "destinationOwner", "createdAt", "expiresAt"}},
+		{name: "portable repository transfer acceptance", file: "dev.adenosine.repositoryTransferAcceptance.json", id: "dev.adenosine.repositoryTransferAcceptance", fields: []string{"proposal", "repository", "createdAt"}},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -39,7 +42,10 @@ func TestRepositoryLexicon(t *testing.T) {
 			if schema.Lexicon != 1 || schema.ID != testCase.id || main.Type != "record" || main.Key != "any" {
 				t.Fatalf("schema identity = %#v", schema)
 			}
-			for _, field := range []string{"slug", "name", "description", "defaultBranch", "git", "web", "createdAt", "updatedAt"} {
+			if len(main.Record.Required) == 0 {
+				t.Fatalf("record has no required fields: %#v", main.Record)
+			}
+			for _, field := range testCase.fields {
 				if _, ok := main.Record.Properties[field]; !ok {
 					t.Fatalf("missing field %q", field)
 				}

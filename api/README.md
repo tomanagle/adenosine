@@ -23,7 +23,8 @@ complete fallback when Electric is absent. ATProto publication and network reads
 eventually consistent, so reconcile writes by returned AT URI/CID and do not assume they
 appear immediately in projections.
 
-Run `make generate` after changing the contract. `api/generated/go/` and
+Run `make generate` after changing the contract. `api/generated/go/` contains the Go
+server bindings and generated public client; `api/generated/go/` and
 `packages/api-client/src/generated/` are outputs; do not hand-edit them. See
 [`../docs/api.md`](../docs/api.md) for authentication, pagination, errors, idempotency,
 versioning, and generated ownership.

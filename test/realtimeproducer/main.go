@@ -20,15 +20,17 @@ import (
 )
 
 const (
-	authorDID      = "did:plc:dddddddddddddddddddddddd"
-	repositoryDID  = "did:plc:cccccccccccccccccccccccc"
-	repositoryRKey = "0198a8512a897ae2a370dc68883e3af5"
-	repositoryCID  = "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
+	authorDID            = "did:plc:dddddddddddddddddddddddd"
+	sourceRepositoryDID  = "did:plc:cccccccccccccccccccccccc"
+	currentRepositoryDID = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb"
+	repositoryRKey       = "0198a8512a897ae2a370dc68883e3af5"
+	repositoryCID        = "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"
 )
 
 var (
-	repositoryURI = "at://" + repositoryDID + "/dev.adenosine.repo/" + repositoryRKey
-	createdAt     = time.Date(2026, 8, 10, 9, 0, 0, 0, time.UTC)
+	repositoryURI        = "at://" + sourceRepositoryDID + "/dev.adenosine.repo/" + repositoryRKey
+	currentRepositoryURI = "at://" + currentRepositoryDID + "/dev.adenosine.repo/" + repositoryRKey
+	createdAt            = time.Date(2026, 8, 10, 9, 0, 0, 0, time.UTC)
 )
 
 type fixedClock struct{}
@@ -38,7 +40,7 @@ func (fixedClock) Now() time.Time { return createdAt }
 type deterministicPublisher struct{ created star.Star }
 
 func (publisher *deterministicPublisher) CreateStar(_ context.Context, author string, target star.Target, at time.Time) (star.Star, error) {
-	if author != authorDID || target != (star.Target{URI: repositoryURI, CID: repositoryCID}) || !at.Equal(createdAt) {
+	if author != authorDID || target != (star.Target{URI: currentRepositoryURI, CID: repositoryCID}) || !at.Equal(createdAt) {
 		return star.Star{}, fmt.Errorf("unexpected publication input: author=%s target=%+v at=%s", author, target, at)
 	}
 	record, err := recordJSON(target, at)
@@ -54,7 +56,7 @@ func (publisher *deterministicPublisher) CreateStar(_ context.Context, author st
 }
 
 func (publisher *deterministicPublisher) DeleteStar(_ context.Context, author string, target star.Target) error {
-	if author != authorDID || target != (star.Target{URI: repositoryURI, CID: repositoryCID}) {
+	if author != authorDID || target != (star.Target{URI: currentRepositoryURI, CID: repositoryCID}) {
 		return fmt.Errorf("unexpected deletion input: author=%s target=%+v", author, target)
 	}
 	return nil
@@ -70,14 +72,14 @@ func main() {
 }
 
 func run(ctx context.Context, phase string) error {
-	db, err := database.Open(ctx, requiredEnv("DATABASE_URL"))
+	db, err := database.Open(ctx, requiredEnv("DATABASE_URL"), nil)
 	if err != nil {
 		return fmt.Errorf("open A database: %w", err)
 	}
 	defer db.Close()
 	publisher := &deterministicPublisher{}
 	service := star.NewService(star.NewPostgresStore(db.Queries()), publisher, fixedClock{})
-	rkey, err := star.RecordKey(repositoryURI)
+	rkey, err := star.RecordKey(currentRepositoryURI)
 	if err != nil {
 		return err
 	}

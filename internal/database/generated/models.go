@@ -299,6 +299,8 @@ type CoreRepository struct {
 	ForkedFromLocalRepositoryID pgtype.UUID        `json:"forked_from_local_repository_id"`
 	ForkCount                   int64              `json:"fork_count"`
 	ArchivedAt                  pgtype.Timestamptz `json:"archived_at"`
+	TransferredFromUri          pgtype.Text        `json:"transferred_from_uri"`
+	TransferredFromCid          pgtype.Text        `json:"transferred_from_cid"`
 }
 
 type CoreRepositoryAlias struct {
@@ -325,6 +327,34 @@ type CoreRepositoryDeletion struct {
 	PurgeAfter     pgtype.Timestamptz `json:"purge_after"`
 	RestoredAt     pgtype.Timestamptz `json:"restored_at"`
 	PurgedAt       pgtype.Timestamptz `json:"purged_at"`
+}
+
+type CoreRepositoryTransfer struct {
+	ID                        pgtype.UUID        `json:"id"`
+	RepositoryID              pgtype.UUID        `json:"repository_id"`
+	SourceOwnerDid            string             `json:"source_owner_did"`
+	SourceOrganizationID      pgtype.UUID        `json:"source_organization_id"`
+	SourceOwnerAlias          string             `json:"source_owner_alias"`
+	SourceRepositoryUri       pgtype.Text        `json:"source_repository_uri"`
+	SourceRepositoryCid       pgtype.Text        `json:"source_repository_cid"`
+	DestinationOwnerDid       string             `json:"destination_owner_did"`
+	DestinationOrganizationID pgtype.UUID        `json:"destination_organization_id"`
+	DestinationOwnerAlias     string             `json:"destination_owner_alias"`
+	InitiatedByDid            string             `json:"initiated_by_did"`
+	AcceptedByDid             pgtype.Text        `json:"accepted_by_did"`
+	ProposalUri               pgtype.Text        `json:"proposal_uri"`
+	ProposalCid               pgtype.Text        `json:"proposal_cid"`
+	SuccessorUri              pgtype.Text        `json:"successor_uri"`
+	SuccessorCid              pgtype.Text        `json:"successor_cid"`
+	AcceptanceUri             pgtype.Text        `json:"acceptance_uri"`
+	AcceptanceCid             pgtype.Text        `json:"acceptance_cid"`
+	SourceRedirectCid         pgtype.Text        `json:"source_redirect_cid"`
+	Status                    string             `json:"status"`
+	CreatedAt                 pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt                 pgtype.Timestamptz `json:"expires_at"`
+	AcceptanceStartedAt       pgtype.Timestamptz `json:"acceptance_started_at"`
+	AcceptedAt                pgtype.Timestamptz `json:"accepted_at"`
+	CancelledAt               pgtype.Timestamptz `json:"cancelled_at"`
 }
 
 type CoreRepositoryWebhook struct {
@@ -609,6 +639,81 @@ type NetworkRepository struct {
 	ForkedFromUri        pgtype.Text        `json:"forked_from_uri"`
 	ForkedFromCid        pgtype.Text        `json:"forked_from_cid"`
 	ForkCount            int64              `json:"fork_count"`
+	TransferredFromUri   pgtype.Text        `json:"transferred_from_uri"`
+	TransferredFromCid   pgtype.Text        `json:"transferred_from_cid"`
+	TransferredToUri     pgtype.Text        `json:"transferred_to_uri"`
+	TransferredToCid     pgtype.Text        `json:"transferred_to_cid"`
+	LineageUri           string             `json:"lineage_uri"`
+	CanonicalUri         string             `json:"canonical_uri"`
+}
+
+type NetworkRepositoryLabel struct {
+	Uri             string             `json:"uri"`
+	Cid             pgtype.Text        `json:"cid"`
+	AuthorDid       string             `json:"author_did"`
+	Rkey            string             `json:"rkey"`
+	RepositoryUri   string             `json:"repository_uri"`
+	RepositoryCid   string             `json:"repository_cid"`
+	Name            string             `json:"name"`
+	Color           string             `json:"color"`
+	Description     string             `json:"description"`
+	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID   int64              `json:"source_event_id"`
+}
+
+type NetworkRepositoryMilestone struct {
+	Uri             string             `json:"uri"`
+	Cid             pgtype.Text        `json:"cid"`
+	AuthorDid       string             `json:"author_did"`
+	Rkey            string             `json:"rkey"`
+	RepositoryUri   string             `json:"repository_uri"`
+	RepositoryCid   string             `json:"repository_cid"`
+	Title           string             `json:"title"`
+	Description     string             `json:"description"`
+	State           string             `json:"state"`
+	DueAt           pgtype.Timestamptz `json:"due_at"`
+	ClosedAt        pgtype.Timestamptz `json:"closed_at"`
+	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID   int64              `json:"source_event_id"`
+}
+
+type NetworkRepositoryTransfer struct {
+	Uri                        string             `json:"uri"`
+	Cid                        pgtype.Text        `json:"cid"`
+	AuthorDid                  string             `json:"author_did"`
+	Rkey                       string             `json:"rkey"`
+	RepositoryUri              pgtype.Text        `json:"repository_uri"`
+	RepositoryCid              pgtype.Text        `json:"repository_cid"`
+	DestinationDid             pgtype.Text        `json:"destination_did"`
+	DestinationOrganizationUri pgtype.Text        `json:"destination_organization_uri"`
+	DestinationOrganizationCid pgtype.Text        `json:"destination_organization_cid"`
+	DestinationOwnerAlias      pgtype.Text        `json:"destination_owner_alias"`
+	CreatedAt                  pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt                  pgtype.Timestamptz `json:"expires_at"`
+	IndexedAt                  pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID              int64              `json:"source_event_id"`
+	DeletedAt                  pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type NetworkRepositoryTransferAcceptance struct {
+	Uri           string             `json:"uri"`
+	Cid           pgtype.Text        `json:"cid"`
+	AuthorDid     string             `json:"author_did"`
+	Rkey          string             `json:"rkey"`
+	ProposalUri   pgtype.Text        `json:"proposal_uri"`
+	ProposalCid   pgtype.Text        `json:"proposal_cid"`
+	RepositoryUri pgtype.Text        `json:"repository_uri"`
+	RepositoryCid pgtype.Text        `json:"repository_cid"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	IndexedAt     pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID int64              `json:"source_event_id"`
+	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
 }
 
 type NetworkStar struct {
@@ -619,6 +724,26 @@ type NetworkStar struct {
 	RepositoryUri   string             `json:"repository_uri"`
 	RepositoryCid   string             `json:"repository_cid"`
 	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	SourceEventID   int64              `json:"source_event_id"`
+}
+
+type NetworkSubjectTriage struct {
+	Uri             string             `json:"uri"`
+	Cid             pgtype.Text        `json:"cid"`
+	AuthorDid       string             `json:"author_did"`
+	Rkey            string             `json:"rkey"`
+	SubjectUri      string             `json:"subject_uri"`
+	SubjectCid      string             `json:"subject_cid"`
+	SubjectKind     string             `json:"subject_kind"`
+	RepositoryUri   string             `json:"repository_uri"`
+	RepositoryCid   string             `json:"repository_cid"`
+	LabelUris       []string           `json:"label_uris"`
+	AssigneeDids    []string           `json:"assignee_dids"`
+	MilestoneUri    pgtype.Text        `json:"milestone_uri"`
+	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt pgtype.Timestamptz `json:"record_updated_at"`
 	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
 	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
 	SourceEventID   int64              `json:"source_event_id"`

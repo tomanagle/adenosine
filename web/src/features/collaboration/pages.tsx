@@ -16,6 +16,9 @@ import { encodeRecordIdentity } from './identity'
 import { boundedCommentDepth } from './comments'
 import { canTriageIssue } from './permissions'
 import { PublicationNotice, usePublication } from './publication'
+import { SubjectTriagePanel } from './triage-panel'
+import { IssueFilterBar, PullRequestFilterBar } from './triage-filter-bar'
+import type { IssueFilters, PullRequestFilters } from './validation'
 import {
   activityStarsQueryOptions,
   commentsQueryOptions,
@@ -46,9 +49,13 @@ function reviewVerdict(value: FormDataEntryValue | null) {
   }
 }
 
-export function IssuesPage({ params, identityDid }: PageProps) {
+export function IssuesPage({
+  params,
+  identityDid,
+  filters,
+}: PageProps & { filters: IssueFilters }) {
   const { data: repository } = useSuspenseQuery(repositoryQueryOptions(params))
-  const { data } = useSuspenseQuery(issuesQueryOptions(repository.uri ?? ''))
+  const { data } = useSuspenseQuery(issuesQueryOptions(repository.uri ?? '', filters))
   const queryClient = useQueryClient()
   const mutation = useMutation(createIssueMutationOptions())
   const publication = usePublication()
@@ -92,6 +99,7 @@ export function IssuesPage({ params, identityDid }: PageProps) {
           </p>
         </div>
       </header>
+      <IssueFilterBar filters={filters} params={params} />
       {identityDid && repository.uri ? (
         <form
           className="grid gap-3 rounded-lg border bg-card p-4"
@@ -231,6 +239,12 @@ export function IssuePage({ params, issueUri, identityDid }: PageProps & { issue
       <section className="rounded-lg border bg-card">
         <SafeMarkdown source={issue.body} />
       </section>
+      <SubjectTriagePanel
+        canManage={repository.hosting.local && Boolean(repository.viewer_can_admin)}
+        kind="issue"
+        params={params}
+        subjectUri={issueUri}
+      />
       <section aria-labelledby="comments-title" className="space-y-3">
         <h3 className="font-serif text-2xl" id="comments-title">
           Comments
@@ -289,9 +303,13 @@ export function IssuePage({ params, issueUri, identityDid }: PageProps & { issue
   )
 }
 
-export function PullRequestsPage({ params, identityDid }: PageProps) {
+export function PullRequestsPage({
+  params,
+  identityDid,
+  filters,
+}: PageProps & { filters: PullRequestFilters }) {
   const { data: repository } = useSuspenseQuery(repositoryQueryOptions(params))
-  const { data } = useSuspenseQuery(pullRequestsQueryOptions(repository.uri ?? ''))
+  const { data } = useSuspenseQuery(pullRequestsQueryOptions(repository.uri ?? '', filters))
   const mutation = useMutation(createPullMutationOptions())
   const publication = usePublication()
   const queryClient = useQueryClient()
@@ -337,6 +355,7 @@ export function PullRequestsPage({ params, identityDid }: PageProps) {
           {data.open_pull_request_count} open of {data.pull_request_count}
         </p>
       </header>
+      <PullRequestFilterBar filters={filters} params={params} />
       {identityDid && repository.uri ? (
         <details className="rounded-lg border bg-card p-4">
           <summary className="cursor-pointer font-medium">Open pull request</summary>
@@ -497,6 +516,12 @@ export function PullRequestPage({
       <section className="rounded-lg border bg-card">
         <SafeMarkdown source={pull.body} />
       </section>
+      <SubjectTriagePanel
+        canManage={repository.hosting.local && Boolean(repository.viewer_can_admin)}
+        kind="pull_request"
+        params={params}
+        subjectUri={pullRequestUri}
+      />
       {repository.hosting.local ? (
         <VerifiedPullRequestDiff pullRequestUri={pullRequestUri} />
       ) : (

@@ -141,6 +141,24 @@ func (q *Queries) GetFederationRepositoryForkSource(ctx context.Context, uri str
 	return forked_from_uri, err
 }
 
+const getFederationRepositoryTransferLinks = `-- name: GetFederationRepositoryTransferLinks :one
+SELECT transferred_from_uri, transferred_to_uri
+FROM network.repositories
+WHERE uri = $1
+`
+
+type GetFederationRepositoryTransferLinksRow struct {
+	TransferredFromUri pgtype.Text `json:"transferred_from_uri"`
+	TransferredToUri   pgtype.Text `json:"transferred_to_uri"`
+}
+
+func (q *Queries) GetFederationRepositoryTransferLinks(ctx context.Context, uri string) (GetFederationRepositoryTransferLinksRow, error) {
+	row := q.db.QueryRow(ctx, getFederationRepositoryTransferLinks, uri)
+	var i GetFederationRepositoryTransferLinksRow
+	err := row.Scan(&i.TransferredFromUri, &i.TransferredToUri)
+	return i, err
+}
+
 const getFederationStarRepositoryURI = `-- name: GetFederationStarRepositoryURI :one
 SELECT repository_uri
 FROM network.stars
@@ -217,19 +235,23 @@ SELECT
     COALESCE(projected_issue.record_created_at, repository.indexed_at) AS record_created_at,
     COALESCE(projected_issue.record_updated_at, repository.indexed_at) AS record_updated_at,
     COALESCE(projected_issue.indexed_at, repository.indexed_at) AS indexed_at
-FROM network.repositories AS repository
+FROM network.repositories AS requested_repository
+JOIN network.repositories AS repository ON repository.uri = requested_repository.canonical_uri
 LEFT JOIN LATERAL (
     SELECT issue.uri, issue.cid, issue.author_did, issue.repository_cid, issue.title, issue.body,
            issue.state, issue.status_uri, issue.status_cid, issue.comment_count, issue.record_created_at,
            issue.record_updated_at, issue.indexed_at
     FROM network.issues AS issue
-    WHERE issue.repository_uri = repository.uri
+    JOIN network.repositories AS observed ON observed.uri = issue.repository_uri
+    WHERE observed.lineage_uri = repository.lineage_uri
       AND issue.deleted_at IS NULL
       AND issue.cid IS NOT NULL
     ORDER BY issue.record_created_at DESC, issue.uri DESC
     LIMIT $1
 ) AS projected_issue ON TRUE
-WHERE repository.uri = $2
+WHERE requested_repository.uri = $2
+  AND requested_repository.deleted_at IS NULL
+  AND requested_repository.cid IS NOT NULL
   AND repository.deleted_at IS NULL
   AND repository.cid IS NOT NULL
 ORDER BY projected_issue.record_created_at DESC, projected_issue.uri DESC
@@ -297,9 +319,11 @@ func (q *Queries) GetNetworkIssueProjection(ctx context.Context, arg GetNetworkI
 }
 
 const getNetworkIssueRepositoryTarget = `-- name: GetNetworkIssueRepositoryTarget :one
-SELECT uri, cid
-FROM network.repositories
-WHERE uri = $1 AND deleted_at IS NULL AND cid IS NOT NULL
+SELECT canonical.uri, canonical.cid
+FROM network.repositories AS requested
+JOIN network.repositories AS canonical ON canonical.uri = requested.canonical_uri
+WHERE requested.uri = $1 AND requested.deleted_at IS NULL AND requested.cid IS NOT NULL
+  AND canonical.deleted_at IS NULL AND canonical.cid IS NOT NULL
 `
 
 type GetNetworkIssueRepositoryTargetRow struct {
@@ -323,16 +347,15 @@ SELECT
     status.record_created_at AS status_created_at,
     local_repository.id AS local_repository_id
 FROM network.issues AS issue
-JOIN network.repositories AS repository
-  ON repository.uri = issue.repository_uri
- AND repository.deleted_at IS NULL
- AND repository.cid IS NOT NULL
+JOIN network.repositories AS observed_repository ON observed_repository.uri = issue.repository_uri
+JOIN network.repositories AS repository ON repository.uri = observed_repository.canonical_uri
+ AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
 LEFT JOIN network.issue_statuses AS status
   ON status.uri = issue.status_uri
  AND status.cid = issue.status_cid
  AND status.deleted_at IS NULL
 LEFT JOIN core.repositories AS local_repository
-  ON local_repository.at_uri = repository.uri
+  ON local_repository.id = repository.local_repository_id
  AND local_repository.deleted_at IS NULL
 WHERE issue.uri = $1
   AND issue.deleted_at IS NULL
@@ -363,9 +386,11 @@ func (q *Queries) GetNetworkIssueStatusWriteTarget(ctx context.Context, uri stri
 }
 
 const getNetworkRepositoryStarTarget = `-- name: GetNetworkRepositoryStarTarget :one
-SELECT uri, cid, star_count
-FROM network.repositories
-WHERE uri = $1 AND deleted_at IS NULL AND cid IS NOT NULL
+SELECT canonical.uri, canonical.cid, canonical.star_count
+FROM network.repositories AS requested
+JOIN network.repositories AS canonical ON canonical.uri = requested.canonical_uri
+WHERE requested.uri = $1 AND requested.deleted_at IS NULL AND requested.cid IS NOT NULL
+  AND canonical.deleted_at IS NULL AND canonical.cid IS NOT NULL
 `
 
 type GetNetworkRepositoryStarTargetRow struct {
@@ -391,17 +416,26 @@ SELECT
     COALESCE(projected_star.repository_cid, '') AS observed_repository_cid,
     COALESCE(projected_star.record_created_at, repository.indexed_at) AS record_created_at,
     COALESCE(projected_star.indexed_at, repository.indexed_at) AS indexed_at
-FROM network.repositories AS repository
+FROM network.repositories AS requested_repository
+JOIN network.repositories AS repository ON repository.uri = requested_repository.canonical_uri
 LEFT JOIN LATERAL (
-    SELECT star.uri, star.cid, star.author_did, star.repository_cid, star.record_created_at, star.indexed_at
-    FROM network.stars AS star
-    WHERE star.repository_uri = repository.uri
-      AND star.deleted_at IS NULL
-      AND star.cid IS NOT NULL
-    ORDER BY star.record_created_at DESC, star.uri DESC
+    SELECT deduplicated.uri, deduplicated.cid, deduplicated.author_did, deduplicated.repository_cid, deduplicated.record_created_at, deduplicated.indexed_at
+    FROM (
+      SELECT DISTINCT ON (star.author_did)
+             star.uri, star.cid, star.author_did, star.repository_cid, star.record_created_at, star.indexed_at
+      FROM network.stars AS star
+      JOIN network.repositories AS observed ON observed.uri = star.repository_uri
+      WHERE observed.lineage_uri = repository.lineage_uri
+        AND star.deleted_at IS NULL
+        AND star.cid IS NOT NULL
+      ORDER BY star.author_did, star.record_created_at DESC, star.uri DESC
+    ) AS deduplicated
+    ORDER BY deduplicated.record_created_at DESC, deduplicated.uri DESC
     LIMIT $1
 ) AS projected_star ON TRUE
-WHERE repository.uri = $2
+WHERE requested_repository.uri = $2
+  AND requested_repository.deleted_at IS NULL
+  AND requested_repository.cid IS NOT NULL
   AND repository.deleted_at IS NULL
   AND repository.cid IS NOT NULL
 ORDER BY projected_star.record_created_at DESC, projected_star.uri DESC
@@ -684,11 +718,15 @@ func (q *Queries) GetProjectedPullRequestMergeTarget(ctx context.Context, pullRe
 const getProjectedPullRequestRepositoryTargets = `-- name: GetProjectedPullRequestRepositoryTargets :one
 SELECT source.uri AS source_uri, source.cid AS source_cid,
        target.uri AS target_uri, target.cid AS target_cid
-FROM network.repositories AS source
-CROSS JOIN network.repositories AS target
-WHERE source.uri = $1
+FROM network.repositories AS requested_source
+JOIN network.repositories AS source ON source.uri = requested_source.canonical_uri
+CROSS JOIN network.repositories AS requested_target
+JOIN network.repositories AS target ON target.uri = requested_target.canonical_uri
+WHERE requested_source.uri = $1
+  AND requested_source.deleted_at IS NULL AND requested_source.cid IS NOT NULL
   AND source.deleted_at IS NULL AND source.cid IS NOT NULL
-  AND target.uri = $2
+  AND requested_target.uri = $2
+  AND requested_target.deleted_at IS NULL AND requested_target.cid IS NOT NULL
   AND target.deleted_at IS NULL AND target.cid IS NOT NULL
 `
 
@@ -738,11 +776,12 @@ SELECT pull_request.uri, pull_request.cid, pull_request.target_repository_uri,
        pull_request.target_repository_cid, status.record_created_at AS status_created_at,
        local_repository.id AS local_repository_id
 FROM network.pull_requests AS pull_request
+JOIN network.repositories AS observed_target_repository ON observed_target_repository.uri = pull_request.target_repository_uri
 JOIN network.repositories AS target_repository
-  ON target_repository.uri = pull_request.target_repository_uri
- AND target_repository.deleted_at IS NULL
+  ON target_repository.uri = observed_target_repository.canonical_uri
+ AND target_repository.deleted_at IS NULL AND target_repository.cid IS NOT NULL
 LEFT JOIN core.repositories AS local_repository
-  ON local_repository.at_uri = target_repository.uri
+  ON local_repository.id = target_repository.local_repository_id
  AND local_repository.deleted_at IS NULL
 LEFT JOIN network.pull_request_statuses AS status
   ON status.uri = pull_request.status_uri
@@ -1206,7 +1245,13 @@ LEFT JOIN network.pull_request_statuses AS status
   ON status.uri = pull_request.status_uri AND status.cid = pull_request.status_cid
  AND status.pull_request_uri = pull_request.uri AND status.pull_request_cid = pull_request.cid
  AND status.deleted_at IS NULL AND status.cid IS NOT NULL
-WHERE pull_request.target_repository_uri = $1
+WHERE EXISTS (
+    SELECT 1
+    FROM network.repositories AS observed, network.repositories AS requested
+    WHERE observed.uri = pull_request.target_repository_uri
+      AND requested.uri = $1
+      AND observed.lineage_uri = requested.lineage_uri
+  )
   AND pull_request.deleted_at IS NULL AND pull_request.cid IS NOT NULL
 ORDER BY pull_request.record_created_at DESC, pull_request.uri DESC
 LIMIT $2
@@ -1335,6 +1380,15 @@ func (q *Queries) LockFederationRepositoryStars(ctx context.Context, repositoryU
 	return err
 }
 
+const lockFederationRepositoryTransferLineages = `-- name: LockFederationRepositoryTransferLineages :exec
+SELECT pg_advisory_xact_lock(1718579564)
+`
+
+func (q *Queries) LockFederationRepositoryTransferLineages(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, lockFederationRepositoryTransferLineages)
+	return err
+}
+
 const projectIdentityHandle = `-- name: ProjectIdentityHandle :exec
 UPDATE network.profiles SET handle = $2, indexed_at = $3, handle_source_event_id = $4
 WHERE did = $1 AND (handle_source_event_id IS NULL OR handle_source_event_id < $4)
@@ -1358,23 +1412,27 @@ func (q *Queries) ProjectIdentityHandle(ctx context.Context, arg ProjectIdentity
 }
 
 const recomputeFederationForkCount = `-- name: RecomputeFederationForkCount :exec
-WITH fork_total AS (
-    SELECT count(*)::bigint AS value
+WITH target AS (
+    SELECT lineage_uri FROM network.repositories WHERE uri = $1::text
+), fork_total AS (
+    SELECT count(DISTINCT fork.lineage_uri)::bigint AS value
     FROM network.repositories AS fork
-    WHERE fork.forked_from_uri = $1::text
+    JOIN network.repositories AS fork_source ON fork_source.uri = fork.forked_from_uri
+    JOIN target ON target.lineage_uri = fork_source.lineage_uri
+    WHERE fork.lineage_uri <> target.lineage_uri
       AND fork.deleted_at IS NULL
       AND fork.cid IS NOT NULL
 ), network_update AS (
     UPDATE network.repositories AS source
     SET fork_count = fork_total.value
-    FROM fork_total
-    WHERE source.uri = $1::text
-    RETURNING source.uri
+    FROM fork_total, target
+    WHERE source.lineage_uri = target.lineage_uri
+    RETURNING source.local_repository_id
 )
-UPDATE core.repositories
+UPDATE core.repositories AS repository
 SET fork_count = fork_total.value
 FROM fork_total
-WHERE at_uri = $1::text
+WHERE repository.id IN (SELECT local_repository_id FROM network_update WHERE local_repository_id IS NOT NULL)
 `
 
 func (q *Queries) RecomputeFederationForkCount(ctx context.Context, repositoryUri string) error {
@@ -1383,10 +1441,12 @@ func (q *Queries) RecomputeFederationForkCount(ctx context.Context, repositoryUr
 }
 
 const recomputeFederationIssueCommentCount = `-- name: RecomputeFederationIssueCommentCount :exec
-UPDATE network.issues SET comment_count = (
+UPDATE network.issues AS issue SET comment_count = (
     SELECT count(*) FROM network.issue_comments AS comment
     WHERE comment.issue_uri = $1
+      AND issue.cid IS NOT NULL
       AND comment.deleted_at IS NULL
+      AND comment.cid IS NOT NULL
       AND (
           comment.parent_uri IS NULL
           OR NOT EXISTS (
@@ -1401,7 +1461,7 @@ UPDATE network.issues SET comment_count = (
           )
       )
 )
-WHERE uri = $1
+WHERE issue.uri = $1
 `
 
 func (q *Queries) RecomputeFederationIssueCommentCount(ctx context.Context, issueUri string) error {
@@ -1410,20 +1470,23 @@ func (q *Queries) RecomputeFederationIssueCommentCount(ctx context.Context, issu
 }
 
 const recomputeFederationIssueCounts = `-- name: RecomputeFederationIssueCounts :exec
-UPDATE network.repositories AS repository SET
-    issue_count = (
-        SELECT count(*) FROM network.issues AS issue
-        WHERE issue.repository_uri = $1 AND issue.deleted_at IS NULL
-    ),
-    open_issue_count = (
-        SELECT count(*) FROM network.issues AS issue
-        WHERE issue.repository_uri = $1 AND issue.deleted_at IS NULL AND issue.state = 'open'
-    )
-WHERE repository.uri = $1
+WITH target AS (
+    SELECT target_repository.lineage_uri FROM network.repositories AS target_repository WHERE target_repository.uri = $1
+), totals AS (
+    SELECT count(*) AS issue_count, count(*) FILTER (WHERE issue.state = 'open') AS open_issue_count
+    FROM network.issues AS issue
+    JOIN network.repositories AS observed ON observed.uri = issue.repository_uri
+    JOIN target ON target.lineage_uri = observed.lineage_uri
+    WHERE issue.deleted_at IS NULL AND issue.cid IS NOT NULL
+)
+UPDATE network.repositories AS repository
+SET issue_count = totals.issue_count, open_issue_count = totals.open_issue_count
+FROM target, totals
+WHERE repository.lineage_uri = target.lineage_uri
 `
 
-func (q *Queries) RecomputeFederationIssueCounts(ctx context.Context, repositoryUri string) error {
-	_, err := q.db.Exec(ctx, recomputeFederationIssueCounts, repositoryUri)
+func (q *Queries) RecomputeFederationIssueCounts(ctx context.Context, uri string) error {
+	_, err := q.db.Exec(ctx, recomputeFederationIssueCounts, uri)
 	return err
 }
 
@@ -1437,13 +1500,16 @@ WITH resolved AS (
         status.record_updated_at AS status_updated_at,
         status.source_event_id AS status_source_event_id
     FROM network.issues AS issue
+    JOIN network.repositories AS source_repository ON source_repository.uri = issue.repository_uri
     LEFT JOIN LATERAL (
         SELECT candidate.uri, candidate.cid, candidate.state,
                candidate.record_updated_at, candidate.source_event_id
         FROM network.issue_statuses AS candidate
+        JOIN network.repositories AS authority_repository ON authority_repository.uri = candidate.repository_uri
         WHERE candidate.issue_uri = issue.uri
-          AND candidate.repository_uri = issue.repository_uri
-          AND candidate.author_did = split_part(issue.repository_uri, '/', 3)
+          AND authority_repository.uri = source_repository.canonical_uri
+          AND authority_repository.cid = candidate.repository_cid
+          AND candidate.author_did = authority_repository.owner_did
           AND candidate.deleted_at IS NULL
           AND candidate.cid IS NOT NULL
         ORDER BY candidate.source_event_id DESC, candidate.uri DESC
@@ -1467,21 +1533,23 @@ func (q *Queries) RecomputeFederationIssueState(ctx context.Context, uri string)
 }
 
 const recomputeFederationPullRequestCounts = `-- name: RecomputeFederationPullRequestCounts :exec
-UPDATE network.repositories AS repository SET
-    pull_request_count = (
-        SELECT count(*) FROM network.pull_requests AS pull_request
-        WHERE pull_request.target_repository_uri = $1 AND pull_request.deleted_at IS NULL
-    ),
-    open_pull_request_count = (
-        SELECT count(*) FROM network.pull_requests AS pull_request
-        WHERE pull_request.target_repository_uri = $1
-          AND pull_request.deleted_at IS NULL AND pull_request.state = 'open'
-    )
-WHERE repository.uri = $1
+WITH target AS (
+    SELECT target_repository.lineage_uri FROM network.repositories AS target_repository WHERE target_repository.uri = $1
+), totals AS (
+    SELECT count(*) AS pull_request_count, count(*) FILTER (WHERE pull_request.state = 'open') AS open_pull_request_count
+    FROM network.pull_requests AS pull_request
+    JOIN network.repositories AS observed ON observed.uri = pull_request.target_repository_uri
+    JOIN target ON target.lineage_uri = observed.lineage_uri
+    WHERE pull_request.deleted_at IS NULL AND pull_request.cid IS NOT NULL
+)
+UPDATE network.repositories AS repository
+SET pull_request_count = totals.pull_request_count, open_pull_request_count = totals.open_pull_request_count
+FROM target, totals
+WHERE repository.lineage_uri = target.lineage_uri
 `
 
-func (q *Queries) RecomputeFederationPullRequestCounts(ctx context.Context, targetRepositoryUri string) error {
-	_, err := q.db.Exec(ctx, recomputeFederationPullRequestCounts, targetRepositoryUri)
+func (q *Queries) RecomputeFederationPullRequestCounts(ctx context.Context, uri string) error {
+	_, err := q.db.Exec(ctx, recomputeFederationPullRequestCounts, uri)
 	return err
 }
 
@@ -1506,14 +1574,17 @@ WITH resolved AS (
            status.state, status.merged_commit_sha, status.record_updated_at AS status_updated_at,
            status.source_event_id AS status_source_event_id
     FROM network.pull_requests AS pull_request
+    JOIN network.repositories AS source_target_repository ON source_target_repository.uri = pull_request.target_repository_uri
     LEFT JOIN LATERAL (
         SELECT candidate.uri, candidate.cid, candidate.state, candidate.merged_commit_sha,
                candidate.record_updated_at, candidate.source_event_id
         FROM network.pull_request_statuses AS candidate
+        JOIN network.repositories AS authority_repository ON authority_repository.uri = candidate.target_repository_uri
         WHERE candidate.pull_request_uri = pull_request.uri
           AND candidate.pull_request_cid = pull_request.cid
-          AND candidate.target_repository_uri = pull_request.target_repository_uri
-          AND candidate.author_did = split_part(pull_request.target_repository_uri, '/', 3)
+          AND authority_repository.uri = source_target_repository.canonical_uri
+          AND authority_repository.cid = candidate.target_repository_cid
+          AND candidate.author_did = authority_repository.owner_did
           AND candidate.deleted_at IS NULL
           AND candidate.cid IS NOT NULL
         ORDER BY candidate.source_event_id DESC, candidate.uri DESC
@@ -1538,12 +1609,15 @@ func (q *Queries) RecomputeFederationPullRequestState(ctx context.Context, uri s
 }
 
 const recomputeFederationRepositoryCommentCount = `-- name: RecomputeFederationRepositoryCommentCount :exec
-UPDATE network.repositories AS repository SET comment_count = (
-    SELECT count(*)
+WITH target AS (
+    SELECT target_repository.lineage_uri FROM network.repositories AS target_repository WHERE target_repository.uri = $1
+), total AS (
+    SELECT count(*) AS value
     FROM network.issue_comments AS comment
     JOIN network.issues AS issue ON issue.uri = comment.issue_uri
-    WHERE issue.repository_uri = $1
-      AND issue.deleted_at IS NULL
+    JOIN network.repositories AS observed ON observed.uri = issue.repository_uri
+    JOIN target ON target.lineage_uri = observed.lineage_uri
+    WHERE issue.deleted_at IS NULL
       AND comment.deleted_at IS NULL
       AND (
           comment.parent_uri IS NULL
@@ -1559,11 +1633,13 @@ UPDATE network.repositories AS repository SET comment_count = (
           )
       )
 )
-WHERE repository.uri = $1
+UPDATE network.repositories AS repository SET comment_count = total.value
+FROM target, total
+WHERE repository.lineage_uri = target.lineage_uri
 `
 
-func (q *Queries) RecomputeFederationRepositoryCommentCount(ctx context.Context, repositoryUri string) error {
-	_, err := q.db.Exec(ctx, recomputeFederationRepositoryCommentCount, repositoryUri)
+func (q *Queries) RecomputeFederationRepositoryCommentCount(ctx context.Context, uri string) error {
+	_, err := q.db.Exec(ctx, recomputeFederationRepositoryCommentCount, uri)
 	return err
 }
 
@@ -1580,16 +1656,194 @@ func (q *Queries) RecomputeFederationRepositoryCount(ctx context.Context, ownerD
 	return err
 }
 
-const recomputeFederationStarCount = `-- name: RecomputeFederationStarCount :exec
-UPDATE network.repositories SET star_count = (
-    SELECT count(*) FROM network.stars
-    WHERE repository_uri = $1 AND deleted_at IS NULL
+const recomputeFederationRepositoryLineageCounts = `-- name: RecomputeFederationRepositoryLineageCounts :exec
+WITH lineages AS (
+  SELECT DISTINCT lineage_uri FROM network.repositories WHERE deleted_at IS NULL AND cid IS NOT NULL
+), totals AS (
+  SELECT lineage.lineage_uri,
+    (SELECT count(DISTINCT star.author_did)
+     FROM network.stars AS star
+     JOIN network.repositories AS observed ON observed.uri = star.repository_uri
+     WHERE observed.lineage_uri = lineage.lineage_uri AND star.deleted_at IS NULL AND star.cid IS NOT NULL) AS star_count,
+    (SELECT count(*) FROM network.issues AS issue
+     JOIN network.repositories AS observed ON observed.uri = issue.repository_uri
+     WHERE observed.lineage_uri = lineage.lineage_uri AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL) AS issue_count,
+    (SELECT count(*) FROM network.issues AS issue
+     JOIN network.repositories AS observed ON observed.uri = issue.repository_uri
+     WHERE observed.lineage_uri = lineage.lineage_uri AND issue.state = 'open' AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL) AS open_issue_count,
+    (SELECT count(*) FROM network.issue_comments AS comment
+     JOIN network.issues AS issue ON issue.uri = comment.issue_uri
+     JOIN network.repositories AS observed ON observed.uri = issue.repository_uri
+     WHERE observed.lineage_uri = lineage.lineage_uri AND issue.deleted_at IS NULL AND issue.cid IS NOT NULL
+       AND comment.deleted_at IS NULL AND comment.cid IS NOT NULL) AS comment_count,
+    (SELECT count(*) FROM network.pull_requests AS pull_request
+     JOIN network.repositories AS observed ON observed.uri = pull_request.target_repository_uri
+     WHERE observed.lineage_uri = lineage.lineage_uri AND pull_request.deleted_at IS NULL AND pull_request.cid IS NOT NULL) AS pull_request_count,
+    (SELECT count(*) FROM network.pull_requests AS pull_request
+     JOIN network.repositories AS observed ON observed.uri = pull_request.target_repository_uri
+     WHERE observed.lineage_uri = lineage.lineage_uri AND pull_request.state = 'open' AND pull_request.deleted_at IS NULL AND pull_request.cid IS NOT NULL) AS open_pull_request_count,
+    (SELECT count(DISTINCT fork.lineage_uri)
+     FROM network.repositories AS fork
+     JOIN network.repositories AS fork_source ON fork_source.uri = fork.forked_from_uri
+     WHERE fork_source.lineage_uri = lineage.lineage_uri AND fork.lineage_uri <> lineage.lineage_uri
+       AND fork.deleted_at IS NULL AND fork.cid IS NOT NULL) AS fork_count
+  FROM lineages AS lineage
+), network_update AS (
+  UPDATE network.repositories AS repository
+  SET star_count = totals.star_count, issue_count = totals.issue_count,
+      open_issue_count = totals.open_issue_count, comment_count = totals.comment_count,
+      pull_request_count = totals.pull_request_count,
+      open_pull_request_count = totals.open_pull_request_count, fork_count = totals.fork_count
+  FROM totals
+  WHERE repository.lineage_uri = totals.lineage_uri
+  RETURNING repository.local_repository_id, repository.fork_count
 )
-WHERE uri = $1
+UPDATE core.repositories AS repository
+SET fork_count = local_projection.fork_count
+FROM network_update AS local_projection
+WHERE repository.id = local_projection.local_repository_id
 `
 
-func (q *Queries) RecomputeFederationStarCount(ctx context.Context, repositoryUri string) error {
-	_, err := q.db.Exec(ctx, recomputeFederationStarCount, repositoryUri)
+func (q *Queries) RecomputeFederationRepositoryLineageCounts(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, recomputeFederationRepositoryLineageCounts)
+	return err
+}
+
+const recomputeFederationStarCount = `-- name: RecomputeFederationStarCount :exec
+WITH target AS (
+    SELECT target_repository.lineage_uri FROM network.repositories AS target_repository WHERE target_repository.uri = $1
+), total AS (
+    SELECT count(DISTINCT star.author_did) AS value
+    FROM network.stars AS star
+    JOIN network.repositories AS observed ON observed.uri = star.repository_uri
+    JOIN target ON target.lineage_uri = observed.lineage_uri
+    WHERE star.deleted_at IS NULL AND star.cid IS NOT NULL
+)
+UPDATE network.repositories AS repository SET star_count = total.value
+FROM target, total
+WHERE repository.lineage_uri = target.lineage_uri
+`
+
+func (q *Queries) RecomputeFederationStarCount(ctx context.Context, uri string) error {
+	_, err := q.db.Exec(ctx, recomputeFederationStarCount, uri)
+	return err
+}
+
+const reconcileFederationRepositoryTransferLineages = `-- name: ReconcileFederationRepositoryTransferLineages :exec
+WITH RECURSIVE candidate_edges AS (
+  SELECT proposal.repository_uri AS source_uri, acceptance.repository_uri AS successor_uri
+  FROM network.repository_transfers AS proposal
+  JOIN network.repository_transfer_acceptances AS acceptance
+    ON acceptance.proposal_uri = proposal.uri
+   AND acceptance.proposal_cid = proposal.cid
+   AND acceptance.deleted_at IS NULL
+   AND acceptance.cid IS NOT NULL
+  JOIN network.repositories AS source
+    ON source.uri = proposal.repository_uri
+   AND source.deleted_at IS NULL
+   AND source.cid IS NOT NULL
+  JOIN network.repositories AS successor
+    ON successor.uri = acceptance.repository_uri
+   AND successor.deleted_at IS NULL
+   AND successor.cid IS NOT NULL
+  WHERE proposal.deleted_at IS NULL
+    AND proposal.cid IS NOT NULL
+    AND proposal.author_did = source.owner_did
+    AND proposal.repository_cid = source.cid
+    AND source.transferred_to_uri = acceptance.repository_uri
+    AND source.transferred_to_cid = acceptance.repository_cid
+    AND successor.transferred_from_uri = proposal.repository_uri
+    AND successor.transferred_from_cid = proposal.repository_cid
+    AND acceptance.repository_cid = successor.cid
+    AND acceptance.created_at >= proposal.created_at
+    AND acceptance.created_at <= proposal.expires_at
+    AND successor.owner_did = proposal.destination_did
+    AND acceptance.author_did = proposal.destination_did
+    AND (
+      (proposal.destination_organization_uri IS NULL AND successor.organization_uri IS NULL)
+      OR (
+        proposal.destination_organization_uri IS NOT NULL
+        AND successor.organization_uri = proposal.destination_organization_uri
+        AND successor.organization_cid = proposal.destination_organization_cid
+        AND EXISTS (
+          SELECT 1
+          FROM network.organizations AS destination_organization
+          WHERE destination_organization.uri = proposal.destination_organization_uri
+            AND destination_organization.cid = proposal.destination_organization_cid
+            AND destination_organization.creator_did = proposal.destination_did
+            AND destination_organization.deleted_at IS NULL
+        )
+      )
+    )
+), valid_edges AS (
+  SELECT edge.source_uri, edge.successor_uri
+  FROM candidate_edges AS edge
+  WHERE (SELECT count(*) FROM candidate_edges AS candidate WHERE candidate.source_uri = edge.source_uri) = 1
+    AND (SELECT count(*) FROM candidate_edges AS candidate WHERE candidate.successor_uri = edge.successor_uri) = 1
+), reach(start_uri, current_uri, path, cycle, depth) AS (
+  SELECT edge.source_uri, edge.successor_uri,
+         ARRAY[edge.source_uri, edge.successor_uri]::text[],
+         edge.source_uri = edge.successor_uri, 1
+  FROM valid_edges AS edge
+  UNION ALL
+  SELECT reach.start_uri, edge.successor_uri, reach.path || edge.successor_uri,
+         edge.successor_uri = ANY(reach.path), reach.depth + 1
+  FROM reach
+  JOIN valid_edges AS edge ON edge.source_uri = reach.current_uri
+  WHERE NOT reach.cycle AND reach.depth < 32
+), cyclic_nodes AS (
+  SELECT DISTINCT unnest(path) AS uri FROM reach WHERE cycle
+), overlong_nodes AS (
+  SELECT DISTINCT unnest(reach.path) AS uri
+  FROM reach
+  WHERE reach.depth = 32
+    AND EXISTS (
+      SELECT 1 FROM valid_edges AS edge
+      WHERE edge.source_uri = reach.current_uri
+        AND NOT edge.successor_uri = ANY(reach.path)
+    )
+), invalid_nodes AS (
+  SELECT uri FROM cyclic_nodes
+  UNION
+  SELECT uri FROM overlong_nodes
+), safe_edges AS (
+  SELECT edge.source_uri, edge.successor_uri FROM valid_edges AS edge
+  WHERE NOT EXISTS (SELECT 1 FROM invalid_nodes WHERE uri IN (edge.source_uri, edge.successor_uri))
+), backward(start_uri, current_uri, depth, path) AS (
+  SELECT repository.uri, repository.uri, 0, ARRAY[repository.uri]::text[]
+  FROM network.repositories AS repository
+  WHERE repository.deleted_at IS NULL
+  UNION ALL
+  SELECT backward.start_uri, edge.source_uri, backward.depth + 1, backward.path || edge.source_uri
+  FROM backward
+  JOIN safe_edges AS edge ON edge.successor_uri = backward.current_uri
+  WHERE backward.depth < 32 AND NOT edge.source_uri = ANY(backward.path)
+), forward(start_uri, current_uri, depth, path) AS (
+  SELECT repository.uri, repository.uri, 0, ARRAY[repository.uri]::text[]
+  FROM network.repositories AS repository
+  WHERE repository.deleted_at IS NULL
+  UNION ALL
+  SELECT forward.start_uri, edge.successor_uri, forward.depth + 1, forward.path || edge.successor_uri
+  FROM forward
+  JOIN safe_edges AS edge ON edge.source_uri = forward.current_uri
+  WHERE forward.depth < 32 AND NOT edge.successor_uri = ANY(forward.path)
+), roots AS (
+  SELECT DISTINCT ON (start_uri) start_uri, current_uri
+  FROM backward ORDER BY start_uri, depth DESC, current_uri
+), tips AS (
+  SELECT DISTINCT ON (start_uri) start_uri, current_uri
+  FROM forward ORDER BY start_uri, depth DESC, current_uri
+)
+UPDATE network.repositories AS repository
+SET lineage_uri = roots.current_uri,
+    canonical_uri = tips.current_uri
+FROM roots
+JOIN tips ON tips.start_uri = roots.start_uri
+WHERE repository.uri = roots.start_uri
+`
+
+func (q *Queries) ReconcileFederationRepositoryTransferLineages(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, reconcileFederationRepositoryTransferLineages)
 	return err
 }
 
@@ -1835,8 +2089,8 @@ func (q *Queries) TombstoneFederationRecord(ctx context.Context, arg TombstoneFe
 }
 
 const tombstoneFederationRepository = `-- name: TombstoneFederationRepository :exec
-INSERT INTO network.repositories (uri, owner_did, rkey, indexed_at, deleted_at, source_event_id)
-VALUES ($1, $2, $3, $4, $4, $5)
+INSERT INTO network.repositories (uri, owner_did, rkey, lineage_uri, canonical_uri, indexed_at, deleted_at, source_event_id)
+VALUES ($1, $2, $3, $1, $1, $4, $4, $5)
 ON CONFLICT (uri) DO UPDATE SET
     cid = NULL,
     indexed_at = EXCLUDED.indexed_at,
@@ -1861,6 +2115,44 @@ func (q *Queries) TombstoneFederationRepository(ctx context.Context, arg Tombsto
 		arg.IndexedAt,
 		arg.SourceEventID,
 	)
+	return err
+}
+
+const tombstoneFederationRepositoryTransfer = `-- name: TombstoneFederationRepositoryTransfer :exec
+UPDATE network.repository_transfers
+SET cid = NULL, deleted_at = $1, indexed_at = $1,
+    source_event_id = $2
+WHERE uri = $3
+  AND source_event_id < $2
+`
+
+type TombstoneFederationRepositoryTransferParams struct {
+	IndexedAt     pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID int64              `json:"source_event_id"`
+	Uri           string             `json:"uri"`
+}
+
+func (q *Queries) TombstoneFederationRepositoryTransfer(ctx context.Context, arg TombstoneFederationRepositoryTransferParams) error {
+	_, err := q.db.Exec(ctx, tombstoneFederationRepositoryTransfer, arg.IndexedAt, arg.SourceEventID, arg.Uri)
+	return err
+}
+
+const tombstoneFederationRepositoryTransferAcceptance = `-- name: TombstoneFederationRepositoryTransferAcceptance :exec
+UPDATE network.repository_transfer_acceptances
+SET cid = NULL, deleted_at = $1, indexed_at = $1,
+    source_event_id = $2
+WHERE uri = $3
+  AND source_event_id < $2
+`
+
+type TombstoneFederationRepositoryTransferAcceptanceParams struct {
+	IndexedAt     pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID int64              `json:"source_event_id"`
+	Uri           string             `json:"uri"`
+}
+
+func (q *Queries) TombstoneFederationRepositoryTransferAcceptance(ctx context.Context, arg TombstoneFederationRepositoryTransferAcceptanceParams) error {
+	_, err := q.db.Exec(ctx, tombstoneFederationRepositoryTransferAcceptance, arg.IndexedAt, arg.SourceEventID, arg.Uri)
 	return err
 }
 
@@ -2488,11 +2780,23 @@ const upsertFederationRepository = `-- name: UpsertFederationRepository :exec
 INSERT INTO network.repositories (
     uri, cid, owner_did, rkey, slug, name, description, default_branch,
     git_https, git_ssh, web, organization_uri, organization_cid, forked_from_uri, forked_from_cid,
+    transferred_from_uri, transferred_from_cid, transferred_to_uri, transferred_to_cid,
+    lineage_uri, canonical_uri,
     local_repository_id, record_created_at,
     record_updated_at, indexed_at, deleted_at, source_event_id
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-    (SELECT id FROM core.repositories WHERE at_uri = $1), $16, $17, $18, NULL, $19
+    $16, $17, $18, $19, $1, $1,
+    (SELECT repository.id
+     FROM core.repositories AS repository
+     WHERE repository.at_uri = $1
+        OR EXISTS (
+          SELECT 1 FROM core.repository_transfers AS transfer
+          WHERE transfer.repository_id = repository.id
+            AND transfer.status = 'completed'
+            AND transfer.successor_uri = $1
+        )
+     LIMIT 1), $20, $21, $22, NULL, $23
 )
 ON CONFLICT (uri) DO UPDATE SET
     cid = EXCLUDED.cid,
@@ -2509,7 +2813,11 @@ ON CONFLICT (uri) DO UPDATE SET
     organization_cid = EXCLUDED.organization_cid,
     forked_from_uri = EXCLUDED.forked_from_uri,
     forked_from_cid = EXCLUDED.forked_from_cid,
-    local_repository_id = EXCLUDED.local_repository_id,
+    transferred_from_uri = EXCLUDED.transferred_from_uri,
+    transferred_from_cid = EXCLUDED.transferred_from_cid,
+    transferred_to_uri = EXCLUDED.transferred_to_uri,
+    transferred_to_cid = EXCLUDED.transferred_to_cid,
+    local_repository_id = COALESCE(EXCLUDED.local_repository_id, network.repositories.local_repository_id),
     record_created_at = EXCLUDED.record_created_at,
     record_updated_at = EXCLUDED.record_updated_at,
     indexed_at = EXCLUDED.indexed_at,
@@ -2519,25 +2827,29 @@ WHERE network.repositories.source_event_id < EXCLUDED.source_event_id
 `
 
 type UpsertFederationRepositoryParams struct {
-	Uri             string             `json:"uri"`
-	Cid             pgtype.Text        `json:"cid"`
-	OwnerDid        string             `json:"owner_did"`
-	Rkey            string             `json:"rkey"`
-	Slug            pgtype.Text        `json:"slug"`
-	Name            pgtype.Text        `json:"name"`
-	Description     pgtype.Text        `json:"description"`
-	DefaultBranch   pgtype.Text        `json:"default_branch"`
-	GitHttps        pgtype.Text        `json:"git_https"`
-	GitSsh          pgtype.Text        `json:"git_ssh"`
-	Web             pgtype.Text        `json:"web"`
-	OrganizationUri pgtype.Text        `json:"organization_uri"`
-	OrganizationCid pgtype.Text        `json:"organization_cid"`
-	ForkedFromUri   pgtype.Text        `json:"forked_from_uri"`
-	ForkedFromCid   pgtype.Text        `json:"forked_from_cid"`
-	RecordCreatedAt pgtype.Timestamptz `json:"record_created_at"`
-	RecordUpdatedAt pgtype.Timestamptz `json:"record_updated_at"`
-	IndexedAt       pgtype.Timestamptz `json:"indexed_at"`
-	SourceEventID   int64              `json:"source_event_id"`
+	Uri                string             `json:"uri"`
+	Cid                pgtype.Text        `json:"cid"`
+	OwnerDid           string             `json:"owner_did"`
+	Rkey               string             `json:"rkey"`
+	Slug               pgtype.Text        `json:"slug"`
+	Name               pgtype.Text        `json:"name"`
+	Description        pgtype.Text        `json:"description"`
+	DefaultBranch      pgtype.Text        `json:"default_branch"`
+	GitHttps           pgtype.Text        `json:"git_https"`
+	GitSsh             pgtype.Text        `json:"git_ssh"`
+	Web                pgtype.Text        `json:"web"`
+	OrganizationUri    pgtype.Text        `json:"organization_uri"`
+	OrganizationCid    pgtype.Text        `json:"organization_cid"`
+	ForkedFromUri      pgtype.Text        `json:"forked_from_uri"`
+	ForkedFromCid      pgtype.Text        `json:"forked_from_cid"`
+	TransferredFromUri pgtype.Text        `json:"transferred_from_uri"`
+	TransferredFromCid pgtype.Text        `json:"transferred_from_cid"`
+	TransferredToUri   pgtype.Text        `json:"transferred_to_uri"`
+	TransferredToCid   pgtype.Text        `json:"transferred_to_cid"`
+	RecordCreatedAt    pgtype.Timestamptz `json:"record_created_at"`
+	RecordUpdatedAt    pgtype.Timestamptz `json:"record_updated_at"`
+	IndexedAt          pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID      int64              `json:"source_event_id"`
 }
 
 func (q *Queries) UpsertFederationRepository(ctx context.Context, arg UpsertFederationRepositoryParams) error {
@@ -2557,8 +2869,135 @@ func (q *Queries) UpsertFederationRepository(ctx context.Context, arg UpsertFede
 		arg.OrganizationCid,
 		arg.ForkedFromUri,
 		arg.ForkedFromCid,
+		arg.TransferredFromUri,
+		arg.TransferredFromCid,
+		arg.TransferredToUri,
+		arg.TransferredToCid,
 		arg.RecordCreatedAt,
 		arg.RecordUpdatedAt,
+		arg.IndexedAt,
+		arg.SourceEventID,
+	)
+	return err
+}
+
+const upsertFederationRepositoryTransfer = `-- name: UpsertFederationRepositoryTransfer :exec
+INSERT INTO network.repository_transfers (
+    uri, cid, author_did, rkey, repository_uri, repository_cid,
+    destination_did, destination_organization_uri, destination_organization_cid,
+    destination_owner_alias, created_at, expires_at, indexed_at, source_event_id, deleted_at
+) VALUES (
+    $1, $2, $3, $4,
+    $5, $6, $7,
+    $8, $9,
+    $10, $11, $12,
+    $13, $14, NULL
+)
+ON CONFLICT (uri) DO UPDATE SET
+    cid = EXCLUDED.cid,
+    author_did = EXCLUDED.author_did,
+    rkey = EXCLUDED.rkey,
+    repository_uri = EXCLUDED.repository_uri,
+    repository_cid = EXCLUDED.repository_cid,
+    destination_did = EXCLUDED.destination_did,
+    destination_organization_uri = EXCLUDED.destination_organization_uri,
+    destination_organization_cid = EXCLUDED.destination_organization_cid,
+    destination_owner_alias = EXCLUDED.destination_owner_alias,
+    created_at = EXCLUDED.created_at,
+    expires_at = EXCLUDED.expires_at,
+    indexed_at = EXCLUDED.indexed_at,
+    source_event_id = EXCLUDED.source_event_id,
+    deleted_at = NULL
+WHERE network.repository_transfers.source_event_id < EXCLUDED.source_event_id
+`
+
+type UpsertFederationRepositoryTransferParams struct {
+	Uri                        string             `json:"uri"`
+	Cid                        pgtype.Text        `json:"cid"`
+	AuthorDid                  string             `json:"author_did"`
+	Rkey                       string             `json:"rkey"`
+	RepositoryUri              pgtype.Text        `json:"repository_uri"`
+	RepositoryCid              pgtype.Text        `json:"repository_cid"`
+	DestinationDid             pgtype.Text        `json:"destination_did"`
+	DestinationOrganizationUri pgtype.Text        `json:"destination_organization_uri"`
+	DestinationOrganizationCid pgtype.Text        `json:"destination_organization_cid"`
+	DestinationOwnerAlias      pgtype.Text        `json:"destination_owner_alias"`
+	CreatedAt                  pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt                  pgtype.Timestamptz `json:"expires_at"`
+	IndexedAt                  pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID              int64              `json:"source_event_id"`
+}
+
+func (q *Queries) UpsertFederationRepositoryTransfer(ctx context.Context, arg UpsertFederationRepositoryTransferParams) error {
+	_, err := q.db.Exec(ctx, upsertFederationRepositoryTransfer,
+		arg.Uri,
+		arg.Cid,
+		arg.AuthorDid,
+		arg.Rkey,
+		arg.RepositoryUri,
+		arg.RepositoryCid,
+		arg.DestinationDid,
+		arg.DestinationOrganizationUri,
+		arg.DestinationOrganizationCid,
+		arg.DestinationOwnerAlias,
+		arg.CreatedAt,
+		arg.ExpiresAt,
+		arg.IndexedAt,
+		arg.SourceEventID,
+	)
+	return err
+}
+
+const upsertFederationRepositoryTransferAcceptance = `-- name: UpsertFederationRepositoryTransferAcceptance :exec
+INSERT INTO network.repository_transfer_acceptances (
+    uri, cid, author_did, rkey, proposal_uri, proposal_cid,
+    repository_uri, repository_cid, created_at, indexed_at, source_event_id, deleted_at
+) VALUES (
+    $1, $2, $3, $4,
+    $5, $6, $7,
+    $8, $9, $10,
+    $11, NULL
+)
+ON CONFLICT (uri) DO UPDATE SET
+    cid = EXCLUDED.cid,
+    author_did = EXCLUDED.author_did,
+    rkey = EXCLUDED.rkey,
+    proposal_uri = EXCLUDED.proposal_uri,
+    proposal_cid = EXCLUDED.proposal_cid,
+    repository_uri = EXCLUDED.repository_uri,
+    repository_cid = EXCLUDED.repository_cid,
+    created_at = EXCLUDED.created_at,
+    indexed_at = EXCLUDED.indexed_at,
+    source_event_id = EXCLUDED.source_event_id,
+    deleted_at = NULL
+WHERE network.repository_transfer_acceptances.source_event_id < EXCLUDED.source_event_id
+`
+
+type UpsertFederationRepositoryTransferAcceptanceParams struct {
+	Uri           string             `json:"uri"`
+	Cid           pgtype.Text        `json:"cid"`
+	AuthorDid     string             `json:"author_did"`
+	Rkey          string             `json:"rkey"`
+	ProposalUri   pgtype.Text        `json:"proposal_uri"`
+	ProposalCid   pgtype.Text        `json:"proposal_cid"`
+	RepositoryUri pgtype.Text        `json:"repository_uri"`
+	RepositoryCid pgtype.Text        `json:"repository_cid"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	IndexedAt     pgtype.Timestamptz `json:"indexed_at"`
+	SourceEventID int64              `json:"source_event_id"`
+}
+
+func (q *Queries) UpsertFederationRepositoryTransferAcceptance(ctx context.Context, arg UpsertFederationRepositoryTransferAcceptanceParams) error {
+	_, err := q.db.Exec(ctx, upsertFederationRepositoryTransferAcceptance,
+		arg.Uri,
+		arg.Cid,
+		arg.AuthorDid,
+		arg.Rkey,
+		arg.ProposalUri,
+		arg.ProposalCid,
+		arg.RepositoryUri,
+		arg.RepositoryCid,
+		arg.CreatedAt,
 		arg.IndexedAt,
 		arg.SourceEventID,
 	)
