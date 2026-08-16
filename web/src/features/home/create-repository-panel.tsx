@@ -27,12 +27,28 @@ import {
 } from './requests'
 import { repositoryParams } from './viewer-repositories'
 
-export function CreateRepositoryPanel({ onClose }: { onClose: () => void }) {
+type CreateRepositoryDependencies = {
+  createRepositoryMutationOptions: typeof createRepositoryMutationOptions
+  organizationsQueryOptions: typeof organizationsQueryOptions
+}
+
+const createRepositoryDependencies: CreateRepositoryDependencies = {
+  createRepositoryMutationOptions,
+  organizationsQueryOptions,
+}
+
+export function CreateRepositoryPanel({
+  dependencies = createRepositoryDependencies,
+  onClose,
+}: {
+  dependencies?: CreateRepositoryDependencies
+  onClose: () => void
+}) {
   const queryClient = useQueryClient()
-  const mutation = useMutation(createRepositoryMutationOptions())
+  const mutation = useMutation(dependencies.createRepositoryMutationOptions())
   const [created, setCreated] = useState<Repository>()
   const snapshotQuery = repositorySnapshotQueryOptions()
-  const organizations = useQuery(organizationsQueryOptions())
+  const organizations = useQuery(dependencies.organizationsQueryOptions())
 
   const form = useForm({
     defaultValues: emptyRepositoryForm,

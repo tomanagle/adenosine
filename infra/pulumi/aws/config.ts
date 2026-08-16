@@ -48,7 +48,7 @@ export function loadConfig(config = new pulumi.Config()): AwsConfig {
     zoneId,
     backupRetentionDays,
     databaseAllocatedStorage,
-    repositoryPerformanceMode: repositoryPerformanceMode as AwsConfig['repositoryPerformanceMode'],
+    repositoryPerformanceMode,
     sshAllowedCidrs,
     instanceType: config.get('instanceType') ?? 't3.xlarge',
     databaseInstanceClass: config.get('databaseInstanceClass') ?? 'db.t4g.medium',

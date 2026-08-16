@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
+import { z } from 'zod'
 
 const root = join(import.meta.dir, '..', '..')
 const markdownFiles = filesBelow(root).filter((file) => file.endsWith('.md'))
@@ -37,9 +38,9 @@ describe('documentation freshness', () => {
   })
 
   test('documented REST routes exist in the installed OpenAPI contract', () => {
-    const contract = JSON.parse(readFileSync(join(root, 'api', 'openapi.yaml'), 'utf8')) as {
-      paths: Record<string, unknown>
-    }
+    const contract = z
+      .object({ paths: z.record(z.string(), z.json()) })
+      .parse(JSON.parse(readFileSync(join(root, 'api', 'openapi.yaml'), 'utf8')))
     const routes = new Set(Object.keys(contract.paths))
     const stale: string[] = []
 

@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 import * as pulumi from '@pulumi/pulumi'
+import { z } from 'zod'
 
 interface RegisteredResource {
   name: string
-  inputs: Record<string, unknown>
+  inputs: pulumi.Inputs
 }
 
 const resources: RegisteredResource[] = []
@@ -93,14 +94,14 @@ describe('Railway provider resource contract', () => {
   test('models volume attachment and immutable deployment separately', async () => {
     await program
     assert.equal(named('adenosine-data').inputs.mountPath, '/var/lib/adenosine')
-    assert.match(named('app-deployment').inputs.revision as string, /@sha256:/)
+    assert.match(z.string().parse(named('app-deployment').inputs.revision), /@sha256:/)
   })
 
   test('runs migration before serving and drops privileges after initialization', async () => {
     await program
     const app = named('app')
     assert.deepEqual(app.inputs.preDeployCommand, ['adenosine migrate'])
-    assert.match(app.inputs.startCommand as string, /su adenosine/)
+    assert.match(z.string().parse(app.inputs.startCommand), /su adenosine/)
   })
 
   test('preserves Postgres initialization and invokes the production web executable', async () => {
