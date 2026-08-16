@@ -298,7 +298,10 @@ export type AccessToken = {
     id: string;
     name: string;
     prefix: string;
-    scopes: Array<'repository:read' | 'repository:write'>;
+    scopes: Array<'repository:read' | 'repository:write' | 'repository:status'>;
+    /**
+     * Required when scopes includes repository:status; confines status and check-run writes to this repository.
+     */
     repository_id?: string | null;
     created_at: string;
     expires_at?: string | null;
@@ -311,7 +314,10 @@ export type CreatedAccessToken = AccessToken & {
 
 export type CreateAccessTokenRequest = {
     name: string;
-    scopes: Array<'repository:read' | 'repository:write'>;
+    scopes: Array<'repository:read' | 'repository:write' | 'repository:status'>;
+    /**
+     * Required when scopes includes repository:status; confines status and check-run writes to this repository.
+     */
     repository_id?: string | null;
     expires_at?: string | null;
 };
@@ -391,7 +397,7 @@ export type UpdateNotificationRequest = {
     read: boolean;
 };
 
-export type WebhookEvent = 'push' | 'issue' | 'pull_request' | 'review';
+export type WebhookEvent = 'push' | 'issue' | 'pull_request' | 'review' | 'status' | 'check_run';
 
 export type RepositoryWebhook = {
     id: string;
@@ -445,6 +451,91 @@ export type WebhookDeliveryList = {
 
 export type CreateWebhookRedeliveryRequest = {
     delivery_id: string;
+};
+
+export type CommitSha = string;
+
+export type CommitStatusState = 'pending' | 'success' | 'failure' | 'error';
+
+export type CommitStatus = {
+    id: string;
+    sha: CommitSha;
+    context: string;
+    state: CommitStatusState;
+    description: string;
+    target_url?: string | null;
+    creator_did: string;
+    external_id: string;
+    created_at: string;
+};
+
+export type CreateCommitStatusRequest = {
+    context: string;
+    state: CommitStatusState;
+    description?: string;
+    target_url?: string | null;
+    external_id: string;
+};
+
+export type CommitStatusList = {
+    items: Array<CommitStatus>;
+    page: Page;
+};
+
+export type CombinedCommitStatus = {
+    sha: CommitSha;
+    state: CommitStatusState;
+    statuses: Array<CommitStatus>;
+};
+
+export type CheckRunStatus = 'queued' | 'in_progress' | 'completed';
+
+export type CheckRunConclusion = 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required';
+
+export type CheckRun = {
+    id: string;
+    sha: CommitSha;
+    name: string;
+    external_id: string;
+    creator_did: string;
+    status: CheckRunStatus;
+    conclusion?: CheckRunConclusion | null;
+    details_url?: string | null;
+    output_title: string;
+    output_summary: string;
+    version: number;
+    started_at?: string | null;
+    completed_at?: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
+export type CreateCheckRunRequest = {
+    name: string;
+    external_id: string;
+    status?: CheckRunStatus;
+    conclusion?: CheckRunConclusion | null;
+    details_url?: string | null;
+    output_title?: string;
+    output_summary?: string;
+    started_at?: string | null;
+    completed_at?: string | null;
+};
+
+export type UpdateCheckRunRequest = {
+    expected_version: number;
+    status: CheckRunStatus;
+    conclusion?: CheckRunConclusion | null;
+    details_url?: string | null;
+    output_title?: string;
+    output_summary?: string;
+    started_at?: string | null;
+    completed_at?: string | null;
+};
+
+export type CheckRunList = {
+    items: Array<CheckRun>;
+    page: Page;
 };
 
 export type BranchProtection = {
@@ -5541,6 +5632,323 @@ export type CreateRepositoryWebhookResponses = {
 };
 
 export type CreateRepositoryWebhookResponse = CreateRepositoryWebhookResponses[keyof CreateRepositoryWebhookResponses];
+
+export type ListCommitStatusesData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        sha: CommitSha;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/commits/{sha}/statuses';
+};
+
+export type ListCommitStatusesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListCommitStatusesError = ListCommitStatusesErrors[keyof ListCommitStatusesErrors];
+
+export type ListCommitStatusesResponses = {
+    /**
+     * Commit status history page
+     */
+    200: CommitStatusList;
+};
+
+export type ListCommitStatusesResponse = ListCommitStatusesResponses[keyof ListCommitStatusesResponses];
+
+export type CreateCommitStatusData = {
+    body: CreateCommitStatusRequest;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        sha: CommitSha;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/commits/{sha}/statuses';
+};
+
+export type CreateCommitStatusErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type CreateCommitStatusError = CreateCommitStatusErrors[keyof CreateCommitStatusErrors];
+
+export type CreateCommitStatusResponses = {
+    /**
+     * Idempotent replay of the existing status
+     */
+    200: CommitStatus;
+    /**
+     * Commit status created
+     */
+    201: CommitStatus;
+};
+
+export type CreateCommitStatusResponse = CreateCommitStatusResponses[keyof CreateCommitStatusResponses];
+
+export type GetCombinedCommitStatusData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        sha: CommitSha;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/commits/{sha}/status';
+};
+
+export type GetCombinedCommitStatusErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetCombinedCommitStatusError = GetCombinedCommitStatusErrors[keyof GetCombinedCommitStatusErrors];
+
+export type GetCombinedCommitStatusResponses = {
+    /**
+     * Combined commit status
+     */
+    200: CombinedCommitStatus;
+};
+
+export type GetCombinedCommitStatusResponse = GetCombinedCommitStatusResponses[keyof GetCombinedCommitStatusResponses];
+
+export type ListCheckRunsData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        sha: CommitSha;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/commits/{sha}/check-runs';
+};
+
+export type ListCheckRunsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListCheckRunsError = ListCheckRunsErrors[keyof ListCheckRunsErrors];
+
+export type ListCheckRunsResponses = {
+    /**
+     * Check run page
+     */
+    200: CheckRunList;
+};
+
+export type ListCheckRunsResponse = ListCheckRunsResponses[keyof ListCheckRunsResponses];
+
+export type CreateCheckRunData = {
+    body: CreateCheckRunRequest;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        sha: CommitSha;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/commits/{sha}/check-runs';
+};
+
+export type CreateCheckRunErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type CreateCheckRunError = CreateCheckRunErrors[keyof CreateCheckRunErrors];
+
+export type CreateCheckRunResponses = {
+    /**
+     * Idempotent replay of the existing check run
+     */
+    200: CheckRun;
+    /**
+     * Check run created
+     */
+    201: CheckRun;
+};
+
+export type CreateCheckRunResponse = CreateCheckRunResponses[keyof CreateCheckRunResponses];
+
+export type GetCheckRunData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        check_run: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/check-runs/{check_run}';
+};
+
+export type GetCheckRunErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetCheckRunError = GetCheckRunErrors[keyof GetCheckRunErrors];
+
+export type GetCheckRunResponses = {
+    /**
+     * Check run
+     */
+    200: CheckRun;
+};
+
+export type GetCheckRunResponse = GetCheckRunResponses[keyof GetCheckRunResponses];
+
+export type UpdateCheckRunData = {
+    body: UpdateCheckRunRequest;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        check_run: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/check-runs/{check_run}';
+};
+
+export type UpdateCheckRunErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateCheckRunError = UpdateCheckRunErrors[keyof UpdateCheckRunErrors];
+
+export type UpdateCheckRunResponses = {
+    /**
+     * Check run updated or idempotently replayed
+     */
+    200: CheckRun;
+};
+
+export type UpdateCheckRunResponse = UpdateCheckRunResponses[keyof UpdateCheckRunResponses];
 
 export type ListBranchProtectionsData = {
     body?: never;

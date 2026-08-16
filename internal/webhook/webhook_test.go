@@ -15,6 +15,7 @@ func TestValidateInput(t *testing.T) {
 		wantErr error
 	}{
 		{name: "public HTTPS", url: "https://hooks.example/adenosine", secret: "0123456789abcdef", events: []string{"push"}},
+		{name: "external CI events", url: "https://hooks.example/adenosine", secret: "0123456789abcdef", events: []string{"check_run", "status"}},
 		{name: "HTTP rejected", url: "http://hooks.example/adenosine", secret: "0123456789abcdef", events: []string{"push"}, wantErr: ErrValidation},
 		{name: "loopback rejected", url: "https://127.0.0.1/hook", secret: "0123456789abcdef", events: []string{"push"}, wantErr: ErrValidation},
 		{name: "localhost rejected", url: "https://localhost/hook", secret: "0123456789abcdef", events: []string{"push"}, wantErr: ErrValidation},
@@ -26,6 +27,26 @@ func TestValidateInput(t *testing.T) {
 			err := validateInput(testCase.url, testCase.secret, testCase.events)
 			if !errors.Is(err, testCase.wantErr) {
 				t.Fatalf("validateInput() error = %v, want %v", err, testCase.wantErr)
+			}
+		})
+	}
+}
+
+func TestWebhookEventType(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name      string
+		eventType string
+		want      string
+	}{
+		{name: "status", eventType: "status.created", want: "status"},
+		{name: "check run", eventType: "check_run.updated", want: "check_run"},
+		{name: "unknown", eventType: "release.created"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			if got := webhookEventType(testCase.eventType); got != testCase.want {
+				t.Fatalf("webhookEventType(%q) = %q, want %q", testCase.eventType, got, testCase.want)
 			}
 		})
 	}

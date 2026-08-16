@@ -19,6 +19,8 @@ const (
 	ScopeRepositoryRead = "repository:read"
 	// ScopeRepositoryWrite permits repository ref mutations when local authorization also allows them.
 	ScopeRepositoryWrite = "repository:write"
+	// ScopeRepositoryStatus permits a repository-scoped external CI provider to report statuses.
+	ScopeRepositoryStatus = "repository:status"
 
 	tokenPrefix = "adn_pat_"
 )
@@ -186,13 +188,16 @@ func (input CreateTokenInput) validate(now time.Time) error {
 	}
 	seen := make(map[string]struct{}, len(input.Scopes))
 	for _, scope := range input.Scopes {
-		if scope != ScopeRepositoryRead && scope != ScopeRepositoryWrite {
+		if scope != ScopeRepositoryRead && scope != ScopeRepositoryWrite && scope != ScopeRepositoryStatus {
 			return fmt.Errorf("unsupported scope %q", scope)
 		}
 		if _, exists := seen[scope]; exists {
 			return fmt.Errorf("duplicate scope %q", scope)
 		}
 		seen[scope] = struct{}{}
+	}
+	if _, reportsStatuses := seen[ScopeRepositoryStatus]; reportsStatuses && input.RepositoryID == nil {
+		return fmt.Errorf("repository:status scope requires a repository_id")
 	}
 	if input.ExpiresAt != nil && !input.ExpiresAt.After(now) {
 		return fmt.Errorf("expiry must be in the future")
