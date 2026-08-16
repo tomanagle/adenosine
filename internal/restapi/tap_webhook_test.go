@@ -61,7 +61,7 @@ func TestTapWebhookHandler(t *testing.T) {
 				configuredPassword = ""
 			}
 			processor := &fakeFederationProcessor{err: testCase.processorErr}
-			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Dependencies{
+			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Observability{}, Dependencies{
 				Federation: &FederationDependencies{Processor: processor, TapAdminPassword: configuredPassword},
 			}, nil)
 			if err != nil {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	dbgen "github.com/adenosine-dev/adenosine/internal/database/generated"
 	"github.com/jackc/pgx/v5"
@@ -19,11 +20,13 @@ import (
 // DB is the process-wide PostgreSQL pool.
 type DB struct {
 	pool         *pgxpool.Pool
+	metrics      CallMetrics
+	clock        clock
 	registration metric.Registration
 }
 
 // Open constructs and verifies a PostgreSQL pool.
-func Open(ctx context.Context, databaseURL string) (*DB, error) {
+func Open(ctx context.Context, databaseURL string, metrics CallMetrics) (*DB, error) {
 	config, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("parse postgres pool configuration: %w", err)
@@ -33,11 +36,11 @@ func Open(ctx context.Context, databaseURL string) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create postgres pool: %w", err)
 	}
-	if err := pool.Ping(ctx); err != nil {
+	db := &DB{pool: pool, metrics: metrics, clock: systemClock{}}
+	if err := db.Ping(ctx); err != nil {
 		pool.Close()
 		return nil, fmt.Errorf("ping postgres: %w", err)
 	}
-	db := &DB{pool: pool}
 	if err := db.registerMetrics(); err != nil {
 		pool.Close()
 		return nil, fmt.Errorf("register postgres pool metrics: %w", err)
@@ -47,7 +50,10 @@ func Open(ctx context.Context, databaseURL string) (*DB, error) {
 
 // Ping verifies that PostgreSQL can accept a query.
 func (db *DB) Ping(ctx context.Context) error {
-	if err := db.pool.Ping(ctx); err != nil {
+	started := db.clock.Now()
+	err := db.pool.Ping(ctx)
+	db.recordCall(ctx, "Ping", "select", started, err)
+	if err != nil {
 		return fmt.Errorf("ping postgres: %w", err)
 	}
 	return nil
@@ -55,12 +61,18 @@ func (db *DB) Ping(ctx context.Context) error {
 
 // Queries returns the generated typed query set bound to this pool.
 func (db *DB) Queries() *dbgen.Queries {
-	return dbgen.New(db.pool)
+	return dbgen.New(instrumentedDBTX{db: db.pool, metrics: db.metrics, clock: db.clock})
 }
 
 // Begin starts a transaction for components that require atomic generated queries.
 func (db *DB) Begin(ctx context.Context) (pgx.Tx, error) {
-	return db.pool.Begin(ctx)
+	started := db.clock.Now()
+	tx, err := db.pool.Begin(ctx)
+	db.recordCall(ctx, "Begin", "begin", started, err)
+	if err != nil {
+		return nil, err
+	}
+	return instrumentedTx{Tx: tx, metrics: db.metrics, clock: db.clock}, nil
 }
 
 // Close releases the PostgreSQL pool.
@@ -69,6 +81,12 @@ func (db *DB) Close() {
 		_ = db.registration.Unregister()
 	}
 	db.pool.Close()
+}
+
+func (db *DB) recordCall(ctx context.Context, caller, operation string, started time.Time, err error) {
+	if db.metrics != nil {
+		db.metrics.RecordDatabaseCall(ctx, caller, operation, db.clock.Now().Sub(started), err)
+	}
 }
 
 func (db *DB) registerMetrics() error {

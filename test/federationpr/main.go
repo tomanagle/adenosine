@@ -212,7 +212,7 @@ func create(ctx context.Context) error {
 }
 
 func fetch(ctx context.Context) error {
-	db, err := database.Open(ctx, requiredEnv("DATABASE_URL"))
+	db, err := database.Open(ctx, requiredEnv("DATABASE_URL"), nil)
 	if err != nil {
 		return fmt.Errorf("open A database: %w", err)
 	}
@@ -274,7 +274,7 @@ func fetch(ctx context.Context) error {
 }
 
 func merge(ctx context.Context) error {
-	db, err := database.Open(ctx, requiredEnv("DATABASE_URL_A"))
+	db, err := database.Open(ctx, requiredEnv("DATABASE_URL_A"), nil)
 	if err != nil {
 		return fmt.Errorf("open A database: %w", err)
 	}
@@ -302,7 +302,7 @@ func merge(ctx context.Context) error {
 		pullrequest.NewPostgresStore(db.Queries()), nativeGit, publisher, fixedClock{}, authStore, event.NewWriter(db.Queries()),
 	)
 	const origin = "http://adenosine-a:8080"
-	server, err := restapi.NewServer("", origin, db, slog.New(slog.NewTextHandler(io.Discard, nil)), restapi.Dependencies{
+	server, err := restapi.NewServer("", origin, db, slog.New(slog.NewTextHandler(io.Discard, nil)), restapi.Observability{}, restapi.Dependencies{
 		Sessions: auth.NewSessionAuthenticator(authStore, fixedClock{}), PullRequests: pullRequests,
 	}, nil)
 	if err != nil {
@@ -482,7 +482,7 @@ type databaseCase struct {
 func verifyDatabases(ctx context.Context, testCases []databaseCase, expectation projectionExpectation) error {
 	var want *projection
 	for _, testCase := range testCases {
-		db, err := database.Open(ctx, testCase.url)
+		db, err := database.Open(ctx, testCase.url, nil)
 		if err != nil {
 			return fmt.Errorf("open %s database: %w", testCase.name, err)
 		}
