@@ -218,7 +218,7 @@ export const zStartAtProtoLoginRequest = z.object({
     identifier: z.string().min(1).max(2048)
 });
 
-export const zStartAtProtoLoginResponse = z.object({
+export const zAtProtoLoginStart = z.object({
     authorization_url: z.url()
 });
 
@@ -1144,6 +1144,12 @@ export const zPullRequestMerge = z.object({
     status: zPullRequestStatusEnvelope
 });
 
+export const zPullRequestCheckout = z.object({
+    git_https_url: z.url(),
+    source_branch: z.string().min(1),
+    head_sha: z.string().regex(/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/)
+});
+
 export const zComment = z.object({
     uri: z.string(),
     cid: z.string(),
@@ -1536,6 +1542,11 @@ export const zMutationOrigin = z.url();
  */
 export const zExactOrigin = z.url();
 
+/**
+ * Required for cookie-authenticated mutations and ignored for personal access token authentication. When required, it must exactly match the configured Adenosine browser-serialized origin: scheme and host, with the default port omitted and no path or trailing slash.
+ */
+export const zSessionMutationOrigin = z.url();
+
 export const zIdempotencyKey = z.string().min(1).max(255);
 
 export const zLimit = z.int().gte(1).lte(100).default(30);
@@ -1646,7 +1657,7 @@ export const zStartAtProtoLoginBody = zStartAtProtoLoginRequest;
 /**
  * Authorization URL
  */
-export const zStartAtProtoLoginResponse2 = zStartAtProtoLoginResponse;
+export const zStartAtProtoLoginResponse = zAtProtoLoginStart;
 
 /**
  * Session revoked
@@ -2564,6 +2575,15 @@ export const zGetPullRequestDiffQuery = z.object({
  * Verified bounded pull request diff
  */
 export const zGetPullRequestDiffResponse = zPullRequestDiff;
+
+export const zGetPullRequestCheckoutQuery = z.object({
+    pull_request_uri: z.string().min(1)
+});
+
+/**
+ * Canonical Git checkout target
+ */
+export const zGetPullRequestCheckoutResponse = zPullRequestCheckout;
 
 export const zListPullRequestReviewsQuery = z.object({
     pull_request_uri: z.string().min(1),

@@ -80,7 +80,7 @@ func TestNetworkRepositoryDiscoveryEndpoint(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			store := &restDiscoveryStore{repositories: testCase.repositories}
-			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Dependencies{Discovery: federation.NewDiscoveryService(store)}, nil)
+			server, err := NewServer(":0", "http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Observability{}, Dependencies{Discovery: federation.NewDiscoveryService(store)}, nil)
 			if err != nil {
 				t.Fatalf("create server: %v", err)
 			}

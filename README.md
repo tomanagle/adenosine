@@ -17,6 +17,7 @@ It combines a Go API and Git server, PostgreSQL projections, AT Protocol federat
 - Secure cross-instance pull request fetches, reviews, merge commits, and squash merges
 - PostgreSQL outbox events, Tap ingestion, Electric repository sync, and OpenTelemetry export
 - Generated Go server bindings and a public TypeScript API client
+- Official public-API CLI for repository, issue, and pull request workflows
 
 ## Development
 
@@ -50,6 +51,9 @@ The generated development defaults are:
 - PostgreSQL: `localhost:5432`
 
 Your `.env.local` is the source of truth when ports are overridden. Electric is intentionally internal and is exposed to clients only through documented API sync routes.
+
+The same binary includes the official command-line client. See the [CLI guide](docs/cli.md)
+for secure token login and repository, issue, and pull request commands.
 
 ## Development Commands
 

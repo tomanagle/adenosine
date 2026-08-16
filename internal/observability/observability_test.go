@@ -2,14 +2,133 @@ package observability
 
 import (
 	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"go.opentelemetry.io/otel/attribute"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.34.0"
 	"go.opentelemetry.io/otel/trace"
 )
+
+func TestMetricsRecordDurationsAndOutcomes(t *testing.T) {
+	cause := errors.New("failed")
+	testCases := []struct {
+		name       string
+		metricName string
+		record     func(*Metrics)
+		want       map[attribute.Key]string
+	}{
+		{name: "HTTP success includes client errors", metricName: "http.server.request.duration", record: func(metrics *Metrics) {
+			metrics.RecordHTTPRequest(context.Background(), http.MethodGet, "GET /api/v1/profiles/{did}", http.StatusNotFound, 25*time.Millisecond)
+		}, want: map[attribute.Key]string{"http.request.method": http.MethodGet, "http.route": "GET /api/v1/profiles/{did}", "outcome": outcomeSuccess}},
+		{name: "HTTP server error", metricName: "http.server.request.duration", record: func(metrics *Metrics) {
+			metrics.RecordHTTPRequest(context.Background(), http.MethodPost, "POST /api/v1/repositories", http.StatusServiceUnavailable, 50*time.Millisecond)
+		}, want: map[attribute.Key]string{"error.type": "503", "outcome": outcomeError}},
+		{name: "unknown HTTP method is bounded", metricName: "http.server.request.duration", record: func(metrics *Metrics) {
+			metrics.RecordHTTPRequest(context.Background(), "BREW", "unmatched", http.StatusNotFound, time.Millisecond)
+		}, want: map[attribute.Key]string{"http.request.method": "_OTHER", "outcome": outcomeSuccess}},
+		{name: "database success", metricName: "db.client.operation.duration", record: func(metrics *Metrics) {
+			metrics.RecordDatabaseCall(context.Background(), "GetProfile", "select", 5*time.Millisecond, nil)
+		}, want: map[attribute.Key]string{"adenosine.db.caller": "GetProfile", "db.operation.name": "select", "db.system.name": "postgresql", "outcome": outcomeSuccess}},
+		{name: "database error", metricName: "db.client.operation.duration", record: func(metrics *Metrics) {
+			metrics.RecordDatabaseCall(context.Background(), "UpdateProfile", "update", time.Second, cause)
+		}, want: map[attribute.Key]string{"error.type": "database_error", "outcome": outcomeError}},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			reader := sdkmetric.NewManualReader()
+			provider := sdkmetric.NewMeterProvider(
+				sdkmetric.WithReader(reader),
+				sdkmetric.WithView(durationHistogramView("http.server.request.duration", httpDurationBoundaries,
+					"http.request.method", "http.route", "http.response.status_code", "error.type", "outcome")),
+				sdkmetric.WithView(durationHistogramView("db.client.operation.duration", databaseDurationBoundaries,
+					"db.system.name", "db.operation.name", "adenosine.db.caller", "error.type", "outcome")),
+			)
+			t.Cleanup(func() { _ = provider.Shutdown(context.Background()) })
+			metrics, err := NewMetrics(provider.Meter("test"))
+			if err != nil {
+				t.Fatalf("NewMetrics() error = %v", err)
+			}
+			testCase.record(metrics)
+
+			var collected metricdata.ResourceMetrics
+			if err := reader.Collect(context.Background(), &collected); err != nil {
+				t.Fatalf("collect metrics: %v", err)
+			}
+			point, unit := histogramPoint(collected, testCase.metricName)
+			if point == nil {
+				t.Fatalf("metric %q has no histogram point", testCase.metricName)
+			}
+			if unit != "s" || point.Count != 1 || len(point.Bounds) == 0 {
+				t.Fatalf("metric unit/count/bounds = %q/%d/%v", unit, point.Count, point.Bounds)
+			}
+			for key, want := range testCase.want {
+				got, found := point.Attributes.Value(key)
+				if !found || got.Emit() != want {
+					t.Errorf("attribute %q = %q, want %q", key, got.Emit(), want)
+				}
+			}
+		})
+	}
+}
+
+func TestPrometheusHandlerExposesApplicationHistograms(t *testing.T) {
+	testCases := []struct{ name string }{{name: "OpenMetrics scrape"}}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+			telemetry, err := setup(context.Background())
+			if err != nil {
+				t.Fatalf("setup() error = %v", err)
+			}
+			t.Cleanup(func() { _ = telemetry.Shutdown(context.Background()) })
+			telemetry.Metrics.RecordHTTPRequest(context.Background(), http.MethodGet, "GET /health/ready", http.StatusOK, 10*time.Millisecond)
+			telemetry.Metrics.RecordDatabaseCall(context.Background(), "Ping", "select", 2*time.Millisecond, nil)
+
+			request := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+			request.Header.Set("Accept", "application/openmetrics-text")
+			response := httptest.NewRecorder()
+			telemetry.PrometheusHandler.ServeHTTP(response, request)
+			body := response.Body.String()
+			if response.Code != http.StatusOK {
+				t.Fatalf("scrape status = %d: %s", response.Code, body)
+			}
+			for _, fragment := range []string{
+				"http_server_request_duration_seconds_bucket",
+				`http_route="GET /health/ready"`,
+				`outcome="success"`,
+				"db_client_operation_duration_seconds_bucket",
+				`adenosine_db_caller="Ping"`,
+			} {
+				if !strings.Contains(body, fragment) {
+					t.Errorf("scrape does not contain %q", fragment)
+				}
+			}
+		})
+	}
+}
+
+func histogramPoint(metrics metricdata.ResourceMetrics, name string) (*metricdata.HistogramDataPoint[float64], string) {
+	for _, scope := range metrics.ScopeMetrics {
+		for _, current := range scope.Metrics {
+			if current.Name != name {
+				continue
+			}
+			if histogram, ok := current.Data.(metricdata.Histogram[float64]); ok && len(histogram.DataPoints) != 0 {
+				return &histogram.DataPoints[0], current.Unit
+			}
+		}
+	}
+	return nil, ""
+}
 
 func TestSamplerFromEnv(t *testing.T) {
 	testCases := []struct {

@@ -89,6 +89,14 @@ type Result struct {
 	Diff         gitservice.Diff
 }
 
+// Checkout identifies the public Git source and immutable head for a pull
+// request checkout without exposing projection internals.
+type Checkout struct {
+	GitHTTPSURL  string
+	SourceBranch string
+	HeadSHA      string
+}
+
 // ProjectedPullRequest is the current locally indexed pull request and authoritative state.
 type ProjectedPullRequest struct {
 	PullRequest
@@ -110,6 +118,16 @@ type Projection struct {
 type ProjectedReview struct {
 	Review
 	IndexedAt time.Time
+}
+
+// Checkout returns the canonical HTTPS source and immutable head required by
+// standard Git clients.
+func (service *Service) Checkout(ctx context.Context, pullRequestURI string) (Checkout, error) {
+	target, err := service.store.GetFetchTarget(ctx, pullRequestURI)
+	if err != nil {
+		return Checkout{}, projectionError("load pull request checkout", err)
+	}
+	return Checkout{GitHTTPSURL: target.SourceURL, SourceBranch: target.SourceBranch, HeadSHA: target.HeadSHA}, nil
 }
 
 // CreateInput contains contributor-authored pull request content.

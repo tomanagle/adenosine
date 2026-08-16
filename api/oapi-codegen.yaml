@@ -2,4 +2,5 @@ package: generated
 output: api/generated/go/server.gen.go
 generate:
   models: true
+  client: true
   std-http-server: true

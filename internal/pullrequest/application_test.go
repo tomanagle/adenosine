@@ -11,6 +11,7 @@ import (
 )
 
 type applicationStore struct {
+	fetch        fetchTarget
 	projection   Projection
 	pullRequest  ProjectedPullRequest
 	targets      repositoryTargets
@@ -22,7 +23,30 @@ type applicationStore struct {
 }
 
 func (store *applicationStore) GetFetchTarget(context.Context, string) (fetchTarget, error) {
-	return fetchTarget{}, store.err
+	return store.fetch, store.err
+}
+
+func TestApplicationCheckout(t *testing.T) {
+	cause := errors.New("failed")
+	testCases := []struct {
+		name    string
+		store   *applicationStore
+		want    Checkout
+		wantErr error
+	}{
+		{name: "returns public source", store: &applicationStore{fetch: fetchTarget{SourceURL: "https://source.example/repo.git", SourceBranch: "feature", HeadSHA: testSHA1}}, want: Checkout{GitHTTPSURL: "https://source.example/repo.git", SourceBranch: "feature", HeadSHA: testSHA1}},
+		{name: "not found", store: &applicationStore{err: ErrNotFound}, wantErr: ErrNotFound},
+		{name: "store error", store: &applicationStore{err: cause}, wantErr: cause},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			service := NewApplicationService(testCase.store, nil, nil, applicationClock{}, nil, nil)
+			got, err := service.Checkout(context.Background(), testPullRequestURI)
+			if !errors.Is(err, testCase.wantErr) || got != testCase.want {
+				t.Fatalf("Checkout() = %#v, %v, want %#v, %v", got, err, testCase.want, testCase.wantErr)
+			}
+		})
+	}
 }
 func (store *applicationStore) GetMergeTarget(context.Context, string) (mergeTarget, error) {
 	return mergeTarget{}, store.err

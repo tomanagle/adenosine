@@ -88,7 +88,7 @@ func run(ctx context.Context) error {
 	if databaseURL == "" {
 		return fmt.Errorf("DATABASE_URL is required")
 	}
-	db, err := database.Open(ctx, databaseURL)
+	db, err := database.Open(ctx, databaseURL, nil)
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}

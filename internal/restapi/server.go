@@ -14,9 +14,7 @@ import (
 	generated "github.com/adenosine-dev/adenosine/api/generated/go"
 	"github.com/adenosine-dev/adenosine/internal/requestcontext"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -24,19 +22,26 @@ type readinessChecker interface {
 	Ping(context.Context) error
 }
 
-// NewServer creates the public HTTP server with health and telemetry middleware.
-func NewServer(addr, baseURL string, readiness readinessChecker, logger *slog.Logger, deps Dependencies, gitHTTP http.Handler) (*http.Server, error) {
-	meter := otel.Meter("github.com/adenosine-dev/adenosine/internal/restapi")
-	requestCount, err := meter.Int64Counter("adenosine.http.server.requests")
-	if err != nil {
-		return nil, err
-	}
-	requestDuration, err := meter.Float64Histogram("adenosine.http.server.duration", metric.WithUnit("s"))
-	if err != nil {
-		return nil, err
-	}
+// RequestMetrics is implemented by process telemetry and by small fakes in
+// REST API tests.
+type RequestMetrics interface {
+	RecordHTTPRequest(context.Context, string, string, int, time.Duration)
+}
 
+// Observability contains the protocol-boundary dependencies used by the HTTP
+// server. A zero value disables metrics, which keeps focused handler tests
+// independent of the concrete exporter.
+type Observability struct {
+	Requests   RequestMetrics
+	Prometheus http.Handler
+}
+
+// NewServer creates the public HTTP server with health and telemetry middleware.
+func NewServer(addr, baseURL string, readiness readinessChecker, logger *slog.Logger, observability Observability, deps Dependencies, gitHTTP http.Handler) (*http.Server, error) {
 	mux := http.NewServeMux()
+	if observability.Prometheus != nil {
+		mux.Handle("GET /metrics", observability.Prometheus)
+	}
 	mux.HandleFunc("GET /openapi.json", serveOpenAPI("application/json"))
 	mux.HandleFunc("GET /openapi.yaml", serveOpenAPI("application/yaml"))
 	mux.HandleFunc("GET /docs/api", func(w http.ResponseWriter, _ *http.Request) {
@@ -60,8 +65,11 @@ func NewServer(addr, baseURL string, readiness readinessChecker, logger *slog.Lo
 		mux.Handle("/", gitHTTP)
 	}
 
-	rootHandler := requestMiddleware(logger, requestCount, requestDuration, mux)
-	rootHandler = otelhttp.NewHandler(rootHandler, "http.server")
+	rootHandler := requestMiddleware(logger, observability.Requests, mux)
+	// Request metrics are recorded by requestMiddleware so they include the
+	// bounded outcome dimension. Disable otelhttp's duplicate instruments while
+	// retaining its server spans and propagation.
+	rootHandler = otelhttp.NewHandler(rootHandler, "http.server", otelhttp.WithMeterProvider(metricnoop.NewMeterProvider()))
 	return &http.Server{
 		Addr:              addr,
 		Handler:           rootHandler,
@@ -90,7 +98,7 @@ const apiDocsHTML = `<!doctype html>
 </body>
 </html>`
 
-func requestMiddleware(logger *slog.Logger, count metric.Int64Counter, duration metric.Float64Histogram, next http.Handler) http.Handler {
+func requestMiddleware(logger *slog.Logger, metrics RequestMetrics, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		started := time.Now()
 		requestID := newRequestID()
@@ -105,14 +113,10 @@ func requestMiddleware(logger *slog.Logger, count metric.Int64Counter, duration 
 		if route == "" {
 			route = "unmatched"
 		}
-
-		attrs := metric.WithAttributes(
-			attribute.String("http.request.method", r.Method),
-			attribute.Int("http.response.status_code", response.status),
-			attribute.String("http.route", route),
-		)
-		count.Add(request.Context(), 1, attrs)
-		duration.Record(request.Context(), time.Since(started).Seconds(), attrs)
+		elapsed := time.Since(started)
+		if metrics != nil {
+			metrics.RecordHTTPRequest(request.Context(), r.Method, route, response.status, elapsed)
+		}
 
 		spanContext := trace.SpanContextFromContext(request.Context())
 		logger.InfoContext(request.Context(), "http request",
@@ -123,7 +127,7 @@ func requestMiddleware(logger *slog.Logger, count metric.Int64Counter, duration 
 			"method", r.Method,
 			"route", route,
 			"status", response.status,
-			"duration_ms", time.Since(started).Milliseconds(),
+			"duration_ms", elapsed.Milliseconds(),
 		)
 	})
 }
