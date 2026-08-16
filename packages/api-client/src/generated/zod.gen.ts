@@ -969,6 +969,45 @@ export const zPutHiddenRecordRequest = z.object({
     record_uri: z.string().min(1)
 });
 
+export const zRelease = z.object({
+    id: z.uuid(),
+    tag_name: z.string(),
+    target_sha: z.string(),
+    name: z.string(),
+    body: z.string(),
+    state: z.enum(['draft', 'published']),
+    prerelease: z.boolean(),
+    created_by_did: z.string(),
+    created_at: z.iso.datetime({ offset: true }),
+    updated_at: z.iso.datetime({ offset: true }),
+    published_at: z.iso.datetime({ offset: true }).nullish()
+});
+
+export const zCreateReleaseRequest = z.object({
+    tag_name: z.string().min(1).max(1024),
+    name: z.string().min(1).max(255),
+    body: z.string().max(1048576),
+    draft: z.boolean(),
+    prerelease: z.boolean()
+});
+
+export const zUpdateReleaseRequest = z.object({
+    name: z.string().min(1).max(255),
+    body: z.string().max(1048576),
+    draft: z.boolean(),
+    prerelease: z.boolean()
+});
+
+export const zReleaseAsset = z.object({
+    id: z.uuid(),
+    name: z.string(),
+    content_type: z.string(),
+    size_bytes: z.coerce.bigint().gte(BigInt(0)).max(BigInt('9223372036854775807'), { error: 'Invalid value: Expected int64 to be <= 9223372036854775807' }),
+    sha256: z.string().regex(/^[0-9a-f]{64}$/),
+    download_url: z.string(),
+    created_at: z.iso.datetime({ offset: true })
+});
+
 export const zBranch = z.object({
     name: z.string(),
     sha: z.string(),
@@ -1193,6 +1232,17 @@ export const zCommentList = z.object({
     page: zPage
 });
 
+export const zReleaseList = z.object({
+    items: z.array(zRelease),
+    page: zPage,
+    viewer_can_manage: z.boolean()
+});
+
+export const zReleaseAssetList = z.object({
+    items: z.array(zReleaseAsset),
+    page: zPage
+});
+
 export const zBranchList = z.object({
     items: z.array(zBranch),
     page: zPage
@@ -1246,6 +1296,10 @@ export const zIdempotencyKey = z.string().min(1).max(255);
 export const zLimit = z.int().gte(1).lte(100).default(30);
 
 export const zCursor = z.string();
+
+export const zReleaseId = z.uuid();
+
+export const zReleaseAssetId = z.uuid();
 
 /**
  * UTF-8 text matched against fields documented by the operation
@@ -2584,6 +2638,129 @@ export const zCreateWebhookRedeliveryPath = z.object({
  * Redelivery queued
  */
 export const zCreateWebhookRedeliveryResponse = zWebhookDelivery;
+
+export const zListRepositoryReleasesPath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+export const zListRepositoryReleasesQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Release page
+ */
+export const zListRepositoryReleasesResponse = zReleaseList;
+
+export const zCreateRepositoryReleaseBody = zCreateReleaseRequest;
+
+export const zCreateRepositoryReleasePath = z.object({
+    owner: z.string().min(1),
+    repo: zRepositorySlug
+});
+
+/**
+ * Release created
+ */
+export const zCreateRepositoryReleaseResponse = zRelease;
+
+export const zDeleteRepositoryReleasePath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    release: z.uuid()
+});
+
+/**
+ * Release deleted
+ */
+export const zDeleteRepositoryReleaseResponse = z.void();
+
+export const zGetRepositoryReleasePath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    release: z.uuid()
+});
+
+/**
+ * Release
+ */
+export const zGetRepositoryReleaseResponse = zRelease;
+
+export const zUpdateRepositoryReleaseBody = zUpdateReleaseRequest;
+
+export const zUpdateRepositoryReleasePath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    release: z.uuid()
+});
+
+/**
+ * Release updated
+ */
+export const zUpdateRepositoryReleaseResponse = zRelease;
+
+export const zListRepositoryReleaseAssetsPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    release: z.uuid()
+});
+
+export const zListRepositoryReleaseAssetsQuery = z.object({
+    limit: z.int().gte(1).lte(100).optional().default(30),
+    cursor: z.string().optional()
+});
+
+/**
+ * Release asset page
+ */
+export const zListRepositoryReleaseAssetsResponse = zReleaseAssetList;
+
+export const zUploadRepositoryReleaseAssetBody = z.string();
+
+export const zUploadRepositoryReleaseAssetHeaders = z.object({
+    'X-Asset-Content-Type': z.string().min(3).max(255)
+});
+
+export const zUploadRepositoryReleaseAssetPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    release: z.uuid()
+});
+
+export const zUploadRepositoryReleaseAssetQuery = z.object({
+    name: z.string().min(1).max(255)
+});
+
+/**
+ * Asset uploaded
+ */
+export const zUploadRepositoryReleaseAssetResponse = zReleaseAsset;
+
+export const zDeleteRepositoryReleaseAssetPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    release: z.uuid(),
+    asset: z.uuid()
+});
+
+/**
+ * Asset deleted
+ */
+export const zDeleteRepositoryReleaseAssetResponse = z.void();
+
+export const zDownloadRepositoryReleaseAssetPath = z.object({
+    owner: z.string(),
+    repo: zRepositorySlug,
+    release: z.uuid(),
+    asset: z.uuid()
+});
+
+/**
+ * Raw asset bytes
+ */
+export const zDownloadRepositoryReleaseAssetResponse = z.string();
 
 export const zListRepositoryBranchesPath = z.object({
     owner: z.string().min(1),

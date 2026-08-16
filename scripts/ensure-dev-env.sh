@@ -48,6 +48,7 @@ oauth_state_key="$(openssl rand -base64 32)"
   printf 'ADENOSINE_BASE_URL=http://127.0.0.1:8080\n'
   printf 'ADENOSINE_LISTEN_ADDR=:8080\n'
   printf 'ADENOSINE_REPO_ROOT=/var/lib/adenosine/repos\n'
+  printf 'ADENOSINE_RELEASE_ASSET_ROOT=/var/lib/adenosine/state/release-assets\n'
   printf 'ADENOSINE_GIT_BINARY=git\n'
   printf 'ADENOSINE_HTTP_PORT=8080\n'
   printf 'ADENOSINE_SSH_LISTEN_ADDR=:2222\n'

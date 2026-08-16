@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { acceptOrganizationInvitation, beginPasskeyLogin, beginPasskeyRegistration, completeAtProtoLogin, createAccessToken, createBranchProtection, createIssue, createIssueComment, createOrganization, createOrganizationTeam, createPullRequest, createPullRequestReview, createRepository, createRepositoryFork, createRepositoryWebhook, createSshKey, createWebhookRedelivery, deleteBlockedDid, deleteBranchProtection, deleteHiddenRecord, deleteIssueComment, deleteNotification, deleteOrganizationTeam, deletePasskey, deleteRepository, deleteRepositoryWebhook, deleteStar, getBranchProtection, getCurrentIdentity, getDeveloperProfile, getIssue, getIssueComments, getIssues, getLiveness, getModeration, getOAuthClientMetadata, getOrganization, getOwner, getPullRequest, getPullRequestDiff, getReadiness, getRepository, getRepositoryBlob, getRepositoryCommit, getRepositoryDeletion, getRepositoryDiff, getRepositoryMergeBase, getRepositoryTree, getRepositoryWebhook, getStars, getSyncIssueComments, getSyncIssues, getSyncProfiles, getSyncPullRequestReviews, getSyncPullRequests, getSyncRepositories, getSyncStars, inviteOrganizationMember, listAccessTokens, listBranchProtections, listNetworkRepositories, listNotifications, listOrganizationAuditEvents, listOrganizationInvitations, listOrganizationInvitationsForCurrentUser, listOrganizationMembers, listOrganizationRepositories, listOrganizationRepositoryCollaborators, listOrganizations, listOrganizationTeamMembers, listOrganizationTeamRepositories, listOrganizationTeams, listPasskeys, listPullRequestReviews, listPullRequests, listRepositoryBranches, listRepositoryCommits, listRepositoryForks, listRepositoryTags, listRepositoryWebhooks, listSshKeys, listWebhookDeliveries, logout, mergePullRequest, type Options, postSyncIssueComments, postSyncIssues, postSyncProfiles, postSyncPullRequestReviews, postSyncPullRequests, postSyncRepositories, postSyncStars, putBlockedDid, putHiddenRecord, putIssueStatus, putOrganizationRepositoryCollaborator, putOrganizationTeamMember, putOrganizationTeamRepository, putPullRequestStatus, putStar, removeOrganizationMember, removeOrganizationRepositoryCollaborator, removeOrganizationTeamMember, removeOrganizationTeamRepository, restoreRepositoryDeletion, revokeAccessToken, revokeOrganizationInvitation, revokeSshKey, searchProfiles, searchRepositories, startAtProtoLogin, syncRepositoryFork, updateBranchProtection, updateDeveloperProfile, updateNotification, updateOrganization, updateOrganizationMember, updateOrganizationTeam, updateRepository, updateRepositoryWebhook, verifyPasskeyLogin, verifyPasskeyRegistration } from '../sdk.gen';
-import type { AcceptOrganizationInvitationData, AcceptOrganizationInvitationError, AcceptOrganizationInvitationResponse, BeginPasskeyLoginData, BeginPasskeyLoginError, BeginPasskeyLoginResponse, BeginPasskeyRegistrationData, BeginPasskeyRegistrationError, BeginPasskeyRegistrationResponse, CompleteAtProtoLoginData, CompleteAtProtoLoginError, CreateAccessTokenData, CreateAccessTokenError, CreateAccessTokenResponse, CreateBranchProtectionData, CreateBranchProtectionError, CreateBranchProtectionResponse, CreateIssueCommentData, CreateIssueCommentError, CreateIssueCommentResponse, CreateIssueData, CreateIssueError, CreateIssueResponse, CreateOrganizationData, CreateOrganizationError, CreateOrganizationResponse, CreateOrganizationTeamData, CreateOrganizationTeamError, CreateOrganizationTeamResponse, CreatePullRequestData, CreatePullRequestError, CreatePullRequestResponse, CreatePullRequestReviewData, CreatePullRequestReviewError, CreatePullRequestReviewResponse, CreateRepositoryData, CreateRepositoryError, CreateRepositoryForkData, CreateRepositoryForkError, CreateRepositoryForkResponse, CreateRepositoryResponse, CreateRepositoryWebhookData, CreateRepositoryWebhookError, CreateRepositoryWebhookResponse, CreateSshKeyData, CreateSshKeyError, CreateSshKeyResponse, CreateWebhookRedeliveryData, CreateWebhookRedeliveryError, CreateWebhookRedeliveryResponse, DeleteBlockedDidData, DeleteBlockedDidError, DeleteBlockedDidResponse, DeleteBranchProtectionData, DeleteBranchProtectionError, DeleteBranchProtectionResponse, DeleteHiddenRecordData, DeleteHiddenRecordError, DeleteHiddenRecordResponse, DeleteIssueCommentData, DeleteIssueCommentError, DeleteNotificationData, DeleteNotificationError, DeleteNotificationResponse, DeleteOrganizationTeamData, DeleteOrganizationTeamError, DeleteOrganizationTeamResponse, DeletePasskeyData, DeletePasskeyError, DeletePasskeyResponse, DeleteRepositoryData, DeleteRepositoryError, DeleteRepositoryResponse, DeleteRepositoryWebhookData, DeleteRepositoryWebhookError, DeleteRepositoryWebhookResponse, DeleteStarData, DeleteStarError, GetBranchProtectionData, GetBranchProtectionError, GetBranchProtectionResponse, GetCurrentIdentityData, GetCurrentIdentityError, GetCurrentIdentityResponse, GetDeveloperProfileData, GetDeveloperProfileError, GetDeveloperProfileResponse, GetIssueCommentsData, GetIssueCommentsError, GetIssueCommentsResponse, GetIssueData, GetIssueError, GetIssueResponse, GetIssuesData, GetIssuesError, GetIssuesResponse, GetLivenessData, GetLivenessResponse, GetModerationData, GetModerationError, GetModerationResponse, GetOAuthClientMetadataData, GetOAuthClientMetadataResponse, GetOrganizationData, GetOrganizationError, GetOrganizationResponse, GetOwnerData, GetOwnerError, GetOwnerResponse, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffError, GetPullRequestDiffResponse, GetPullRequestError, GetPullRequestResponse, GetReadinessData, GetReadinessError, GetReadinessResponse, GetRepositoryBlobData, GetRepositoryBlobError, GetRepositoryBlobResponse, GetRepositoryCommitData, GetRepositoryCommitError, GetRepositoryCommitResponse, GetRepositoryData, GetRepositoryDeletionData, GetRepositoryDeletionError, GetRepositoryDeletionResponse, GetRepositoryDiffData, GetRepositoryDiffError, GetRepositoryDiffResponse, GetRepositoryError, GetRepositoryMergeBaseData, GetRepositoryMergeBaseError, GetRepositoryMergeBaseResponse, GetRepositoryResponse, GetRepositoryTreeData, GetRepositoryTreeError, GetRepositoryTreeResponse, GetRepositoryWebhookData, GetRepositoryWebhookError, GetRepositoryWebhookResponse, GetStarsData, GetStarsError, GetStarsResponse, GetSyncIssueCommentsData, GetSyncIssueCommentsError, GetSyncIssueCommentsResponse, GetSyncIssuesData, GetSyncIssuesError, GetSyncIssuesResponse, GetSyncProfilesData, GetSyncProfilesError, GetSyncProfilesResponse, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsError, GetSyncPullRequestReviewsResponse, GetSyncPullRequestsData, GetSyncPullRequestsError, GetSyncPullRequestsResponse, GetSyncRepositoriesData, GetSyncRepositoriesError, GetSyncRepositoriesResponse, GetSyncStarsData, GetSyncStarsError, GetSyncStarsResponse, InviteOrganizationMemberData, InviteOrganizationMemberError, InviteOrganizationMemberResponse, ListAccessTokensData, ListAccessTokensError, ListAccessTokensResponse, ListBranchProtectionsData, ListBranchProtectionsError, ListBranchProtectionsResponse, ListNetworkRepositoriesData, ListNetworkRepositoriesError, ListNetworkRepositoriesResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListOrganizationAuditEventsData, ListOrganizationAuditEventsError, ListOrganizationAuditEventsResponse, ListOrganizationInvitationsData, ListOrganizationInvitationsError, ListOrganizationInvitationsForCurrentUserData, ListOrganizationInvitationsForCurrentUserError, ListOrganizationInvitationsForCurrentUserResponse, ListOrganizationInvitationsResponse, ListOrganizationMembersData, ListOrganizationMembersError, ListOrganizationMembersResponse, ListOrganizationRepositoriesData, ListOrganizationRepositoriesError, ListOrganizationRepositoriesResponse, ListOrganizationRepositoryCollaboratorsData, ListOrganizationRepositoryCollaboratorsError, ListOrganizationRepositoryCollaboratorsResponse, ListOrganizationsData, ListOrganizationsError, ListOrganizationsResponse, ListOrganizationTeamMembersData, ListOrganizationTeamMembersError, ListOrganizationTeamMembersResponse, ListOrganizationTeamRepositoriesData, ListOrganizationTeamRepositoriesError, ListOrganizationTeamRepositoriesResponse, ListOrganizationTeamsData, ListOrganizationTeamsError, ListOrganizationTeamsResponse, ListPasskeysData, ListPasskeysError, ListPasskeysResponse, ListPullRequestReviewsData, ListPullRequestReviewsError, ListPullRequestReviewsResponse, ListPullRequestsData, ListPullRequestsError, ListPullRequestsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRepositoryCommitsData, ListRepositoryCommitsError, ListRepositoryCommitsResponse, ListRepositoryForksData, ListRepositoryForksError, ListRepositoryForksResponse, ListRepositoryTagsData, ListRepositoryTagsError, ListRepositoryTagsResponse, ListRepositoryWebhooksData, ListRepositoryWebhooksError, ListRepositoryWebhooksResponse, ListSshKeysData, ListSshKeysError, ListSshKeysResponse, ListWebhookDeliveriesData, ListWebhookDeliveriesError, ListWebhookDeliveriesResponse, LogoutData, LogoutError, LogoutResponse, MergePullRequestData, MergePullRequestError, MergePullRequestResponse, PostSyncIssueCommentsData, PostSyncIssueCommentsError, PostSyncIssueCommentsResponse, PostSyncIssuesData, PostSyncIssuesError, PostSyncIssuesResponse, PostSyncProfilesData, PostSyncProfilesError, PostSyncProfilesResponse, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsError, PostSyncPullRequestReviewsResponse, PostSyncPullRequestsData, PostSyncPullRequestsError, PostSyncPullRequestsResponse, PostSyncRepositoriesData, PostSyncRepositoriesError, PostSyncRepositoriesResponse, PostSyncStarsData, PostSyncStarsError, PostSyncStarsResponse, PutBlockedDidData, PutBlockedDidError, PutBlockedDidResponse, PutHiddenRecordData, PutHiddenRecordError, PutHiddenRecordResponse, PutIssueStatusData, PutIssueStatusError, PutIssueStatusResponse, PutOrganizationRepositoryCollaboratorData, PutOrganizationRepositoryCollaboratorError, PutOrganizationRepositoryCollaboratorResponse, PutOrganizationTeamMemberData, PutOrganizationTeamMemberError, PutOrganizationTeamMemberResponse, PutOrganizationTeamRepositoryData, PutOrganizationTeamRepositoryError, PutOrganizationTeamRepositoryResponse, PutPullRequestStatusData, PutPullRequestStatusError, PutPullRequestStatusResponse, PutStarData, PutStarError, PutStarResponse, RemoveOrganizationMemberData, RemoveOrganizationMemberError, RemoveOrganizationMemberResponse, RemoveOrganizationRepositoryCollaboratorData, RemoveOrganizationRepositoryCollaboratorError, RemoveOrganizationRepositoryCollaboratorResponse, RemoveOrganizationTeamMemberData, RemoveOrganizationTeamMemberError, RemoveOrganizationTeamMemberResponse, RemoveOrganizationTeamRepositoryData, RemoveOrganizationTeamRepositoryError, RemoveOrganizationTeamRepositoryResponse, RestoreRepositoryDeletionData, RestoreRepositoryDeletionError, RestoreRepositoryDeletionResponse, RevokeAccessTokenData, RevokeAccessTokenError, RevokeAccessTokenResponse, RevokeOrganizationInvitationData, RevokeOrganizationInvitationError, RevokeOrganizationInvitationResponse, RevokeSshKeyData, RevokeSshKeyError, RevokeSshKeyResponse, SearchProfilesData, SearchProfilesError, SearchProfilesResponse, SearchRepositoriesData, SearchRepositoriesError, SearchRepositoriesResponse, StartAtProtoLoginData, StartAtProtoLoginError, StartAtProtoLoginResponse2, SyncRepositoryForkData, SyncRepositoryForkError, SyncRepositoryForkResponse, UpdateBranchProtectionData, UpdateBranchProtectionError, UpdateBranchProtectionResponse, UpdateDeveloperProfileData, UpdateDeveloperProfileError, UpdateDeveloperProfileResponse, UpdateNotificationData, UpdateNotificationError, UpdateNotificationResponse, UpdateOrganizationData, UpdateOrganizationError, UpdateOrganizationMemberData, UpdateOrganizationMemberError, UpdateOrganizationMemberResponse, UpdateOrganizationResponse, UpdateOrganizationTeamData, UpdateOrganizationTeamError, UpdateOrganizationTeamResponse, UpdateRepositoryData, UpdateRepositoryError, UpdateRepositoryResponse, UpdateRepositoryWebhookData, UpdateRepositoryWebhookError, UpdateRepositoryWebhookResponse, VerifyPasskeyLoginData, VerifyPasskeyLoginError, VerifyPasskeyLoginResponse, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationError, VerifyPasskeyRegistrationResponse } from '../types.gen';
+import { acceptOrganizationInvitation, beginPasskeyLogin, beginPasskeyRegistration, completeAtProtoLogin, createAccessToken, createBranchProtection, createIssue, createIssueComment, createOrganization, createOrganizationTeam, createPullRequest, createPullRequestReview, createRepository, createRepositoryFork, createRepositoryRelease, createRepositoryWebhook, createSshKey, createWebhookRedelivery, deleteBlockedDid, deleteBranchProtection, deleteHiddenRecord, deleteIssueComment, deleteNotification, deleteOrganizationTeam, deletePasskey, deleteRepository, deleteRepositoryRelease, deleteRepositoryReleaseAsset, deleteRepositoryWebhook, deleteStar, downloadRepositoryReleaseAsset, getBranchProtection, getCurrentIdentity, getDeveloperProfile, getIssue, getIssueComments, getIssues, getLiveness, getModeration, getOAuthClientMetadata, getOrganization, getOwner, getPullRequest, getPullRequestDiff, getReadiness, getRepository, getRepositoryBlob, getRepositoryCommit, getRepositoryDeletion, getRepositoryDiff, getRepositoryMergeBase, getRepositoryRelease, getRepositoryTree, getRepositoryWebhook, getStars, getSyncIssueComments, getSyncIssues, getSyncProfiles, getSyncPullRequestReviews, getSyncPullRequests, getSyncRepositories, getSyncStars, inviteOrganizationMember, listAccessTokens, listBranchProtections, listNetworkRepositories, listNotifications, listOrganizationAuditEvents, listOrganizationInvitations, listOrganizationInvitationsForCurrentUser, listOrganizationMembers, listOrganizationRepositories, listOrganizationRepositoryCollaborators, listOrganizations, listOrganizationTeamMembers, listOrganizationTeamRepositories, listOrganizationTeams, listPasskeys, listPullRequestReviews, listPullRequests, listRepositoryBranches, listRepositoryCommits, listRepositoryForks, listRepositoryReleaseAssets, listRepositoryReleases, listRepositoryTags, listRepositoryWebhooks, listSshKeys, listWebhookDeliveries, logout, mergePullRequest, type Options, postSyncIssueComments, postSyncIssues, postSyncProfiles, postSyncPullRequestReviews, postSyncPullRequests, postSyncRepositories, postSyncStars, putBlockedDid, putHiddenRecord, putIssueStatus, putOrganizationRepositoryCollaborator, putOrganizationTeamMember, putOrganizationTeamRepository, putPullRequestStatus, putStar, removeOrganizationMember, removeOrganizationRepositoryCollaborator, removeOrganizationTeamMember, removeOrganizationTeamRepository, restoreRepositoryDeletion, revokeAccessToken, revokeOrganizationInvitation, revokeSshKey, searchProfiles, searchRepositories, startAtProtoLogin, syncRepositoryFork, updateBranchProtection, updateDeveloperProfile, updateNotification, updateOrganization, updateOrganizationMember, updateOrganizationTeam, updateRepository, updateRepositoryRelease, updateRepositoryWebhook, uploadRepositoryReleaseAsset, verifyPasskeyLogin, verifyPasskeyRegistration } from '../sdk.gen';
+import type { AcceptOrganizationInvitationData, AcceptOrganizationInvitationError, AcceptOrganizationInvitationResponse, BeginPasskeyLoginData, BeginPasskeyLoginError, BeginPasskeyLoginResponse, BeginPasskeyRegistrationData, BeginPasskeyRegistrationError, BeginPasskeyRegistrationResponse, CompleteAtProtoLoginData, CompleteAtProtoLoginError, CreateAccessTokenData, CreateAccessTokenError, CreateAccessTokenResponse, CreateBranchProtectionData, CreateBranchProtectionError, CreateBranchProtectionResponse, CreateIssueCommentData, CreateIssueCommentError, CreateIssueCommentResponse, CreateIssueData, CreateIssueError, CreateIssueResponse, CreateOrganizationData, CreateOrganizationError, CreateOrganizationResponse, CreateOrganizationTeamData, CreateOrganizationTeamError, CreateOrganizationTeamResponse, CreatePullRequestData, CreatePullRequestError, CreatePullRequestResponse, CreatePullRequestReviewData, CreatePullRequestReviewError, CreatePullRequestReviewResponse, CreateRepositoryData, CreateRepositoryError, CreateRepositoryForkData, CreateRepositoryForkError, CreateRepositoryForkResponse, CreateRepositoryReleaseData, CreateRepositoryReleaseError, CreateRepositoryReleaseResponse, CreateRepositoryResponse, CreateRepositoryWebhookData, CreateRepositoryWebhookError, CreateRepositoryWebhookResponse, CreateSshKeyData, CreateSshKeyError, CreateSshKeyResponse, CreateWebhookRedeliveryData, CreateWebhookRedeliveryError, CreateWebhookRedeliveryResponse, DeleteBlockedDidData, DeleteBlockedDidError, DeleteBlockedDidResponse, DeleteBranchProtectionData, DeleteBranchProtectionError, DeleteBranchProtectionResponse, DeleteHiddenRecordData, DeleteHiddenRecordError, DeleteHiddenRecordResponse, DeleteIssueCommentData, DeleteIssueCommentError, DeleteNotificationData, DeleteNotificationError, DeleteNotificationResponse, DeleteOrganizationTeamData, DeleteOrganizationTeamError, DeleteOrganizationTeamResponse, DeletePasskeyData, DeletePasskeyError, DeletePasskeyResponse, DeleteRepositoryData, DeleteRepositoryError, DeleteRepositoryReleaseAssetData, DeleteRepositoryReleaseAssetError, DeleteRepositoryReleaseAssetResponse, DeleteRepositoryReleaseData, DeleteRepositoryReleaseError, DeleteRepositoryReleaseResponse, DeleteRepositoryResponse, DeleteRepositoryWebhookData, DeleteRepositoryWebhookError, DeleteRepositoryWebhookResponse, DeleteStarData, DeleteStarError, DownloadRepositoryReleaseAssetData, DownloadRepositoryReleaseAssetError, DownloadRepositoryReleaseAssetResponse, GetBranchProtectionData, GetBranchProtectionError, GetBranchProtectionResponse, GetCurrentIdentityData, GetCurrentIdentityError, GetCurrentIdentityResponse, GetDeveloperProfileData, GetDeveloperProfileError, GetDeveloperProfileResponse, GetIssueCommentsData, GetIssueCommentsError, GetIssueCommentsResponse, GetIssueData, GetIssueError, GetIssueResponse, GetIssuesData, GetIssuesError, GetIssuesResponse, GetLivenessData, GetLivenessResponse, GetModerationData, GetModerationError, GetModerationResponse, GetOAuthClientMetadataData, GetOAuthClientMetadataResponse, GetOrganizationData, GetOrganizationError, GetOrganizationResponse, GetOwnerData, GetOwnerError, GetOwnerResponse, GetPullRequestData, GetPullRequestDiffData, GetPullRequestDiffError, GetPullRequestDiffResponse, GetPullRequestError, GetPullRequestResponse, GetReadinessData, GetReadinessError, GetReadinessResponse, GetRepositoryBlobData, GetRepositoryBlobError, GetRepositoryBlobResponse, GetRepositoryCommitData, GetRepositoryCommitError, GetRepositoryCommitResponse, GetRepositoryData, GetRepositoryDeletionData, GetRepositoryDeletionError, GetRepositoryDeletionResponse, GetRepositoryDiffData, GetRepositoryDiffError, GetRepositoryDiffResponse, GetRepositoryError, GetRepositoryMergeBaseData, GetRepositoryMergeBaseError, GetRepositoryMergeBaseResponse, GetRepositoryReleaseData, GetRepositoryReleaseError, GetRepositoryReleaseResponse, GetRepositoryResponse, GetRepositoryTreeData, GetRepositoryTreeError, GetRepositoryTreeResponse, GetRepositoryWebhookData, GetRepositoryWebhookError, GetRepositoryWebhookResponse, GetStarsData, GetStarsError, GetStarsResponse, GetSyncIssueCommentsData, GetSyncIssueCommentsError, GetSyncIssueCommentsResponse, GetSyncIssuesData, GetSyncIssuesError, GetSyncIssuesResponse, GetSyncProfilesData, GetSyncProfilesError, GetSyncProfilesResponse, GetSyncPullRequestReviewsData, GetSyncPullRequestReviewsError, GetSyncPullRequestReviewsResponse, GetSyncPullRequestsData, GetSyncPullRequestsError, GetSyncPullRequestsResponse, GetSyncRepositoriesData, GetSyncRepositoriesError, GetSyncRepositoriesResponse, GetSyncStarsData, GetSyncStarsError, GetSyncStarsResponse, InviteOrganizationMemberData, InviteOrganizationMemberError, InviteOrganizationMemberResponse, ListAccessTokensData, ListAccessTokensError, ListAccessTokensResponse, ListBranchProtectionsData, ListBranchProtectionsError, ListBranchProtectionsResponse, ListNetworkRepositoriesData, ListNetworkRepositoriesError, ListNetworkRepositoriesResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListOrganizationAuditEventsData, ListOrganizationAuditEventsError, ListOrganizationAuditEventsResponse, ListOrganizationInvitationsData, ListOrganizationInvitationsError, ListOrganizationInvitationsForCurrentUserData, ListOrganizationInvitationsForCurrentUserError, ListOrganizationInvitationsForCurrentUserResponse, ListOrganizationInvitationsResponse, ListOrganizationMembersData, ListOrganizationMembersError, ListOrganizationMembersResponse, ListOrganizationRepositoriesData, ListOrganizationRepositoriesError, ListOrganizationRepositoriesResponse, ListOrganizationRepositoryCollaboratorsData, ListOrganizationRepositoryCollaboratorsError, ListOrganizationRepositoryCollaboratorsResponse, ListOrganizationsData, ListOrganizationsError, ListOrganizationsResponse, ListOrganizationTeamMembersData, ListOrganizationTeamMembersError, ListOrganizationTeamMembersResponse, ListOrganizationTeamRepositoriesData, ListOrganizationTeamRepositoriesError, ListOrganizationTeamRepositoriesResponse, ListOrganizationTeamsData, ListOrganizationTeamsError, ListOrganizationTeamsResponse, ListPasskeysData, ListPasskeysError, ListPasskeysResponse, ListPullRequestReviewsData, ListPullRequestReviewsError, ListPullRequestReviewsResponse, ListPullRequestsData, ListPullRequestsError, ListPullRequestsResponse, ListRepositoryBranchesData, ListRepositoryBranchesError, ListRepositoryBranchesResponse, ListRepositoryCommitsData, ListRepositoryCommitsError, ListRepositoryCommitsResponse, ListRepositoryForksData, ListRepositoryForksError, ListRepositoryForksResponse, ListRepositoryReleaseAssetsData, ListRepositoryReleaseAssetsError, ListRepositoryReleaseAssetsResponse, ListRepositoryReleasesData, ListRepositoryReleasesError, ListRepositoryReleasesResponse, ListRepositoryTagsData, ListRepositoryTagsError, ListRepositoryTagsResponse, ListRepositoryWebhooksData, ListRepositoryWebhooksError, ListRepositoryWebhooksResponse, ListSshKeysData, ListSshKeysError, ListSshKeysResponse, ListWebhookDeliveriesData, ListWebhookDeliveriesError, ListWebhookDeliveriesResponse, LogoutData, LogoutError, LogoutResponse, MergePullRequestData, MergePullRequestError, MergePullRequestResponse, PostSyncIssueCommentsData, PostSyncIssueCommentsError, PostSyncIssueCommentsResponse, PostSyncIssuesData, PostSyncIssuesError, PostSyncIssuesResponse, PostSyncProfilesData, PostSyncProfilesError, PostSyncProfilesResponse, PostSyncPullRequestReviewsData, PostSyncPullRequestReviewsError, PostSyncPullRequestReviewsResponse, PostSyncPullRequestsData, PostSyncPullRequestsError, PostSyncPullRequestsResponse, PostSyncRepositoriesData, PostSyncRepositoriesError, PostSyncRepositoriesResponse, PostSyncStarsData, PostSyncStarsError, PostSyncStarsResponse, PutBlockedDidData, PutBlockedDidError, PutBlockedDidResponse, PutHiddenRecordData, PutHiddenRecordError, PutHiddenRecordResponse, PutIssueStatusData, PutIssueStatusError, PutIssueStatusResponse, PutOrganizationRepositoryCollaboratorData, PutOrganizationRepositoryCollaboratorError, PutOrganizationRepositoryCollaboratorResponse, PutOrganizationTeamMemberData, PutOrganizationTeamMemberError, PutOrganizationTeamMemberResponse, PutOrganizationTeamRepositoryData, PutOrganizationTeamRepositoryError, PutOrganizationTeamRepositoryResponse, PutPullRequestStatusData, PutPullRequestStatusError, PutPullRequestStatusResponse, PutStarData, PutStarError, PutStarResponse, RemoveOrganizationMemberData, RemoveOrganizationMemberError, RemoveOrganizationMemberResponse, RemoveOrganizationRepositoryCollaboratorData, RemoveOrganizationRepositoryCollaboratorError, RemoveOrganizationRepositoryCollaboratorResponse, RemoveOrganizationTeamMemberData, RemoveOrganizationTeamMemberError, RemoveOrganizationTeamMemberResponse, RemoveOrganizationTeamRepositoryData, RemoveOrganizationTeamRepositoryError, RemoveOrganizationTeamRepositoryResponse, RestoreRepositoryDeletionData, RestoreRepositoryDeletionError, RestoreRepositoryDeletionResponse, RevokeAccessTokenData, RevokeAccessTokenError, RevokeAccessTokenResponse, RevokeOrganizationInvitationData, RevokeOrganizationInvitationError, RevokeOrganizationInvitationResponse, RevokeSshKeyData, RevokeSshKeyError, RevokeSshKeyResponse, SearchProfilesData, SearchProfilesError, SearchProfilesResponse, SearchRepositoriesData, SearchRepositoriesError, SearchRepositoriesResponse, StartAtProtoLoginData, StartAtProtoLoginError, StartAtProtoLoginResponse2, SyncRepositoryForkData, SyncRepositoryForkError, SyncRepositoryForkResponse, UpdateBranchProtectionData, UpdateBranchProtectionError, UpdateBranchProtectionResponse, UpdateDeveloperProfileData, UpdateDeveloperProfileError, UpdateDeveloperProfileResponse, UpdateNotificationData, UpdateNotificationError, UpdateNotificationResponse, UpdateOrganizationData, UpdateOrganizationError, UpdateOrganizationMemberData, UpdateOrganizationMemberError, UpdateOrganizationMemberResponse, UpdateOrganizationResponse, UpdateOrganizationTeamData, UpdateOrganizationTeamError, UpdateOrganizationTeamResponse, UpdateRepositoryData, UpdateRepositoryError, UpdateRepositoryReleaseData, UpdateRepositoryReleaseError, UpdateRepositoryReleaseResponse, UpdateRepositoryResponse, UpdateRepositoryWebhookData, UpdateRepositoryWebhookError, UpdateRepositoryWebhookResponse, UploadRepositoryReleaseAssetData, UploadRepositoryReleaseAssetError, UploadRepositoryReleaseAssetResponse, VerifyPasskeyLoginData, VerifyPasskeyLoginError, VerifyPasskeyLoginResponse, VerifyPasskeyRegistrationData, VerifyPasskeyRegistrationError, VerifyPasskeyRegistrationResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -2927,6 +2927,233 @@ export const createWebhookRedeliveryMutation = (options?: Partial<Options<Create
     };
     return mutationOptions;
 };
+
+export const listRepositoryReleasesQueryKey = (options: Options<ListRepositoryReleasesData>) => createQueryKey('listRepositoryReleases', options, false, ['Releases']);
+
+/**
+ * List visible repository releases
+ *
+ * Returns published releases newest first. Repository maintainers also receive drafts. Pagination uses an opaque keyset cursor.
+ */
+export const listRepositoryReleasesOptions = (options: Options<ListRepositoryReleasesData>) => queryOptions<ListRepositoryReleasesResponse, ListRepositoryReleasesError, ListRepositoryReleasesResponse, ReturnType<typeof listRepositoryReleasesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRepositoryReleases({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRepositoryReleasesQueryKey(options)
+});
+
+export const listRepositoryReleasesInfiniteQueryKey = (options: Options<ListRepositoryReleasesData>): QueryKey<Options<ListRepositoryReleasesData>> => createQueryKey('listRepositoryReleases', options, true);
+
+/**
+ * List visible repository releases
+ *
+ * Returns published releases newest first. Repository maintainers also receive drafts. Pagination uses an opaque keyset cursor.
+ */
+export const listRepositoryReleasesInfiniteOptions = (options: Options<ListRepositoryReleasesData>) => {
+    const opts = infiniteQueryOptions<ListRepositoryReleasesResponse, ListRepositoryReleasesError, InfiniteData<ListRepositoryReleasesResponse>, QueryKey<Options<ListRepositoryReleasesData>>, string | Pick<QueryKey<Options<ListRepositoryReleasesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListRepositoryReleasesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listRepositoryReleases({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listRepositoryReleasesInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Create a release for an existing tag
+ *
+ * Snapshots the tag's current peeled target SHA. Later tag movement does not change the release target.
+ */
+export const createRepositoryReleaseMutation = (options?: Partial<Options<CreateRepositoryReleaseData>>): UseMutationOptions<CreateRepositoryReleaseResponse, CreateRepositoryReleaseError, Options<CreateRepositoryReleaseData>> => {
+    const mutationOptions: UseMutationOptions<CreateRepositoryReleaseResponse, CreateRepositoryReleaseError, Options<CreateRepositoryReleaseData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createRepositoryRelease({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete a release and its hosted assets
+ */
+export const deleteRepositoryReleaseMutation = (options?: Partial<Options<DeleteRepositoryReleaseData>>): UseMutationOptions<DeleteRepositoryReleaseResponse, DeleteRepositoryReleaseError, Options<DeleteRepositoryReleaseData>> => {
+    const mutationOptions: UseMutationOptions<DeleteRepositoryReleaseResponse, DeleteRepositoryReleaseError, Options<DeleteRepositoryReleaseData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteRepositoryRelease({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getRepositoryReleaseQueryKey = (options: Options<GetRepositoryReleaseData>) => createQueryKey('getRepositoryRelease', options, false, ['Releases']);
+
+/**
+ * Get a visible repository release
+ */
+export const getRepositoryReleaseOptions = (options: Options<GetRepositoryReleaseData>) => queryOptions<GetRepositoryReleaseResponse, GetRepositoryReleaseError, GetRepositoryReleaseResponse, ReturnType<typeof getRepositoryReleaseQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRepositoryRelease({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRepositoryReleaseQueryKey(options)
+});
+
+/**
+ * Update release notes or publication state
+ */
+export const updateRepositoryReleaseMutation = (options?: Partial<Options<UpdateRepositoryReleaseData>>): UseMutationOptions<UpdateRepositoryReleaseResponse, UpdateRepositoryReleaseError, Options<UpdateRepositoryReleaseData>> => {
+    const mutationOptions: UseMutationOptions<UpdateRepositoryReleaseResponse, UpdateRepositoryReleaseError, Options<UpdateRepositoryReleaseData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateRepositoryRelease({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listRepositoryReleaseAssetsQueryKey = (options: Options<ListRepositoryReleaseAssetsData>) => createQueryKey('listRepositoryReleaseAssets', options, false, ['Releases']);
+
+/**
+ * List release assets
+ */
+export const listRepositoryReleaseAssetsOptions = (options: Options<ListRepositoryReleaseAssetsData>) => queryOptions<ListRepositoryReleaseAssetsResponse, ListRepositoryReleaseAssetsError, ListRepositoryReleaseAssetsResponse, ReturnType<typeof listRepositoryReleaseAssetsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRepositoryReleaseAssets({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRepositoryReleaseAssetsQueryKey(options)
+});
+
+export const listRepositoryReleaseAssetsInfiniteQueryKey = (options: Options<ListRepositoryReleaseAssetsData>): QueryKey<Options<ListRepositoryReleaseAssetsData>> => createQueryKey('listRepositoryReleaseAssets', options, true);
+
+/**
+ * List release assets
+ */
+export const listRepositoryReleaseAssetsInfiniteOptions = (options: Options<ListRepositoryReleaseAssetsData>) => {
+    const opts = infiniteQueryOptions<ListRepositoryReleaseAssetsResponse, ListRepositoryReleaseAssetsError, InfiniteData<ListRepositoryReleaseAssetsResponse>, QueryKey<Options<ListRepositoryReleaseAssetsData>>, string | Pick<QueryKey<Options<ListRepositoryReleaseAssetsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListRepositoryReleaseAssetsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    cursor: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listRepositoryReleaseAssets({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listRepositoryReleaseAssetsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Stream a release asset upload
+ *
+ * Requires a known Content-Length and Content-Type. The server streams the body, verifies the byte count, computes SHA-256, and atomically publishes the blob. Instance-configured per-asset, per-release, and per-repository quotas apply.
+ */
+export const uploadRepositoryReleaseAssetMutation = (options?: Partial<Options<UploadRepositoryReleaseAssetData>>): UseMutationOptions<UploadRepositoryReleaseAssetResponse, UploadRepositoryReleaseAssetError, Options<UploadRepositoryReleaseAssetData>> => {
+    const mutationOptions: UseMutationOptions<UploadRepositoryReleaseAssetResponse, UploadRepositoryReleaseAssetError, Options<UploadRepositoryReleaseAssetData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await uploadRepositoryReleaseAsset({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete a hosted release asset
+ */
+export const deleteRepositoryReleaseAssetMutation = (options?: Partial<Options<DeleteRepositoryReleaseAssetData>>): UseMutationOptions<DeleteRepositoryReleaseAssetResponse, DeleteRepositoryReleaseAssetError, Options<DeleteRepositoryReleaseAssetData>> => {
+    const mutationOptions: UseMutationOptions<DeleteRepositoryReleaseAssetResponse, DeleteRepositoryReleaseAssetError, Options<DeleteRepositoryReleaseAssetData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteRepositoryReleaseAsset({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const downloadRepositoryReleaseAssetQueryKey = (options: Options<DownloadRepositoryReleaseAssetData>) => createQueryKey('downloadRepositoryReleaseAsset', options, false, ['Releases']);
+
+/**
+ * Stream an immutable release asset
+ *
+ * Returns a strong SHA-256 ETag. Public assets are cacheable for one year as immutable; private assets use the same lifetime with private caching.
+ */
+export const downloadRepositoryReleaseAssetOptions = (options: Options<DownloadRepositoryReleaseAssetData>) => queryOptions<DownloadRepositoryReleaseAssetResponse, DownloadRepositoryReleaseAssetError, DownloadRepositoryReleaseAssetResponse, ReturnType<typeof downloadRepositoryReleaseAssetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await downloadRepositoryReleaseAsset({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: downloadRepositoryReleaseAssetQueryKey(options)
+});
 
 export const listRepositoryBranchesQueryKey = (options: Options<ListRepositoryBranchesData>) => createQueryKey('listRepositoryBranches', options, false, ['Repositories']);
 

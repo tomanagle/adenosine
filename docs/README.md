@@ -11,6 +11,7 @@ Start with the document for the boundary you are changing:
 - [Realtime and REST fallback](realtime.md)
 - [Git Smart HTTP](git-http.md), [Git SSH](git-ssh.md), and [pull request security](pull-requests.md)
 - [Repository read API](repository-browser.md)
+- [Repository releases and hosted assets](repository-releases.md)
 - [Forks and upstream synchronization](forks.md)
 - [Observability](observability.md)
 - [Development and test layers](development.md)

@@ -209,6 +209,14 @@ func (fakeAuthorization) CanReadRepository(context.Context, string, repository.I
 	return true, nil
 }
 
+func (fakeAuthorization) CanWriteRepository(context.Context, string, repository.ID) (bool, error) {
+	return true, nil
+}
+
+func (fakeAuthorization) CanAdminRepository(context.Context, string, repository.ID) (bool, error) {
+	return true, nil
+}
+
 type fakeGitReader struct {
 	blob []byte
 }

@@ -90,10 +90,13 @@ transaction. Services restart even when capture fails. The package contains:
 - `manifest.json` with format, release, schema, timestamp, consistency mode, and RPO
 - a PostgreSQL custom-format dump
 - repository and instance-state archives, including the stable SSH identity
+- release assets from `/var/lib/adenosine/state/release-assets` (or the configured `ADENOSINE_RELEASE_ASSET_ROOT` when it remains beneath instance state)
 - the identity/decryption-critical production environment
 - SHA-256 checksums for every payload
 
 The resulting archive contains secrets and local Git objects that cannot be rebuilt from ATProto.
+It also contains hosted release assets. Live deletion is immediate, while copies in backups remain
+until the operator's encrypted off-host retention policy expires them.
 Encrypt it at rest, restrict access, copy it off-host, and apply an organization-specific retention
 policy. The script supplies integrity checksums, not authenticity signatures; sign the archive or
 its checksum with the operator's existing signing system. RPO is all state committed before the

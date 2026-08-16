@@ -5,6 +5,7 @@ x-app-environment: &app-environment
   ADENOSINE_BASE_URL: ${ADENOSINE_BASE_URL}
   ADENOSINE_LISTEN_ADDR: :8080
   ADENOSINE_REPO_ROOT: /var/lib/adenosine/repos
+  ADENOSINE_RELEASE_ASSET_ROOT: /var/lib/adenosine/state/release-assets
   ADENOSINE_GIT_BINARY: git
   ADENOSINE_SSH_LISTEN_ADDR: :2222
   ADENOSINE_SSH_HOST: ${ADENOSINE_SSH_HOST}

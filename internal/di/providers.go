@@ -28,6 +28,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/passkey"
 	"github.com/adenosine-dev/adenosine/internal/profile"
 	"github.com/adenosine-dev/adenosine/internal/pullrequest"
+	"github.com/adenosine-dev/adenosine/internal/release"
 	"github.com/adenosine-dev/adenosine/internal/repository"
 	"github.com/adenosine-dev/adenosine/internal/restapi"
 	"github.com/adenosine-dev/adenosine/internal/search"
@@ -60,6 +61,12 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		db.Close()
 		_ = shutdownTelemetry(ctx)
 		return nil, fmt.Errorf("open repository storage: %w", err)
+	}
+	releaseAssetStorage, err := release.NewFilesystem(cfg.ReleaseAssetRoot)
+	if err != nil {
+		db.Close()
+		_ = shutdownTelemetry(ctx)
+		return nil, fmt.Errorf("open release asset storage: %w", err)
 	}
 	git := gitservice.NewService(gitservice.NewRunner(cfg.GitBinary), repositoryStorage)
 	oauthClient := atproto.Must(cfg.BaseURL, db.Queries(), cfg.OAuthStateKey, cfg.OAuthCredentialKey, atproto.SystemClock{})
@@ -97,6 +104,19 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 	webhookWorker := webhook.NewWorker(db.Queries(), webhooks)
 	repositoryPurgeWorker := repository.NewPurgeWorker(repositoryStore, git)
 	branchProtections := branchprotection.NewService(db.Queries(), git)
+	releases, err := release.NewService(
+		release.NewPostgresStore(db, db.Queries()),
+		releaseAssetStorage,
+		git,
+		release.SystemClock{},
+		release.UUIDv7Generator{},
+		release.Limits{AssetBytes: cfg.ReleaseAssetMaxBytes, ReleaseBytes: cfg.ReleaseMaxBytes, RepositoryBytes: cfg.RepositoryReleaseMaxBytes},
+	)
+	if err != nil {
+		db.Close()
+		_ = shutdownTelemetry(ctx)
+		return nil, fmt.Errorf("create release service: %w", err)
+	}
 	organizations := organization.NewService(
 		organization.NewPostgresStore(db, db.Queries()),
 		organization.SystemClock{},
@@ -154,6 +174,7 @@ func build(ctx context.Context, cfg config.Config) (*app.Application, error) {
 		Notifications:               notifications,
 		Webhooks:                    webhooks,
 		BranchProtections:           branchProtections,
+		Releases:                    releases,
 		Activity:                    eventWriter,
 		Authorization:               authStore,
 		Git:                         git,

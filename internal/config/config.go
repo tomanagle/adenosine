@@ -21,6 +21,10 @@ type Config struct {
 	ElectricURL                 string
 	ElectricSecret              string
 	RepositoryRoot              string
+	ReleaseAssetRoot            string
+	ReleaseAssetMaxBytes        int64
+	ReleaseMaxBytes             int64
+	RepositoryReleaseMaxBytes   int64
 	GitBinary                   string
 	SSHListenAddr               string
 	SSHHost                     string
@@ -52,6 +56,7 @@ func load() (Config, error) {
 		ElectricURL:      strings.TrimSpace(os.Getenv("ADENOSINE_ELECTRIC_URL")),
 		ElectricSecret:   strings.TrimSpace(os.Getenv("ADENOSINE_ELECTRIC_SECRET")),
 		RepositoryRoot:   valueOrDefault("ADENOSINE_REPO_ROOT", "/var/lib/adenosine/repos"),
+		ReleaseAssetRoot: valueOrDefault("ADENOSINE_RELEASE_ASSET_ROOT", "/var/lib/adenosine/state/release-assets"),
 		GitBinary:        valueOrDefault("ADENOSINE_GIT_BINARY", "git"),
 		SSHListenAddr:    listenAddrOrDefault("ADENOSINE_SSH_LISTEN_ADDR", ":2222"),
 		SSHHost:          valueOrDefault("ADENOSINE_SSH_HOST", "localhost"),
@@ -61,6 +66,21 @@ func load() (Config, error) {
 		SessionLifetime:  30 * 24 * time.Hour,
 		ShutdownTimeout:  10 * time.Second,
 	}
+	releaseAssetMaxBytes, err := positiveInt64OrDefault("ADENOSINE_RELEASE_ASSET_MAX_BYTES", 100*1024*1024)
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.ReleaseAssetMaxBytes = releaseAssetMaxBytes
+	releaseMaxBytes, err := positiveInt64OrDefault("ADENOSINE_RELEASE_MAX_BYTES", 1024*1024*1024)
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.ReleaseMaxBytes = releaseMaxBytes
+	repositoryReleaseMaxBytes, err := positiveInt64OrDefault("ADENOSINE_REPOSITORY_RELEASE_MAX_BYTES", 10*1024*1024*1024)
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.RepositoryReleaseMaxBytes = repositoryReleaseMaxBytes
 	repositoryDeletionRetention, err := durationOrDefault("ADENOSINE_REPOSITORY_DELETION_RETENTION", 7*24*time.Hour)
 	if err != nil {
 		return Config{}, err
@@ -128,6 +148,12 @@ func (c Config) Validate() error {
 	if strings.TrimSpace(c.RepositoryRoot) == "" {
 		return fmt.Errorf("ADENOSINE_REPO_ROOT must not be empty")
 	}
+	if strings.TrimSpace(c.ReleaseAssetRoot) == "" {
+		return fmt.Errorf("ADENOSINE_RELEASE_ASSET_ROOT must not be empty")
+	}
+	if c.ReleaseAssetMaxBytes <= 0 || c.ReleaseMaxBytes < c.ReleaseAssetMaxBytes || c.RepositoryReleaseMaxBytes < c.ReleaseMaxBytes {
+		return fmt.Errorf("release asset byte limits must be positive and monotonically increasing")
+	}
 	if strings.TrimSpace(c.GitBinary) == "" {
 		return fmt.Errorf("ADENOSINE_GIT_BINARY must not be empty")
 	}
@@ -162,6 +188,18 @@ func (c Config) Validate() error {
 		return fmt.Errorf("ADENOSINE_REPOSITORY_DELETION_RETENTION must not be negative")
 	}
 	return nil
+}
+
+func positiveInt64OrDefault(name string, fallback int64) (int64, error) {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return fallback, nil
+	}
+	parsed, err := strconv.ParseInt(value, 10, 64)
+	if err != nil || parsed <= 0 {
+		return 0, fmt.Errorf("%s must be a positive integer", name)
+	}
+	return parsed, nil
 }
 
 func durationOrDefault(name string, fallback time.Duration) (time.Duration, error) {

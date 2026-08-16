@@ -1046,6 +1046,56 @@ export type PutHiddenRecordRequest = {
     record_uri: string;
 };
 
+export type Release = {
+    id: string;
+    tag_name: string;
+    target_sha: string;
+    name: string;
+    body: string;
+    state: 'draft' | 'published';
+    prerelease: boolean;
+    created_by_did: string;
+    created_at: string;
+    updated_at: string;
+    published_at?: string | null;
+};
+
+export type ReleaseList = {
+    items: Array<Release>;
+    page: Page;
+    viewer_can_manage: boolean;
+};
+
+export type CreateReleaseRequest = {
+    tag_name: string;
+    name: string;
+    body: string;
+    draft: boolean;
+    prerelease: boolean;
+};
+
+export type UpdateReleaseRequest = {
+    name: string;
+    body: string;
+    draft: boolean;
+    prerelease: boolean;
+};
+
+export type ReleaseAsset = {
+    id: string;
+    name: string;
+    content_type: string;
+    size_bytes: number;
+    sha256: string;
+    download_url: string;
+    created_at: string;
+};
+
+export type ReleaseAssetList = {
+    items: Array<ReleaseAsset>;
+    page: Page;
+};
+
 export type Branch = {
     name: string;
     sha: string;
@@ -1183,6 +1233,10 @@ export type IdempotencyKey = string;
 export type Limit = number;
 
 export type Cursor = string;
+
+export type ReleaseId = string;
+
+export type ReleaseAssetId = string;
 
 /**
  * UTF-8 text matched against fields documented by the operation
@@ -5959,6 +6013,381 @@ export type CreateWebhookRedeliveryResponses = {
 };
 
 export type CreateWebhookRedeliveryResponse = CreateWebhookRedeliveryResponses[keyof CreateWebhookRedeliveryResponses];
+
+export type ListRepositoryReleasesData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/releases';
+};
+
+export type ListRepositoryReleasesErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListRepositoryReleasesError = ListRepositoryReleasesErrors[keyof ListRepositoryReleasesErrors];
+
+export type ListRepositoryReleasesResponses = {
+    /**
+     * Release page
+     */
+    200: ReleaseList;
+};
+
+export type ListRepositoryReleasesResponse = ListRepositoryReleasesResponses[keyof ListRepositoryReleasesResponses];
+
+export type CreateRepositoryReleaseData = {
+    body: CreateReleaseRequest;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/releases';
+};
+
+export type CreateRepositoryReleaseErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type CreateRepositoryReleaseError = CreateRepositoryReleaseErrors[keyof CreateRepositoryReleaseErrors];
+
+export type CreateRepositoryReleaseResponses = {
+    /**
+     * Release created
+     */
+    201: Release;
+};
+
+export type CreateRepositoryReleaseResponse = CreateRepositoryReleaseResponses[keyof CreateRepositoryReleaseResponses];
+
+export type DeleteRepositoryReleaseData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        release: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/releases/{release}';
+};
+
+export type DeleteRepositoryReleaseErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type DeleteRepositoryReleaseError = DeleteRepositoryReleaseErrors[keyof DeleteRepositoryReleaseErrors];
+
+export type DeleteRepositoryReleaseResponses = {
+    /**
+     * Release deleted
+     */
+    204: void;
+};
+
+export type DeleteRepositoryReleaseResponse = DeleteRepositoryReleaseResponses[keyof DeleteRepositoryReleaseResponses];
+
+export type GetRepositoryReleaseData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        release: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/releases/{release}';
+};
+
+export type GetRepositoryReleaseErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type GetRepositoryReleaseError = GetRepositoryReleaseErrors[keyof GetRepositoryReleaseErrors];
+
+export type GetRepositoryReleaseResponses = {
+    /**
+     * Release
+     */
+    200: Release;
+};
+
+export type GetRepositoryReleaseResponse = GetRepositoryReleaseResponses[keyof GetRepositoryReleaseResponses];
+
+export type UpdateRepositoryReleaseData = {
+    body: UpdateReleaseRequest;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        release: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/releases/{release}';
+};
+
+export type UpdateRepositoryReleaseErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type UpdateRepositoryReleaseError = UpdateRepositoryReleaseErrors[keyof UpdateRepositoryReleaseErrors];
+
+export type UpdateRepositoryReleaseResponses = {
+    /**
+     * Release updated
+     */
+    200: Release;
+};
+
+export type UpdateRepositoryReleaseResponse = UpdateRepositoryReleaseResponses[keyof UpdateRepositoryReleaseResponses];
+
+export type ListRepositoryReleaseAssetsData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        release: string;
+    };
+    query?: {
+        limit?: number;
+        cursor?: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/releases/{release}/assets';
+};
+
+export type ListRepositoryReleaseAssetsErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type ListRepositoryReleaseAssetsError = ListRepositoryReleaseAssetsErrors[keyof ListRepositoryReleaseAssetsErrors];
+
+export type ListRepositoryReleaseAssetsResponses = {
+    /**
+     * Release asset page
+     */
+    200: ReleaseAssetList;
+};
+
+export type ListRepositoryReleaseAssetsResponse = ListRepositoryReleaseAssetsResponses[keyof ListRepositoryReleaseAssetsResponses];
+
+export type UploadRepositoryReleaseAssetData = {
+    body: Blob | File;
+    headers: {
+        /**
+         * Original media type stored and returned for the asset.
+         */
+        'X-Asset-Content-Type': string;
+    };
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        release: string;
+    };
+    query: {
+        name: string;
+    };
+    url: '/api/v1/repositories/{owner}/{repo}/releases/{release}/assets';
+};
+
+export type UploadRepositoryReleaseAssetErrors = {
+    /**
+     * Malformed request
+     */
+    400: ErrorResponse;
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+    /**
+     * The request conflicts with existing state
+     */
+    409: ErrorResponse;
+    /**
+     * Configured asset quota exceeded
+     */
+    413: ErrorResponse;
+    /**
+     * The request is structurally valid but semantically invalid
+     */
+    422: ErrorResponse;
+};
+
+export type UploadRepositoryReleaseAssetError = UploadRepositoryReleaseAssetErrors[keyof UploadRepositoryReleaseAssetErrors];
+
+export type UploadRepositoryReleaseAssetResponses = {
+    /**
+     * Asset uploaded
+     */
+    201: ReleaseAsset;
+};
+
+export type UploadRepositoryReleaseAssetResponse = UploadRepositoryReleaseAssetResponses[keyof UploadRepositoryReleaseAssetResponses];
+
+export type DeleteRepositoryReleaseAssetData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        release: string;
+        asset: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/releases/{release}/assets/{asset}';
+};
+
+export type DeleteRepositoryReleaseAssetErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The identity is not authorized
+     */
+    403: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type DeleteRepositoryReleaseAssetError = DeleteRepositoryReleaseAssetErrors[keyof DeleteRepositoryReleaseAssetErrors];
+
+export type DeleteRepositoryReleaseAssetResponses = {
+    /**
+     * Asset deleted
+     */
+    204: void;
+};
+
+export type DeleteRepositoryReleaseAssetResponse = DeleteRepositoryReleaseAssetResponses[keyof DeleteRepositoryReleaseAssetResponses];
+
+export type DownloadRepositoryReleaseAssetData = {
+    body?: never;
+    path: {
+        owner: string;
+        repo: RepositorySlug;
+        release: string;
+        asset: string;
+    };
+    query?: never;
+    url: '/api/v1/repositories/{owner}/{repo}/releases/{release}/assets/{asset}';
+};
+
+export type DownloadRepositoryReleaseAssetErrors = {
+    /**
+     * Authentication required
+     */
+    401: ErrorResponse;
+    /**
+     * The requested resource was not found
+     */
+    404: ErrorResponse;
+};
+
+export type DownloadRepositoryReleaseAssetError = DownloadRepositoryReleaseAssetErrors[keyof DownloadRepositoryReleaseAssetErrors];
+
+export type DownloadRepositoryReleaseAssetResponses = {
+    /**
+     * Raw asset bytes
+     */
+    200: Blob | File;
+};
+
+export type DownloadRepositoryReleaseAssetResponse = DownloadRepositoryReleaseAssetResponses[keyof DownloadRepositoryReleaseAssetResponses];
 
 export type ListRepositoryBranchesData = {
     body?: never;

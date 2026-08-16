@@ -862,6 +862,24 @@ func (e PutPullRequestStatusRequestState) Valid() bool {
 	}
 }
 
+// Defines values for ReleaseState.
+const (
+	Draft     ReleaseState = "draft"
+	Published ReleaseState = "published"
+)
+
+// Valid indicates whether the value is a known member of the ReleaseState enum.
+func (e ReleaseState) Valid() bool {
+	switch e {
+	case Draft:
+		return true
+	case Published:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RepositoryState.
 const (
 	RepositoryStateActive   RepositoryState = "active"
@@ -1984,6 +2002,15 @@ type CreatePullRequestReviewRequest struct {
 // CreatePullRequestReviewRequestVerdict defines model for CreatePullRequestReviewRequest.Verdict.
 type CreatePullRequestReviewRequestVerdict string
 
+// CreateReleaseRequest defines model for CreateReleaseRequest.
+type CreateReleaseRequest struct {
+	Body       string `json:"body"`
+	Draft      bool   `json:"draft"`
+	Name       string `json:"name"`
+	Prerelease bool   `json:"prerelease"`
+	TagName    string `json:"tag_name"`
+}
+
 // CreateRepositoryForkRequest defines model for CreateRepositoryForkRequest.
 type CreateRepositoryForkRequest struct {
 	Organization *OrganizationSlug `json:"organization,omitempty"`
@@ -2711,6 +2738,48 @@ type PutPullRequestStatusRequest struct {
 // PutPullRequestStatusRequestState defines model for PutPullRequestStatusRequest.State.
 type PutPullRequestStatusRequestState string
 
+// Release defines model for Release.
+type Release struct {
+	Body         string             `json:"body"`
+	CreatedAt    time.Time          `json:"created_at"`
+	CreatedByDid string             `json:"created_by_did"`
+	Id           openapi_types.UUID `json:"id"`
+	Name         string             `json:"name"`
+	Prerelease   bool               `json:"prerelease"`
+	PublishedAt  *time.Time         `json:"published_at,omitempty"`
+	State        ReleaseState       `json:"state"`
+	TagName      string             `json:"tag_name"`
+	TargetSha    string             `json:"target_sha"`
+	UpdatedAt    time.Time          `json:"updated_at"`
+}
+
+// ReleaseState defines model for Release.State.
+type ReleaseState string
+
+// ReleaseAsset defines model for ReleaseAsset.
+type ReleaseAsset struct {
+	ContentType string             `json:"content_type"`
+	CreatedAt   time.Time          `json:"created_at"`
+	DownloadUrl string             `json:"download_url"`
+	Id          openapi_types.UUID `json:"id"`
+	Name        string             `json:"name"`
+	Sha256      string             `json:"sha256"`
+	SizeBytes   int64              `json:"size_bytes"`
+}
+
+// ReleaseAssetList defines model for ReleaseAssetList.
+type ReleaseAssetList struct {
+	Items []ReleaseAsset `json:"items"`
+	Page  Page           `json:"page"`
+}
+
+// ReleaseList defines model for ReleaseList.
+type ReleaseList struct {
+	Items           []Release `json:"items"`
+	Page            Page      `json:"page"`
+	ViewerCanManage bool      `json:"viewer_can_manage"`
+}
+
 // Repository defines model for Repository.
 type Repository struct {
 	Archived      bool                 `json:"archived"`
@@ -3132,6 +3201,14 @@ type UpdateOrganizationTeamRequest struct {
 // UpdateOrganizationTeamRequestVisibility defines model for UpdateOrganizationTeamRequest.Visibility.
 type UpdateOrganizationTeamRequestVisibility string
 
+// UpdateReleaseRequest defines model for UpdateReleaseRequest.
+type UpdateReleaseRequest struct {
+	Body       string `json:"body"`
+	Draft      bool   `json:"draft"`
+	Name       string `json:"name"`
+	Prerelease bool   `json:"prerelease"`
+}
+
 // UpdateRepositoryRequest defines model for UpdateRepositoryRequest.
 type UpdateRepositoryRequest struct {
 	Archived      *bool                              `json:"archived,omitempty"`
@@ -3243,6 +3320,12 @@ type PullRequestURI = string
 
 // RecordURI defines model for RecordURI.
 type RecordURI = string
+
+// ReleaseAssetID defines model for ReleaseAssetID.
+type ReleaseAssetID = openapi_types.UUID
+
+// ReleaseID defines model for ReleaseID.
+type ReleaseID = openapi_types.UUID
 
 // RepositoryOwnerPath defines model for RepositoryOwnerPath.
 type RepositoryOwnerPath = string
@@ -3579,6 +3662,26 @@ type CreateRepositoryForkParams struct {
 type GetRepositoryMergeBaseParams struct {
 	A string `form:"a" json:"a"`
 	B string `form:"b" json:"b"`
+}
+
+// ListRepositoryReleasesParams defines parameters for ListRepositoryReleases.
+type ListRepositoryReleasesParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListRepositoryReleaseAssetsParams defines parameters for ListRepositoryReleaseAssets.
+type ListRepositoryReleaseAssetsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// UploadRepositoryReleaseAssetParams defines parameters for UploadRepositoryReleaseAsset.
+type UploadRepositoryReleaseAssetParams struct {
+	Name string `form:"name" json:"name"`
+
+	// XAssetContentType Original media type stored and returned for the asset.
+	XAssetContentType string `json:"X-Asset-Content-Type"`
 }
 
 // ListRepositoryTagsParams defines parameters for ListRepositoryTags.
@@ -4192,6 +4295,12 @@ type UpdateBranchProtectionJSONRequestBody = BranchProtectionInput
 // CreateRepositoryForkJSONRequestBody defines body for CreateRepositoryFork for application/json ContentType.
 type CreateRepositoryForkJSONRequestBody = CreateRepositoryForkRequest
 
+// CreateRepositoryReleaseJSONRequestBody defines body for CreateRepositoryRelease for application/json ContentType.
+type CreateRepositoryReleaseJSONRequestBody = CreateReleaseRequest
+
+// UpdateRepositoryReleaseJSONRequestBody defines body for UpdateRepositoryRelease for application/json ContentType.
+type UpdateRepositoryReleaseJSONRequestBody = UpdateReleaseRequest
+
 // CreateRepositoryWebhookJSONRequestBody defines body for CreateRepositoryWebhook for application/json ContentType.
 type CreateRepositoryWebhookJSONRequestBody = CreateRepositoryWebhookRequest
 
@@ -4532,6 +4641,33 @@ type ServerInterface interface {
 	// Find a merge base for two commits
 	// (GET /api/v1/repositories/{owner}/{repo}/merge-base)
 	GetRepositoryMergeBase(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryMergeBaseParams)
+	// List visible repository releases
+	// (GET /api/v1/repositories/{owner}/{repo}/releases)
+	ListRepositoryReleases(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryReleasesParams)
+	// Create a release for an existing tag
+	// (POST /api/v1/repositories/{owner}/{repo}/releases)
+	CreateRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug)
+	// Delete a release and its hosted assets
+	// (DELETE /api/v1/repositories/{owner}/{repo}/releases/{release})
+	DeleteRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID)
+	// Get a visible repository release
+	// (GET /api/v1/repositories/{owner}/{repo}/releases/{release})
+	GetRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID)
+	// Update release notes or publication state
+	// (PATCH /api/v1/repositories/{owner}/{repo}/releases/{release})
+	UpdateRepositoryRelease(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID)
+	// List release assets
+	// (GET /api/v1/repositories/{owner}/{repo}/releases/{release}/assets)
+	ListRepositoryReleaseAssets(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID, params ListRepositoryReleaseAssetsParams)
+	// Stream a release asset upload
+	// (POST /api/v1/repositories/{owner}/{repo}/releases/{release}/assets)
+	UploadRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID, params UploadRepositoryReleaseAssetParams)
+	// Delete a hosted release asset
+	// (DELETE /api/v1/repositories/{owner}/{repo}/releases/{release}/assets/{asset})
+	DeleteRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID)
+	// Stream an immutable release asset
+	// (GET /api/v1/repositories/{owner}/{repo}/releases/{release}/assets/{asset})
+	DownloadRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, release ReleaseID, asset ReleaseAssetID)
 	// Fast-forward a local fork's default branch from its current upstream
 	// (POST /api/v1/repositories/{owner}/{repo}/sync-fork)
 	SyncRepositoryFork(w http.ResponseWriter, r *http.Request, owner RepositoryOwnerPath, repo RepositorySlugPath)
@@ -8561,6 +8697,573 @@ func (siw *ServerInterfaceWrapper) GetRepositoryMergeBase(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// ListRepositoryReleases operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryReleases(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryReleasesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryReleases(w, r, owner, repo, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateRepositoryRelease operation middleware
+func (siw *ServerInterfaceWrapper) CreateRepositoryRelease(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRepositoryRelease(w, r, owner, repo)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRepositoryRelease operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepositoryRelease(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepositoryRelease(w, r, owner, repo, release)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRepositoryRelease operation middleware
+func (siw *ServerInterfaceWrapper) GetRepositoryRelease(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRepositoryRelease(w, r, owner, repo, release)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateRepositoryRelease operation middleware
+func (siw *ServerInterfaceWrapper) UpdateRepositoryRelease(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateRepositoryRelease(w, r, owner, repo, release)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRepositoryReleaseAssets operation middleware
+func (siw *ServerInterfaceWrapper) ListRepositoryReleaseAssets(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRepositoryReleaseAssetsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRepositoryReleaseAssets(w, r, owner, repo, release, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UploadRepositoryReleaseAsset operation middleware
+func (siw *ServerInterfaceWrapper) UploadRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params UploadRepositoryReleaseAssetParams
+
+	// ------------- Required query parameter "name" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "name", r.URL.Query(), &params.Name, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "name"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		}
+		return
+	}
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-Asset-Content-Type" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Asset-Content-Type")]; found {
+		var XAssetContentType string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Asset-Content-Type", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-Asset-Content-Type", valueList[0], &XAssetContentType, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Asset-Content-Type", Err: err})
+			return
+		}
+
+		params.XAssetContentType = XAssetContentType
+
+	} else {
+		err := fmt.Errorf("Header parameter X-Asset-Content-Type is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-Asset-Content-Type", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadRepositoryReleaseAsset(w, r, owner, repo, release, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRepositoryReleaseAsset operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "asset" -------------
+	var asset ReleaseAssetID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "asset", r.PathValue("asset"), &asset, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "asset", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRepositoryReleaseAsset(w, r, owner, repo, release, asset)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DownloadRepositoryReleaseAsset operation middleware
+func (siw *ServerInterfaceWrapper) DownloadRepositoryReleaseAsset(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "release" -------------
+	var release ReleaseID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "release", r.PathValue("release"), &release, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "release", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "asset" -------------
+	var asset ReleaseAssetID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "asset", r.PathValue("asset"), &asset, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "asset", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DownloadRepositoryReleaseAsset(w, r, owner, repo, release, asset)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SyncRepositoryFork operation middleware
 func (siw *ServerInterfaceWrapper) SyncRepositoryFork(w http.ResponseWriter, r *http.Request) {
 
@@ -11752,6 +12455,15 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.ListRepositoryForks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.CreateRepositoryFork)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/merge-base", wrapper.GetRepositoryMergeBase)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases", wrapper.ListRepositoryReleases)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases", wrapper.CreateRepositoryRelease)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}", wrapper.DeleteRepositoryRelease)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}", wrapper.GetRepositoryRelease)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}", wrapper.UpdateRepositoryRelease)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}/assets", wrapper.ListRepositoryReleaseAssets)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}/assets", wrapper.UploadRepositoryReleaseAsset)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}/assets/{asset}", wrapper.DeleteRepositoryReleaseAsset)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/releases/{release}/assets/{asset}", wrapper.DownloadRepositoryReleaseAsset)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/sync-fork", wrapper.SyncRepositoryFork)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tags", wrapper.ListRepositoryTags)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/tree", wrapper.GetRepositoryTree)

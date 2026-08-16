@@ -41,6 +41,10 @@ application := di.Must(ctx, cfg)
 
 Do not add generic `must[T]` helpers in `main`, repeated startup error branches, or exported error-returning constructors when the application cannot run without the result. Keep `panic` restricted to these startup-only `Must` functions. Runtime and request-path failures must continue to return normal wrapped errors.
 
+## Database Schemas
+
+Never create PostgreSQL enum types. Represent finite state values with `TEXT` columns and enforce the allowed values with explicitly named `CHECK` constraints. Keep the corresponding Go types and constants in application code so states can evolve through ordinary migrations without PostgreSQL enum alteration semantics.
+
 ## Development Environment
 
 Development Docker files belong under `dev/`. Use the single `dev/docker-compose.yml`; do not split development configuration across Compose override files.
