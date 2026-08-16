@@ -104,6 +104,10 @@ type repositoryResolverStore interface {
 	ResolveRepository(context.Context, string, string, string) (federation.DiscoveryRepository, error)
 }
 
+type repositoryURIResolverStore interface {
+	ResolveRepositoryByURI(context.Context, string, string) (federation.DiscoveryRepository, error)
+}
+
 type forkStore interface {
 	ListForks(context.Context, string, string, int, *Cursor) ([]federation.DiscoveryRepository, int64, error)
 }
@@ -132,6 +136,15 @@ func (service *Service) ResolveRepository(ctx context.Context, owner, slug, view
 		return federation.DiscoveryRepository{}, ErrNotFound
 	}
 	return resolver.ResolveRepository(ctx, owner, slug, viewerDID)
+}
+
+// ResolveRepositoryByURI resolves the current canonical repository for an immutable lineage URI.
+func (service *Service) ResolveRepositoryByURI(ctx context.Context, repositoryURI, viewerDID string) (federation.DiscoveryRepository, error) {
+	resolver, ok := service.store.(repositoryURIResolverStore)
+	if !ok {
+		return federation.DiscoveryRepository{}, ErrNotFound
+	}
+	return resolver.ResolveRepositoryByURI(ctx, repositoryURI, viewerDID)
 }
 
 // PageForks lists direct public forks from the moderated local AppView.

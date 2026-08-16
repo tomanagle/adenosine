@@ -811,8 +811,15 @@ LEFT JOIN network.organizations AS requested_organization ON requested_organizat
 LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
 WHERE requested_repository.deleted_at IS NULL AND requested_repository.cid IS NOT NULL
   AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
-  AND lower(requested_repository.slug) = lower($2::text)
-  AND (requested_repository.owner_did = $3::text OR lower(coalesce(requested_profile.handle, requested_identity.handle, '')) = lower($3::text) OR lower(coalesce(requested_organization.slug, '')) = lower($3::text))
+  AND (
+    ($2::text IS NOT NULL
+      AND requested_repository.uri = $2::text)
+    OR (
+      $2::text IS NULL
+      AND lower(requested_repository.slug) = lower($3::text)
+      AND (requested_repository.owner_did = $4::text OR lower(coalesce(requested_profile.handle, requested_identity.handle, '')) = lower($4::text) OR lower(coalesce(requested_organization.slug, '')) = lower($4::text))
+    )
+  )
   AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids AS block WHERE block.account_did = $1 AND block.blocked_did IN (requested_repository.owner_did, repository.owner_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records AS hidden WHERE hidden.account_did = $1 AND hidden.record_uri IN (requested_repository.uri, repository.uri))
@@ -821,9 +828,10 @@ LIMIT 1
 `
 
 type ResolveSearchRepositoryParams struct {
-	ViewerDid       pgtype.Text `json:"viewer_did"`
-	RepositorySlug  string      `json:"repository_slug"`
-	RepositoryOwner string      `json:"repository_owner"`
+	ViewerDid              pgtype.Text `json:"viewer_did"`
+	RequestedRepositoryUri pgtype.Text `json:"requested_repository_uri"`
+	RepositorySlug         string      `json:"repository_slug"`
+	RepositoryOwner        string      `json:"repository_owner"`
 }
 
 type ResolveSearchRepositoryRow struct {
@@ -855,7 +863,12 @@ type ResolveSearchRepositoryRow struct {
 }
 
 func (q *Queries) ResolveSearchRepository(ctx context.Context, arg ResolveSearchRepositoryParams) (ResolveSearchRepositoryRow, error) {
-	row := q.db.QueryRow(ctx, resolveSearchRepository, arg.ViewerDid, arg.RepositorySlug, arg.RepositoryOwner)
+	row := q.db.QueryRow(ctx, resolveSearchRepository,
+		arg.ViewerDid,
+		arg.RequestedRepositoryUri,
+		arg.RepositorySlug,
+		arg.RepositoryOwner,
+	)
 	var i ResolveSearchRepositoryRow
 	err := row.Scan(
 		&i.Uri,

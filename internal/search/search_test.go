@@ -11,16 +11,24 @@ import (
 )
 
 type memoryStore struct {
-	repositories []RepositoryResult
-	forks        []federation.DiscoveryRepository
-	forkCount    int64
-	profiles     []ProfileResult
-	query        string
-	sort         Sort
-	limit        int
-	viewerDID    string
-	cursor       *Cursor
-	calls        int
+	repositories  []RepositoryResult
+	repository    federation.DiscoveryRepository
+	forks         []federation.DiscoveryRepository
+	forkCount     int64
+	profiles      []ProfileResult
+	query         string
+	sort          Sort
+	limit         int
+	viewerDID     string
+	repositoryURI string
+	cursor        *Cursor
+	calls         int
+}
+
+func (store *memoryStore) ResolveRepositoryByURI(_ context.Context, repositoryURI, viewerDID string) (federation.DiscoveryRepository, error) {
+	store.repositoryURI, store.viewerDID = repositoryURI, viewerDID
+	store.calls++
+	return store.repository, nil
 }
 
 func (store *memoryStore) ListForks(_ context.Context, _ string, viewerDID string, limit int, cursor *Cursor) ([]federation.DiscoveryRepository, int64, error) {
@@ -148,6 +156,34 @@ func TestForkPagination(t *testing.T) {
 			}
 			if err == nil && (len(page.Repositories) != testCase.wantItems || (page.NextCursor != nil) != testCase.wantNext || page.ForkCount != 2) {
 				t.Fatalf("page = %+v", page)
+			}
+		})
+	}
+}
+
+func TestResolveRepositoryByURI(t *testing.T) {
+	t.Parallel()
+	repositoryURI := "at://did:plc:alice/dev.adenosine.repo/project"
+	projected := federation.DiscoveryRepository{URI: repositoryURI, StarCount: 11, IssueCount: 13}
+	testCases := []struct {
+		name      string
+		viewerDID string
+	}{
+		{name: "anonymous projection"},
+		{name: "viewer moderated projection", viewerDID: "did:plc:viewer"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &memoryStore{repository: projected}
+			got, err := NewService(store).ResolveRepositoryByURI(context.Background(), repositoryURI, testCase.viewerDID)
+			if err != nil {
+				t.Fatalf("ResolveRepositoryByURI() error = %v", err)
+			}
+			if got != projected {
+				t.Fatalf("repository = %#v, want %#v", got, projected)
+			}
+			if store.calls != 1 || store.repositoryURI != repositoryURI || store.viewerDID != testCase.viewerDID {
+				t.Fatalf("store input = %d/%q/%q", store.calls, store.repositoryURI, store.viewerDID)
 			}
 		})
 	}

@@ -95,8 +95,15 @@ LEFT JOIN network.organizations AS requested_organization ON requested_organizat
 LEFT JOIN core.repositories AS local_repository ON local_repository.id = repository.local_repository_id
 WHERE requested_repository.deleted_at IS NULL AND requested_repository.cid IS NOT NULL
   AND repository.deleted_at IS NULL AND repository.cid IS NOT NULL
-  AND lower(requested_repository.slug) = lower(sqlc.arg(repository_slug)::text)
-  AND (requested_repository.owner_did = sqlc.arg(repository_owner)::text OR lower(coalesce(requested_profile.handle, requested_identity.handle, '')) = lower(sqlc.arg(repository_owner)::text) OR lower(coalesce(requested_organization.slug, '')) = lower(sqlc.arg(repository_owner)::text))
+  AND (
+    (sqlc.narg(requested_repository_uri)::text IS NOT NULL
+      AND requested_repository.uri = sqlc.narg(requested_repository_uri)::text)
+    OR (
+      sqlc.narg(requested_repository_uri)::text IS NULL
+      AND lower(requested_repository.slug) = lower(sqlc.arg(repository_slug)::text)
+      AND (requested_repository.owner_did = sqlc.arg(repository_owner)::text OR lower(coalesce(requested_profile.handle, requested_identity.handle, '')) = lower(sqlc.arg(repository_owner)::text) OR lower(coalesce(requested_organization.slug, '')) = lower(sqlc.arg(repository_owner)::text))
+    )
+  )
   AND (local_repository.id IS NULL OR (local_repository.visibility = 'public' AND local_repository.state = 'active' AND local_repository.deleted_at IS NULL))
   AND NOT EXISTS (SELECT 1 FROM moderation.blocked_dids AS block WHERE block.account_did = sqlc.narg(viewer_did) AND block.blocked_did IN (requested_repository.owner_did, repository.owner_did))
   AND NOT EXISTS (SELECT 1 FROM moderation.hidden_records AS hidden WHERE hidden.account_did = sqlc.narg(viewer_did) AND hidden.record_uri IN (requested_repository.uri, repository.uri))

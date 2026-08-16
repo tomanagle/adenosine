@@ -416,6 +416,10 @@ func verifyTransfer(instances map[string]instance, password string) error {
 			if projected.URI != transferredURI {
 				return fmt.Errorf("%s transfer route %s = %+v", target.name, owner, projected)
 			}
+			if projected.StarCount != 1 || projected.IssueCount != 1 || projected.OpenIssueCount != 1 ||
+				projected.CommentCount != 1 || projected.PullRequestCount != 1 || projected.OpenPullRequestCount != 0 {
+				return fmt.Errorf("%s transfer route %s collaboration counts = %+v", target.name, owner, projected)
+			}
 		}
 		response, err := client.Get(target.url + "/api/v1/issues?repository_uri=" + url.QueryEscape(transferredURI))
 		if err != nil {
