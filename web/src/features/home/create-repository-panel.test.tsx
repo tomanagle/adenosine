@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 
 import type { Repository } from '@adenosine/api-client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -12,16 +10,22 @@ import {
 } from '@/features/repositories/repository-snapshot.query'
 
 import { CreateRepositoryPanel } from './create-repository-panel'
+import { createRepositoryMutationOptions } from './home.query'
+import { createTestQueryClient, renderWithAppProviders } from '@/test/render'
+import { organizationsQueryOptions } from '@/features/organizations/queries'
 
 const { createRepository } = vi.hoisted(() => ({ createRepository: vi.fn() }))
 
-vi.mock('./home.query', () => ({
-  createRepositoryMutationOptions: () => ({ mutationFn: createRepository }),
-}))
-
-vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
-}))
+const dependencies = {
+  createRepositoryMutationOptions: () => ({
+    ...createRepositoryMutationOptions(),
+    mutationFn: createRepository,
+  }),
+  organizationsQueryOptions: () => ({
+    ...organizationsQueryOptions(),
+    queryFn: () => ({ items: [], page: { next_cursor: null } }),
+  }),
+}
 
 const created: Repository = {
   id: '00000000-0000-4000-8000-000000000000',
@@ -53,19 +57,12 @@ const created: Repository = {
   updated_at: '2026-08-12T00:00:00Z',
 }
 
-function testQueryClient() {
-  return new QueryClient({
-    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
-  })
-}
-
-function renderPanel(client = testQueryClient()) {
+function renderPanel(client = createTestQueryClient()) {
   return {
     client,
-    ...render(
-      <QueryClientProvider client={client}>
-        <CreateRepositoryPanel onClose={() => undefined} />
-      </QueryClientProvider>,
+    ...renderWithAppProviders(
+      <CreateRepositoryPanel dependencies={dependencies} onClose={() => undefined} />,
+      { queryClient: client },
     ),
   }
 }
@@ -117,13 +114,13 @@ describe('CreateRepositoryPanel', () => {
     expect(await screen.findByText('ledger is ready')).toBeTruthy()
     expect(screen.getByText('https://example.test/viewer.example/ledger.git')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Open repository' }).getAttribute('href')).toBe(
-      '/$owner/$repo',
+      '/viewer.example/ledger',
     )
   })
 
   it('keeps the created repository in the home snapshot while projection catches up', async () => {
     createRepository.mockResolvedValue(created)
-    const client = testQueryClient()
+    const client = createTestQueryClient()
     const queryKey = repositorySnapshotQueryOptions().queryKey
     client.setQueryData<RepositorySnapshot>(queryKey, { repositories: [], available: true })
     renderPanel(client)

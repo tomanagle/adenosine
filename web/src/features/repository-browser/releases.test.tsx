@@ -1,11 +1,23 @@
 // @vitest-environment jsdom
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { renderWithAppProviders } from '@/test/render'
+
 import { ReleaseDetailPage, ReleasesPage } from './releases'
+import {
+  createReleaseMutationOptions,
+  deleteReleaseAssetMutationOptions,
+  deleteReleaseMutationOptions,
+  releaseAssetsQueryOptions,
+  releaseQueryOptions,
+  releasesQueryOptions,
+  tagsQueryOptions,
+  updateReleaseMutationOptions,
+  uploadReleaseAssetMutationOptions,
+} from './queries'
 
 const release = {
   id: '0198aaaa-0000-7000-8000-000000000001',
@@ -29,27 +41,35 @@ const asset = {
   download_url: '/download',
   created_at: '2026-08-16T00:00:00Z',
 }
-const mocks = vi.hoisted(() => ({
-  create: vi.fn(),
-  update: vi.fn(),
-  remove: vi.fn(),
-  upload: vi.fn(),
-  removeAsset: vi.fn(),
-  navigate: vi.fn(),
-}))
+type CreateReleaseMutation = NonNullable<
+  ReturnType<typeof createReleaseMutationOptions>['mutationFn']
+>
+type UpdateReleaseMutation = NonNullable<
+  ReturnType<typeof updateReleaseMutationOptions>['mutationFn']
+>
+type DeleteReleaseMutation = NonNullable<
+  ReturnType<typeof deleteReleaseMutationOptions>['mutationFn']
+>
+type UploadReleaseAssetMutation = NonNullable<
+  ReturnType<typeof uploadReleaseAssetMutationOptions>['mutationFn']
+>
+type DeleteReleaseAssetMutation = NonNullable<
+  ReturnType<typeof deleteReleaseAssetMutationOptions>['mutationFn']
+>
 
-vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
-  useNavigate: () => mocks.navigate,
-}))
+const createRelease = vi.fn<CreateReleaseMutation>()
+const updateRelease = vi.fn<UpdateReleaseMutation>()
+const deleteRelease = vi.fn<DeleteReleaseMutation>()
+const uploadReleaseAsset = vi.fn<UploadReleaseAssetMutation>()
+const deleteReleaseAsset = vi.fn<DeleteReleaseAssetMutation>()
 
-vi.mock('./queries', () => ({
-  releasesQueryOptions: () => ({
-    queryKey: ['releases'],
+const dependencies = {
+  releasesQueryOptions: (params: { owner: string; repo: string }) => ({
+    ...releasesQueryOptions(params),
     queryFn: () => ({ items: [release], page: { next_cursor: null }, viewer_can_manage: true }),
   }),
-  tagsQueryOptions: () => ({
-    queryKey: ['tags'],
+  tagsQueryOptions: (params: { owner: string; repo: string }) => ({
+    ...tagsQueryOptions(params),
     queryFn: () => ({
       items: [
         {
@@ -63,34 +83,55 @@ vi.mock('./queries', () => ({
       page: { next_cursor: null },
     }),
   }),
-  releaseQueryOptions: () => ({ queryKey: ['release'], queryFn: () => release }),
-  releaseAssetsQueryOptions: () => ({
-    queryKey: ['release-assets'],
+  releaseQueryOptions: (params: { owner: string; repo: string }, releaseId: string) => ({
+    ...releaseQueryOptions(params, releaseId),
+    queryFn: () => release,
+  }),
+  releaseAssetsQueryOptions: (params: { owner: string; repo: string }, releaseId: string) => ({
+    ...releaseAssetsQueryOptions(params, releaseId),
     queryFn: () => ({ items: [asset], page: { next_cursor: null } }),
   }),
-  createReleaseMutationOptions: () => ({ mutationFn: mocks.create }),
-  updateReleaseMutationOptions: () => ({ mutationFn: mocks.update }),
-  deleteReleaseMutationOptions: () => ({ mutationFn: mocks.remove }),
-  uploadReleaseAssetMutationOptions: () => ({ mutationFn: mocks.upload }),
-  deleteReleaseAssetMutationOptions: () => ({ mutationFn: mocks.removeAsset }),
-}))
+  createReleaseMutationOptions: () => ({
+    ...createReleaseMutationOptions(),
+    mutationFn: createRelease,
+  }),
+  updateReleaseMutationOptions: () => ({
+    ...updateReleaseMutationOptions(),
+    mutationFn: updateRelease,
+  }),
+  deleteReleaseMutationOptions: () => ({
+    ...deleteReleaseMutationOptions(),
+    mutationFn: deleteRelease,
+  }),
+  uploadReleaseAssetMutationOptions: () => ({
+    ...uploadReleaseAssetMutationOptions(),
+    mutationFn: uploadReleaseAsset,
+  }),
+  deleteReleaseAssetMutationOptions: () => ({
+    ...deleteReleaseAssetMutationOptions(),
+    mutationFn: deleteReleaseAsset,
+  }),
+}
 
 function renderWithQuery(children: ReactNode) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  })
-  return render(<QueryClientProvider client={client}>{children}</QueryClientProvider>)
+  return renderWithAppProviders(children)
 }
 
 beforeEach(() => {
-  for (const mock of Object.values(mocks)) mock.mockReset()
+  createRelease.mockReset()
+  updateRelease.mockReset()
+  deleteRelease.mockReset()
+  uploadReleaseAsset.mockReset()
+  deleteReleaseAsset.mockReset()
 })
 afterEach(cleanup)
 
 describe('repository releases', () => {
   it('creates a release from an existing tag with TanStack Form values', async () => {
-    mocks.create.mockResolvedValue(release)
-    renderWithQuery(<ReleasesPage params={{ owner: 'alice', repo: 'adenosine' }} />)
+    createRelease.mockResolvedValue(release)
+    const { router } = renderWithQuery(
+      <ReleasesPage dependencies={dependencies} params={{ owner: 'alice', repo: 'adenosine' }} />,
+    )
 
     fireEvent.change(await screen.findByLabelText('Release title'), {
       target: { value: ' Adenosine 1.0 ' },
@@ -99,8 +140,8 @@ describe('repository releases', () => {
     fireEvent.click(screen.getByLabelText('Mark as pre-release'))
     fireEvent.click(screen.getByRole('button', { name: 'Create release' }))
 
-    await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(1))
-    expect(mocks.create.mock.calls[0]?.[0]).toEqual({
+    await waitFor(() => expect(createRelease).toHaveBeenCalledTimes(1))
+    expect(createRelease.mock.calls[0]?.[0]).toEqual({
       path: { owner: 'alice', repo: 'adenosine' },
       body: {
         tag_name: 'v1.0.0',
@@ -111,17 +152,18 @@ describe('repository releases', () => {
       },
     })
     await waitFor(() =>
-      expect(mocks.navigate).toHaveBeenCalledWith({
-        to: '/$owner/$repo/releases/$release',
-        params: { owner: 'alice', repo: 'adenosine', release: release.id },
-      }),
+      expect(router.state.location.pathname).toBe(`/alice/adenosine/releases/${release.id}`),
     )
   })
 
   it('renders safe notes and uploads the selected asset with its media type', async () => {
-    mocks.upload.mockResolvedValue(asset)
+    uploadReleaseAsset.mockResolvedValue(asset)
     renderWithQuery(
-      <ReleaseDetailPage params={{ owner: 'alice', repo: 'adenosine' }} releaseId={release.id} />,
+      <ReleaseDetailPage
+        dependencies={dependencies}
+        params={{ owner: 'alice', repo: 'adenosine' }}
+        releaseId={release.id}
+      />,
     )
 
     expect(await screen.findByRole('heading', { name: 'Safer shipping' })).toBeTruthy()
@@ -132,8 +174,8 @@ describe('repository releases', () => {
     fireEvent.change(input)
     fireEvent.submit(input.closest('form')!)
 
-    await waitFor(() => expect(mocks.upload).toHaveBeenCalledTimes(1))
-    expect(mocks.upload.mock.calls[0]?.[0]).toMatchObject({
+    await waitFor(() => expect(uploadReleaseAsset).toHaveBeenCalledTimes(1))
+    expect(uploadReleaseAsset.mock.calls[0]?.[0]).toMatchObject({
       path: { owner: 'alice', repo: 'adenosine', release: release.id },
       query: { name: 'adenosine.zip' },
       headers: { 'X-Asset-Content-Type': 'application/zip' },

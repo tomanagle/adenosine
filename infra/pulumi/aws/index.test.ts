@@ -1,22 +1,27 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 import * as pulumi from '@pulumi/pulumi'
+import { z } from 'zod'
 
 interface RegisteredResource {
   type: string
   name: string
   id: string
-  inputs: Record<string, unknown>
+  inputs: pulumi.Inputs
 }
 
-interface ContainerDefinition {
-  name: string
-  cpu?: number
-  memory?: number
-  dependsOn?: Array<{ containerName: string; condition: string }>
-  portMappings?: Array<{ containerPort: number }>
-  secrets?: Array<{ name: string; valueFrom: string }>
-}
+const containerDefinitionsSchema = z.array(
+  z.object({
+    name: z.string(),
+    cpu: z.number().optional(),
+    memory: z.number().optional(),
+    dependsOn: z.array(z.object({ containerName: z.string(), condition: z.string() })).optional(),
+    portMappings: z
+      .array(z.object({ containerPort: z.number(), protocol: z.string().optional() }))
+      .optional(),
+    secrets: z.array(z.object({ name: z.string(), valueFrom: z.string() })).optional(),
+  }),
+)
 
 const resources: RegisteredResource[] = []
 const program = pulumi.runtime
@@ -77,11 +82,13 @@ describe('AWS resource graph', () => {
       'postgres17',
     )
     assert.equal(
-      (resource('aws:backup/plan:Plan', 'backup-plan').inputs.rules as unknown[]).length,
+      z.array(z.json()).parse(resource('aws:backup/plan:Plan', 'backup-plan').inputs.rules).length,
       1,
     )
     assert.equal(
-      (resource('aws:backup/selection:Selection', 'backup-selection').inputs.resources as unknown[])
+      z
+        .array(z.json())
+        .parse(resource('aws:backup/selection:Selection', 'backup-selection').inputs.resources)
         .length,
       2,
     )
@@ -90,9 +97,9 @@ describe('AWS resource graph', () => {
   test('routes public HTTP through gateway after migration', async () => {
     await program
     const task = resource('aws:ecs/taskDefinition:TaskDefinition', 'task')
-    const definitions = JSON.parse(
-      task.inputs.containerDefinitions as string,
-    ) as ContainerDefinition[]
+    const definitions = containerDefinitionsSchema.parse(
+      JSON.parse(z.string().parse(task.inputs.containerDefinitions)),
+    )
     assert.deepEqual(definitions.find(({ name }) => name === 'adenosine')?.dependsOn, [
       {
         containerName: 'migrate',
@@ -129,14 +136,17 @@ describe('AWS resource graph', () => {
       'electric-database-password-value',
     )
     const task = resource('aws:ecs/taskDefinition:TaskDefinition', 'task')
-    assert.match(task.inputs.containerDefinitions as string, /secret:electric-database-url-value/)
     assert.match(
-      task.inputs.containerDefinitions as string,
+      z.string().parse(task.inputs.containerDefinitions),
+      /secret:electric-database-url-value/,
+    )
+    assert.match(
+      z.string().parse(task.inputs.containerDefinitions),
       /secret:electric-database-password-value/,
     )
-    const definitions = JSON.parse(
-      task.inputs.containerDefinitions as string,
-    ) as ContainerDefinition[]
+    const definitions = containerDefinitionsSchema.parse(
+      JSON.parse(z.string().parse(task.inputs.containerDefinitions)),
+    )
     assert.ok(definitions.find(({ name }) => name === 'electric'))
     assert.ok(definitions.find(({ name }) => name === 'migrate'))
     assert.equal(electricUrl.id, 'electric-database-url-value-id')

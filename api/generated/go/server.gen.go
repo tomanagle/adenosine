@@ -24,14 +24,17 @@ const (
 
 // Defines values for AccessTokenScopes.
 const (
-	AccessTokenScopesRepositoryRead  AccessTokenScopes = "repository:read"
-	AccessTokenScopesRepositoryWrite AccessTokenScopes = "repository:write"
+	AccessTokenScopesRepositoryRead   AccessTokenScopes = "repository:read"
+	AccessTokenScopesRepositoryStatus AccessTokenScopes = "repository:status"
+	AccessTokenScopesRepositoryWrite  AccessTokenScopes = "repository:write"
 )
 
 // Valid indicates whether the value is a known member of the AccessTokenScopes enum.
 func (e AccessTokenScopes) Valid() bool {
 	switch e {
 	case AccessTokenScopesRepositoryRead:
+		return true
+	case AccessTokenScopesRepositoryStatus:
 		return true
 	case AccessTokenScopesRepositoryWrite:
 		return true
@@ -70,6 +73,60 @@ func (e BranchProtectionInputPattern) Valid() bool {
 	}
 }
 
+// Defines values for CheckRunConclusion.
+const (
+	CheckRunConclusionActionRequired CheckRunConclusion = "action_required"
+	CheckRunConclusionCancelled      CheckRunConclusion = "cancelled"
+	CheckRunConclusionFailure        CheckRunConclusion = "failure"
+	CheckRunConclusionNeutral        CheckRunConclusion = "neutral"
+	CheckRunConclusionSkipped        CheckRunConclusion = "skipped"
+	CheckRunConclusionSuccess        CheckRunConclusion = "success"
+	CheckRunConclusionTimedOut       CheckRunConclusion = "timed_out"
+)
+
+// Valid indicates whether the value is a known member of the CheckRunConclusion enum.
+func (e CheckRunConclusion) Valid() bool {
+	switch e {
+	case CheckRunConclusionActionRequired:
+		return true
+	case CheckRunConclusionCancelled:
+		return true
+	case CheckRunConclusionFailure:
+		return true
+	case CheckRunConclusionNeutral:
+		return true
+	case CheckRunConclusionSkipped:
+		return true
+	case CheckRunConclusionSuccess:
+		return true
+	case CheckRunConclusionTimedOut:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CheckRunStatus.
+const (
+	Completed  CheckRunStatus = "completed"
+	InProgress CheckRunStatus = "in_progress"
+	Queued     CheckRunStatus = "queued"
+)
+
+// Valid indicates whether the value is a known member of the CheckRunStatus enum.
+func (e CheckRunStatus) Valid() bool {
+	switch e {
+	case Completed:
+		return true
+	case InProgress:
+		return true
+	case Queued:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CommentMutationProjected.
 const (
 	CommentMutationProjectedFalse CommentMutationProjected = false
@@ -85,16 +142,43 @@ func (e CommentMutationProjected) Valid() bool {
 	}
 }
 
+// Defines values for CommitStatusState.
+const (
+	CommitStatusStateError   CommitStatusState = "error"
+	CommitStatusStateFailure CommitStatusState = "failure"
+	CommitStatusStatePending CommitStatusState = "pending"
+	CommitStatusStateSuccess CommitStatusState = "success"
+)
+
+// Valid indicates whether the value is a known member of the CommitStatusState enum.
+func (e CommitStatusState) Valid() bool {
+	switch e {
+	case CommitStatusStateError:
+		return true
+	case CommitStatusStateFailure:
+		return true
+	case CommitStatusStatePending:
+		return true
+	case CommitStatusStateSuccess:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CreateAccessTokenRequestScopes.
 const (
-	CreateAccessTokenRequestScopesRepositoryRead  CreateAccessTokenRequestScopes = "repository:read"
-	CreateAccessTokenRequestScopesRepositoryWrite CreateAccessTokenRequestScopes = "repository:write"
+	CreateAccessTokenRequestScopesRepositoryRead   CreateAccessTokenRequestScopes = "repository:read"
+	CreateAccessTokenRequestScopesRepositoryStatus CreateAccessTokenRequestScopes = "repository:status"
+	CreateAccessTokenRequestScopesRepositoryWrite  CreateAccessTokenRequestScopes = "repository:write"
 )
 
 // Valid indicates whether the value is a known member of the CreateAccessTokenRequestScopes enum.
 func (e CreateAccessTokenRequestScopes) Valid() bool {
 	switch e {
 	case CreateAccessTokenRequestScopesRepositoryRead:
+		return true
+	case CreateAccessTokenRequestScopesRepositoryStatus:
 		return true
 	case CreateAccessTokenRequestScopesRepositoryWrite:
 		return true
@@ -183,14 +267,17 @@ func (e CreateRepositoryRequestVisibility) Valid() bool {
 
 // Defines values for CreatedAccessTokenScopes.
 const (
-	RepositoryRead  CreatedAccessTokenScopes = "repository:read"
-	RepositoryWrite CreatedAccessTokenScopes = "repository:write"
+	RepositoryRead   CreatedAccessTokenScopes = "repository:read"
+	RepositoryStatus CreatedAccessTokenScopes = "repository:status"
+	RepositoryWrite  CreatedAccessTokenScopes = "repository:write"
 )
 
 // Valid indicates whether the value is a known member of the CreatedAccessTokenScopes enum.
 func (e CreatedAccessTokenScopes) Valid() bool {
 	switch e {
 	case RepositoryRead:
+		return true
+	case RepositoryStatus:
 		return true
 	case RepositoryWrite:
 		return true
@@ -1167,15 +1254,19 @@ func (e UpdateRepositoryRequestVisibility) Valid() bool {
 
 // Defines values for WebhookEvent.
 const (
+	WebhookEventCheckRun    WebhookEvent = "check_run"
 	WebhookEventIssue       WebhookEvent = "issue"
 	WebhookEventPullRequest WebhookEvent = "pull_request"
 	WebhookEventPush        WebhookEvent = "push"
 	WebhookEventReview      WebhookEvent = "review"
+	WebhookEventStatus      WebhookEvent = "status"
 )
 
 // Valid indicates whether the value is a known member of the WebhookEvent enum.
 func (e WebhookEvent) Valid() bool {
 	switch e {
+	case WebhookEventCheckRun:
+		return true
 	case WebhookEventIssue:
 		return true
 	case WebhookEventPullRequest:
@@ -1183,6 +1274,8 @@ func (e WebhookEvent) Valid() bool {
 	case WebhookEventPush:
 		return true
 	case WebhookEventReview:
+		return true
+	case WebhookEventStatus:
 		return true
 	default:
 		return false
@@ -1785,12 +1878,14 @@ func (e PostSyncStarsParamsLog) Valid() bool {
 
 // AccessToken defines model for AccessToken.
 type AccessToken struct {
-	CreatedAt    time.Time           `json:"created_at"`
-	ExpiresAt    *time.Time          `json:"expires_at,omitempty"`
-	Id           openapi_types.UUID  `json:"id"`
-	LastUsedAt   *time.Time          `json:"last_used_at,omitempty"`
-	Name         string              `json:"name"`
-	Prefix       string              `json:"prefix"`
+	CreatedAt  time.Time          `json:"created_at"`
+	ExpiresAt  *time.Time         `json:"expires_at,omitempty"`
+	Id         openapi_types.UUID `json:"id"`
+	LastUsedAt *time.Time         `json:"last_used_at,omitempty"`
+	Name       string             `json:"name"`
+	Prefix     string             `json:"prefix"`
+
+	// RepositoryId Required when scopes includes repository:status; confines status and check-run writes to this repository.
 	RepositoryId *openapi_types.UUID `json:"repository_id,omitempty"`
 	Scopes       []AccessTokenScopes `json:"scopes"`
 }
@@ -1849,6 +1944,44 @@ type BranchProtectionInputPattern string
 type BranchProtectionList struct {
 	Items []BranchProtection `json:"items"`
 	Page  Page               `json:"page"`
+}
+
+// CheckRun defines model for CheckRun.
+type CheckRun struct {
+	CompletedAt   *time.Time          `json:"completed_at,omitempty"`
+	Conclusion    *CheckRunConclusion `json:"conclusion,omitempty"`
+	CreatedAt     time.Time           `json:"created_at"`
+	CreatorDid    string              `json:"creator_did"`
+	DetailsUrl    *string             `json:"details_url,omitempty"`
+	ExternalId    string              `json:"external_id"`
+	Id            openapi_types.UUID  `json:"id"`
+	Name          string              `json:"name"`
+	OutputSummary string              `json:"output_summary"`
+	OutputTitle   string              `json:"output_title"`
+	Sha           CommitSHA           `json:"sha"`
+	StartedAt     *time.Time          `json:"started_at,omitempty"`
+	Status        CheckRunStatus      `json:"status"`
+	UpdatedAt     time.Time           `json:"updated_at"`
+	Version       int64               `json:"version"`
+}
+
+// CheckRunConclusion defines model for CheckRunConclusion.
+type CheckRunConclusion string
+
+// CheckRunList defines model for CheckRunList.
+type CheckRunList struct {
+	Items []CheckRun `json:"items"`
+	Page  Page       `json:"page"`
+}
+
+// CheckRunStatus defines model for CheckRunStatus.
+type CheckRunStatus string
+
+// CombinedCommitStatus defines model for CombinedCommitStatus.
+type CombinedCommitStatus struct {
+	Sha      CommitSHA         `json:"sha"`
+	State    CommitStatusState `json:"state"`
+	Statuses []CommitStatus    `json:"statuses"`
 }
 
 // Comment defines model for Comment.
@@ -1919,6 +2052,31 @@ type CommitList struct {
 	Page  Page            `json:"page"`
 }
 
+// CommitSHA defines model for CommitSHA.
+type CommitSHA = string
+
+// CommitStatus defines model for CommitStatus.
+type CommitStatus struct {
+	Context     string             `json:"context"`
+	CreatedAt   time.Time          `json:"created_at"`
+	CreatorDid  string             `json:"creator_did"`
+	Description string             `json:"description"`
+	ExternalId  string             `json:"external_id"`
+	Id          openapi_types.UUID `json:"id"`
+	Sha         CommitSHA          `json:"sha"`
+	State       CommitStatusState  `json:"state"`
+	TargetUrl   *string            `json:"target_url,omitempty"`
+}
+
+// CommitStatusList defines model for CommitStatusList.
+type CommitStatusList struct {
+	Items []CommitStatus `json:"items"`
+	Page  Page           `json:"page"`
+}
+
+// CommitStatusState defines model for CommitStatusState.
+type CommitStatusState string
+
 // CommitSummary defines model for CommitSummary.
 type CommitSummary struct {
 	Author    CommitIdentity `json:"author"`
@@ -1930,8 +2088,10 @@ type CommitSummary struct {
 
 // CreateAccessTokenRequest defines model for CreateAccessTokenRequest.
 type CreateAccessTokenRequest struct {
-	ExpiresAt    *time.Time                       `json:"expires_at,omitempty"`
-	Name         string                           `json:"name"`
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	Name      string     `json:"name"`
+
+	// RepositoryId Required when scopes includes repository:status; confines status and check-run writes to this repository.
 	RepositoryId *openapi_types.UUID              `json:"repository_id,omitempty"`
 	Scopes       []CreateAccessTokenRequestScopes `json:"scopes"`
 }
@@ -1939,11 +2099,33 @@ type CreateAccessTokenRequest struct {
 // CreateAccessTokenRequestScopes defines model for CreateAccessTokenRequest.Scopes.
 type CreateAccessTokenRequestScopes string
 
+// CreateCheckRunRequest defines model for CreateCheckRunRequest.
+type CreateCheckRunRequest struct {
+	CompletedAt   *time.Time          `json:"completed_at,omitempty"`
+	Conclusion    *CheckRunConclusion `json:"conclusion,omitempty"`
+	DetailsUrl    *string             `json:"details_url,omitempty"`
+	ExternalId    string              `json:"external_id"`
+	Name          string              `json:"name"`
+	OutputSummary *string             `json:"output_summary,omitempty"`
+	OutputTitle   *string             `json:"output_title,omitempty"`
+	StartedAt     *time.Time          `json:"started_at,omitempty"`
+	Status        *CheckRunStatus     `json:"status,omitempty"`
+}
+
 // CreateCommentRequest defines model for CreateCommentRequest.
 type CreateCommentRequest struct {
 	Body      string  `json:"body"`
 	IssueUri  string  `json:"issue_uri"`
 	ParentUri *string `json:"parent_uri,omitempty"`
+}
+
+// CreateCommitStatusRequest defines model for CreateCommitStatusRequest.
+type CreateCommitStatusRequest struct {
+	Context     string            `json:"context"`
+	Description *string           `json:"description,omitempty"`
+	ExternalId  string            `json:"external_id"`
+	State       CommitStatusState `json:"state"`
+	TargetUrl   *string           `json:"target_url,omitempty"`
 }
 
 // CreateIssueRequest defines model for CreateIssueRequest.
@@ -2051,12 +2233,14 @@ type CreateWebhookRedeliveryRequest struct {
 
 // CreatedAccessToken defines model for CreatedAccessToken.
 type CreatedAccessToken struct {
-	CreatedAt    time.Time                  `json:"created_at"`
-	ExpiresAt    *time.Time                 `json:"expires_at,omitempty"`
-	Id           openapi_types.UUID         `json:"id"`
-	LastUsedAt   *time.Time                 `json:"last_used_at,omitempty"`
-	Name         string                     `json:"name"`
-	Prefix       string                     `json:"prefix"`
+	CreatedAt  time.Time          `json:"created_at"`
+	ExpiresAt  *time.Time         `json:"expires_at,omitempty"`
+	Id         openapi_types.UUID `json:"id"`
+	LastUsedAt *time.Time         `json:"last_used_at,omitempty"`
+	Name       string             `json:"name"`
+	Prefix     string             `json:"prefix"`
+
+	// RepositoryId Required when scopes includes repository:status; confines status and check-run writes to this repository.
 	RepositoryId *openapi_types.UUID        `json:"repository_id,omitempty"`
 	Scopes       []CreatedAccessTokenScopes `json:"scopes"`
 	Token        string                     `json:"token"`
@@ -3150,6 +3334,18 @@ type TreeEntry struct {
 // TreeEntryType defines model for TreeEntry.Type.
 type TreeEntryType string
 
+// UpdateCheckRunRequest defines model for UpdateCheckRunRequest.
+type UpdateCheckRunRequest struct {
+	CompletedAt     *time.Time          `json:"completed_at,omitempty"`
+	Conclusion      *CheckRunConclusion `json:"conclusion,omitempty"`
+	DetailsUrl      *string             `json:"details_url,omitempty"`
+	ExpectedVersion int64               `json:"expected_version"`
+	OutputSummary   *string             `json:"output_summary,omitempty"`
+	OutputTitle     *string             `json:"output_title,omitempty"`
+	StartedAt       *time.Time          `json:"started_at,omitempty"`
+	Status          CheckRunStatus      `json:"status"`
+}
+
 // UpdateDeveloperProfileRequest defines model for UpdateDeveloperProfileRequest.
 type UpdateDeveloperProfileRequest struct {
 	Bio         *string `json:"bio,omitempty"`
@@ -3637,6 +3833,18 @@ type ListRepositoryBranchesParams struct {
 // ListRepositoryCommitsParams defines parameters for ListRepositoryCommits.
 type ListRepositoryCommitsParams struct {
 	Ref    *string `form:"ref,omitempty" json:"ref,omitempty"`
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListCheckRunsParams defines parameters for ListCheckRuns.
+type ListCheckRunsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListCommitStatusesParams defines parameters for ListCommitStatuses.
+type ListCommitStatusesParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
@@ -4292,6 +4500,15 @@ type CreateBranchProtectionJSONRequestBody = BranchProtectionInput
 // UpdateBranchProtectionJSONRequestBody defines body for UpdateBranchProtection for application/json ContentType.
 type UpdateBranchProtectionJSONRequestBody = BranchProtectionInput
 
+// UpdateCheckRunJSONRequestBody defines body for UpdateCheckRun for application/json ContentType.
+type UpdateCheckRunJSONRequestBody = UpdateCheckRunRequest
+
+// CreateCheckRunJSONRequestBody defines body for CreateCheckRun for application/json ContentType.
+type CreateCheckRunJSONRequestBody = CreateCheckRunRequest
+
+// CreateCommitStatusJSONRequestBody defines body for CreateCommitStatus for application/json ContentType.
+type CreateCommitStatusJSONRequestBody = CreateCommitStatusRequest
+
 // CreateRepositoryForkJSONRequestBody defines body for CreateRepositoryFork for application/json ContentType.
 type CreateRepositoryForkJSONRequestBody = CreateRepositoryForkRequest
 
@@ -4623,12 +4840,33 @@ type ServerInterface interface {
 	// List repository branches
 	// (GET /api/v1/repositories/{owner}/{repo}/branches)
 	ListRepositoryBranches(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryBranchesParams)
+	// Get a check run
+	// (GET /api/v1/repositories/{owner}/{repo}/check-runs/{check_run})
+	GetCheckRun(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, checkRun openapi_types.UUID)
+	// Advance a check run
+	// (PATCH /api/v1/repositories/{owner}/{repo}/check-runs/{check_run})
+	UpdateCheckRun(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, checkRun openapi_types.UUID)
 	// List repository commit history
 	// (GET /api/v1/repositories/{owner}/{repo}/commits)
 	ListRepositoryCommits(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryCommitsParams)
 	// Get repository commit details
 	// (GET /api/v1/repositories/{owner}/{repo}/commits/{revision})
 	GetRepositoryCommit(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, revision string)
+	// List check runs for a commit
+	// (GET /api/v1/repositories/{owner}/{repo}/commits/{sha}/check-runs)
+	ListCheckRuns(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha CommitSHA, params ListCheckRunsParams)
+	// Create a check run
+	// (POST /api/v1/repositories/{owner}/{repo}/commits/{sha}/check-runs)
+	CreateCheckRun(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha CommitSHA)
+	// Get the latest combined status for a commit
+	// (GET /api/v1/repositories/{owner}/{repo}/commits/{sha}/status)
+	GetCombinedCommitStatus(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha CommitSHA)
+	// List status history for a commit
+	// (GET /api/v1/repositories/{owner}/{repo}/commits/{sha}/statuses)
+	ListCommitStatuses(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha CommitSHA, params ListCommitStatusesParams)
+	// Report a commit status
+	// (POST /api/v1/repositories/{owner}/{repo}/commits/{sha}/statuses)
+	CreateCommitStatus(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha CommitSHA)
 	// Get a bounded diff between two commits
 	// (GET /api/v1/repositories/{owner}/{repo}/diff)
 	GetRepositoryDiff(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryDiffParams)
@@ -8281,6 +8519,110 @@ func (siw *ServerInterfaceWrapper) ListRepositoryBranches(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// GetCheckRun operation middleware
+func (siw *ServerInterfaceWrapper) GetCheckRun(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "check_run" -------------
+	var checkRun openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "check_run", r.PathValue("check_run"), &checkRun, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "check_run", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCheckRun(w, r, owner, repo, checkRun)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateCheckRun operation middleware
+func (siw *ServerInterfaceWrapper) UpdateCheckRun(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "check_run" -------------
+	var checkRun openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "check_run", r.PathValue("check_run"), &checkRun, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "check_run", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateCheckRun(w, r, owner, repo, checkRun)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListRepositoryCommits operation middleware
 func (siw *ServerInterfaceWrapper) ListRepositoryCommits(w http.ResponseWriter, r *http.Request) {
 
@@ -8409,6 +8751,324 @@ func (siw *ServerInterfaceWrapper) GetRepositoryCommit(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepositoryCommit(w, r, owner, repo, revision)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCheckRuns operation middleware
+func (siw *ServerInterfaceWrapper) ListCheckRuns(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sha" -------------
+	var sha CommitSHA
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sha", r.PathValue("sha"), &sha, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sha", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCheckRunsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCheckRuns(w, r, owner, repo, sha, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCheckRun operation middleware
+func (siw *ServerInterfaceWrapper) CreateCheckRun(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sha" -------------
+	var sha CommitSHA
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sha", r.PathValue("sha"), &sha, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sha", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCheckRun(w, r, owner, repo, sha)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCombinedCommitStatus operation middleware
+func (siw *ServerInterfaceWrapper) GetCombinedCommitStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sha" -------------
+	var sha CommitSHA
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sha", r.PathValue("sha"), &sha, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sha", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCombinedCommitStatus(w, r, owner, repo, sha)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCommitStatuses operation middleware
+func (siw *ServerInterfaceWrapper) ListCommitStatuses(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sha" -------------
+	var sha CommitSHA
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sha", r.PathValue("sha"), &sha, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sha", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCommitStatusesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCommitStatuses(w, r, owner, repo, sha, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCommitStatus operation middleware
+func (siw *ServerInterfaceWrapper) CreateCommitStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sha" -------------
+	var sha CommitSHA
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sha", r.PathValue("sha"), &sha, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sha", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCommitStatus(w, r, owner, repo, sha)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -12449,8 +13109,15 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}", wrapper.GetBranchProtection)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}", wrapper.UpdateBranchProtection)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branches", wrapper.ListRepositoryBranches)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/check-runs/{check_run}", wrapper.GetCheckRun)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/check-runs/{check_run}", wrapper.UpdateCheckRun)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits", wrapper.ListRepositoryCommits)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{revision}", wrapper.GetRepositoryCommit)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{sha}/check-runs", wrapper.ListCheckRuns)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{sha}/check-runs", wrapper.CreateCheckRun)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{sha}/status", wrapper.GetCombinedCommitStatus)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{sha}/statuses", wrapper.ListCommitStatuses)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{sha}/statuses", wrapper.CreateCommitStatus)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/diff", wrapper.GetRepositoryDiff)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.ListRepositoryForks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.CreateRepositoryFork)

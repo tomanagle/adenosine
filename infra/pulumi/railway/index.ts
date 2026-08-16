@@ -80,7 +80,11 @@ const collectorDeployment = new Deployment('collector-deployment', {
 })
 
 const databaseUrl = pulumi.interpolate`postgresql://adenosine:${postgresPassword.result}@postgres.railway.internal:5432/adenosine`
-const appVariables: Record<string, pulumi.Input<string>> = {
+interface ApplicationVariables {
+  [name: string]: pulumi.Input<string>
+}
+
+const appVariables: ApplicationVariables = {
   DATABASE_URL: databaseUrl,
   ADENOSINE_BASE_URL: `https://${cfg.domain}`,
   ADENOSINE_LISTEN_ADDR: ':8080',

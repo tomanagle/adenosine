@@ -28,8 +28,42 @@ import {
 } from './queries'
 import type { RepositoryRouteParams } from './queries'
 
-export function ReleasesPage({ params }: { params: RepositoryRouteParams }) {
-  const { data } = useSuspenseQuery(releasesQueryOptions(params))
+type ReleaseDependencies = {
+  createReleaseMutationOptions: typeof createReleaseMutationOptions
+  deleteReleaseAssetMutationOptions: typeof deleteReleaseAssetMutationOptions
+  deleteReleaseMutationOptions: typeof deleteReleaseMutationOptions
+  releaseAssetsQueryOptions: typeof releaseAssetsQueryOptions
+  releaseQueryOptions: typeof releaseQueryOptions
+  releasesQueryOptions: typeof releasesQueryOptions
+  tagsQueryOptions: typeof tagsQueryOptions
+  updateReleaseMutationOptions: typeof updateReleaseMutationOptions
+  uploadReleaseAssetMutationOptions: typeof uploadReleaseAssetMutationOptions
+}
+
+type AssetUploadValues = { file: File | null }
+
+const releaseDependencies: ReleaseDependencies = {
+  createReleaseMutationOptions,
+  deleteReleaseAssetMutationOptions,
+  deleteReleaseMutationOptions,
+  releaseAssetsQueryOptions,
+  releaseQueryOptions,
+  releasesQueryOptions,
+  tagsQueryOptions,
+  updateReleaseMutationOptions,
+  uploadReleaseAssetMutationOptions,
+}
+
+const emptyAssetUpload: AssetUploadValues = { file: null }
+
+export function ReleasesPage({
+  dependencies = releaseDependencies,
+  params,
+}: {
+  dependencies?: ReleaseDependencies
+  params: RepositoryRouteParams
+}) {
+  const { data } = useSuspenseQuery(dependencies.releasesQueryOptions(params))
   return (
     <div className="space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b pb-5">
@@ -43,7 +77,9 @@ export function ReleasesPage({ params }: { params: RepositoryRouteParams }) {
         <Badge variant="outline">{data.items.length} loaded</Badge>
       </header>
 
-      {data.viewer_can_manage ? <CreateReleaseForm params={params} /> : null}
+      {data.viewer_can_manage ? (
+        <CreateReleaseForm dependencies={dependencies} params={params} />
+      ) : null}
 
       {data.items.length ? (
         <ol className="relative space-y-5 before:absolute before:bottom-6 before:left-[0.7rem] before:top-6 before:w-px before:bg-border">
@@ -107,11 +143,17 @@ function ReleaseCard({ item, params }: { item: Release; params: RepositoryRouteP
   )
 }
 
-function CreateReleaseForm({ params }: { params: RepositoryRouteParams }) {
+function CreateReleaseForm({
+  dependencies,
+  params,
+}: {
+  dependencies: ReleaseDependencies
+  params: RepositoryRouteParams
+}) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const { data: tags } = useSuspenseQuery(tagsQueryOptions(params))
-  const mutation = useMutation(createReleaseMutationOptions())
+  const { data: tags } = useSuspenseQuery(dependencies.tagsQueryOptions(params))
+  const mutation = useMutation(dependencies.createReleaseMutationOptions())
   const form = useForm({
     defaultValues: {
       tagName: tags.items[0]?.name ?? '',
@@ -131,7 +173,9 @@ function CreateReleaseForm({ params }: { params: RepositoryRouteParams }) {
           prerelease: value.prerelease,
         },
       })
-      await queryClient.invalidateQueries({ queryKey: releasesQueryOptions(params).queryKey })
+      await queryClient.invalidateQueries({
+        queryKey: dependencies.releasesQueryOptions(params).queryKey,
+      })
       await navigate({
         to: '/$owner/$repo/releases/$release',
         params: { ...params, release: created.id },
@@ -256,20 +300,24 @@ function CreateReleaseForm({ params }: { params: RepositoryRouteParams }) {
 }
 
 export function ReleaseDetailPage({
+  dependencies = releaseDependencies,
   params,
   releaseId,
 }: {
+  dependencies?: ReleaseDependencies
   params: RepositoryRouteParams
   releaseId: string
 }) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const { data: item } = useSuspenseQuery(releaseQueryOptions(params, releaseId))
-  const { data: assets } = useSuspenseQuery(releaseAssetsQueryOptions(params, releaseId))
-  const { data: releases } = useSuspenseQuery(releasesQueryOptions(params))
-  const update = useMutation(updateReleaseMutationOptions())
-  const remove = useMutation(deleteReleaseMutationOptions())
-  const removeAsset = useMutation(deleteReleaseAssetMutationOptions())
+  const { data: item } = useSuspenseQuery(dependencies.releaseQueryOptions(params, releaseId))
+  const { data: assets } = useSuspenseQuery(
+    dependencies.releaseAssetsQueryOptions(params, releaseId),
+  )
+  const { data: releases } = useSuspenseQuery(dependencies.releasesQueryOptions(params))
+  const update = useMutation(dependencies.updateReleaseMutationOptions())
+  const remove = useMutation(dependencies.deleteReleaseMutationOptions())
+  const removeAsset = useMutation(dependencies.deleteReleaseAssetMutationOptions())
   const canManage = releases.viewer_can_manage
   const form = useForm({
     defaultValues: {
@@ -290,15 +338,17 @@ export function ReleaseDetailPage({
       })
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: releaseQueryOptions(params, releaseId).queryKey,
+          queryKey: dependencies.releaseQueryOptions(params, releaseId).queryKey,
         }),
-        queryClient.invalidateQueries({ queryKey: releasesQueryOptions(params).queryKey }),
+        queryClient.invalidateQueries({
+          queryKey: dependencies.releasesQueryOptions(params).queryKey,
+        }),
       ])
     },
   })
   const refreshAssets = () =>
     queryClient.invalidateQueries({
-      queryKey: releaseAssetsQueryOptions(params, releaseId).queryKey,
+      queryKey: dependencies.releaseAssetsQueryOptions(params, releaseId).queryKey,
     })
   return (
     <div className="space-y-7">
@@ -388,7 +438,12 @@ export function ReleaseDetailPage({
             <p className="text-sm text-muted-foreground">No downloadable assets attached.</p>
           )}
           {canManage ? (
-            <AssetUploadForm params={params} releaseId={releaseId} onUploaded={refreshAssets} />
+            <AssetUploadForm
+              dependencies={dependencies}
+              params={params}
+              releaseId={releaseId}
+              onUploaded={refreshAssets}
+            />
           ) : null}
         </CardContent>
       </Card>
@@ -468,7 +523,7 @@ export function ReleaseDetailPage({
                       .mutateAsync({ path: { ...params, release: releaseId } })
                       .then(async () => {
                         await queryClient.invalidateQueries({
-                          queryKey: releasesQueryOptions(params).queryKey,
+                          queryKey: dependencies.releasesQueryOptions(params).queryKey,
                         })
                         await navigate({ to: '/$owner/$repo/releases', params })
                       })
@@ -497,17 +552,19 @@ export function ReleaseDetailPage({
 }
 
 function AssetUploadForm({
+  dependencies,
   params,
   releaseId,
   onUploaded,
 }: {
+  dependencies: ReleaseDependencies
   params: RepositoryRouteParams
   releaseId: string
-  onUploaded: () => Promise<unknown>
+  onUploaded: () => Promise<void>
 }) {
-  const mutation = useMutation(uploadReleaseAssetMutationOptions())
+  const mutation = useMutation(dependencies.uploadReleaseAssetMutationOptions())
   const form = useForm({
-    defaultValues: { file: null as File | null },
+    defaultValues: emptyAssetUpload,
     onSubmit: async ({ value }) => {
       if (!value.file) return
       await mutation.mutateAsync({

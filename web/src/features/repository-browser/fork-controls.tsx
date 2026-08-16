@@ -36,11 +36,31 @@ const forkFormSchema = zCreateRepositoryForkRequest.extend({
   organization: z.union([z.literal(''), zOrganizationSlug]),
 })
 
+type ForkDependencies = {
+  branchesQueryOptions: typeof branchesQueryOptions
+  createRepositoryForkMutationOptions: typeof createRepositoryForkMutationOptions
+  organizationsQueryOptions: typeof organizationsQueryOptions
+  repositoryForksQueryOptions: typeof repositoryForksQueryOptions
+  repositorySnapshotQueryOptions: typeof repositorySnapshotQueryOptions
+  syncRepositoryForkMutationOptions: typeof syncRepositoryForkMutationOptions
+}
+
+const forkDependencies: ForkDependencies = {
+  branchesQueryOptions,
+  createRepositoryForkMutationOptions,
+  organizationsQueryOptions,
+  repositoryForksQueryOptions,
+  repositorySnapshotQueryOptions,
+  syncRepositoryForkMutationOptions,
+}
+
 export function ForkActions({
+  dependencies = forkDependencies,
   identityDid,
   params,
   repository,
 }: {
+  dependencies?: ForkDependencies
   identityDid?: string
   params: RepositoryRouteParams
   repository: Repository
@@ -48,13 +68,13 @@ export function ForkActions({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const organizations = useQuery({
-    ...organizationsQueryOptions(),
+    ...dependencies.organizationsQueryOptions(),
     enabled: Boolean(identityDid),
   })
-  const createFork = useMutation(createRepositoryForkMutationOptions())
-  const syncFork = useMutation(syncRepositoryForkMutationOptions())
-  const snapshotQuery = repositorySnapshotQueryOptions()
-  const forksQuery = repositoryForksQueryOptions(params)
+  const createFork = useMutation(dependencies.createRepositoryForkMutationOptions())
+  const syncFork = useMutation(dependencies.syncRepositoryForkMutationOptions())
+  const snapshotQuery = dependencies.repositorySnapshotQueryOptions()
+  const forksQuery = dependencies.repositoryForksQueryOptions(params)
   const canSyncFork = Boolean(
     identityDid &&
     repository.hosting.local &&
@@ -86,7 +106,9 @@ export function ForkActions({
 
   async function sync() {
     await syncFork.mutateAsync({ path: params })
-    await queryClient.invalidateQueries({ queryKey: branchesQueryOptions(params).queryKey })
+    await queryClient.invalidateQueries({
+      queryKey: dependencies.branchesQueryOptions(params).queryKey,
+    })
   }
 
   return (
@@ -235,14 +257,16 @@ export function ForkActions({
 }
 
 export function ForkNetwork({
+  dependencies = forkDependencies,
   params,
   repository,
 }: {
+  dependencies?: ForkDependencies
   params: RepositoryRouteParams
   repository: Repository
 }) {
   const forks = useQuery({
-    ...repositoryForksQueryOptions(params),
+    ...dependencies.repositoryForksQueryOptions(params),
     enabled: Boolean(repository.uri && repository.fork_count),
   })
 

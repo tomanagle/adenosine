@@ -25,12 +25,26 @@ import {
 } from './requests'
 import { repositoryParams } from './viewer-repositories'
 
+type CreatePullRequestDependencies = {
+  branchesQueryOptions: typeof branchesQueryOptions
+  createPullRequestMutationOptions: typeof createPullRequestMutationOptions
+  pullRequestsQueryOptions: typeof pullRequestsQueryOptions
+}
+
+const createPullRequestDependencies: CreatePullRequestDependencies = {
+  branchesQueryOptions,
+  createPullRequestMutationOptions,
+  pullRequestsQueryOptions,
+}
+
 /** Home composes branch proposals and sends fork work to its upstream by default. */
 export function CreatePullRequestPanel({
+  dependencies = createPullRequestDependencies,
   onClose,
   repositories,
   networkRepositories,
 }: {
+  dependencies?: CreatePullRequestDependencies
   onClose: () => void
   repositories: Repository[]
   networkRepositories: Repository[]
@@ -40,14 +54,14 @@ export function CreatePullRequestPanel({
   const selected = repositories.find((repository) => repository.uri === selectedUri) ?? first
   const params = selected ? repositoryParams(selected) : { owner: '', repo: '' }
   const branchQuery = useQuery({
-    ...branchesQueryOptions(params),
+    ...dependencies.branchesQueryOptions(params),
     enabled: Boolean(selected),
   })
   const branches = branchQuery.data?.items ?? []
 
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const mutation = useMutation(createPullRequestMutationOptions())
+  const mutation = useMutation(dependencies.createPullRequestMutationOptions())
   const publication = usePublication()
   const [headError, setHeadError] = useState<string>()
 
@@ -70,7 +84,7 @@ export function CreatePullRequestPanel({
           (await mutation.mutateAsync({ body: proposalRequest(value, headSha) })).pull_request,
         async (reference) => {
           const projection = await queryClient.fetchQuery({
-            ...pullRequestsQueryOptions(value.target_repository_uri),
+            ...dependencies.pullRequestsQueryOptions(value.target_repository_uri),
             staleTime: 0,
           })
           return projection.items.some(
@@ -79,7 +93,7 @@ export function CreatePullRequestPanel({
         },
       )
       await queryClient.invalidateQueries({
-        queryKey: pullRequestsQueryOptions(value.target_repository_uri).queryKey,
+        queryKey: dependencies.pullRequestsQueryOptions(value.target_repository_uri).queryKey,
       })
       const target = networkRepositories.find(
         (repository) => repository.uri === value.target_repository_uri,
