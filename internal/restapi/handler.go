@@ -278,6 +278,10 @@ type PullRequestManager interface {
 	Merge(context.Context, string, pullrequest.MergeInput) (pullrequest.MergeResult, error)
 }
 
+type pullRequestCheckoutReader interface {
+	Checkout(context.Context, string) (pullrequest.Checkout, error)
+}
+
 type CommentManager interface {
 	Get(context.Context, string, string) (comment.Projection, error)
 	Create(context.Context, string, comment.CreateInput) (issue.Comment, error)
@@ -554,7 +558,7 @@ func (handler *apiHandler) StartATProtoLogin(w http.ResponseWriter, r *http.Requ
 		handler.writeError(w, r, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, generated.StartATProtoLoginResponse{AuthorizationUrl: authorizationURL})
+	writeJSON(w, http.StatusOK, generated.ATProtoLoginStart{AuthorizationUrl: authorizationURL})
 }
 
 func (handler *apiHandler) CompleteATProtoLogin(w http.ResponseWriter, r *http.Request, _ generated.CompleteATProtoLoginParams) {
@@ -3064,7 +3068,7 @@ func (handler *apiHandler) GetIssue(w http.ResponseWriter, r *http.Request, para
 }
 
 func (handler *apiHandler) CreateIssue(w http.ResponseWriter, r *http.Request, _ generated.CreateIssueParams) {
-	identity, err := handler.requireSession(r, true)
+	identity, err := handler.requireRepositoryWrite(r)
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -3167,8 +3171,24 @@ func (handler *apiHandler) GetPullRequest(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, projectedPullRequestResponse(value))
 }
 
+func (handler *apiHandler) GetPullRequestCheckout(w http.ResponseWriter, r *http.Request, params generated.GetPullRequestCheckoutParams) {
+	reader, ok := handler.deps.PullRequests.(pullRequestCheckoutReader)
+	if !ok {
+		handler.writeError(w, r, pullrequest.ErrNotFound)
+		return
+	}
+	value, err := reader.Checkout(r.Context(), params.PullRequestUri)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.PullRequestCheckout{
+		GitHttpsUrl: value.GitHTTPSURL, SourceBranch: value.SourceBranch, HeadSha: value.HeadSHA,
+	})
+}
+
 func (handler *apiHandler) CreatePullRequest(w http.ResponseWriter, r *http.Request, _ generated.CreatePullRequestParams) {
-	identity, err := handler.requireSession(r, true)
+	identity, err := handler.requireRepositoryWrite(r)
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -3298,7 +3318,7 @@ func (handler *apiHandler) PutPullRequestStatus(w http.ResponseWriter, r *http.R
 }
 
 func (handler *apiHandler) MergePullRequest(w http.ResponseWriter, r *http.Request, _ generated.MergePullRequestParams) {
-	identity, err := handler.requireSession(r, true)
+	identity, err := handler.requireRepositoryWrite(r)
 	if err != nil {
 		handler.writeError(w, r, err)
 		return
@@ -3801,6 +3821,23 @@ func (handler *apiHandler) requireSession(r *http.Request, mutation bool) (princ
 		return principal{}, auth.ErrForbidden
 	}
 	if mutation && !handler.validOrigin(r) {
+		return principal{}, auth.ErrForbidden
+	}
+	return identity, nil
+}
+
+func (handler *apiHandler) requireRepositoryWrite(r *http.Request) (principal, error) {
+	identity, err := handler.authenticate(r)
+	if err != nil {
+		return principal{}, err
+	}
+	if identity.session {
+		if !handler.validOrigin(r) {
+			return principal{}, auth.ErrForbidden
+		}
+		return identity, nil
+	}
+	if identity.repositoryID != nil || !slices.Contains(identity.scopes, auth.ScopeRepositoryWrite) {
 		return principal{}, auth.ErrForbidden
 	}
 	return identity, nil

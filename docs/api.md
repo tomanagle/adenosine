@@ -92,7 +92,8 @@ destinations, and ranking has no local-host preference.
 ## Generated ownership
 
 Inputs are `api/openapi.yaml`, `api/oapi-codegen.yaml`, and
-`packages/api-client/openapi-ts.config.ts`. `make generate` writes
-`api/generated/go/` and `packages/api-client/src/generated/`. Do not hand-edit those
+`packages/api-client/openapi-ts.config.ts`. `make generate` writes the Go server bindings
+and public client to `api/generated/go/` and the TypeScript client to
+`packages/api-client/src/generated/`. Do not hand-edit those
 directories. The small package export files outside `src/generated/` are maintained by
 hand. Run generation and commit input and output changes together.

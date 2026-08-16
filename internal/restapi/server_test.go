@@ -376,6 +376,34 @@ func TestHealthEndpoints(t *testing.T) {
 	}
 }
 
+func TestRepositoryWritePrincipal(t *testing.T) {
+	repositoryID := repository.ID(uuid.MustParse("0198a851-2a89-7ae2-a370-dc68883e3af3"))
+	testCases := []struct {
+		name    string
+		token   auth.AccessToken
+		wantErr error
+	}{
+		{name: "account wide write token", token: auth.AccessToken{AccountDID: "did:plc:alice", Scopes: []string{auth.ScopeRepositoryWrite}}},
+		{name: "read token", token: auth.AccessToken{AccountDID: "did:plc:alice", Scopes: []string{auth.ScopeRepositoryRead}}, wantErr: auth.ErrForbidden},
+		{name: "repository scoped token", token: auth.AccessToken{AccountDID: "did:plc:alice", Scopes: []string{auth.ScopeRepositoryWrite}, RepositoryID: &repositoryID}, wantErr: auth.ErrForbidden},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			handler := newAPIHandler("http://localhost:8080", fakeReadiness{}, slog.New(slog.NewTextHandler(io.Discard, nil)), Dependencies{TokenAuth: configuredTokenAuth{token: testCase.token}})
+			request := httptest.NewRequest(http.MethodPost, "/api/v1/issues", nil)
+			request.Header.Set("Authorization", "Bearer valid-pat")
+			identity, err := handler.requireRepositoryWrite(request)
+			if !errors.Is(err, testCase.wantErr) {
+				t.Fatalf("requireRepositoryWrite() error = %v, want %v", err, testCase.wantErr)
+			}
+			if testCase.wantErr == nil && identity.accountDID != testCase.token.AccountDID {
+				t.Errorf("account DID = %q, want %q", identity.accountDID, testCase.token.AccountDID)
+			}
+		})
+	}
+}
+
 func TestRequestObservabilityUsesMatchedRoute(t *testing.T) {
 	testCases := []struct {
 		name        string
@@ -755,7 +783,7 @@ func TestATProtoLoginStartAndCallback(t *testing.T) {
 			if response.Code != http.StatusOK || login.identifier != "alice.example" {
 				t.Fatalf("start response = %d %q, identifier = %q", response.Code, response.Body.String(), login.identifier)
 			}
-			var started generated.StartATProtoLoginResponse
+			var started generated.ATProtoLoginStart
 			if err := json.Unmarshal(response.Body.Bytes(), &started); err != nil || started.AuthorizationUrl != "https://provider.example/authorize" {
 				t.Fatalf("start body = %#v, error = %v", started, err)
 			}
