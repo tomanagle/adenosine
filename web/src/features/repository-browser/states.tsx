@@ -1,19 +1,24 @@
 import { AlertTriangle, FileQuestion, LockKeyhole, ServerOff } from 'lucide-react'
+import { z } from 'zod'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 type BrowserErrorKind = 'forbidden' | 'missing' | 'oversized' | 'unavailable' | 'unknown'
 
-export function classifyBrowserError(error: unknown): BrowserErrorKind {
-  const value = error as {
-    status?: number
-    response?: { status?: number }
-    error?: { code?: string }
-    message?: string
-  }
-  const status = value?.status ?? value?.response?.status
-  const code = value?.error?.code ?? ''
-  const message = value?.message ?? ''
+const browserErrorSchema = z
+  .object({
+    status: z.number().optional(),
+    response: z.object({ status: z.number().optional() }).optional(),
+    error: z.object({ code: z.string().optional() }).optional(),
+    message: z.string().optional(),
+  })
+  .catch({})
+
+export function classifyBrowserError<T>(error: T): BrowserErrorKind {
+  const value = browserErrorSchema.parse(error)
+  const status = value.status ?? value.response?.status
+  const code = value.error?.code ?? ''
+  const message = value.message ?? ''
   if (
     status === 401 ||
     status === 403 ||

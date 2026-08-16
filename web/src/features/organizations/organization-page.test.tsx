@@ -6,128 +6,42 @@ import type {
   OrganizationInvitationList,
   OrganizationMemberList,
   OrganizationRepositoryCollaboratorList,
+  OrganizationTeamMemberList,
+  OrganizationTeamRepositoryList,
   OrganizationTeamList,
   RepositoryList,
 } from '@adenosine/api-client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { Suspense } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { OrganizationPage } from './organization-page'
+import {
+  organizationAuditEventsInfiniteQueryOptions,
+  organizationMembersInfiniteQueryOptions,
+  organizationOwnerInvitationsInfiniteQueryOptions,
+  organizationQueryOptions,
+  organizationRepositoriesInfiniteQueryOptions,
+  organizationRepositoryCollaboratorsInfiniteQueryOptions,
+  organizationTeamMembersInfiniteQueryOptions,
+  organizationTeamRepositoriesInfiniteQueryOptions,
+  organizationTeamsInfiniteQueryOptions,
+} from './queries'
 
-const state = vi.hoisted(() => ({
-  organization: {} as Organization,
-  members: { items: [], page: { next_cursor: null } } as OrganizationMemberList,
-  teams: { items: [], page: { next_cursor: null } } as OrganizationTeamList,
-  invitations: { items: [], page: { next_cursor: null } } as OrganizationInvitationList,
-  audit: { items: [], page: { next_cursor: null } } as OrganizationAuditEventList,
-  repositories: { items: [], page: { next_cursor: null } } as RepositoryList,
-  collaborators: {
-    items: [],
-    page: { next_cursor: null },
-  } as OrganizationRepositoryCollaboratorList,
-}))
+type OrganizationTestState = {
+  organization: Organization
+  members: OrganizationMemberList
+  teams: OrganizationTeamList
+  invitations: OrganizationInvitationList
+  audit: OrganizationAuditEventList
+  repositories: RepositoryList
+  collaborators: OrganizationRepositoryCollaboratorList
+  teamMembers: OrganizationTeamMemberList
+  teamRepositories: OrganizationTeamRepositoryList
+}
 
-const queryHelpers = vi.hoisted(() => ({
-  mutation: () => ({ mutationFn: vi.fn() }),
-  infinite: <T,>(queryKey: string, data: () => T) => ({
-    queryKey: [queryKey],
-    queryFn: data,
-    initialPageParam: '',
-    getNextPageParam: () => undefined,
-  }),
-}))
-
-vi.mock('./queries', () => {
-  const { infinite, mutation } = queryHelpers
-  return {
-    organizationQueryOptions: () => ({
-      queryKey: ['organization'],
-      queryFn: () => state.organization,
-    }),
-    organizationMembersQueryOptions: () => ({
-      queryKey: ['members'],
-      queryFn: () => state.members,
-    }),
-    organizationMembersInfiniteQueryOptions: () =>
-      infinite('members-infinite', () => state.members),
-    organizationTeamsQueryOptions: () => ({ queryKey: ['teams'], queryFn: () => state.teams }),
-    organizationTeamsInfiniteQueryOptions: () => infinite('teams-infinite', () => state.teams),
-    organizationOwnerInvitationsQueryOptions: () => ({
-      queryKey: ['invitations'],
-      queryFn: () => state.invitations,
-    }),
-    organizationOwnerInvitationsInfiniteQueryOptions: () =>
-      infinite('invitations-infinite', () => state.invitations),
-    organizationAuditEventsQueryOptions: () => ({
-      queryKey: ['audit'],
-      queryFn: () => state.audit,
-    }),
-    organizationAuditEventsInfiniteQueryOptions: () =>
-      infinite('audit-infinite', () => state.audit),
-    organizationTeamMembersQueryOptions: () => ({
-      queryKey: ['team-members'],
-      queryFn: () => ({
-        items: [
-          {
-            did: 'did:plc:viewer',
-            handle: 'viewer.test',
-            role: 'maintainer',
-            created_at: '2026-08-13T00:00:00Z',
-            updated_at: '2026-08-13T00:00:00Z',
-          },
-        ],
-        page: { next_cursor: null },
-      }),
-    }),
-    organizationTeamMembersInfiniteQueryOptions: () =>
-      infinite('team-members-infinite', () => ({
-        items: [
-          {
-            did: 'did:plc:viewer',
-            handle: 'viewer.test',
-            role: 'maintainer',
-            created_at: '2026-08-13T00:00:00Z',
-            updated_at: '2026-08-13T00:00:00Z',
-          },
-        ],
-        page: { next_cursor: null },
-      })),
-    organizationRepositoriesQueryOptions: () => ({
-      queryKey: ['repositories'],
-      queryFn: () => state.repositories,
-    }),
-    organizationRepositoriesInfiniteQueryOptions: () =>
-      infinite('repositories-infinite', () => state.repositories),
-    organizationRepositoryCollaboratorsQueryOptions: () => ({
-      queryKey: ['collaborators'],
-      queryFn: () => state.collaborators,
-    }),
-    organizationRepositoryCollaboratorsInfiniteQueryOptions: () =>
-      infinite('collaborators-infinite', () => state.collaborators),
-    organizationTeamRepositoriesQueryOptions: () => ({
-      queryKey: ['team-repositories'],
-      queryFn: () => ({ items: [], page: { next_cursor: null } }),
-    }),
-    organizationTeamRepositoriesInfiniteQueryOptions: () =>
-      infinite('team-repositories-infinite', () => ({ items: [], page: { next_cursor: null } })),
-    inviteOrganizationMemberMutationOptions: mutation,
-    createOrganizationTeamMutationOptions: mutation,
-    updateOrganizationTeamMutationOptions: mutation,
-    deleteOrganizationTeamMutationOptions: mutation,
-    putOrganizationTeamMemberMutationOptions: mutation,
-    putOrganizationTeamRepositoryMutationOptions: mutation,
-    removeOrganizationMemberMutationOptions: mutation,
-    removeOrganizationTeamMemberMutationOptions: mutation,
-    removeOrganizationTeamRepositoryMutationOptions: mutation,
-    revokeOrganizationInvitationMutationOptions: mutation,
-    updateOrganizationMemberMutationOptions: mutation,
-    updateOrganizationMutationOptions: mutation,
-    putOrganizationRepositoryCollaboratorMutationOptions: mutation,
-    removeOrganizationRepositoryCollaboratorMutationOptions: mutation,
-  }
-})
+let state: OrganizationTestState
 
 const now = '2026-08-13T00:00:00Z'
 
@@ -146,8 +60,77 @@ function organization(overrides: Partial<Organization> = {}): Organization {
   }
 }
 
+function infiniteData<T>(page: T) {
+  return { pages: [page], pageParams: [''] }
+}
+
+beforeEach(() => {
+  state = {
+    organization: organization(),
+    members: { items: [], page: { next_cursor: null } },
+    teams: { items: [], page: { next_cursor: null } },
+    invitations: { items: [], page: { next_cursor: null } },
+    audit: { items: [], page: { next_cursor: null } },
+    repositories: { items: [], page: { next_cursor: null } },
+    collaborators: { items: [], page: { next_cursor: null } },
+    teamMembers: {
+      items: [
+        {
+          did: 'did:plc:viewer',
+          handle: 'viewer.test',
+          role: 'maintainer',
+          created_at: now,
+          updated_at: now,
+        },
+      ],
+      page: { next_cursor: null },
+    },
+    teamRepositories: { items: [], page: { next_cursor: null } },
+  }
+})
+
 async function renderPage() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
+  })
+  client.setQueryData(organizationQueryOptions('adenosine').queryKey, state.organization)
+  client.setQueryData(
+    organizationMembersInfiniteQueryOptions('adenosine').queryKey,
+    infiniteData(state.members),
+  )
+  client.setQueryData(
+    organizationTeamsInfiniteQueryOptions('adenosine').queryKey,
+    infiniteData(state.teams),
+  )
+  client.setQueryData(
+    organizationOwnerInvitationsInfiniteQueryOptions('adenosine').queryKey,
+    infiniteData(state.invitations),
+  )
+  client.setQueryData(
+    organizationAuditEventsInfiniteQueryOptions('adenosine').queryKey,
+    infiniteData(state.audit),
+  )
+  client.setQueryData(
+    organizationRepositoriesInfiniteQueryOptions('adenosine').queryKey,
+    infiniteData(state.repositories),
+  )
+  for (const repository of state.repositories.items) {
+    if (!repository.id) continue
+    client.setQueryData(
+      organizationRepositoryCollaboratorsInfiniteQueryOptions('adenosine', repository.id).queryKey,
+      infiniteData(state.collaborators),
+    )
+  }
+  for (const team of state.teams.items) {
+    client.setQueryData(
+      organizationTeamMembersInfiniteQueryOptions('adenosine', team.id).queryKey,
+      infiniteData(state.teamMembers),
+    )
+    client.setQueryData(
+      organizationTeamRepositoriesInfiniteQueryOptions('adenosine', team.id).queryKey,
+      infiniteData(state.teamRepositories),
+    )
+  }
   render(
     <QueryClientProvider client={client}>
       <Suspense fallback={<p>Loading</p>}>

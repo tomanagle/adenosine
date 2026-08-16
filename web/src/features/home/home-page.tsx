@@ -28,9 +28,25 @@ import {
 
 type Panel = 'repository' | 'pull-request'
 
-export function HomePage() {
-  const { data: identity } = useSuspenseQuery(identityQueryOptions())
-  const { data: snapshot } = useSuspenseQuery(repositorySnapshotQueryOptions())
+type HomePageDependencies = {
+  IdentityQueryOptions: typeof identityQueryOptions
+  RepositorySnapshotQueryOptions: typeof repositorySnapshotQueryOptions
+  LiveRepositories: typeof LiveRepositories
+}
+
+const homePageDependencies: HomePageDependencies = {
+  IdentityQueryOptions: identityQueryOptions,
+  RepositorySnapshotQueryOptions: repositorySnapshotQueryOptions,
+  LiveRepositories,
+}
+
+export function HomePage({
+  dependencies = homePageDependencies,
+}: {
+  dependencies?: HomePageDependencies
+}) {
+  const { data: identity } = useSuspenseQuery(dependencies.IdentityQueryOptions())
+  const { data: snapshot } = useSuspenseQuery(dependencies.RepositorySnapshotQueryOptions())
   const [panel, setPanel] = useState<Panel>()
   const [filter, setFilter] = useState('')
 
@@ -144,7 +160,7 @@ export function HomePage() {
               Public repositories as this server indexes them.
             </p>
             <div className="mt-4">
-              <LiveRepositories />
+              <dependencies.LiveRepositories />
             </div>
             <Link
               className={cn(buttonVariants({ size: 'sm', variant: 'outline' }), 'mt-5 w-full')}
