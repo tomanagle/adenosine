@@ -20,6 +20,7 @@ import (
 	"github.com/adenosine-dev/adenosine/internal/auth"
 	"github.com/adenosine-dev/adenosine/internal/branchprotection"
 	"github.com/adenosine-dev/adenosine/internal/comment"
+	"github.com/adenosine-dev/adenosine/internal/commitstatus"
 	"github.com/adenosine-dev/adenosine/internal/federation"
 	gitservice "github.com/adenosine-dev/adenosine/internal/git"
 	localidentity "github.com/adenosine-dev/adenosine/internal/identity"
@@ -324,6 +325,16 @@ type BranchProtectionManager interface {
 	Delete(context.Context, repository.ID, uuid.UUID) error
 }
 
+type CommitStatusManager interface {
+	CreateStatus(context.Context, repository.ID, string, string, commitstatus.StatusInput, time.Time) (commitstatus.CommitStatus, bool, error)
+	PageStatuses(context.Context, repository.ID, string, *uuid.UUID, int) (commitstatus.Page[commitstatus.CommitStatus], error)
+	Combined(context.Context, repository.ID, string) (commitstatus.Combined, error)
+	CreateCheckRun(context.Context, repository.ID, string, commitstatus.CheckRunInput, time.Time) (commitstatus.CheckRun, bool, error)
+	GetCheckRun(context.Context, repository.ID, uuid.UUID) (commitstatus.CheckRun, error)
+	PageCheckRuns(context.Context, repository.ID, string, *uuid.UUID, int) (commitstatus.Page[commitstatus.CheckRun], error)
+	UpdateCheckRun(context.Context, repository.ID, string, uuid.UUID, commitstatus.CheckRunUpdate, time.Time) (commitstatus.CheckRun, bool, error)
+}
+
 type RepositoryActivityWriter interface {
 	RepositoryActivity(context.Context, string, string, any) error
 }
@@ -450,6 +461,7 @@ type Dependencies struct {
 	Notifications               NotificationManager
 	Webhooks                    WebhookManager
 	BranchProtections           BranchProtectionManager
+	CommitStatuses              CommitStatusManager
 	Activity                    RepositoryActivityWriter
 	Authorization               RepositoryAuthorizer
 	Git                         GitReader
@@ -2285,6 +2297,185 @@ func (handler *apiHandler) CreateWebhookRedelivery(w http.ResponseWriter, r *htt
 	writeJSON(w, http.StatusCreated, webhookDeliveryResponse(value))
 }
 
+func (handler *apiHandler) ListCommitStatuses(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, sha generated.CommitSHA, params generated.ListCommitStatusesParams) {
+	repo, err := handler.commitStatusRepository(r, owner, string(slug), string(sha))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "commit-statuses:" + repo.ID.String() + ":" + string(sha)
+	after, err := decodeUUIDCollectionCursor(encoded, scope)
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	page, err := handler.deps.CommitStatuses.PageStatuses(r.Context(), repo.ID, string(sha), after, limit)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.CommitStatus, len(page.Items))
+	for index, value := range page.Items {
+		items[index] = commitStatusResponse(value)
+	}
+	next, err := encodeCollectionCursor(scope, uuidCursorString(page.NextCursor))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.CommitStatusList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) CreateCommitStatus(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, sha generated.CommitSHA) {
+	identity, repo, err := handler.requireCommitStatusWriter(r, owner, string(slug), string(sha))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.CreateCommitStatusRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	value, created, err := handler.deps.CommitStatuses.CreateStatus(r.Context(), repo.ID, identity.accountDID, string(sha), commitstatus.StatusInput{
+		Context: request.Context, State: commitstatus.State(request.State), Description: stringValue(request.Description), TargetURL: request.TargetUrl, ExternalID: request.ExternalId,
+	}, time.Now().UTC())
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	location := "/api/v1/repositories/" + owner + "/" + string(slug) + "/commits/" + string(sha) + "/statuses"
+	w.Header().Set("Location", location)
+	if created {
+		handler.recordRepositoryEvent(r, repo.ID, "status.created", map[string]any{"status_id": value.ID, "sha": value.CommitSHA, "context": value.Context, "state": value.State})
+		writeJSON(w, http.StatusCreated, commitStatusResponse(value))
+		return
+	}
+	writeJSON(w, http.StatusOK, commitStatusResponse(value))
+}
+
+func (handler *apiHandler) GetCombinedCommitStatus(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, sha generated.CommitSHA) {
+	repo, err := handler.commitStatusRepository(r, owner, string(slug), string(sha))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.CommitStatuses.Combined(r.Context(), repo.ID, string(sha))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.CommitStatus, len(value.Items))
+	for index, item := range value.Items {
+		items[index] = commitStatusResponse(item)
+	}
+	writeJSON(w, http.StatusOK, generated.CombinedCommitStatus{Sha: generated.CommitSHA(value.SHA), State: generated.CommitStatusState(value.State), Statuses: items})
+}
+
+func (handler *apiHandler) ListCheckRuns(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, sha generated.CommitSHA, params generated.ListCheckRunsParams) {
+	repo, err := handler.commitStatusRepository(r, owner, string(slug), string(sha))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	limit, encoded := collectionParameters(params.Limit, params.Cursor)
+	scope := "check-runs:" + repo.ID.String() + ":" + string(sha)
+	after, err := decodeUUIDCollectionCursor(encoded, scope)
+	if err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	page, err := handler.deps.CommitStatuses.PageCheckRuns(r.Context(), repo.ID, string(sha), after, limit)
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	items := make([]generated.CheckRun, len(page.Items))
+	for index, value := range page.Items {
+		items[index] = checkRunResponse(value)
+	}
+	next, err := encodeCollectionCursor(scope, uuidCursorString(page.NextCursor))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, generated.CheckRunList{Items: items, Page: generated.Page{NextCursor: next}})
+}
+
+func (handler *apiHandler) CreateCheckRun(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, sha generated.CommitSHA) {
+	identity, repo, err := handler.requireCommitStatusWriter(r, owner, string(slug), string(sha))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.CreateCheckRunRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	status := commitstatus.CheckQueued
+	if request.Status != nil {
+		status = commitstatus.CheckStatus(*request.Status)
+	}
+	value, created, err := handler.deps.CommitStatuses.CreateCheckRun(r.Context(), repo.ID, identity.accountDID, commitstatus.CheckRunInput{
+		CommitSHA: string(sha), Name: request.Name, ExternalID: request.ExternalId, Status: status,
+		Conclusion: checkConclusion(request.Conclusion), DetailsURL: request.DetailsUrl, OutputTitle: stringValue(request.OutputTitle), OutputSummary: stringValue(request.OutputSummary),
+		StartedAt: request.StartedAt, CompletedAt: request.CompletedAt,
+	}, time.Now().UTC())
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	location := "/api/v1/repositories/" + owner + "/" + string(slug) + "/check-runs/" + value.ID.String()
+	w.Header().Set("Location", location)
+	if created {
+		handler.recordRepositoryEvent(r, repo.ID, "check_run.created", map[string]any{"check_run_id": value.ID, "sha": value.CommitSHA, "name": value.Name, "status": value.Status})
+		writeJSON(w, http.StatusCreated, checkRunResponse(value))
+		return
+	}
+	writeJSON(w, http.StatusOK, checkRunResponse(value))
+}
+
+func (handler *apiHandler) GetCheckRun(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, checkRunID openapi_types.UUID) {
+	repo, err := handler.readableRepository(r, owner, string(slug))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	value, err := handler.deps.CommitStatuses.GetCheckRun(r.Context(), repo.ID, uuid.UUID(checkRunID))
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, checkRunResponse(value))
+}
+
+func (handler *apiHandler) UpdateCheckRun(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, checkRunID openapi_types.UUID) {
+	identity, repo, err := handler.requireCommitStatusWriter(r, owner, string(slug), "")
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	var request generated.UpdateCheckRunRequest
+	if err := decodeJSON(w, r, &request); err != nil {
+		handler.writeMalformed(w, r, err)
+		return
+	}
+	value, changed, err := handler.deps.CommitStatuses.UpdateCheckRun(r.Context(), repo.ID, identity.accountDID, uuid.UUID(checkRunID), commitstatus.CheckRunUpdate{
+		ExpectedVersion: request.ExpectedVersion, Status: commitstatus.CheckStatus(request.Status), Conclusion: checkConclusion(request.Conclusion), DetailsURL: request.DetailsUrl,
+		OutputTitle: stringValue(request.OutputTitle), OutputSummary: stringValue(request.OutputSummary), StartedAt: request.StartedAt, CompletedAt: request.CompletedAt,
+	}, time.Now().UTC())
+	if err != nil {
+		handler.writeError(w, r, err)
+		return
+	}
+	if changed {
+		handler.recordRepositoryEvent(r, repo.ID, "check_run.updated", map[string]any{"check_run_id": value.ID, "sha": value.CommitSHA, "name": value.Name, "status": value.Status, "conclusion": value.Conclusion})
+	}
+	writeJSON(w, http.StatusOK, checkRunResponse(value))
+}
+
 func (handler *apiHandler) ListBranchProtections(w http.ResponseWriter, r *http.Request, owner string, slug generated.RepositorySlug, params generated.ListBranchProtectionsParams) {
 	_, repo, err := handler.requireRepositoryAdmin(r, owner, string(slug), false)
 	if err != nil {
@@ -2450,6 +2641,60 @@ func (handler *apiHandler) requireRepositoryAdmin(r *http.Request, owner, slug s
 	}
 	if err := handler.authorizeRepositoryAdmin(r.Context(), identity, repo.ID); err != nil {
 		return principal{}, repository.Repository{}, err
+	}
+	return identity, repo, nil
+}
+
+func (handler *apiHandler) commitStatusRepository(r *http.Request, owner, slug, sha string) (repository.Repository, error) {
+	if handler.deps.CommitStatuses == nil {
+		return repository.Repository{}, repository.ErrNotFound
+	}
+	repo, err := handler.readableRepository(r, owner, slug)
+	if err != nil {
+		return repository.Repository{}, err
+	}
+	if sha != "" {
+		commit, commitErr := handler.deps.Git.Commit(r.Context(), repo.ID, sha)
+		if commitErr != nil || commit.SHA != sha {
+			if commitErr != nil {
+				return repository.Repository{}, commitErr
+			}
+			return repository.Repository{}, gitservice.ErrObjectNotFound
+		}
+	}
+	return repo, nil
+}
+
+func (handler *apiHandler) requireCommitStatusWriter(r *http.Request, owner, slug, sha string) (principal, repository.Repository, error) {
+	identity, err := handler.authenticate(r)
+	if err != nil {
+		return principal{}, repository.Repository{}, err
+	}
+	if identity.session && !handler.validOrigin(r) {
+		return principal{}, repository.Repository{}, auth.ErrForbidden
+	}
+	repo, err := handler.deps.Repositories.GetByOwnerSlug(r.Context(), owner, slug)
+	if err != nil || repo.State != repository.StateActive {
+		return principal{}, repository.Repository{}, repository.ErrNotFound
+	}
+	if !identity.session {
+		if !slices.Contains(identity.scopes, auth.ScopeRepositoryStatus) || identity.repositoryID == nil || *identity.repositoryID != repo.ID {
+			return principal{}, repository.Repository{}, auth.ErrForbidden
+		}
+	} else if err := handler.authorizeRepositoryAdmin(r.Context(), identity, repo.ID); err != nil {
+		return principal{}, repository.Repository{}, err
+	}
+	if handler.deps.CommitStatuses == nil {
+		return principal{}, repository.Repository{}, repository.ErrNotFound
+	}
+	if sha != "" {
+		commit, commitErr := handler.deps.Git.Commit(r.Context(), repo.ID, sha)
+		if commitErr != nil || commit.SHA != sha {
+			if commitErr != nil {
+				return principal{}, repository.Repository{}, commitErr
+			}
+			return principal{}, repository.Repository{}, gitservice.ErrObjectNotFound
+		}
 	}
 	return identity, repo, nil
 }
@@ -3189,6 +3434,20 @@ func (handler *apiHandler) recordRepositoryActivity(r *http.Request, eventType, 
 	}
 }
 
+func (handler *apiHandler) recordRepositoryEvent(r *http.Request, repositoryID repository.ID, eventType string, payload any) {
+	writer, ok := handler.deps.Activity.(interface {
+		RepositoryEvent(context.Context, repository.ID, string, any) error
+	})
+	if !ok {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), 2*time.Second)
+	defer cancel()
+	if err := writer.RepositoryEvent(ctx, repositoryID, eventType, payload); err != nil {
+		handler.logger.ErrorContext(ctx, "record repository event", "event_type", eventType, "request_id", requestIDFromContext(ctx), "error", err)
+	}
+}
+
 func (handler *apiHandler) DeleteIssueComment(w http.ResponseWriter, r *http.Request, params generated.DeleteIssueCommentParams) {
 	identity, err := handler.requireSession(r, true)
 	if err != nil {
@@ -3665,6 +3924,12 @@ func (handler *apiHandler) writeError(w http.ResponseWriter, r *http.Request, er
 		handler.writeAPIError(w, r, http.StatusConflict, "branch_protection_conflict", "The branch protection already exists", err)
 	case errors.Is(err, branchprotection.ErrValidation):
 		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The branch protection request is invalid", err)
+	case errors.Is(err, commitstatus.ErrNotFound):
+		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested commit status resource was not found", err)
+	case errors.Is(err, commitstatus.ErrConflict):
+		handler.writeAPIError(w, r, http.StatusConflict, "commit_status_conflict", "The commit status request conflicts with existing state", err)
+	case errors.Is(err, commitstatus.ErrValidation):
+		handler.writeAPIError(w, r, http.StatusUnprocessableEntity, "validation_failed", "The commit status request is invalid", err)
 	case errors.Is(err, organization.ErrNotFound):
 		handler.writeAPIError(w, r, http.StatusNotFound, "not_found", "The requested organization resource was not found", err)
 	case errors.Is(err, organization.ErrAlreadyExists):
@@ -3961,6 +4226,46 @@ func branchProtectionInput(value generated.BranchProtectionInput) branchprotecti
 
 func branchProtectionResponse(value branchprotection.Protection) generated.BranchProtection {
 	return generated.BranchProtection{Id: openapi_types.UUID(value.ID), Pattern: generated.BranchProtectionPattern(value.Pattern), DenyForcePush: value.DenyForcePush, DenyDeletion: value.DenyDeletion, CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
+}
+
+func commitStatusResponse(value commitstatus.CommitStatus) generated.CommitStatus {
+	return generated.CommitStatus{Id: openapi_types.UUID(value.ID), Sha: generated.CommitSHA(value.CommitSHA), Context: value.Context,
+		State: generated.CommitStatusState(value.State), Description: value.Description, TargetUrl: value.TargetURL,
+		CreatorDid: value.CreatorDID, ExternalId: value.ExternalID, CreatedAt: value.CreatedAt}
+}
+
+func checkRunResponse(value commitstatus.CheckRun) generated.CheckRun {
+	var conclusion *generated.CheckRunConclusion
+	if value.Conclusion != nil {
+		converted := generated.CheckRunConclusion(*value.Conclusion)
+		conclusion = &converted
+	}
+	return generated.CheckRun{Id: openapi_types.UUID(value.ID), Sha: generated.CommitSHA(value.CommitSHA), Name: value.Name,
+		ExternalId: value.ExternalID, CreatorDid: value.CreatorDID, Status: generated.CheckRunStatus(value.Status), Conclusion: conclusion,
+		DetailsUrl: value.DetailsURL, OutputTitle: value.OutputTitle, OutputSummary: value.OutputSummary, Version: value.Version,
+		StartedAt: value.StartedAt, CompletedAt: value.CompletedAt, CreatedAt: value.CreatedAt, UpdatedAt: value.UpdatedAt}
+}
+
+func checkConclusion(value *generated.CheckRunConclusion) *commitstatus.Conclusion {
+	if value == nil {
+		return nil
+	}
+	converted := commitstatus.Conclusion(*value)
+	return &converted
+}
+
+func stringValue(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}
+
+func uuidCursorString(value *uuid.UUID) string {
+	if value == nil {
+		return ""
+	}
+	return value.String()
 }
 
 func networkRepositoryResponse(repo federation.DiscoveryRepository) generated.Repository {

@@ -28,14 +28,17 @@ const (
 
 // Defines values for AccessTokenScopes.
 const (
-	AccessTokenScopesRepositoryRead  AccessTokenScopes = "repository:read"
-	AccessTokenScopesRepositoryWrite AccessTokenScopes = "repository:write"
+	AccessTokenScopesRepositoryRead   AccessTokenScopes = "repository:read"
+	AccessTokenScopesRepositoryStatus AccessTokenScopes = "repository:status"
+	AccessTokenScopesRepositoryWrite  AccessTokenScopes = "repository:write"
 )
 
 // Valid indicates whether the value is a known member of the AccessTokenScopes enum.
 func (e AccessTokenScopes) Valid() bool {
 	switch e {
 	case AccessTokenScopesRepositoryRead:
+		return true
+	case AccessTokenScopesRepositoryStatus:
 		return true
 	case AccessTokenScopesRepositoryWrite:
 		return true
@@ -74,6 +77,60 @@ func (e BranchProtectionInputPattern) Valid() bool {
 	}
 }
 
+// Defines values for CheckRunConclusion.
+const (
+	CheckRunConclusionActionRequired CheckRunConclusion = "action_required"
+	CheckRunConclusionCancelled      CheckRunConclusion = "cancelled"
+	CheckRunConclusionFailure        CheckRunConclusion = "failure"
+	CheckRunConclusionNeutral        CheckRunConclusion = "neutral"
+	CheckRunConclusionSkipped        CheckRunConclusion = "skipped"
+	CheckRunConclusionSuccess        CheckRunConclusion = "success"
+	CheckRunConclusionTimedOut       CheckRunConclusion = "timed_out"
+)
+
+// Valid indicates whether the value is a known member of the CheckRunConclusion enum.
+func (e CheckRunConclusion) Valid() bool {
+	switch e {
+	case CheckRunConclusionActionRequired:
+		return true
+	case CheckRunConclusionCancelled:
+		return true
+	case CheckRunConclusionFailure:
+		return true
+	case CheckRunConclusionNeutral:
+		return true
+	case CheckRunConclusionSkipped:
+		return true
+	case CheckRunConclusionSuccess:
+		return true
+	case CheckRunConclusionTimedOut:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CheckRunStatus.
+const (
+	Completed  CheckRunStatus = "completed"
+	InProgress CheckRunStatus = "in_progress"
+	Queued     CheckRunStatus = "queued"
+)
+
+// Valid indicates whether the value is a known member of the CheckRunStatus enum.
+func (e CheckRunStatus) Valid() bool {
+	switch e {
+	case Completed:
+		return true
+	case InProgress:
+		return true
+	case Queued:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CommentMutationProjected.
 const (
 	CommentMutationProjectedFalse CommentMutationProjected = false
@@ -89,16 +146,43 @@ func (e CommentMutationProjected) Valid() bool {
 	}
 }
 
+// Defines values for CommitStatusState.
+const (
+	CommitStatusStateError   CommitStatusState = "error"
+	CommitStatusStateFailure CommitStatusState = "failure"
+	CommitStatusStatePending CommitStatusState = "pending"
+	CommitStatusStateSuccess CommitStatusState = "success"
+)
+
+// Valid indicates whether the value is a known member of the CommitStatusState enum.
+func (e CommitStatusState) Valid() bool {
+	switch e {
+	case CommitStatusStateError:
+		return true
+	case CommitStatusStateFailure:
+		return true
+	case CommitStatusStatePending:
+		return true
+	case CommitStatusStateSuccess:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CreateAccessTokenRequestScopes.
 const (
-	CreateAccessTokenRequestScopesRepositoryRead  CreateAccessTokenRequestScopes = "repository:read"
-	CreateAccessTokenRequestScopesRepositoryWrite CreateAccessTokenRequestScopes = "repository:write"
+	CreateAccessTokenRequestScopesRepositoryRead   CreateAccessTokenRequestScopes = "repository:read"
+	CreateAccessTokenRequestScopesRepositoryStatus CreateAccessTokenRequestScopes = "repository:status"
+	CreateAccessTokenRequestScopesRepositoryWrite  CreateAccessTokenRequestScopes = "repository:write"
 )
 
 // Valid indicates whether the value is a known member of the CreateAccessTokenRequestScopes enum.
 func (e CreateAccessTokenRequestScopes) Valid() bool {
 	switch e {
 	case CreateAccessTokenRequestScopesRepositoryRead:
+		return true
+	case CreateAccessTokenRequestScopesRepositoryStatus:
 		return true
 	case CreateAccessTokenRequestScopesRepositoryWrite:
 		return true
@@ -187,14 +271,17 @@ func (e CreateRepositoryRequestVisibility) Valid() bool {
 
 // Defines values for CreatedAccessTokenScopes.
 const (
-	RepositoryRead  CreatedAccessTokenScopes = "repository:read"
-	RepositoryWrite CreatedAccessTokenScopes = "repository:write"
+	RepositoryRead   CreatedAccessTokenScopes = "repository:read"
+	RepositoryStatus CreatedAccessTokenScopes = "repository:status"
+	RepositoryWrite  CreatedAccessTokenScopes = "repository:write"
 )
 
 // Valid indicates whether the value is a known member of the CreatedAccessTokenScopes enum.
 func (e CreatedAccessTokenScopes) Valid() bool {
 	switch e {
 	case RepositoryRead:
+		return true
+	case RepositoryStatus:
 		return true
 	case RepositoryWrite:
 		return true
@@ -1153,15 +1240,19 @@ func (e UpdateRepositoryRequestVisibility) Valid() bool {
 
 // Defines values for WebhookEvent.
 const (
+	WebhookEventCheckRun    WebhookEvent = "check_run"
 	WebhookEventIssue       WebhookEvent = "issue"
 	WebhookEventPullRequest WebhookEvent = "pull_request"
 	WebhookEventPush        WebhookEvent = "push"
 	WebhookEventReview      WebhookEvent = "review"
+	WebhookEventStatus      WebhookEvent = "status"
 )
 
 // Valid indicates whether the value is a known member of the WebhookEvent enum.
 func (e WebhookEvent) Valid() bool {
 	switch e {
+	case WebhookEventCheckRun:
+		return true
 	case WebhookEventIssue:
 		return true
 	case WebhookEventPullRequest:
@@ -1169,6 +1260,8 @@ func (e WebhookEvent) Valid() bool {
 	case WebhookEventPush:
 		return true
 	case WebhookEventReview:
+		return true
+	case WebhookEventStatus:
 		return true
 	default:
 		return false
@@ -1776,12 +1869,14 @@ type ATProtoLoginStart struct {
 
 // AccessToken defines model for AccessToken.
 type AccessToken struct {
-	CreatedAt    time.Time           `json:"created_at"`
-	ExpiresAt    *time.Time          `json:"expires_at,omitempty"`
-	Id           openapi_types.UUID  `json:"id"`
-	LastUsedAt   *time.Time          `json:"last_used_at,omitempty"`
-	Name         string              `json:"name"`
-	Prefix       string              `json:"prefix"`
+	CreatedAt  time.Time          `json:"created_at"`
+	ExpiresAt  *time.Time         `json:"expires_at,omitempty"`
+	Id         openapi_types.UUID `json:"id"`
+	LastUsedAt *time.Time         `json:"last_used_at,omitempty"`
+	Name       string             `json:"name"`
+	Prefix     string             `json:"prefix"`
+
+	// RepositoryId Required when scopes includes repository:status; confines status and check-run writes to this repository.
 	RepositoryId *openapi_types.UUID `json:"repository_id,omitempty"`
 	Scopes       []AccessTokenScopes `json:"scopes"`
 }
@@ -1840,6 +1935,44 @@ type BranchProtectionInputPattern string
 type BranchProtectionList struct {
 	Items []BranchProtection `json:"items"`
 	Page  Page               `json:"page"`
+}
+
+// CheckRun defines model for CheckRun.
+type CheckRun struct {
+	CompletedAt   *time.Time          `json:"completed_at,omitempty"`
+	Conclusion    *CheckRunConclusion `json:"conclusion,omitempty"`
+	CreatedAt     time.Time           `json:"created_at"`
+	CreatorDid    string              `json:"creator_did"`
+	DetailsUrl    *string             `json:"details_url,omitempty"`
+	ExternalId    string              `json:"external_id"`
+	Id            openapi_types.UUID  `json:"id"`
+	Name          string              `json:"name"`
+	OutputSummary string              `json:"output_summary"`
+	OutputTitle   string              `json:"output_title"`
+	Sha           CommitSHA           `json:"sha"`
+	StartedAt     *time.Time          `json:"started_at,omitempty"`
+	Status        CheckRunStatus      `json:"status"`
+	UpdatedAt     time.Time           `json:"updated_at"`
+	Version       int64               `json:"version"`
+}
+
+// CheckRunConclusion defines model for CheckRunConclusion.
+type CheckRunConclusion string
+
+// CheckRunList defines model for CheckRunList.
+type CheckRunList struct {
+	Items []CheckRun `json:"items"`
+	Page  Page       `json:"page"`
+}
+
+// CheckRunStatus defines model for CheckRunStatus.
+type CheckRunStatus string
+
+// CombinedCommitStatus defines model for CombinedCommitStatus.
+type CombinedCommitStatus struct {
+	Sha      CommitSHA         `json:"sha"`
+	State    CommitStatusState `json:"state"`
+	Statuses []CommitStatus    `json:"statuses"`
 }
 
 // Comment defines model for Comment.
@@ -1910,6 +2043,31 @@ type CommitList struct {
 	Page  Page            `json:"page"`
 }
 
+// CommitSHA defines model for CommitSHA.
+type CommitSHA = string
+
+// CommitStatus defines model for CommitStatus.
+type CommitStatus struct {
+	Context     string             `json:"context"`
+	CreatedAt   time.Time          `json:"created_at"`
+	CreatorDid  string             `json:"creator_did"`
+	Description string             `json:"description"`
+	ExternalId  string             `json:"external_id"`
+	Id          openapi_types.UUID `json:"id"`
+	Sha         CommitSHA          `json:"sha"`
+	State       CommitStatusState  `json:"state"`
+	TargetUrl   *string            `json:"target_url,omitempty"`
+}
+
+// CommitStatusList defines model for CommitStatusList.
+type CommitStatusList struct {
+	Items []CommitStatus `json:"items"`
+	Page  Page           `json:"page"`
+}
+
+// CommitStatusState defines model for CommitStatusState.
+type CommitStatusState string
+
 // CommitSummary defines model for CommitSummary.
 type CommitSummary struct {
 	Author    CommitIdentity `json:"author"`
@@ -1921,8 +2079,10 @@ type CommitSummary struct {
 
 // CreateAccessTokenRequest defines model for CreateAccessTokenRequest.
 type CreateAccessTokenRequest struct {
-	ExpiresAt    *time.Time                       `json:"expires_at,omitempty"`
-	Name         string                           `json:"name"`
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	Name      string     `json:"name"`
+
+	// RepositoryId Required when scopes includes repository:status; confines status and check-run writes to this repository.
 	RepositoryId *openapi_types.UUID              `json:"repository_id,omitempty"`
 	Scopes       []CreateAccessTokenRequestScopes `json:"scopes"`
 }
@@ -1930,11 +2090,33 @@ type CreateAccessTokenRequest struct {
 // CreateAccessTokenRequestScopes defines model for CreateAccessTokenRequest.Scopes.
 type CreateAccessTokenRequestScopes string
 
+// CreateCheckRunRequest defines model for CreateCheckRunRequest.
+type CreateCheckRunRequest struct {
+	CompletedAt   *time.Time          `json:"completed_at,omitempty"`
+	Conclusion    *CheckRunConclusion `json:"conclusion,omitempty"`
+	DetailsUrl    *string             `json:"details_url,omitempty"`
+	ExternalId    string              `json:"external_id"`
+	Name          string              `json:"name"`
+	OutputSummary *string             `json:"output_summary,omitempty"`
+	OutputTitle   *string             `json:"output_title,omitempty"`
+	StartedAt     *time.Time          `json:"started_at,omitempty"`
+	Status        *CheckRunStatus     `json:"status,omitempty"`
+}
+
 // CreateCommentRequest defines model for CreateCommentRequest.
 type CreateCommentRequest struct {
 	Body      string  `json:"body"`
 	IssueUri  string  `json:"issue_uri"`
 	ParentUri *string `json:"parent_uri,omitempty"`
+}
+
+// CreateCommitStatusRequest defines model for CreateCommitStatusRequest.
+type CreateCommitStatusRequest struct {
+	Context     string            `json:"context"`
+	Description *string           `json:"description,omitempty"`
+	ExternalId  string            `json:"external_id"`
+	State       CommitStatusState `json:"state"`
+	TargetUrl   *string           `json:"target_url,omitempty"`
 }
 
 // CreateIssueRequest defines model for CreateIssueRequest.
@@ -2033,12 +2215,14 @@ type CreateWebhookRedeliveryRequest struct {
 
 // CreatedAccessToken defines model for CreatedAccessToken.
 type CreatedAccessToken struct {
-	CreatedAt    time.Time                  `json:"created_at"`
-	ExpiresAt    *time.Time                 `json:"expires_at,omitempty"`
-	Id           openapi_types.UUID         `json:"id"`
-	LastUsedAt   *time.Time                 `json:"last_used_at,omitempty"`
-	Name         string                     `json:"name"`
-	Prefix       string                     `json:"prefix"`
+	CreatedAt  time.Time          `json:"created_at"`
+	ExpiresAt  *time.Time         `json:"expires_at,omitempty"`
+	Id         openapi_types.UUID `json:"id"`
+	LastUsedAt *time.Time         `json:"last_used_at,omitempty"`
+	Name       string             `json:"name"`
+	Prefix     string             `json:"prefix"`
+
+	// RepositoryId Required when scopes includes repository:status; confines status and check-run writes to this repository.
 	RepositoryId *openapi_types.UUID        `json:"repository_id,omitempty"`
 	Scopes       []CreatedAccessTokenScopes `json:"scopes"`
 	Token        string                     `json:"token"`
@@ -3092,6 +3276,18 @@ type TreeEntry struct {
 // TreeEntryType defines model for TreeEntry.Type.
 type TreeEntryType string
 
+// UpdateCheckRunRequest defines model for UpdateCheckRunRequest.
+type UpdateCheckRunRequest struct {
+	CompletedAt     *time.Time          `json:"completed_at,omitempty"`
+	Conclusion      *CheckRunConclusion `json:"conclusion,omitempty"`
+	DetailsUrl      *string             `json:"details_url,omitempty"`
+	ExpectedVersion int64               `json:"expected_version"`
+	OutputSummary   *string             `json:"output_summary,omitempty"`
+	OutputTitle     *string             `json:"output_title,omitempty"`
+	StartedAt       *time.Time          `json:"started_at,omitempty"`
+	Status          CheckRunStatus      `json:"status"`
+}
+
 // UpdateDeveloperProfileRequest defines model for UpdateDeveloperProfileRequest.
 type UpdateDeveloperProfileRequest struct {
 	Bio         *string `json:"bio,omitempty"`
@@ -3573,6 +3769,18 @@ type ListRepositoryBranchesParams struct {
 // ListRepositoryCommitsParams defines parameters for ListRepositoryCommits.
 type ListRepositoryCommitsParams struct {
 	Ref    *string `form:"ref,omitempty" json:"ref,omitempty"`
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListCheckRunsParams defines parameters for ListCheckRuns.
+type ListCheckRunsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListCommitStatusesParams defines parameters for ListCommitStatuses.
+type ListCommitStatusesParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
@@ -4208,6 +4416,15 @@ type CreateBranchProtectionJSONRequestBody = BranchProtectionInput
 // UpdateBranchProtectionJSONRequestBody defines body for UpdateBranchProtection for application/json ContentType.
 type UpdateBranchProtectionJSONRequestBody = BranchProtectionInput
 
+// UpdateCheckRunJSONRequestBody defines body for UpdateCheckRun for application/json ContentType.
+type UpdateCheckRunJSONRequestBody = UpdateCheckRunRequest
+
+// CreateCheckRunJSONRequestBody defines body for CreateCheckRun for application/json ContentType.
+type CreateCheckRunJSONRequestBody = CreateCheckRunRequest
+
+// CreateCommitStatusJSONRequestBody defines body for CreateCommitStatus for application/json ContentType.
+type CreateCommitStatusJSONRequestBody = CreateCommitStatusRequest
+
 // CreateRepositoryForkJSONRequestBody defines body for CreateRepositoryFork for application/json ContentType.
 type CreateRepositoryForkJSONRequestBody = CreateRepositoryForkRequest
 
@@ -4663,11 +4880,38 @@ type ClientInterface interface {
 	// ListRepositoryBranches request
 	ListRepositoryBranches(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryBranchesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetCheckRun request
+	GetCheckRun(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateCheckRunWithBody request with any body
+	UpdateCheckRunWithBody(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateCheckRun(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, body UpdateCheckRunJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListRepositoryCommits request
 	ListRepositoryCommits(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryCommitsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRepositoryCommit request
 	GetRepositoryCommit(ctx context.Context, owner string, repo RepositorySlug, revision string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListCheckRuns request
+	ListCheckRuns(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, params *ListCheckRunsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateCheckRunWithBody request with any body
+	CreateCheckRunWithBody(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateCheckRun(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, body CreateCheckRunJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetCombinedCommitStatus request
+	GetCombinedCommitStatus(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListCommitStatuses request
+	ListCommitStatuses(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, params *ListCommitStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateCommitStatusWithBody request with any body
+	CreateCommitStatusWithBody(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateCommitStatus(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, body CreateCommitStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetRepositoryDiff request
 	GetRepositoryDiff(ctx context.Context, owner string, repo RepositorySlug, params *GetRepositoryDiffParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -6067,6 +6311,42 @@ func (c *Client) ListRepositoryBranches(ctx context.Context, owner string, repo 
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetCheckRun(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCheckRunRequest(c.Server, owner, repo, checkRun)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCheckRunWithBody(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCheckRunRequestWithBody(c.Server, owner, repo, checkRun, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCheckRun(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, body UpdateCheckRunJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateCheckRunRequest(c.Server, owner, repo, checkRun, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ListRepositoryCommits(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryCommitsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListRepositoryCommitsRequest(c.Server, owner, repo, params)
 	if err != nil {
@@ -6081,6 +6361,90 @@ func (c *Client) ListRepositoryCommits(ctx context.Context, owner string, repo R
 
 func (c *Client) GetRepositoryCommit(ctx context.Context, owner string, repo RepositorySlug, revision string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetRepositoryCommitRequest(c.Server, owner, repo, revision)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListCheckRuns(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, params *ListCheckRunsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListCheckRunsRequest(c.Server, owner, repo, sha, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateCheckRunWithBody(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateCheckRunRequestWithBody(c.Server, owner, repo, sha, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateCheckRun(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, body CreateCheckRunJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateCheckRunRequest(c.Server, owner, repo, sha, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetCombinedCommitStatus(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCombinedCommitStatusRequest(c.Server, owner, repo, sha)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListCommitStatuses(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, params *ListCommitStatusesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListCommitStatusesRequest(c.Server, owner, repo, sha, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateCommitStatusWithBody(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateCommitStatusRequestWithBody(c.Server, owner, repo, sha, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateCommitStatus(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, body CreateCommitStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateCommitStatusRequest(c.Server, owner, repo, sha, body)
 	if err != nil {
 		return nil, err
 	}
@@ -10911,6 +11275,115 @@ func NewListRepositoryBranchesRequest(server string, owner string, repo Reposito
 	return req, nil
 }
 
+// NewGetCheckRunRequest generates requests for GetCheckRun
+func NewGetCheckRunRequest(server string, owner string, repo RepositorySlug, checkRun openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "check_run", checkRun, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/check-runs/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateCheckRunRequest calls the generic UpdateCheckRun builder with application/json body
+func NewUpdateCheckRunRequest(server string, owner string, repo RepositorySlug, checkRun openapi_types.UUID, body UpdateCheckRunJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateCheckRunRequestWithBody(server, owner, repo, checkRun, "application/json", bodyReader)
+}
+
+// NewUpdateCheckRunRequestWithBody generates requests for UpdateCheckRun with any type of body
+func NewUpdateCheckRunRequestWithBody(server string, owner string, repo RepositorySlug, checkRun openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "check_run", checkRun, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/check-runs/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListRepositoryCommitsRequest generates requests for ListRepositoryCommits
 func NewListRepositoryCommitsRequest(server string, owner string, repo RepositorySlug, params *ListRepositoryCommitsParams) (*http.Request, error) {
 	var err error
@@ -11047,6 +11520,350 @@ func NewGetRepositoryCommitRequest(server string, owner string, repo RepositoryS
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewListCheckRunsRequest generates requests for ListCheckRuns
+func NewListCheckRunsRequest(server string, owner string, repo RepositorySlug, sha CommitSHA, params *ListCheckRunsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "sha", sha, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/commits/%s/check-runs", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateCheckRunRequest calls the generic CreateCheckRun builder with application/json body
+func NewCreateCheckRunRequest(server string, owner string, repo RepositorySlug, sha CommitSHA, body CreateCheckRunJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateCheckRunRequestWithBody(server, owner, repo, sha, "application/json", bodyReader)
+}
+
+// NewCreateCheckRunRequestWithBody generates requests for CreateCheckRun with any type of body
+func NewCreateCheckRunRequestWithBody(server string, owner string, repo RepositorySlug, sha CommitSHA, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "sha", sha, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/commits/%s/check-runs", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetCombinedCommitStatusRequest generates requests for GetCombinedCommitStatus
+func NewGetCombinedCommitStatusRequest(server string, owner string, repo RepositorySlug, sha CommitSHA) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "sha", sha, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/commits/%s/status", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListCommitStatusesRequest generates requests for ListCommitStatuses
+func NewListCommitStatusesRequest(server string, owner string, repo RepositorySlug, sha CommitSHA, params *ListCommitStatusesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "sha", sha, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/commits/%s/statuses", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateCommitStatusRequest calls the generic CreateCommitStatus builder with application/json body
+func NewCreateCommitStatusRequest(server string, owner string, repo RepositorySlug, sha CommitSHA, body CreateCommitStatusJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateCommitStatusRequestWithBody(server, owner, repo, sha, "application/json", bodyReader)
+}
+
+// NewCreateCommitStatusRequestWithBody generates requests for CreateCommitStatus with any type of body
+func NewCreateCommitStatusRequestWithBody(server string, owner string, repo RepositorySlug, sha CommitSHA, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "owner", owner, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "repo", repo, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithOptions("simple", false, "sha", sha, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/repositories/%s/%s/commits/%s/statuses", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -15110,11 +15927,38 @@ type ClientWithResponsesInterface interface {
 	// ListRepositoryBranchesWithResponse request
 	ListRepositoryBranchesWithResponse(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryBranchesParams, reqEditors ...RequestEditorFn) (*ListRepositoryBranchesResponse, error)
 
+	// GetCheckRunWithResponse request
+	GetCheckRunWithResponse(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetCheckRunResponse, error)
+
+	// UpdateCheckRunWithBodyWithResponse request with any body
+	UpdateCheckRunWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCheckRunResponse, error)
+
+	UpdateCheckRunWithResponse(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, body UpdateCheckRunJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCheckRunResponse, error)
+
 	// ListRepositoryCommitsWithResponse request
 	ListRepositoryCommitsWithResponse(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryCommitsParams, reqEditors ...RequestEditorFn) (*ListRepositoryCommitsResponse, error)
 
 	// GetRepositoryCommitWithResponse request
 	GetRepositoryCommitWithResponse(ctx context.Context, owner string, repo RepositorySlug, revision string, reqEditors ...RequestEditorFn) (*GetRepositoryCommitResponse, error)
+
+	// ListCheckRunsWithResponse request
+	ListCheckRunsWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, params *ListCheckRunsParams, reqEditors ...RequestEditorFn) (*ListCheckRunsResponse, error)
+
+	// CreateCheckRunWithBodyWithResponse request with any body
+	CreateCheckRunWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateCheckRunResponse, error)
+
+	CreateCheckRunWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, body CreateCheckRunJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateCheckRunResponse, error)
+
+	// GetCombinedCommitStatusWithResponse request
+	GetCombinedCommitStatusWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, reqEditors ...RequestEditorFn) (*GetCombinedCommitStatusResponse, error)
+
+	// ListCommitStatusesWithResponse request
+	ListCommitStatusesWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, params *ListCommitStatusesParams, reqEditors ...RequestEditorFn) (*ListCommitStatusesResponse, error)
+
+	// CreateCommitStatusWithBodyWithResponse request with any body
+	CreateCommitStatusWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateCommitStatusResponse, error)
+
+	CreateCommitStatusWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, body CreateCommitStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateCommitStatusResponse, error)
 
 	// GetRepositoryDiffWithResponse request
 	GetRepositoryDiffWithResponse(ctx context.Context, owner string, repo RepositorySlug, params *GetRepositoryDiffParams, reqEditors ...RequestEditorFn) (*GetRepositoryDiffResponse, error)
@@ -17796,6 +18640,75 @@ func (r ListRepositoryBranchesResponse) ContentType() string {
 	return ""
 }
 
+type GetCheckRunResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CheckRun
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCheckRunResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCheckRunResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetCheckRunResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateCheckRunResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CheckRun
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateCheckRunResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateCheckRunResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateCheckRunResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListRepositoryCommitsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -17858,6 +18771,181 @@ func (r GetRepositoryCommitResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetRepositoryCommitResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListCheckRunsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CheckRunList
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r ListCheckRunsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListCheckRunsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListCheckRunsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateCheckRunResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CheckRun
+	JSON201      *CheckRun
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateCheckRunResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateCheckRunResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateCheckRunResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetCombinedCommitStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CombinedCommitStatus
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCombinedCommitStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCombinedCommitStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetCombinedCommitStatusResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListCommitStatusesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CommitStatusList
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+}
+
+// Status returns HTTPResponse.Status
+func (r ListCommitStatusesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListCommitStatusesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListCommitStatusesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateCommitStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *CommitStatus
+	JSON201      *CommitStatus
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateCommitStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateCommitStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateCommitStatusResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -20264,6 +21352,32 @@ func (c *ClientWithResponses) ListRepositoryBranchesWithResponse(ctx context.Con
 	return ParseListRepositoryBranchesResponse(rsp)
 }
 
+// GetCheckRunWithResponse request returning *GetCheckRunResponse
+func (c *ClientWithResponses) GetCheckRunWithResponse(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetCheckRunResponse, error) {
+	rsp, err := c.GetCheckRun(ctx, owner, repo, checkRun, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCheckRunResponse(rsp)
+}
+
+// UpdateCheckRunWithBodyWithResponse request with arbitrary body returning *UpdateCheckRunResponse
+func (c *ClientWithResponses) UpdateCheckRunWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateCheckRunResponse, error) {
+	rsp, err := c.UpdateCheckRunWithBody(ctx, owner, repo, checkRun, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCheckRunResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateCheckRunWithResponse(ctx context.Context, owner string, repo RepositorySlug, checkRun openapi_types.UUID, body UpdateCheckRunJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateCheckRunResponse, error) {
+	rsp, err := c.UpdateCheckRun(ctx, owner, repo, checkRun, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateCheckRunResponse(rsp)
+}
+
 // ListRepositoryCommitsWithResponse request returning *ListRepositoryCommitsResponse
 func (c *ClientWithResponses) ListRepositoryCommitsWithResponse(ctx context.Context, owner string, repo RepositorySlug, params *ListRepositoryCommitsParams, reqEditors ...RequestEditorFn) (*ListRepositoryCommitsResponse, error) {
 	rsp, err := c.ListRepositoryCommits(ctx, owner, repo, params, reqEditors...)
@@ -20280,6 +21394,67 @@ func (c *ClientWithResponses) GetRepositoryCommitWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseGetRepositoryCommitResponse(rsp)
+}
+
+// ListCheckRunsWithResponse request returning *ListCheckRunsResponse
+func (c *ClientWithResponses) ListCheckRunsWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, params *ListCheckRunsParams, reqEditors ...RequestEditorFn) (*ListCheckRunsResponse, error) {
+	rsp, err := c.ListCheckRuns(ctx, owner, repo, sha, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListCheckRunsResponse(rsp)
+}
+
+// CreateCheckRunWithBodyWithResponse request with arbitrary body returning *CreateCheckRunResponse
+func (c *ClientWithResponses) CreateCheckRunWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateCheckRunResponse, error) {
+	rsp, err := c.CreateCheckRunWithBody(ctx, owner, repo, sha, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateCheckRunResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateCheckRunWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, body CreateCheckRunJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateCheckRunResponse, error) {
+	rsp, err := c.CreateCheckRun(ctx, owner, repo, sha, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateCheckRunResponse(rsp)
+}
+
+// GetCombinedCommitStatusWithResponse request returning *GetCombinedCommitStatusResponse
+func (c *ClientWithResponses) GetCombinedCommitStatusWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, reqEditors ...RequestEditorFn) (*GetCombinedCommitStatusResponse, error) {
+	rsp, err := c.GetCombinedCommitStatus(ctx, owner, repo, sha, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCombinedCommitStatusResponse(rsp)
+}
+
+// ListCommitStatusesWithResponse request returning *ListCommitStatusesResponse
+func (c *ClientWithResponses) ListCommitStatusesWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, params *ListCommitStatusesParams, reqEditors ...RequestEditorFn) (*ListCommitStatusesResponse, error) {
+	rsp, err := c.ListCommitStatuses(ctx, owner, repo, sha, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListCommitStatusesResponse(rsp)
+}
+
+// CreateCommitStatusWithBodyWithResponse request with arbitrary body returning *CreateCommitStatusResponse
+func (c *ClientWithResponses) CreateCommitStatusWithBodyWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateCommitStatusResponse, error) {
+	rsp, err := c.CreateCommitStatusWithBody(ctx, owner, repo, sha, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateCommitStatusResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateCommitStatusWithResponse(ctx context.Context, owner string, repo RepositorySlug, sha CommitSHA, body CreateCommitStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateCommitStatusResponse, error) {
+	rsp, err := c.CreateCommitStatus(ctx, owner, repo, sha, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateCommitStatusResponse(rsp)
 }
 
 // GetRepositoryDiffWithResponse request returning *GetRepositoryDiffResponse
@@ -24617,6 +25792,121 @@ func ParseListRepositoryBranchesResponse(rsp *http.Response) (*ListRepositoryBra
 	return response, nil
 }
 
+// ParseGetCheckRunResponse parses an HTTP response from a GetCheckRunWithResponse call
+func ParseGetCheckRunResponse(rsp *http.Response) (*GetCheckRunResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCheckRunResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CheckRun
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateCheckRunResponse parses an HTTP response from a UpdateCheckRunWithResponse call
+func ParseUpdateCheckRunResponse(rsp *http.Response) (*UpdateCheckRunResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateCheckRunResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CheckRun
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListRepositoryCommitsResponse parses an HTTP response from a ListRepositoryCommitsWithResponse call
 func ParseListRepositoryCommitsResponse(rsp *http.Response) (*ListRepositoryCommitsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -24712,6 +26002,311 @@ func ParseGetRepositoryCommitResponse(rsp *http.Response) (*GetRepositoryCommitR
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListCheckRunsResponse parses an HTTP response from a ListCheckRunsWithResponse call
+func ParseListCheckRunsResponse(rsp *http.Response) (*ListCheckRunsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListCheckRunsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CheckRunList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateCheckRunResponse parses an HTTP response from a CreateCheckRunWithResponse call
+func ParseCreateCheckRunResponse(rsp *http.Response) (*CreateCheckRunResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateCheckRunResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CheckRun
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest CheckRun
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetCombinedCommitStatusResponse parses an HTTP response from a GetCombinedCommitStatusWithResponse call
+func ParseGetCombinedCommitStatusResponse(rsp *http.Response) (*GetCombinedCommitStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCombinedCommitStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CombinedCommitStatus
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListCommitStatusesResponse parses an HTTP response from a ListCommitStatusesWithResponse call
+func ParseListCommitStatusesResponse(rsp *http.Response) (*ListCommitStatusesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListCommitStatusesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CommitStatusList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateCommitStatusResponse parses an HTTP response from a CreateCommitStatusWithResponse call
+func ParseCreateCommitStatusResponse(rsp *http.Response) (*CreateCommitStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateCommitStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest CommitStatus
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest CommitStatus
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
 		var dest UnprocessableEntity
@@ -27221,12 +28816,33 @@ type ServerInterface interface {
 	// List repository branches
 	// (GET /api/v1/repositories/{owner}/{repo}/branches)
 	ListRepositoryBranches(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryBranchesParams)
+	// Get a check run
+	// (GET /api/v1/repositories/{owner}/{repo}/check-runs/{check_run})
+	GetCheckRun(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, checkRun openapi_types.UUID)
+	// Advance a check run
+	// (PATCH /api/v1/repositories/{owner}/{repo}/check-runs/{check_run})
+	UpdateCheckRun(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, checkRun openapi_types.UUID)
 	// List repository commit history
 	// (GET /api/v1/repositories/{owner}/{repo}/commits)
 	ListRepositoryCommits(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params ListRepositoryCommitsParams)
 	// Get repository commit details
 	// (GET /api/v1/repositories/{owner}/{repo}/commits/{revision})
 	GetRepositoryCommit(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, revision string)
+	// List check runs for a commit
+	// (GET /api/v1/repositories/{owner}/{repo}/commits/{sha}/check-runs)
+	ListCheckRuns(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha CommitSHA, params ListCheckRunsParams)
+	// Create a check run
+	// (POST /api/v1/repositories/{owner}/{repo}/commits/{sha}/check-runs)
+	CreateCheckRun(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha CommitSHA)
+	// Get the latest combined status for a commit
+	// (GET /api/v1/repositories/{owner}/{repo}/commits/{sha}/status)
+	GetCombinedCommitStatus(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha CommitSHA)
+	// List status history for a commit
+	// (GET /api/v1/repositories/{owner}/{repo}/commits/{sha}/statuses)
+	ListCommitStatuses(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha CommitSHA, params ListCommitStatusesParams)
+	// Report a commit status
+	// (POST /api/v1/repositories/{owner}/{repo}/commits/{sha}/statuses)
+	CreateCommitStatus(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, sha CommitSHA)
 	// Get a bounded diff between two commits
 	// (GET /api/v1/repositories/{owner}/{repo}/diff)
 	GetRepositoryDiff(w http.ResponseWriter, r *http.Request, owner string, repo RepositorySlug, params GetRepositoryDiffParams)
@@ -30891,6 +32507,110 @@ func (siw *ServerInterfaceWrapper) ListRepositoryBranches(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// GetCheckRun operation middleware
+func (siw *ServerInterfaceWrapper) GetCheckRun(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "check_run" -------------
+	var checkRun openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "check_run", r.PathValue("check_run"), &checkRun, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "check_run", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCheckRun(w, r, owner, repo, checkRun)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateCheckRun operation middleware
+func (siw *ServerInterfaceWrapper) UpdateCheckRun(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "check_run" -------------
+	var checkRun openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "check_run", r.PathValue("check_run"), &checkRun, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "check_run", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateCheckRun(w, r, owner, repo, checkRun)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListRepositoryCommits operation middleware
 func (siw *ServerInterfaceWrapper) ListRepositoryCommits(w http.ResponseWriter, r *http.Request) {
 
@@ -31019,6 +32739,324 @@ func (siw *ServerInterfaceWrapper) GetRepositoryCommit(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRepositoryCommit(w, r, owner, repo, revision)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCheckRuns operation middleware
+func (siw *ServerInterfaceWrapper) ListCheckRuns(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sha" -------------
+	var sha CommitSHA
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sha", r.PathValue("sha"), &sha, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sha", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCheckRunsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCheckRuns(w, r, owner, repo, sha, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCheckRun operation middleware
+func (siw *ServerInterfaceWrapper) CreateCheckRun(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sha" -------------
+	var sha CommitSHA
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sha", r.PathValue("sha"), &sha, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sha", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCheckRun(w, r, owner, repo, sha)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCombinedCommitStatus operation middleware
+func (siw *ServerInterfaceWrapper) GetCombinedCommitStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sha" -------------
+	var sha CommitSHA
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sha", r.PathValue("sha"), &sha, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sha", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCombinedCommitStatus(w, r, owner, repo, sha)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCommitStatuses operation middleware
+func (siw *ServerInterfaceWrapper) ListCommitStatuses(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sha" -------------
+	var sha CommitSHA
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sha", r.PathValue("sha"), &sha, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sha", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCommitStatusesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCommitStatuses(w, r, owner, repo, sha, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCommitStatus operation middleware
+func (siw *ServerInterfaceWrapper) CreateCommitStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "owner" -------------
+	var owner string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "owner", r.PathValue("owner"), &owner, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "owner", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "repo" -------------
+	var repo RepositorySlug
+
+	err = runtime.BindStyledParameterWithOptions("simple", "repo", r.PathValue("repo"), &repo, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repo", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "sha" -------------
+	var sha CommitSHA
+
+	err = runtime.BindStyledParameterWithOptions("simple", "sha", r.PathValue("sha"), &sha, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sha", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionCookieScopes, []string{})
+
+	ctx = context.WithValue(ctx, PersonalAccessTokenScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCommitStatus(w, r, owner, repo, sha)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -34493,8 +36531,15 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}", wrapper.GetBranchProtection)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branch-protections/{protection}", wrapper.UpdateBranchProtection)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/branches", wrapper.ListRepositoryBranches)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/check-runs/{check_run}", wrapper.GetCheckRun)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/check-runs/{check_run}", wrapper.UpdateCheckRun)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits", wrapper.ListRepositoryCommits)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{revision}", wrapper.GetRepositoryCommit)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{sha}/check-runs", wrapper.ListCheckRuns)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{sha}/check-runs", wrapper.CreateCheckRun)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{sha}/status", wrapper.GetCombinedCommitStatus)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{sha}/statuses", wrapper.ListCommitStatuses)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/commits/{sha}/statuses", wrapper.CreateCommitStatus)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/diff", wrapper.GetRepositoryDiff)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.ListRepositoryForks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/api/v1/repositories/{owner}/{repo}/forks", wrapper.CreateRepositoryFork)

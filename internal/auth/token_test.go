@@ -234,6 +234,34 @@ func TestTokenServiceStoresOnlyHash(t *testing.T) {
 	}
 }
 
+func TestTokenServiceAcceptsStatusOnlyScope(t *testing.T) {
+	t.Parallel()
+	repositoryID := repository.ID(uuid.New())
+	testCases := []struct {
+		name         string
+		repositoryID *repository.ID
+		wantErr      error
+	}{
+		{name: "repository status", repositoryID: &repositoryID},
+		{name: "repository status must be scoped", wantErr: ErrValidation},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			store := &memoryTokenStore{}
+			service := NewTokenService(store, fixedTokenClock{now: time.Now()}, fixedTokenIDs{id: uuid.New()}, fixedSecrets{plaintext: "adn_pat_secret"})
+			token, _, err := service.CreateToken(context.Background(), CreateTokenInput{
+				AccountDID: "did:plc:ci", Name: "external CI", Scopes: []string{ScopeRepositoryStatus}, RepositoryID: testCase.repositoryID,
+			})
+			if !errors.Is(err, testCase.wantErr) {
+				t.Fatalf("CreateToken() error = %v, want %v", err, testCase.wantErr)
+			}
+			if err == nil && (len(token.Scopes) != 1 || token.Scopes[0] != ScopeRepositoryStatus || token.RepositoryID == nil || *token.RepositoryID != repositoryID) {
+				t.Fatalf("token = %+v", token)
+			}
+		})
+	}
+}
+
 func TestGitAuthorizer(t *testing.T) {
 	t.Parallel()
 	testCases := []struct{ name string }{{name: "authorized write"}}
