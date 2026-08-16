@@ -66,7 +66,7 @@ func TestExecutableAgainstAdenosineInstance(t *testing.T) {
 				DefaultBranch: "main", ATURI: "at://did:plc:alice/dev.adenosine.repo/project", ATCID: "bafyrepo",
 				CreatedAt: now, UpdatedAt: now,
 			}}
-			apiServer, err := restapi.NewServer(":0", "http://adenosine.test", readyInstance{}, slog.New(slog.NewTextHandler(io.Discard, nil)), restapi.Dependencies{
+			apiServer, err := restapi.NewServer(":0", "http://adenosine.test", readyInstance{}, slog.New(slog.NewTextHandler(io.Discard, nil)), restapi.Observability{}, restapi.Dependencies{
 				TokenAuth: fixedTokenAuthenticator{}, Repositories: manager,
 			}, nil)
 			if err != nil {
