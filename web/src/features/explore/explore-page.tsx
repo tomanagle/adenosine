@@ -11,6 +11,10 @@ import { cn } from '@/lib/utils'
 import { profileSearchQueryOptions, repositorySearchQueryOptions } from './explore.query'
 import type { ExploreSearch } from './explore-search'
 
+function exploreSort(value: string): ExploreSearch['sort'] {
+  return value === 'recent' ? 'recent' : 'relevance'
+}
+
 export function ExplorePage({ search }: { search: ExploreSearch }) {
   return (
     <main className="bg-muted/30">
@@ -132,7 +136,7 @@ function SortControl({ search }: { search: ExploreSearch }) {
           void navigate({
             search: (previous) => ({
               ...previous,
-              sort: event.target.value as ExploreSearch['sort'],
+              sort: exploreSort(event.target.value),
               cursor: undefined,
             }),
           })

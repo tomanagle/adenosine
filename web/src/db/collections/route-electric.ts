@@ -21,7 +21,9 @@ import { BTreeIndex, createCollection } from '@tanstack/db'
 import type { Collection } from '@tanstack/db'
 import { electricCollectionOptions } from '@tanstack/electric-db-collection'
 import type { ElectricCollectionUtils } from '@tanstack/electric-db-collection'
-import type { z } from 'zod'
+import type { ZodObject, output } from 'zod'
+
+const electricRequestOptionsKey = 'shapeOptions' as const
 
 export type RouteElectricResource =
   | 'profiles'
@@ -99,84 +101,105 @@ function retryTransientSyncError(error: Error) {
   return {}
 }
 
-function createFixedRouteCollection<TShape extends z.ZodRawShape>(
+export function routeElectricConfiguration(
+  routeScope: string,
+  resource: RouteElectricResource,
+  endpoint: `/api/v1/sync/${string}`,
+  origin: string,
+) {
+  return {
+    id: `route:${routeScope}:${resource}`,
+    syncMode: 'on-demand' as const,
+    autoIndex: 'eager' as const,
+    defaultIndexType: BTreeIndex,
+    request: {
+      url: new URL(endpoint, origin).toString(),
+      subsetMethod: 'POST' as const,
+      onError: retryTransientSyncError,
+    },
+  }
+}
+
+function createFixedRouteCollection<TSchema extends ZodObject>(
   routeScope: string,
   resource: RouteElectricResource,
   definition: Readonly<{
     url: `/api/v1/sync/${string}`
-    schema: z.ZodObject<TShape>
-    getKey: (row: z.output<z.ZodObject<TShape>>) => string
+    schema: TSchema
+    getKey: (row: output<TSchema>) => string
   }>,
 ) {
+  const configuration = routeElectricConfiguration(
+    routeScope,
+    resource,
+    definition.url,
+    window.location.origin,
+  )
   const options = electricCollectionOptions({
-    id: `route:${routeScope}:${resource}`,
+    id: configuration.id,
     schema: definition.schema,
-    getKey: (row: Record<string, unknown>) =>
-      definition.getKey(row as unknown as z.output<z.ZodObject<TShape>>),
-    syncMode: 'on-demand',
-    autoIndex: 'eager',
-    defaultIndexType: BTreeIndex,
-    shapeOptions: {
-      url: new URL(definition.url, window.location.origin).toString(),
-      subsetMethod: 'POST',
-      onError: retryTransientSyncError,
-    },
+    getKey: (row) => definition.getKey(definition.schema.parse(row)),
+    syncMode: configuration.syncMode,
+    autoIndex: configuration.autoIndex,
+    defaultIndexType: configuration.defaultIndexType,
+    [electricRequestOptionsKey]: configuration.request,
   })
-  // The adapter and DB package infer the same schema output through separate
-  // conditional types that TypeScript cannot reconcile while TShape is generic.
+  // SAFETY: Both libraries consume the same Standard Schema output, but expose it through
+  // incompatible conditional types. Runtime rows are parsed by definition.schema above.
   return createCollection(options as never)
+}
+
+function bindCollectionResource<
+  R extends RouteElectricResource,
+  TCollection extends object = object,
+>(collection: TCollection): RouteElectricCollection<R> {
+  // SAFETY: Callers select the schema and collection using the same literal resource branch as R.
+  return collection as RouteElectricCollection<R>
 }
 
 export function createRouteElectricCollection<R extends RouteElectricResource>(
   routeScope: string,
   resource: R,
 ): RouteElectricCollection<R> {
-  if (typeof window === 'undefined') {
+  if (!('window' in globalThis)) {
     throw new Error('Route Electric collections are browser-only')
   }
   if (routeScope.length === 0) throw new Error('Route Electric collections require a route scope')
 
-  let collection
   switch (resource) {
     case 'profiles':
-      collection = createFixedRouteCollection(routeScope, resource, routeElectricResources.profiles)
-      break
+      return bindCollectionResource<R>(
+        createFixedRouteCollection(routeScope, resource, routeElectricResources.profiles),
+      )
     case 'repositories':
-      collection = createFixedRouteCollection(
-        routeScope,
-        resource,
-        routeElectricResources.repositories,
+      return bindCollectionResource<R>(
+        createFixedRouteCollection(routeScope, resource, routeElectricResources.repositories),
       )
-      break
     case 'stars':
-      collection = createFixedRouteCollection(routeScope, resource, routeElectricResources.stars)
-      break
+      return bindCollectionResource<R>(
+        createFixedRouteCollection(routeScope, resource, routeElectricResources.stars),
+      )
     case 'issues':
-      collection = createFixedRouteCollection(routeScope, resource, routeElectricResources.issues)
-      break
+      return bindCollectionResource<R>(
+        createFixedRouteCollection(routeScope, resource, routeElectricResources.issues),
+      )
     case 'issue-comments':
-      collection = createFixedRouteCollection(
-        routeScope,
-        resource,
-        routeElectricResources['issue-comments'],
+      return bindCollectionResource<R>(
+        createFixedRouteCollection(routeScope, resource, routeElectricResources['issue-comments']),
       )
-      break
     case 'pull-requests':
-      collection = createFixedRouteCollection(
-        routeScope,
-        resource,
-        routeElectricResources['pull-requests'],
+      return bindCollectionResource<R>(
+        createFixedRouteCollection(routeScope, resource, routeElectricResources['pull-requests']),
       )
-      break
     case 'pull-request-reviews':
-      collection = createFixedRouteCollection(
-        routeScope,
-        resource,
-        routeElectricResources['pull-request-reviews'],
+      return bindCollectionResource<R>(
+        createFixedRouteCollection(
+          routeScope,
+          resource,
+          routeElectricResources['pull-request-reviews'],
+        ),
       )
-      break
   }
-  return collection as unknown as RouteElectricCollection<R>
 }
 
 export const createProfileCollection = (routeScope: string) =>

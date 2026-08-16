@@ -9,6 +9,6 @@ export const exploreSearchSchema = z.object({
 
 export type ExploreSearch = z.infer<typeof exploreSearchSchema>
 
-export function parseExploreSearch(value: unknown): ExploreSearch {
+export function parseExploreSearch<T>(value: T): ExploreSearch {
   return exploreSearchSchema.parse(value)
 }

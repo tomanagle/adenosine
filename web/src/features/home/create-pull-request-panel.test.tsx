@@ -1,41 +1,62 @@
 // @vitest-environment jsdom
 
-import type { Repository } from '@adenosine/api-client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { PullRequest, Repository } from '@adenosine/api-client'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CreatePullRequestPanel } from './create-pull-request-panel'
+import { createPullRequestMutationOptions } from './home.query'
+import { createTestQueryClient, renderWithAppProviders } from '@/test/render'
+import { pullRequestsQueryOptions } from '@/features/collaboration/queries'
+import { branchesQueryOptions } from '@/features/repository-browser/queries'
 
 const headSha = 'a'.repeat(40)
-const pullRequest = { uri: 'at://did:plc:viewer/sh.adenosine.pullRequest/1', cid: 'bafypull' }
+const pullRequest: PullRequest = {
+  uri: 'at://did:plc:viewer/sh.adenosine.pullRequest/1',
+  cid: 'bafypull',
+  author_did: 'did:plc:viewer',
+  source_repository_uri: 'at://did:plc:viewer/sh.adenosine.repository/ledger',
+  source_repository_cid: 'bafy',
+  source_branch: 'feature',
+  target_repository_uri: 'at://did:plc:viewer/sh.adenosine.repository/ledger',
+  target_repository_cid: 'bafy',
+  target_branch: 'main',
+  head_sha: headSha,
+  title: 'Reconcile balances',
+  body: '',
+  state: 'open',
+  status_uri: null,
+  status_cid: null,
+  merged_commit_sha: null,
+  review_count: 0,
+  created_at: '2026-08-12T00:00:00Z',
+  updated_at: '2026-08-12T00:00:00Z',
+  indexed_at: '2026-08-12T00:00:00Z',
+}
 
-const { createPullRequest, navigate } = vi.hoisted(() => ({
-  createPullRequest: vi.fn(),
-  navigate: vi.fn(),
-}))
+type CreatePullRequestMutation = NonNullable<
+  ReturnType<typeof createPullRequestMutationOptions>['mutationFn']
+>
 
-vi.mock('./home.query', () => ({
-  createPullRequestMutationOptions: () => ({ mutationFn: createPullRequest }),
-}))
+const createPullRequest = vi.fn<CreatePullRequestMutation>()
 
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigate }))
-
-vi.mock('@/features/repository-browser/queries', () => ({
+const dependencies = {
+  createPullRequestMutationOptions: () => ({
+    ...createPullRequestMutationOptions(),
+    mutationFn: createPullRequest,
+  }),
   branchesQueryOptions: (params: { owner: string; repo: string }) => ({
-    queryKey: ['branches', params],
+    ...branchesQueryOptions(params),
     queryFn: () => ({
       items: [
         { name: 'main', sha: 'b'.repeat(40), default: true },
         { name: 'feature', sha: headSha, default: false },
       ],
+      page: { next_cursor: null },
     }),
   }),
-}))
-
-vi.mock('@/features/collaboration/queries', () => ({
   pullRequestsQueryOptions: (uri: string) => ({
-    queryKey: ['pull-requests', uri],
+    ...pullRequestsQueryOptions(uri),
     queryFn: () => ({
       items: [pullRequest],
       page: { next_cursor: null },
@@ -43,7 +64,7 @@ vi.mock('@/features/collaboration/queries', () => ({
       open_pull_request_count: 1,
     }),
   }),
-}))
+}
 
 const repository: Repository = {
   id: '00000000-0000-4000-8000-000000000000',
@@ -79,17 +100,15 @@ function renderPanel(
   repositories: Repository[] = [repository],
   networkRepositories: Repository[] = [repository],
 ) {
-  const client = new QueryClient({
-    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
-  })
-  return render(
-    <QueryClientProvider client={client}>
-      <CreatePullRequestPanel
-        networkRepositories={networkRepositories}
-        onClose={() => undefined}
-        repositories={repositories}
-      />
-    </QueryClientProvider>,
+  const client = createTestQueryClient()
+  return renderWithAppProviders(
+    <CreatePullRequestPanel
+      dependencies={dependencies}
+      networkRepositories={networkRepositories}
+      onClose={() => undefined}
+      repositories={repositories}
+    />,
+    { queryClient: client },
   )
 }
 
@@ -99,7 +118,6 @@ async function waitForBranches() {
 
 beforeEach(() => {
   createPullRequest.mockReset()
-  navigate.mockReset()
 })
 afterEach(cleanup)
 
@@ -128,7 +146,7 @@ describe('CreatePullRequestPanel', () => {
 
   it('records the source branch head and opens the repository proposals', async () => {
     createPullRequest.mockResolvedValue({ pull_request: pullRequest, projected: false })
-    renderPanel()
+    const { router } = renderPanel()
     await waitForBranches()
 
     fireEvent.change(screen.getByLabelText('Source branch'), { target: { value: 'feature' } })
@@ -146,12 +164,7 @@ describe('CreatePullRequestPanel', () => {
         title: 'Reconcile balances',
       },
     })
-    await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith({
-        params: { owner: 'viewer.example', repo: 'ledger' },
-        to: '/$owner/$repo/pulls',
-      }),
-    )
+    await waitFor(() => expect(router.state.location.pathname).toBe('/viewer.example/ledger/pulls'))
   })
 
   it('requires a title', async () => {
@@ -180,7 +193,7 @@ describe('CreatePullRequestPanel', () => {
       forked_from: { uri: upstream.uri, cid: upstream.cid },
     }
     createPullRequest.mockResolvedValue({ pull_request: pullRequest, projected: false })
-    renderPanel([fork], [fork, upstream])
+    const { router } = renderPanel([fork], [fork, upstream])
     await waitForBranches()
 
     expect(screen.getByLabelText<HTMLInputElement>('Target repository').value).toBe(
@@ -200,10 +213,7 @@ describe('CreatePullRequestPanel', () => {
       },
     })
     await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith({
-        params: { owner: 'upstream.example', repo: 'ledger' },
-        to: '/$owner/$repo/pulls',
-      }),
+      expect(router.state.location.pathname).toBe('/upstream.example/ledger/pulls'),
     )
   })
 })

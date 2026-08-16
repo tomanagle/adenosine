@@ -1,49 +1,52 @@
 // @vitest-environment jsdom
 
 import type { Repository, RepositoryForkList } from '@adenosine/api-client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ForkActions, ForkNetwork } from './fork-controls'
+import {
+  branchesQueryOptions,
+  createRepositoryForkMutationOptions,
+  repositoryForksQueryOptions,
+  syncRepositoryForkMutationOptions,
+} from './queries'
+import { organizationsQueryOptions } from '@/features/organizations/queries'
+import { repositorySnapshotQueryOptions } from '@/features/repositories/repository-snapshot.query'
+import { createTestQueryClient, renderWithAppProviders } from '@/test/render'
 
-const mocks = vi.hoisted(() => ({
-  createFork: vi.fn(),
-  syncFork: vi.fn(),
-  navigate: vi.fn(),
-  forkPage: { items: [], fork_count: 0, page: { next_cursor: null } } as RepositoryForkList,
-}))
+type CreateForkMutation = NonNullable<
+  ReturnType<typeof createRepositoryForkMutationOptions>['mutationFn']
+>
+type SyncForkMutation = NonNullable<
+  ReturnType<typeof syncRepositoryForkMutationOptions>['mutationFn']
+>
 
-vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
-  useNavigate: () => mocks.navigate,
-}))
+const createFork = vi.fn<CreateForkMutation>()
+const syncFork = vi.fn<SyncForkMutation>()
+let forkPage: RepositoryForkList = { items: [], fork_count: 0, page: { next_cursor: null } }
 
-vi.mock('@/features/organizations/queries', () => ({
+const dependencies = {
+  branchesQueryOptions,
+  createRepositoryForkMutationOptions: () => ({
+    ...createRepositoryForkMutationOptions(),
+    mutationFn: createFork,
+  }),
   organizationsQueryOptions: () => ({
-    queryKey: ['organizations'],
+    ...organizationsQueryOptions(),
     queryFn: () => ({ items: [], page: { next_cursor: null } }),
   }),
-}))
-
-vi.mock('@/features/repositories/repository-snapshot.query', () => ({
-  repositorySnapshotQueryOptions: () => ({ queryKey: ['repository-snapshot'] }),
-  retainCreatedRepository: (snapshot: { repositories: Repository[] }, created: Repository) => ({
-    ...snapshot,
-    repositories: [...snapshot.repositories, created],
+  repositoryForksQueryOptions: (params: { owner: string; repo: string }) => ({
+    ...repositoryForksQueryOptions(params),
+    queryFn: () => forkPage,
   }),
-}))
-
-vi.mock('./queries', () => ({
-  branchesQueryOptions: () => ({ queryKey: ['branches'] }),
-  createRepositoryForkMutationOptions: () => ({ mutationFn: mocks.createFork }),
-  repositoryForksQueryOptions: () => ({
-    queryKey: ['forks'],
-    queryFn: () => mocks.forkPage,
+  repositorySnapshotQueryOptions,
+  syncRepositoryForkMutationOptions: () => ({
+    ...syncRepositoryForkMutationOptions(),
+    mutationFn: syncFork,
   }),
-  syncRepositoryForkMutationOptions: () => ({ mutationFn: mocks.syncFork }),
-}))
+}
 
 const upstream: Repository = {
   id: '0198a851-2a89-7ae2-a370-dc68883e3af1',
@@ -89,29 +92,34 @@ const created: Repository = {
 const params = { owner: 'alice.test', repo: 'project' }
 
 function renderWithQuery(children: ReactNode) {
-  const client = new QueryClient({
-    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
+  const client = createTestQueryClient()
+  client.setQueryData(repositorySnapshotQueryOptions().queryKey, {
+    repositories: [],
+    available: true,
   })
-  client.setQueryData(['repository-snapshot'], { repositories: [], available: true })
   return {
     client,
-    ...render(<QueryClientProvider client={client}>{children}</QueryClientProvider>),
+    ...renderWithAppProviders(children, { queryClient: client }),
   }
 }
 
 beforeEach(() => {
-  mocks.createFork.mockReset()
-  mocks.syncFork.mockReset()
-  mocks.navigate.mockReset()
-  mocks.forkPage = { items: [], fork_count: 0, page: { next_cursor: null } }
+  createFork.mockReset()
+  syncFork.mockReset()
+  forkPage = { items: [], fork_count: 0, page: { next_cursor: null } }
 })
 afterEach(cleanup)
 
 describe('ForkActions', () => {
   it('creates a named fork and opens it', async () => {
-    mocks.createFork.mockResolvedValue(created)
-    const { client } = renderWithQuery(
-      <ForkActions identityDid="did:plc:viewer" params={params} repository={upstream} />,
+    createFork.mockResolvedValue(created)
+    const { client, router } = renderWithQuery(
+      <ForkActions
+        dependencies={dependencies}
+        identityDid="did:plc:viewer"
+        params={params}
+        repository={upstream}
+      />,
     )
 
     fireEvent.click(screen.getByText('Fork'))
@@ -120,39 +128,42 @@ describe('ForkActions', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Create fork' }))
 
-    await waitFor(() => expect(mocks.createFork).toHaveBeenCalledTimes(1))
-    expect(mocks.createFork.mock.calls[0]?.[0]).toEqual({
+    await waitFor(() => expect(createFork).toHaveBeenCalledTimes(1))
+    expect(createFork.mock.calls[0]?.[0]).toEqual({
       body: { slug: 'project-copy', organization: undefined },
       path: params,
     })
-    await waitFor(() =>
-      expect(mocks.navigate).toHaveBeenCalledWith({
-        to: '/$owner/$repo',
-        params: { owner: 'viewer.test', repo: 'project-copy' },
-      }),
-    )
+    await waitFor(() => expect(router.state.location.pathname).toBe('/viewer.test/project-copy'))
     expect(
-      client.getQueryData<{ repositories: Repository[] }>(['repository-snapshot'])?.repositories,
+      client.getQueryData<{ repositories: Repository[] }>(repositorySnapshotQueryOptions().queryKey)
+        ?.repositories,
     ).toContainEqual(created)
   })
 
   it('updates the sync button after a successful fast-forward', async () => {
-    mocks.syncFork.mockResolvedValue({ before_sha: 'before', after_sha: 'after', updated: true })
+    syncFork.mockResolvedValue({ before_sha: 'before', after_sha: 'after', updated: true })
     renderWithQuery(
-      <ForkActions identityDid="did:plc:viewer" params={params} repository={created} />,
+      <ForkActions
+        dependencies={dependencies}
+        identityDid="did:plc:viewer"
+        params={params}
+        repository={created}
+      />,
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Sync fork' }))
 
     expect(await screen.findByRole('button', { name: 'Fork updated' })).toBeTruthy()
-    expect(mocks.syncFork.mock.calls[0]?.[0]).toEqual({ path: params })
+    expect(syncFork.mock.calls[0]?.[0]).toEqual({ path: params })
   })
 })
 
 describe('ForkNetwork', () => {
   it('shows portable ancestry and direct forks', async () => {
-    mocks.forkPage = { items: [created], fork_count: 1, page: { next_cursor: null } }
-    renderWithQuery(<ForkNetwork params={params} repository={upstream} />)
+    forkPage = { items: [created], fork_count: 1, page: { next_cursor: null } }
+    renderWithQuery(
+      <ForkNetwork dependencies={dependencies} params={params} repository={upstream} />,
+    )
 
     expect(await screen.findByText('viewer.test/project-copy')).toBeTruthy()
     expect(screen.getByText('1 direct fork')).toBeTruthy()
