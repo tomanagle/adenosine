@@ -151,7 +151,7 @@ func main() {
 }
 
 func create(ctx context.Context) error {
-	db, err := database.Open(ctx, requiredEnv("DATABASE_URL_B"))
+	db, err := database.Open(ctx, requiredEnv("DATABASE_URL_B"), nil)
 	if err != nil {
 		return fmt.Errorf("open B database: %w", err)
 	}
@@ -192,7 +192,7 @@ func create(ctx context.Context) error {
 }
 
 func moderate(ctx context.Context) error {
-	db, err := database.Open(ctx, requiredEnv("DATABASE_URL_A"))
+	db, err := database.Open(ctx, requiredEnv("DATABASE_URL_A"), nil)
 	if err != nil {
 		return fmt.Errorf("open A database: %w", err)
 	}
@@ -259,7 +259,7 @@ func moderate(ctx context.Context) error {
 }
 
 func deleteRoot(ctx context.Context) error {
-	db, err := database.Open(ctx, requiredEnv("DATABASE_URL_B"))
+	db, err := database.Open(ctx, requiredEnv("DATABASE_URL_B"), nil)
 	if err != nil {
 		return fmt.Errorf("open B database: %w", err)
 	}
