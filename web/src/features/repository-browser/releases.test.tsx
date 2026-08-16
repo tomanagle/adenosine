@@ -133,12 +133,20 @@ describe('repository releases', () => {
       <ReleasesPage dependencies={dependencies} params={{ owner: 'alice', repo: 'adenosine' }} />,
     )
 
-    fireEvent.change(await screen.findByLabelText('Release title'), {
+    const title = await screen.findByLabelText<HTMLInputElement>('Release title')
+    const notes = screen.getByLabelText<HTMLTextAreaElement>('Release notes')
+    const prerelease = screen.getByLabelText<HTMLInputElement>('Mark as pre-release')
+    fireEvent.change(title, {
       target: { value: ' Adenosine 1.0 ' },
     })
-    fireEvent.change(screen.getByLabelText('Release notes'), { target: { value: 'Ship it' } })
-    fireEvent.click(screen.getByLabelText('Mark as pre-release'))
-    fireEvent.click(screen.getByRole('button', { name: 'Create release' }))
+    fireEvent.change(notes, { target: { value: 'Ship it' } })
+    fireEvent.click(prerelease)
+    await waitFor(() => {
+      expect(title.value).toBe(' Adenosine 1.0 ')
+      expect(notes.value).toBe('Ship it')
+      expect(prerelease.checked).toBe(true)
+    })
+    fireEvent.submit(screen.getByRole('button', { name: 'Create release' }).closest('form')!)
 
     await waitFor(() => expect(createRelease).toHaveBeenCalledTimes(1))
     expect(createRelease.mock.calls[0]?.[0]).toEqual({
