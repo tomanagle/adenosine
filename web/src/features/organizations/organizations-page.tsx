@@ -237,13 +237,13 @@ function CreateOrganizationForm({ onDone }: { onDone: () => void }) {
   )
 }
 
-function InvitationList({
+function InvitationList<TPageResult>({
   fetchNextPage,
   hasNextPage,
   invitations,
   isFetchingNextPage,
 }: {
-  fetchNextPage: () => Promise<unknown>
+  fetchNextPage: () => Promise<TPageResult>
   hasNextPage: boolean
   invitations: Array<{
     id: string

@@ -2,10 +2,10 @@ import * as pulumi from '@pulumi/pulumi'
 
 const endpoint = 'https://backboard.railway.com/graphql/v2'
 
-type Inputs = Record<string, unknown>
+type Inputs = pulumi.Inputs
 type GraphQLResponse<T> = { data?: T; errors?: Array<{ message: string }> }
 
-export function serviceCreateInput(inputs: Inputs): Inputs {
+export function serviceCreateInput(inputs: Inputs) {
   return {
     projectId: inputs.projectId,
     name: inputs.name,
@@ -13,7 +13,7 @@ export function serviceCreateInput(inputs: Inputs): Inputs {
   }
 }
 
-export function serviceInstanceUpdateInput(inputs: Inputs): Inputs {
+export function serviceInstanceUpdateInput(inputs: Inputs) {
   return {
     region: inputs.region,
     healthcheckPath: inputs.healthcheckPath,
@@ -43,7 +43,7 @@ async function graphql<T>(query: string, variables: Inputs): Promise<T> {
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
     body: JSON.stringify({ query, variables }),
   })
-  const result = (await response.json()) as GraphQLResponse<T>
+  const result: GraphQLResponse<T> = await response.json()
   if (!response.ok || result.errors?.length || !result.data) {
     throw new Error(
       `Railway API request failed: ${result.errors?.map((error) => error.message).join('; ') || response.status}`,

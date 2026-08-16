@@ -11,6 +11,7 @@
         "oxfmt": "0.63.0",
         "oxlint": "1.78.0",
         "typescript": "6.0.3",
+        "zod": "4.4.3",
       },
     },
     "packages/api-client": {

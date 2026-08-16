@@ -36,6 +36,16 @@ import {
 
 type PageProps = { params: RepositoryRouteParams; identityDid?: string }
 
+function reviewVerdict(value: FormDataEntryValue | null) {
+  switch (value) {
+    case 'approve':
+    case 'request_changes':
+      return value
+    default:
+      return 'comment'
+  }
+}
+
 export function IssuesPage({ params, identityDid }: PageProps) {
   const { data: repository } = useSuspenseQuery(repositoryQueryOptions(params))
   const { data } = useSuspenseQuery(issuesQueryOptions(repository.uri ?? ''))
@@ -412,7 +422,7 @@ export function PullRequestPage({
           await reviewMutation.mutateAsync({
             body: {
               pull_request_uri: pullRequestUri,
-              verdict: form.get('verdict') as 'comment' | 'approve' | 'request_changes',
+              verdict: reviewVerdict(form.get('verdict')),
               body: String(form.get('body')),
             },
           })

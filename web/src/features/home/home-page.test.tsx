@@ -1,39 +1,14 @@
 // @vitest-environment jsdom
 
 import type { Repository } from '@adenosine/api-client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { Suspense, type ReactNode } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
+import { Suspense } from 'react'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { HomePage } from './home-page'
-
-const { snapshot } = vi.hoisted(() => ({
-  snapshot: { value: { available: true, repositories: [] as Repository[] } },
-}))
-
-vi.mock('@/features/identity/identity.query', () => ({
-  identityQueryOptions: () => ({
-    queryKey: ['identity'],
-    queryFn: () => ({ did: 'did:plc:viewer', handle: 'viewer.example' }),
-  }),
-}))
-
-vi.mock('@/features/repositories/repository-snapshot.query', () => ({
-  repositorySnapshotQueryOptions: () => ({
-    queryKey: ['repository-snapshot'],
-    queryFn: () => snapshot.value,
-  }),
-}))
-
-vi.mock('@/features/repositories/live-repositories', () => ({
-  LiveRepositories: () => <p>Live updates connected</p>,
-}))
-
-vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
-  useNavigate: () => vi.fn(),
-}))
+import { identityQueryOptions } from '@/features/identity/identity.query'
+import { repositorySnapshotQueryOptions } from '@/features/repositories/repository-snapshot.query'
+import { renderWithAppProviders } from '@/test/render'
 
 function repository(overrides: Partial<Repository> = {}): Repository {
   return {
@@ -69,14 +44,21 @@ function repository(overrides: Partial<Repository> = {}): Repository {
 }
 
 async function renderHome(value: { available: boolean; repositories: Repository[] }) {
-  snapshot.value = value
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  render(
-    <QueryClientProvider client={client}>
-      <Suspense fallback={<p>Loading</p>}>
-        <HomePage />
-      </Suspense>
-    </QueryClientProvider>,
+  const dependencies = {
+    IdentityQueryOptions: () => ({
+      ...identityQueryOptions(),
+      queryFn: () => ({ did: 'did:plc:viewer', handle: 'viewer.example' }),
+    }),
+    RepositorySnapshotQueryOptions: () => ({
+      ...repositorySnapshotQueryOptions(),
+      queryFn: () => value,
+    }),
+    LiveRepositories: () => <p>Live updates connected</p>,
+  }
+  renderWithAppProviders(
+    <Suspense fallback={<p>Loading</p>}>
+      <HomePage dependencies={dependencies} />
+    </Suspense>,
   )
   await screen.findByRole('heading', { level: 1 })
 }
@@ -98,12 +80,14 @@ describe('HomePage', () => {
     await renderHome({ available: true, repositories: [repository()] })
 
     expect(screen.getByText('1 repository · 2 open issues · 1 open pull request')).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'ledger' }).getAttribute('href')).toBe('/$owner/$repo')
+    expect(screen.getByRole('link', { name: 'ledger' }).getAttribute('href')).toBe(
+      '/viewer.example/ledger',
+    )
     expect(screen.getByRole('link', { name: '2 open issues' }).getAttribute('href')).toBe(
-      '/$owner/$repo/issues',
+      '/viewer.example/ledger/issues',
     )
     expect(screen.getByRole('link', { name: '1 open pull request' }).getAttribute('href')).toBe(
-      '/$owner/$repo/pulls',
+      '/viewer.example/ledger/pulls',
     )
   })
 

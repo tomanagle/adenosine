@@ -14,7 +14,10 @@ describe('route collection lifecycle', () => {
       created.push(`${scope}:${resource}`)
       const cleanup = vi.fn(async () => {})
       cleanups.push(cleanup)
-      return { cleanup } as unknown as RouteElectricCollection<R>
+      const collection: RouteElectricCollection<R> = Object.assign(Object.create(null), {
+        cleanup,
+      })
+      return collection
     }
 
     const lifecycle = createRouteCollectionLifecycle(
